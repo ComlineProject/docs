@@ -1,9 +1,9 @@
 # Generation — codegen, libgen, and the `generation` repo
 
-Status: **de-rot in progress** — G0 + G1a landed on `generation/master`; G1b
-(`core` drops `codelib_gen`, the CLI gets codegen from `comline-codelib-gen`) in
-review (core#41, cli#16). G2 (libgen + more languages) not started · Affects
-`ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/cli`
+Status: **G1 done** — codegen moved out of `core` (G0 + G1a + G1b landed);
+`generation` owns it, the CLI is the composition root. G2 (libgen `mode = "lib"`,
+TypeScript, then FFI/`dylib`) not started · Affects `ComlineProject/core`,
+`ComlineProject/generation`, `ComlineProject/cli`
 
 Companion to [Runtime & generation repository structure](runtime-repo-structure.md),
 which covers how the repos are split; this page fixes what the pieces *are* and
@@ -121,31 +121,65 @@ Landed (`generation` `chore/derot-g1`, PR #2, stacked on #1).
    `heck`; ported `core`'s three codegen unit tests; CI back to blocking
    (`cargo build` / `cargo test` green).
 
-### G1b — flip the switch (in review: core#41, cli#16)
+### G1b — flip the switch ✅
 
-9. **core#41** — delete `core/core/src/codelib_gen/` + `pub mod codelib_gen;`
+Landed — `core` `b2739a4` (#41), `cli` `eb69a60` (#16).
+
+9. **core#41** — deleted `core/core/src/codelib_gen/` + `pub mod codelib_gen;`
    and `core/core/tests/codelib_gen/` (ported to `generation` in G1a). `core` is
    the compiler + IR; it ships no generator.
-10. **cli#16** — add `comline-codelib-gen` (a `generation` git rev) and move
+10. **cli#16** — added `comline-codelib-gen` (a `generation` git rev) and moved
     `comline-core` from crates.io `0.1.0` to the **same** `core` git rev the
-    generator crate pins, so the tree holds one `comline-core`. Repoint
+    generator crate pins, so the tree holds one `comline-core`. Repointed
     `find_generator` to `comline_codelib_gen::code_gen::find_generator` in
     `generate.rs` / `clean.rs`.
 11. Behaviour delta — `generation`'s `find_generator` is version-exact (only
     `"1.70.0"` registered); `core`'s ignored the version. All fixtures and
     `comline new` use `rust#1.70.0`, so no test churn.
 
-### G2 — libgen shape, then languages
+### G2 — libgen, then languages
 
-12. Revive the gated `code_gen::rust_c_ffi` / `rust_abi_stable` / `lib_gen`
-    modules against the current `core` API.
-13. Pin the `lib_gen` entry API — roughly
-    `fn(schemas, out_dir, mode) -> Result<Vec<GeneratedFile>>` — and wire
-    `comline.toml` `mode = "lib" | "dylib"` to it (`builder.rs` already shells
-    `cargo build --release`).
-14. Bring languages back one at a time — luau, python, lua — each its own
-    workspace member with a path-filtered CI job, per the
-    [repo-structure playbook](runtime-repo-structure.md#recommendation-phased-not-big-bang).
+The gated modules (`code_gen::rust_c_ffi`, `code_gen::rust_abi_stable`, all of
+`lib_gen`) are **not a port**. They were written for the pre-G1a orchestration
+model — they open `.frozen/` themselves (the store is `.comline/` now), call
+`basic_storage::get_latest_version`, walk `package/versions/{v}/`. Reviving them
+means **rewriting each as a pure function the CLI drives**, the way `code_gen`
+works now: `(package metadata, [(namespace, &[FrozenUnit])], out dir) -> files`.
+
+Three independent tracks:
+
+#### G2a — `mode = "lib"` for plain rust
+
+Make `comline.toml` `mode = "lib"` real (today "not started"). A `lib_gen::rust`
+function that takes the per-namespace IR the CLI already has, plus package
+metadata, and returns a buildable crate:
+
+- `Cargo.toml` (from the frozen package config — name, version, `serde` dep)
+- `src/lib.rs` — the `pub mod <namespace>;` tree
+- `src/<namespace>.rs` — reuses `code_gen::rust::generate_rust`
+
+CLI `mode = "lib"` calls it instead of writing bare source. No FFI, no compile
+step. Re-adds `toml_edit` (+ maybe `heck`) to `_core`. Depends on the
+`GeneratedFile` shape below being settled (libgen is multi-file).
+
+#### G2b — TypeScript in `code` mode
+
+A new `comline-codelib-gen-typescript` crate — `code_gen` only, no runtime
+needed. IR → `.ts` source: `interface` per struct, `enum` / union per enum, a
+`type` per protocol. Only `lib-gen/typescript/docs/implementation plan.md`
+exists today, so it is greenfield against the current IR; target shape in
+[Codegen by language](codegen-by-language.md). Its own workspace member with a
+path-filtered CI job, per the
+[repo-structure playbook](runtime-repo-structure.md#recommendation-phased-not-big-bang).
+`luau` / `python` / `lua` follow the same pattern later (their skeletons are on
+the old `comline::` crate path and pre-audit IR).
+
+#### G2c — FFI / abi_stable / `mode = "dylib"` — deferred
+
+`code_gen::rust_c_ffi`, `code_gen::rust_abi_stable`, `lib_gen::rust_c_ffi`, and
+`builder.rs` (which shells `cargo build --release`). Tied to the dormant runtime
+dylib-loading story ([runtime structure](runtime-repo-structure.md)) and needs
+core#8. Not scoped until that is.
 
 ## Open questions
 
@@ -156,9 +190,9 @@ Landed (`generation` `chore/derot-g1`, PR #2, stacked on #1).
 - **Version-exact `find_generator`.** `generation` only registers `"1.70.0"`. A
   fallback to the sole generator for a language — or more version keys — before
   anyone targets another Rust version.
-- **`GeneratedFile` shape.** codegen today returns a bare `String`; libgen needs
-  `(relative path, contents)` and possibly a file kind (source / manifest /
-  build script). Unify on one return type across both.
-- **Which language second.** luau (closest to done in the skeleton), python
-  (pyo3, biggest ecosystem pull), or typescript (no native runtime needed for
-  `code` mode)?
+- **`GeneratedFile` shape (blocks G2a).** codegen today returns a bare `String`;
+  libgen emits many files — `(relative path, contents)`, maybe a kind (source /
+  manifest / build script). Pick one return type; `code_gen` can wrap its single
+  string in it.
+- **Second language: TypeScript** (decided) — `code` mode, no runtime needed,
+  most greenfield. `luau` / `python` / `lua` after.
