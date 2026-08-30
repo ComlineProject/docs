@@ -19,6 +19,9 @@ Each page carries a status and links the issues / PRs that carry it out.
 - [Validators](validators.md) — `validator` declarations and the `@validators`
   field annotation: the intended shape and what has to change to get there.
   *Not implemented.*
+- [Generation](generation.md) — what codegen / libgen / runtime each mean, moving
+  the generators out of `core`, and the `generation` repo de-rot plan.
+  *Partly built.*
 - [Runtime & generation repository structure](runtime-repo-structure.md) — how to
   keep the runtime and libgen trees from getting heavy as languages are added.
   *Discussion.*

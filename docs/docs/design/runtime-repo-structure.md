@@ -3,6 +3,11 @@
 Status: **discussion** — no decision, no issues filed · Affects
 `ComlineProject/runtime` and `ComlineProject/generation`
 
+The `generation` side — what codegen / libgen / runtime each mean, where the
+generators live, and how to clean the repo up — is settled separately in
+[Generation](generation.md). This page is about repo granularity for the
+*runtime* tree.
+
 ## Problem
 
 `ComlineProject/runtime` is a single Cargo workspace (`runtime/Cargo.toml`, one
@@ -168,9 +173,10 @@ playbook applies to `generation/lib-gen/*`.
 
 - **Trigger for step 3.** What concretely promotes a binding to its own repo — a
   named maintainer, a release-cadence divergence, CI minutes, toolchain weight?
-- **`generation` vs `core` for codegen.** Independently of the runtime split,
-  the `rust` generator lives in `core` while `generation` is its nominal home.
-  Consolidate, and which way?
 - **Org vs ecosystem ownership.** For a language whose runtime graduates, does
   the packaging (PyPI/npm/LuaRocks account) sit with the org or with a
   maintainer?
+
+`generation` vs `core` for codegen is **resolved** in [Generation](generation.md):
+the generators move to `generation`, `core` ships none, and there is no
+`comline-core-ir` carve-out.
