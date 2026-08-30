@@ -1,6 +1,6 @@
 # Multi-version generation
 
-Status: **implemented** (core#26 merged; cli#12 merged; cli#13 open, CI green) · Follows [Consumer generation configuration](output-configuration.md)
+Status: **implemented** (core#26 merged; cli#12 merged; cli#13 open, CI green) · Follows [Consumer generation configuration](consumer-generation-config.md)
 
 Shipped: `[generate].package_versions` / `[[generate.target]].package_versions` =
 `"latest"` (default) | `"all"` | version-or-hash list; `latest` uses the live
