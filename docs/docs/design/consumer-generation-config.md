@@ -11,7 +11,8 @@ Status: **core feature shipped** · `ComlineProject/core` + `ComlineProject/cli`
 | `history` module (CAS-chain reader) | ✅ merged (cli#12) |
 | Multi-version generation (`package_versions` = latest / list / all) | ✅ merged (cli#13) |
 | Frozen config recorded in each CAS commit | ✅ merged (core#27) |
-| Congregation changes drive the version bump | core#28 (open, CI green) |
+| Congregation changes drive the version bump | ✅ merged (core#28) |
+| `comline clean` split into `clean` (generated code) + guarded `comline reset` (history) | ✅ merged (cli#15) |
 | `lib` / `dylib` modes | not started — needs core#8 |
 | `[generate.dependencies.*]` (generate for a registry dep) | not started — needs dependency resolution (core#6) |
 | Per-historical-version `{{spec_version}}` | not started — cosmetic, low value |
@@ -214,8 +215,8 @@ hash, ideally content) captured in the commit.
 ### What config changes mean for the version — decided 2026-08-30
 
 **Phase A** (core#27, merged) records the frozen config in each commit's root
-tree as a `config` blob. **Phase B** (core#28) wires the config diff into the
-bump per the table below — `analyze_config_changes` in
+tree as a `config` blob. **Phase B** (core#28, merged) wires the config diff
+into the bump per the table below — `analyze_config_changes` in
 `package::config::ir::diff::analyze`. Live today: `specification_version` change →
 major. The dependency arms are implemented but dormant until a `dependencies`
 block is interpreted into `FrozenUnit::Dependency` (part of core#6).
