@@ -274,12 +274,13 @@ validate_on_decode = "collect"
 
 ### Open questions
 
-- **Runtime `params`.** Still assuming every arg is compile-time-known (literal
-  or `const`). A future dynamic arg would break the "inline at codegen" model.
-  No use case yet.
-- **`assert` vocabulary.** Only `assert(cond, msg)`. A `regex` / `matches`
-  helper is the likely first extension — must stay total (a bounded matcher, no
-  catastrophic backtracking).
+- **Runtime `params`.** The design inlines every arg at codegen (literal or
+  `const`). Whether a dynamic arg is ever wanted — and what it would do to the
+  inline model — is undecided; no position yet.
+- **`assert` vocabulary.** Only `assert(cond, msg)` today. Whether it grows
+  (a `regex` / `matches` helper, `let` bindings, …) is undecided. Whatever the
+  answer, it stays bounded by the
+  [non-TC constraint](#constraint-stays-non-turing-complete).
 
 ## Resolved along the way
 
