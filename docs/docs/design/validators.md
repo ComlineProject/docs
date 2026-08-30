@@ -152,13 +152,15 @@ impl Message {
 Decisions baked into that shape:
 
 - **An explicit `validate(&self)` method**, returning
-  `Result<(), Vec<ValidationError>>` — **collect all** failures, not fail-fast.
-  Deserialization does *not* call it automatically (see 4c); a caller runs it at
-  the boundary it cares about.
+  `Result<(), Vec<ValidationError>>` — **collect all** failures. Codegen also
+  emits `validate_first(&self) -> Result<(), ValidationError>` for callers that
+  want to stop at the first. Deserialization calls neither automatically unless
+  [`comline.toml` opts in](#auto-validation-on-decode-4c).
 - **`ValidationError`** is a small shared type from a runtime support crate
   (`comline_rt` — the dormant `runtime` repo's first real job):
-  `{ field: &'static str, message: String }`. It is **not** one of the schema's
-  `error` declarations — validators aren't linked to an `error` today.
+  `{ field: &'static str, message: String }`; `ValidationErrors(Vec<_>)` wraps
+  it for the auto-run path. It is **not** one of the schema's `error`
+  declarations — validators aren't linked to an `error` today.
 - **`params.*` are inlined at codegen.** `min_chars = 3` bakes the literal `3`
   into the check; an unbound property emits its declared default. No runtime
   parameter passing, no per-instance validator object.
@@ -216,16 +218,54 @@ Operand    { ... }   // path "value.length" | integer | string
 | Sub-phase | Work |
 |---|---|
 | 4a | Freeze the `validate` condition as a structured expression tree (keep the text + `references` the checks use). |
-| 4b | `rust` generator emits `fn validate(&self) -> Result<(), Vec<ValidationError>>`; stand up the `comline_rt` support crate with `ValidationError`; implement the `value.*` accessor set. |
-| 4c | Auto-run `validate()` on decode as an opt-in `settings` toggle (`#[serde(try_from = "…")]` shim); default stays "the caller invokes `.validate()`". |
+| 4b | `rust` generator emits `validate()` (collect-all) and `validate_first()` (fail-fast); stand up the `comline_rt` support crate with `ValidationError` / `ValidationErrors`; implement the `value.*` accessor set. |
+| 4c | `comline.toml` `validate_on_decode` knob (`off` / `collect` / `first`) — `#[serde(try_from)]` shim in the `rust` target; default `off`. [Sketch below](#auto-validation-on-decode-4c). |
 | 4d | The other generators (python / typescript / luau) once they exist; imported / cross-schema validators (needs the imported schema's IR at generate time, like multi-version `generate`). |
+
+### Auto-validation on decode (4c)
+
+Whether decode runs the checks is the **consumer's** call, not the schema's — it
+changes the shape and cost of generated decode (a clone per decode, no "parse
+now, validate later"), which is a codegen concern. So it's a `[generate]` key in
+the consumer's [`comline.toml`](../reference/comline-toml.md), overridable per
+`[[generate.target]]`, slotting into the existing
+`defaults → [generate] → [[generate.target]] → env → CLI` precedence:
+
+```toml
+[generate]
+# Run the validators as part of decoding. Off by default.
+#   "off"     — emit validate() / validate_first(), never call them for you
+#   "collect" — decode, then collect-all; Err is ValidationErrors(Vec<_>)
+#   "first"   — decode, then fail-fast; Err is ValidationError
+validate_on_decode = "off"
+
+[[generate.target]]
+language           = "rust"
+validate_on_decode = "collect"
+```
+
+- **rust** — `"collect"` / `"first"` add `#[serde(try_from = "…")]` (a shadow
+  type that decodes the raw shape, then calls `validate()` / `validate_first()`
+  in its `TryFrom`); `"off"` leaves decode untouched.
+- Matching `COMLINE_GENERATE_VALIDATE_ON_DECODE` env var and
+  `--validate-on-decode` flag, like the other `[generate]` keys.
+- Folds into [`comline.toml`](../reference/comline-toml.md) when 4c ships.
 
 ### Decided
 
 - **Trigger point.** `validate()` is always emitted (4b) and the caller invokes
-  it; auto-run on decode is an opt-in `settings` toggle (4c). Auto-run is the
-  safer default, but it costs a clone per decode and removes "parse now,
-  validate later" — so it stays opt-in.
+  it. Auto-running it on decode is opt-in via
+  [`comline.toml`](#auto-validation-on-decode-4c), not the IDL — it's a codegen
+  concern, not a schema contract. Default: off.
+- **Fail-fast vs collect-all.** Not a schema property and not a package
+  `settings` — it's how the *consumer* wants failures surfaced, and a form UI
+  and a hot-path decoder want opposite things from the same type. So codegen
+  emits both verbs (`validate()` collect-all, `validate_first()` fail-fast) and
+  the caller picks; the auto-run path picks with `validate_on_decode`. A
+  package-level toggle would fragment `.validate()`'s meaning across
+  dependencies, so there isn't one. Either way codegen must emit **panic-safe**
+  checks — an assert that indexes past what an earlier assert guards has to
+  evaluate to *failure*, not crash.
 - **Unsupported `value` accessor.** A `comline build` error at the field that
   applies the validator (see the [accessor table](#proposed-generated-shape-rust)).
   `length` is an attribute of the types that have one; on a type that doesn't,
@@ -234,8 +274,6 @@ Operand    { ... }   // path "value.length" | integer | string
 
 ### Open questions
 
-- **Fail-fast vs collect-all.** The shape above is collect-all (`Vec<_>`). A
-  `settings` knob could pick fail-fast. Not worth it until asked for.
 - **Runtime `params`.** Still assuming every arg is compile-time-known (literal
   or `const`). A future dynamic arg would break the "inline at codegen" model.
   No use case yet.
