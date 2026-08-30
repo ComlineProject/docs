@@ -86,6 +86,13 @@ Two distinct jobs:
 3. **Compile-time checks** — `@validators` names/props resolve against the declared `validator`; `validate` block references only known `params`.
 4. **Runtime enforcement** — code generators emit the checks; define the failure surface (an `error`? a panic? a `Result`?).
 
+## Constraint: stays non-Turing-complete
+
+`validate` is a checking language, not a scripting one. Whatever it grows —
+`let`, helpers, regex — it must stay **total**: no recursion, no unbounded
+iteration. A field check that might not terminate is a bug, not a feature. This
+bounds the answers to the questions below.
+
 ## Open questions
 
 - **`validate` as text vs. AST.** `ExpressionBlock { function_calls: Vec<String> }` implies text capture. Fine for v1, but compile-time checks (phase 3) and codegen (phase 4) need structure. Decide when to parse the expression language properly.
