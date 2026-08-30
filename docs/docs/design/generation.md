@@ -32,13 +32,13 @@ In the repo these are already the module names — `generation/lib-gen/_core/src
 has `code_gen/` and `lib_gen/` side by side, and every per-language crate mirrors
 that pair.
 
-### Doc follow-up
+### Doc alignment
 
-The guide page [Runtime libraries](../guide/codegen/runtime.md) is really the
-**libgen** page (generating the loadable library the runtime consumes) — rename
-it to "Library generation" and keep "runtime" for the hand-written layer.
-[Codegen by language](codegen-by-language.md) is **codegen output** and should
-say so in its first line.
+Done: the guide page "Runtime libraries" is renamed
+[Library generation](../guide/codegen/library-generation.md) (it generates the
+loadable library the runtime consumes; "runtime" now means only the hand-written
+layer), and [Codegen by language](codegen-by-language.md) states in its first
+line that it shows codegen *source* output, not libgen.
 
 ## Where codegen lives
 

@@ -24,4 +24,4 @@ custom one) and the message serialization — is the
 [call system](call-system.md).
 
 Generating the schema types the runtime needs is covered in
-[Runtime libraries](../codegen/runtime.md).
+[Library generation](../codegen/library-generation.md).

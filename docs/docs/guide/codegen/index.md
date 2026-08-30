@@ -24,5 +24,5 @@ full guide, and [`comline.toml`](../../reference/comline-toml.md) is where a
 consumer sets the output location, layout and mode.
 
 Today `rust` is the only implemented generator and `code` (plain source text) the
-only mode. [Runtime libraries](runtime.md) covers the planned `lib` / `dylib`
-modes.
+only mode. [Library generation](library-generation.md) covers the planned `lib` /
+`dylib` modes.

@@ -23,7 +23,7 @@ nav:
     - 'Code generation':
       - 'guide/codegen/index.md'
       - Generating code: 'guide/codegen/generating-code.md'
-      - Runtime libraries: 'guide/codegen/runtime.md'
+      - Library generation: 'guide/codegen/library-generation.md'
     - 'Runtime':
       - 'guide/runtime/index.md'
       - Call systems & serialization: 'guide/runtime/call-system.md'

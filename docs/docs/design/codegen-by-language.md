@@ -1,7 +1,8 @@
 # Codegen by language
 
-Status: **sketch** — worked examples of how one schema should surface in each
-language. Not normative; `rust` is the only generator implemented today (see
+Status: **sketch** — worked examples of the **source** one schema should produce
+in each language ([codegen](generation.md#vocabulary), not the libgen packaging
+around it). Not normative; `rust` is the only generator implemented today (see
 [Generating code](../guide/codegen/generating-code.md)).
 
 From this schema:
