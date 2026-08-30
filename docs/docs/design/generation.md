@@ -1,8 +1,8 @@
 # Generation — codegen, libgen, and the `generation` repo
 
-Status: **partly built, mostly rotted** — the `rust` generator works but lives in
-`core`; `ComlineProject/generation` is a skeleton with stale IR patterns and
-broken dependency wiring · Affects `ComlineProject/core`,
+Status: **de-rot in progress** — G0 (build system: workspace, deps, CI) landed;
+the `rust` generator still lives in `core` and the `generation` crate bodies
+still match a pre-audit IR · Affects `ComlineProject/core`,
 `ComlineProject/generation`, `ComlineProject/cli`
 
 Companion to [Runtime & generation repository structure](runtime-repo-structure.md),
@@ -74,22 +74,34 @@ are a `generation` output.
 
 ## `generation` de-rot plan
 
-### G0 — make it build honestly
+### G0 — make the build system honest ✅
 
-1. **Drop committed build junk** — `lib-gen/c/tests/__TEMP__/**` (cmake / ninja
-   / `a.out` / `.bin`), the member-level `lib-gen/_core/Cargo.lock`, the orphan
-   `docs/graph.svg`. Add `.gitignore` entries: `__TEMP__/`, `target/`,
-   `cmake-build-*/`.
-2. **One dependency convention** — `comline-core = "<version>"` in every crate,
-   plus a workspace-root **commented** `[patch."https://github.com/ComlineProject/core"]`
-   for local dev. Delete the `htpps://` typo and the always-on root `[patch]`.
-3. **Remove the vestigial `code-gen/*` workspace glob** — the split is the
+Landed (`generation` `chore/derot-g0`). Scope was the manifest / workspace / CI
+layer only — the crate bodies still don't compile (that is G1).
+
+1. **Build junk** — `__TEMP__/`, `target/`, `Cargo.lock` were already
+   `.gitignore`d, so the cmake / ninja / `a.out` cruft under `lib-gen/c/tests/`
+   was never committed. Added `cmake-build-*/`; removed the stale on-disk
+   `Cargo.lock` / `lib-gen/_core/Cargo.lock` that were forcing a `regex-syntax`
+   resolution conflict.
+2. **One dependency convention** — `comline-core = "0.1"` in every crate that
+   needs it (matching `cli`); a single workspace-root `[patch.crates-io]` →
+   `../core/core`, kept **active** with a comment that it stays until `generation`
+   pins a published `comline-core` (post-G1). Deleted the `htpps://` typo, the
+   version-less git dep, and the stray per-crate commented `[patch]` blocks.
+3. **Removed the vestigial `code-gen/*` workspace glob** — the split is the
    `code_gen` / `lib_gen` *modules* inside each crate, not top-level directories.
-4. **Trim workspace members** to `_core` plus the crates that actually compile;
-   explicitly comment out `c` / `python` / `typescript` (currently empty) with a
-   "not started" note, the way `runtime/Cargo.toml` does.
-5. **Modernise CI** — `actions/checkout@v4`, per-member `cargo build -p …` so one
-   broken stub does not block the rest, drop or de-block the beta/nightly matrix.
+4. **Explicit workspace members** — `_core`, `lua`, `luau` (the wired crates);
+   `c` / `python` / `typescript` commented with a "not started" note (they still
+   `use comline::…`, the pre-rename crate path). `cargo metadata` now resolves.
+5. **CI** — `actions/checkout@v4`, dropped the beta/nightly matrix; `cargo build`
+   / `cargo test` run with `continue-on-error` and a `TODO(de-rot G1)` to remove
+   it once the bodies are ported.
+
+**State after G0:** the workspace resolves and the manifests are clean;
+`cargo build` fails with ~18 pre-audit-IR errors in `_core` (missing `span`
+fields, 1-vs-2-field `EnumVariant`, `basic_storage` imports, a dropped
+`package_from_path_without_context`). Those are G1.
 
 ### G1 — move `rust` codegen out of `core`
 
