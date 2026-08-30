@@ -1,9 +1,10 @@
 # Validators
 
 !!! note "Checked, not run"
-    `comline build` verifies validators — an unknown validator name, a bad
-    keyword argument, or an undeclared `params.*` reference all fail the build.
-    Running them against data (in generated code) is not done yet — see the
+    `comline build` verifies validators — an unknown validator name, a keyword
+    argument that isn't a property or whose literal type is wrong, or an
+    undeclared `params.*` reference all fail the build. Running them against data
+    (in generated code) is not done yet — see the
     [design note](../../design/validators.md).
 
 A **validator** is a named, parameterised check you attach to a
