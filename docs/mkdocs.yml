@@ -1,4 +1,5 @@
 site_name: Comline
+site_url: https://comlineproject.github.io/docs/
 
 nav:
   - Home: 'index.md'

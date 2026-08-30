@@ -1,0 +1,53 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: poetry
+          cache-dependency-path: docs/poetry.lock
+
+      - name: Install dependencies
+        working-directory: docs
+        run: poetry install
+
+      - name: Build site
+        working-directory: docs
+        run: poetry run zensical build --strict
+
+      - name: Upload site
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: docs/site
+          retention-days: 7
+
+  # Deployment to GitHub Pages is disabled: the ComlineProject org currently
+  # blocks Pages creation ("organization administrators disabled Pages
+  # creation"). Once an org owner enables Pages and sets this repo's Pages
+  # source to "GitHub Actions" (Settings -> Pages), add a deploy job:
+  #
+  #   permissions: { contents: read, pages: write, id-token: write }
+  #   build:  ... + actions/upload-pages-artifact@v3 with path: docs/site
+  #   deploy: needs: build, environment: github-pages,
+  #           uses: actions/deploy-pages@v4  (only on push to main)
