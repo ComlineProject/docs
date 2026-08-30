@@ -2,7 +2,8 @@
 
 ## Install
 
-`comline` is not on crates.io yet — build it from source:
+`comline` is not on crates.io yet — build it from source with a recent Rust
+toolchain:
 
 ```bash
 git clone https://github.com/ComlineProject/cli
@@ -16,7 +17,9 @@ That puts the `comline` binary in `~/.cargo/bin`. Check it:
 comline --help
 ```
 
-OS packages (Fedora, Arch, Windows, macOS) are planned but not available yet.
+A `cargo install comline` from crates.io, and OS packages (Fedora, Arch,
+Windows, macOS), are planned — packaging is tracked in
+[`ComlineProject/distributions`](https://github.com/ComlineProject/distributions).
 
 ## Create a project
 
