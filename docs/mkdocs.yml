@@ -4,6 +4,7 @@ nav:
   - Home: 'index.md'
   - Getting started: 'getting-started.md'
   - Guide:
+    - Overview: 'guide/overview.md'
     - 'IDL / Schema':
       - 'guide/idl/index.md'
       - Structure: 'guide/idl/structure.md'
@@ -22,6 +23,10 @@ nav:
       - 'guide/runtime/index.md'
       - Call systems & serialization: 'guide/runtime/call-system.md'
     - 'Packages & dependencies': 'guide/packages/index.md'
+  - Reference:
+    - 'comline.toml': 'reference/comline-toml.md'
+    - CLI: 'reference/cli.md'
+    - Versioning rules: 'reference/versioning.md'
   - Design:
     - 'design/index.md'
     - Consumer generation configuration: 'design/consumer-generation-config.md'

@@ -1,25 +1,67 @@
 # Packages & dependencies
 
-!!! note "Stub"
-    This page will cover the package manifest, dependency resolution, and
-    registries. The underlying design is in
-    [Consumer generation configuration](../../design/consumer-generation-config.md).
+A Comline **package** (historically *congregation*) is a directory with a
+manifest and one or more schema files:
 
-A Comline **package** (historically *congregation*) is a set of schemas plus a
-manifest, `config.idp`, that declares:
+```
+my-api/
+├── config.idp        # the manifest — package identity + declarations
+├── comline.toml       # consumer-side: where generated code goes (see below)
+├── src/
+│   └── *.ids          # the schemas
+└── .comline/          # content-addressable store (appears after the first build)
+```
 
-- the package **name** and `specification_version`
-- **dependencies** on other packages (identity + integrity hash)
-- **publish registries**
-- the code-generation **capability list** — which `language#version` targets the
-  package can be generated as
+## The manifest — `config.idp`
 
-The manifest is frozen and content-addressed, so it travels with every published
-version. Consumer-side choices — where generated code lands, which versions to
-emit — live in a separate, non-frozen `comline.toml`; see
-[Generating code](../codegen/generating-code.md).
+```
+congregation my_api
+specification_version = 1
+
+code_generation = {
+    languages = {
+        rust#1.70.0 = {}
+        python#3.11.0 = {}
+    }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `congregation` | the package name — a Comline identifier (letters, digits, `_`) |
+| `specification_version` | which version of the schema language these files are written against |
+| `code_generation.languages` | the **capability list**: `language#lang_version` targets this package *can* be generated as. Bare entries — `= {}` is required and takes no options. |
+| `dependencies` | other packages this one imports (identity + integrity hash) |
+| `publish_registries` | where `publish` pushes the package |
+
+The manifest is **frozen**: it lowers to IR units and is content-addressed into
+every built version, so a published version carries its own declarations. It
+never contains an output path — that is a consumer choice and lives in
+`comline.toml`.
+
+## `.comline/` — the store
+
+After the first `comline build`, a `.comline/` directory holds the
+[content-addressable store](../ir/cas.md) (`objects/`) and the version ref
+(`refs/heads/main`). It is the authoritative, append-only history of the
+package's versions; a publish pushes it to a registry.
+
+The `comline new` scaffold git-ignores it, which suits tests and examples. A
+package meant for publication should keep its `.comline/` under version control.
+
+## Consumer side — `comline.toml`
+
+Where generated code lands, in what layout, for which versions — none of which
+belongs to the package author — is set by whoever runs `comline generate`, in a
+separate, non-frozen `comline.toml`. See
+[Generating code](../codegen/generating-code.md) and the
+[`comline.toml` reference](../../reference/comline-toml.md).
 
 ## Status
 
-Dependency *resolution* is not implemented yet: `dependencies` blocks are parsed
-but not fetched, pinned, or stored. Tracking: `ComlineProject/core` #6.
+Dependency **resolution is not implemented yet**. A `dependencies` block is
+parsed, but the referenced packages are not fetched, pinned or stored, and their
+schema shapes do not yet feed this package's version or code generation.
+Tracking: `ComlineProject/core` #6. The reasoning and the intended version-bump
+behaviour are worked out in
+[Consumer generation configuration](../../design/consumer-generation-config.md).
