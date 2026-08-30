@@ -1,9 +1,10 @@
 # Validators
 
-!!! note "Recorded, not enforced"
-    Validators parse and are frozen into the version, but nothing checks against
-    them yet — see the [design note](../../design/validators.md) for the
-    remaining phases.
+!!! note "Checked, not run"
+    `comline build` verifies validators — an unknown validator name, a bad
+    keyword argument, or an undeclared `params.*` reference all fail the build.
+    Running them against data (in generated code) is not done yet — see the
+    [design note](../../design/validators.md).
 
 A **validator** is a named, parameterised check you attach to a
 [struct](structure.md) or [error](error.md) field.

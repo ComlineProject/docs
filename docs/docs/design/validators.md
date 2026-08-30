@@ -1,12 +1,14 @@
 # Validators
 
-Status: **parses and freezes** (core#32, #33, #34) · **not enforced** ·
-resolution + runtime checks are phases 3–4
+Status: **compile-time checks land** (core#32–39) · **not run** — codegen /
+runtime enforcement is phase 4
 
 A **validator** is a named, parameterised check attached to a
 [struct](../guide/idl/structure.md) or [error](../guide/idl/error.md) field. The
-declaration, its `validate` block, and the `@validators` field annotation all
-parse today and are recorded in the IR — nothing acts on them yet.
+declaration, its `validate` block, and the `@validators` field annotation parse,
+freeze into structured IR, and are checked at `comline build` time — unknown
+validator, bad keyword arg, undeclared `params.*` reference all fail the build.
+Nothing *runs* them against data yet.
 
 ## Shape
 
@@ -36,14 +38,15 @@ validator StringBounds {
   - `condition` — a small expression: member paths over `value.*` (the field
     being checked) and `params.*` (this validator's properties), comparisons
     (`== != >= <= > <`), and `and` / `or` chains. **No precedence** — it is
-    captured as text, [not evaluated](#constraint-stays-non-turing-complete).
+    [not evaluated](#constraint-stays-non-turing-complete), only checked.
   - `message` — the [interpolated string](../guide/idl/error.md#message) rule,
     reused; `{value.…}` / `{params.…}` placeholders work.
   - **`assert(c, m)` holds when `c` is true**; a false `c` fails validation with
     `m`.
 - Frozen as `FrozenUnit::Validator { properties, expression_block }`, where the
-  block is `ExpressionBlock { function_calls: Vec<String> }` — each assert
-  reconstructed to canonical text.
+  block is `ExpressionBlock { asserts: [Assert { condition, message, references }] }`.
+  Each `params.*` / `value.*` in a `condition` is checked against the validator's
+  properties; unknown roots and unknown `params.*` fail the build.
 
 ### The `@validators` field annotation
 
@@ -56,34 +59,35 @@ struct Message {
 
 - A **list** of **calls**: `ValidatorName(prop = value, …)`, comma-separated
   keyword args. Empty args (`A()`) and empty lists (`[]`) parse.
-- Captured onto the field as a `FrozenUnit::Property` whose value is the
-  normalised text `[StringBounds(min_chars = 3, max_chars = 12)]`. It is **not**
-  yet resolved against the declared validator.
+- Frozen onto the field as one `FrozenUnit::ValidatorRef { name, args }` per
+  call. `validator.rs` checks the name resolves to a declared (or imported)
+  `validator`, and that each keyword arg is one of its properties. Argument
+  **value types** are not checked yet — arg values are still text in the IR.
 - Works on `struct` and `error` fields (same `Field` grammar).
 
 ## Where validation runs
 
-Two distinct jobs, neither done yet:
-
-1. **Well-formedness (compile time).** `@validators` names a real validator and
-   binds real properties with type-correct values; a `validate` block references
-   only declared `params`. `validator.rs`-style work in `core`; gates
-   `comline build`. This is **phase 3** and needs the captured text parsed into
-   structure rather than left as strings.
+1. **Well-formedness (compile time).** Mostly done (core#37–39): `@validators`
+   names a real validator, keyword args are real properties, `validate` blocks
+   reference only `value.*` / declared `params.*`. Gated on `comline build`.
+   Remaining: keyword-arg **value types**.
 2. **The actual check (run time).** `StringBounds(min_chars = 3)` on a field runs
    when a message is decoded — emitted into generated code / enforced by the
    [runtime](../guide/runtime/index.md), the layer that does serialization.
-   **Phase 4.**
+   **Phase 4**, not started.
 
 ## Phasing
 
 | Phase | State |
 |---|---|
 | 1 — `validator` declaration + typed properties | ✅ core#32 |
-| 1b — `validate { assert(…) }` block, captured as text | ✅ core#33 |
+| 1b — `validate { assert(…) }` block | ✅ core#33 |
 | 2 — `@validators = [Name(a = 1)]` list/call annotation values | ✅ core#34 |
-| 3 — compile-time resolution: parse the captured text; resolve names / kwargs / `params` refs; gate `build` | — |
-| 4 — runtime enforcement: generators emit the checks; define the failure surface | — |
+| 3a — resolve `@validators` names | ✅ core#37 |
+| 3b — check `@validators` keyword-arg names | ✅ core#38 |
+| 3c — structured `validate` block, check `params.*` refs | ✅ core#39 |
+| 3d — check keyword-arg value **types** against the property types | — (arg values still text in the IR) |
+| 4 — runtime enforcement: generators emit the checks; failure surface | — |
 
 ## Constraint: stays non-Turing-complete
 
@@ -94,15 +98,13 @@ bounds the answers to the questions below.
 
 ## Open questions
 
-- **`validate` as text vs. AST.** `ExpressionBlock { function_calls: Vec<String> }`
-  is text capture. Phase 3 (compile-time checks) and phase 4 (codegen) need it
-  parsed into structure — decide the AST shape then.
+- **A real condition AST.** The frozen `Assert` keeps `condition` as canonical
+  text plus a flat `references` list — enough for the compile-time checks, not
+  for phase 4 (codegen needs the operator tree). Decide the AST shape when
+  starting phase 4.
 - **`assert` vocabulary.** Only `assert(cond, msg)` exists. Does `validate` stay
   that minimal, or grow `let` / early `return` / regex helpers (within the
   non-TC constraint)?
-- **Scoped-const property defaults.** `min_chars: u32 = 0` today; `= u32::MIN` /
-  `= SOME_CONST` would need scoped paths in default position (a general grammar
-  gap, not validator-specific).
 - **Failure surface.** What does a failed validator produce at run time — an
   `error`, a panic, a `Result`? Can a schema pick "collect all failures" vs.
   "fail fast"?
@@ -113,3 +115,7 @@ bounds the answers to the questions below.
 - **Kwarg separator** — commas: `min_chars = 3, max_chars = 12` (core#34).
 - **`string_bounds.ids`** — the inverted `assert` in the stdlib example was
   corrected when the block landed (core#33).
+- **Scoped-const property defaults** — `= u32::MIN` / `= SOME_CONST` now parse
+  (`Expression::Path` / `Expression::FString`, core#36).
+- **`validate` as text vs. AST** (for the checks) — resolved by the structured
+  `Assert` in core#39. A full operator AST is still deferred to phase 4.
