@@ -1,9 +1,9 @@
 # Generation — codegen, libgen, and the `generation` repo
 
-Status: **de-rot in progress** — G0 (build system) + G1a (`rust` codegen ported
-into `generation`, compiles green) landed; G1b (delete `core`'s copy, point the
-CLI at `generation`) not started · Affects `ComlineProject/core`,
-`ComlineProject/generation`, `ComlineProject/cli`
+Status: **de-rot in progress** — G0 + G1a landed on `generation/master`; G1b
+(`core` drops `codelib_gen`, the CLI gets codegen from `comline-codelib-gen`) in
+review (core#41, cli#16). G2 (libgen + more languages) not started · Affects
+`ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/cli`
 
 Companion to [Runtime & generation repository structure](runtime-repo-structure.md),
 which covers how the repos are split; this page fixes what the pieces *are* and
@@ -121,31 +121,41 @@ Landed (`generation` `chore/derot-g1`, PR #2, stacked on #1).
    `heck`; ported `core`'s three codegen unit tests; CI back to blocking
    (`cargo build` / `cargo test` green).
 
-### G1b — flip the switch (not started, needs `core` + `cli` PRs)
+### G1b — flip the switch (in review: core#41, cli#16)
 
-9. Make `comline-codelib-gen` reachable as a dependency (git dep, or publish).
-10. `cli`: depend on it, call `comline_codelib_gen::find_generator` from
-    `generate.rs` / `clean.rs` instead of `comline_core::codelib_gen`.
-11. Delete `core/core/src/codelib_gen/` + `pub mod codelib_gen;`; drop
-    `core/core/tests/codelib_gen/` (ported to `generation` in G1a).
-12. Net CI effect — `core` loses the codegen tests, `cli` exercises the real
-    end-to-end path.
+9. **core#41** — delete `core/core/src/codelib_gen/` + `pub mod codelib_gen;`
+   and `core/core/tests/codelib_gen/` (ported to `generation` in G1a). `core` is
+   the compiler + IR; it ships no generator.
+10. **cli#16** — add `comline-codelib-gen` (a `generation` git rev) and move
+    `comline-core` from crates.io `0.1.0` to the **same** `core` git rev the
+    generator crate pins, so the tree holds one `comline-core`. Repoint
+    `find_generator` to `comline_codelib_gen::code_gen::find_generator` in
+    `generate.rs` / `clean.rs`.
+11. Behaviour delta — `generation`'s `find_generator` is version-exact (only
+    `"1.70.0"` registered); `core`'s ignored the version. All fixtures and
+    `comline new` use `rust#1.70.0`, so no test churn.
 
 ### G2 — libgen shape, then languages
 
-11. Pin the `lib_gen` entry API — roughly
+12. Revive the gated `code_gen::rust_c_ffi` / `rust_abi_stable` / `lib_gen`
+    modules against the current `core` API.
+13. Pin the `lib_gen` entry API — roughly
     `fn(schemas, out_dir, mode) -> Result<Vec<GeneratedFile>>` — and wire
     `comline.toml` `mode = "lib" | "dylib"` to it (`builder.rs` already shells
     `cargo build --release`).
-12. Bring languages back one at a time — luau, python, lua — each its own
+14. Bring languages back one at a time — luau, python, lua — each its own
     workspace member with a path-filtered CI job, per the
     [repo-structure playbook](runtime-repo-structure.md#recommendation-phased-not-big-bang).
 
 ## Open questions
 
-- **How `cli` reaches `comline-codelib-gen` (G1b).** `cli` pins `comline-core`
-  from crates.io with a commented local `[patch]`. Same for `comline-codelib-gen`
-  (needs a publish), or a git dep until the first release?
+- **Cut releases.** G1b wires everything with **git-rev deps** (`generation` →
+  `core`, `cli` → both). Fine as interim, but every `core` IR change now needs a
+  rev bump in two repos. First `comline-core` + `comline-codelib-gen` releases
+  would let `cli` pin versions like it used to.
+- **Version-exact `find_generator`.** `generation` only registers `"1.70.0"`. A
+  fallback to the sole generator for a language — or more version keys — before
+  anyone targets another Rust version.
 - **`GeneratedFile` shape.** codegen today returns a bare `String`; libgen needs
   `(relative path, contents)` and possibly a file kind (source / manifest /
   build script). Unify on one return type across both.
