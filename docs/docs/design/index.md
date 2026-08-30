@@ -19,3 +19,6 @@ Each page carries a status and links the issues / PRs that carry it out.
 - [Validators](validators.md) — `validator` declarations and the `@validators`
   field annotation: the intended shape and what has to change to get there.
   *Not implemented.*
+- [Runtime & generation repository structure](runtime-repo-structure.md) — how to
+  keep the runtime and libgen trees from getting heavy as languages are added.
+  *Discussion.*
