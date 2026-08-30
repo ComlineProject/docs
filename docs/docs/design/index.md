@@ -16,3 +16,6 @@ Each page carries a status and links the issues / PRs that carry it out.
   automatic versioning, and the `comline clean` redesign. *Partly implemented.*
 - [Codegen by language](codegen-by-language.md) — worked examples of one schema
   across Rust, Python, TypeScript, Luau. *Sketch.*
+- [Validators](validators.md) — `validator` declarations and the `@validators`
+  field annotation: the intended shape and what has to change to get there.
+  *Not implemented.*

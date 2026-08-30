@@ -37,6 +37,7 @@ nav:
     - Multi-version generation: 'design/multi-version-generation.md'
     - IR freezing & the version state: 'design/ir-generation.md'
     - Codegen by language: 'design/codegen-by-language.md'
+    - Validators: 'design/validators.md'
   - Proposals:
     - 'proposals/index.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
