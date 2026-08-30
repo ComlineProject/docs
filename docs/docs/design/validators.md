@@ -1,13 +1,14 @@
 # Validators
 
-Status: **not implemented** · design only · builds on annotation capture (core#31)
+Status: **parses and freezes** (core#32, #33, #34) · **not enforced** ·
+resolution + runtime checks are phases 3–4
 
 A **validator** is a named, parameterised check attached to a
-[struct](../guide/idl/structure.md) or [error](../guide/idl/error.md) field. Two
-`.ids` files already assume it (`core_stdlib/.../validators/string_bounds.ids`,
-`core/tests/schema/simple.ids`), but nothing parses or runs it yet.
+[struct](../guide/idl/structure.md) or [error](../guide/idl/error.md) field. The
+declaration, its `validate` block, and the `@validators` field annotation all
+parse today and are recorded in the IR — nothing acts on them yet.
 
-## Intended shape
+## Shape
 
 ### The `validator` declaration
 
@@ -28,18 +29,21 @@ validator StringBounds {
 }
 ```
 
-- **Properties** — `name: Type [= default]`, the same shape as a struct field.
-  They are the validator's configuration, filled in at the use site.
+- **Properties** — `name: Type [= default]`, the same shape as a struct field
+  (no `;`, no `optional`, no annotations). The validator's configuration, filled
+  in at the use site.
 - **`validate { … }`** — one or more `assert(condition, message)` calls.
-  - `condition` is a boolean expression over `value.*` (the field being checked
-    — `value.length`, `value.name`, …) and `params.*` (this validator's
-    properties). Operators: comparisons, `and` / `or`, `not`.
-  - `message` is an [interpolated string](../guide/idl/error.md#message) with
-    `{value.…}` / `{params.…}` placeholders.
+  - `condition` — a small expression: member paths over `value.*` (the field
+    being checked) and `params.*` (this validator's properties), comparisons
+    (`== != >= <= > <`), and `and` / `or` chains. **No precedence** — it is
+    captured as text, [not evaluated](#constraint-stays-non-turing-complete).
+  - `message` — the [interpolated string](../guide/idl/error.md#message) rule,
+    reused; `{value.…}` / `{params.…}` placeholders work.
   - **`assert(c, m)` holds when `c` is true**; a false `c` fails validation with
-    `m`. The current `string_bounds.ids` has this inverted (it asserts the
-    *failure* condition, with a success-worded message) — the example needs
-    fixing along with the implementation.
+    `m`.
+- Frozen as `FrozenUnit::Validator { properties, expression_block }`, where the
+  block is `ExpressionBlock { function_calls: Vec<String> }` — each assert
+  reconstructed to canonical text.
 
 ### The `@validators` field annotation
 
@@ -50,41 +54,36 @@ struct Message {
 }
 ```
 
-- Value is a **list** of **calls**: `ValidatorName(prop = value, …)`.
-- Each call binds the validator's properties by name; unbound properties take
-  their declared default.
-- Works on `struct` and `error` fields (both use the same `Field` grammar).
-
-## What has to change
-
-| Piece | Today | Needed |
-|---|---|---|
-| `validator` declaration | no grammar rule | `Declaration::Validator` + rule; `FrozenUnit::Validator` already exists |
-| `validate {}` block | — | v1: capture each `assert(…)` as text into `FrozenUnit::ExpressionBlock { function_calls: Vec<String> }` (already defined). A real parsed expression AST is a later step. |
-| Property defaults like `u32::MIN` | `const`/default values are `int \| string \| ident` only | either allow scoped-const paths in default position, or restrict validator defaults to plain literals |
-| `@validators = [ … ]` | annotation value is a single `Expression` | extend annotation values to a **list literal** and a **call with named args**. Depends on core#31 (annotations are now captured; today only scalar values). |
-| Interpolation roots | `error`'s `message` interpolates `self.*` | add `value.*` / `params.*` roots for `validate` messages |
+- A **list** of **calls**: `ValidatorName(prop = value, …)`, comma-separated
+  keyword args. Empty args (`A()`) and empty lists (`[]`) parse.
+- Captured onto the field as a `FrozenUnit::Property` whose value is the
+  normalised text `[StringBounds(min_chars = 3, max_chars = 12)]`. It is **not**
+  yet resolved against the declared validator.
+- Works on `struct` and `error` fields (same `Field` grammar).
 
 ## Where validation runs
 
-Two distinct jobs:
+Two distinct jobs, neither done yet:
 
-1. **Well-formedness (compile time).** The `validator` declaration parses, its
-   `validate` block references only declared `params`, `@validators=[…]` names a
-   real validator and binds real properties with type-correct values. This is
-   `validator.rs`-style work in `core` and gates `comline build`.
-2. **The actual check (run time).** `StringBounds(min_chars=3)` on a `recipient`
-   field runs when a message is decoded. That is **not** a compile-time check —
-   it is emitted into generated code / enforced by the [runtime](../guide/runtime/index.md),
-   the same layer that does serialization. v1 can stop at job 1 and record the
-   validators in the IR without emitting runtime checks yet.
+1. **Well-formedness (compile time).** `@validators` names a real validator and
+   binds real properties with type-correct values; a `validate` block references
+   only declared `params`. `validator.rs`-style work in `core`; gates
+   `comline build`. This is **phase 3** and needs the captured text parsed into
+   structure rather than left as strings.
+2. **The actual check (run time).** `StringBounds(min_chars = 3)` on a field runs
+   when a message is decoded — emitted into generated code / enforced by the
+   [runtime](../guide/runtime/index.md), the layer that does serialization.
+   **Phase 4.**
 
 ## Phasing
 
-1. **`validator` declaration** — grammar + `Declaration::Validator` → `FrozenUnit::Validator`, `validate {}` captured as call-text. Well-formedness of the block deferred.
-2. **Annotation value grammar** — list literals + calls with named args, so `@validators = [Name(a = 1)]` parses; capture into the field's `parameters` (extends core#31).
-3. **Compile-time checks** — `@validators` names/props resolve against the declared `validator`; `validate` block references only known `params`.
-4. **Runtime enforcement** — code generators emit the checks; define the failure surface (an `error`? a panic? a `Result`?).
+| Phase | State |
+|---|---|
+| 1 — `validator` declaration + typed properties | ✅ core#32 |
+| 1b — `validate { assert(…) }` block, captured as text | ✅ core#33 |
+| 2 — `@validators = [Name(a = 1)]` list/call annotation values | ✅ core#34 |
+| 3 — compile-time resolution: parse the captured text; resolve names / kwargs / `params` refs; gate `build` | — |
+| 4 — runtime enforcement: generators emit the checks; define the failure surface | — |
 
 ## Constraint: stays non-Turing-complete
 
@@ -95,8 +94,22 @@ bounds the answers to the questions below.
 
 ## Open questions
 
-- **`validate` as text vs. AST.** `ExpressionBlock { function_calls: Vec<String> }` implies text capture. Fine for v1, but compile-time checks (phase 3) and codegen (phase 4) need structure. Decide when to parse the expression language properly.
-- **Property terminators.** `string_bounds.ids` ends property lines with `;`; struct fields do not. Pick one.
-- **`assert` vs. multiple styles.** Only `assert(cond, msg)` is shown. Is that the whole vocabulary, or will `validate` grow `let`, early `return`, regex helpers, etc.?
-- **Kwarg separator.** `simple.ids` writes `min_chars=3 max_chars=12` (space-separated). Commas (`min_chars = 3, max_chars = 12`) read better and match the rest of the language — this doc assumes commas.
-- **Failure surface.** What does a failed validator produce at run time, and can a schema opt into "collect all failures" vs. "fail fast"?
+- **`validate` as text vs. AST.** `ExpressionBlock { function_calls: Vec<String> }`
+  is text capture. Phase 3 (compile-time checks) and phase 4 (codegen) need it
+  parsed into structure — decide the AST shape then.
+- **`assert` vocabulary.** Only `assert(cond, msg)` exists. Does `validate` stay
+  that minimal, or grow `let` / early `return` / regex helpers (within the
+  non-TC constraint)?
+- **Scoped-const property defaults.** `min_chars: u32 = 0` today; `= u32::MIN` /
+  `= SOME_CONST` would need scoped paths in default position (a general grammar
+  gap, not validator-specific).
+- **Failure surface.** What does a failed validator produce at run time — an
+  `error`, a panic, a `Result`? Can a schema pick "collect all failures" vs.
+  "fail fast"?
+
+## Resolved along the way
+
+- **Property terminators** — no `;`; matches struct fields (core#32).
+- **Kwarg separator** — commas: `min_chars = 3, max_chars = 12` (core#34).
+- **`string_bounds.ids`** — the inverted `assert` in the stdlib example was
+  corrected when the block landed (core#33).
