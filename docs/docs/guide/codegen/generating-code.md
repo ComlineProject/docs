@@ -138,7 +138,8 @@ comline generate --watch                      # regenerate on schema / config ch
 ```
 
 `comline clean` removes the generated output (the whole `out` directory when it
-is a dedicated one, e.g. `generated/`) along with `.comline/`.
+is a dedicated one, e.g. `generated/`). It leaves `.comline/` alone —
+`comline reset` is the command that discards the version history.
 
 ## What Rust output looks like
 

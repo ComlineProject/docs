@@ -31,23 +31,19 @@ A *component* is any part of a schema that declares something:
 - validator
 - protocol
 
-## `comline clean` is destructive
+## The `clean` / `reset` split
 
-Today `comline clean` deletes `.comline/` outright, together with generated
-code. Nothing else holds the history and there is no `publish` yet, so the next
-build starts over at `0.0.1` with no way back.
+`comline clean` used to delete `.comline/` outright, together with generated
+code — one unguarded verb over two very different things: regenerable output and
+the irreplaceable version history (nothing else holds it; there is no `publish`
+yet). Landed in `ComlineProject/cli` #15:
 
-That conflates two very different things — regenerable output and the
-irreplaceable version history — under one unguarded verb. The intended split:
-
-- **`comline generate --clean`** (or `comline generate clean`) — removes only
-  generated code. Safe; no confirmation needed, or an opt-out `--yes`.
-- **`comline reset`** — deletes `.comline/`. Requires an explicit confirmation
-  (type the package name, or `--force`). It exists so "start the version history
-  over" during pre-1.0 churn is a sanctioned move rather than a manual
-  `rm -rf .comline`.
-
-`comline clean` itself would then either alias `generate --clean` or be removed.
+- **`comline clean`** — removes only generated code. `.comline/` is never
+  touched.
+- **`comline reset`** — deletes `.comline/` *and* generated code. On a terminal
+  it shows how many versions will be lost and requires typing `reset`; without a
+  terminal it refuses (exit `2`) unless `--force`. `--dry-run` on either lists
+  without deleting.
 
 ## Reproducibility
 

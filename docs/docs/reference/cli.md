@@ -36,7 +36,8 @@ parse → resolve imports → validate → (freeze into .comline/) → (generate
 | `comline build [--release] [--watch]` | Compile, validate, freeze a new immutable version into `.comline/`; print the changelog and the bump. `--release` is currently a no-op. |
 | `comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--watch]` | Validate (no freeze), then write generated code. Location/layout from [`comline.toml`](comline-toml.md); targets from there or `config.idp`. |
 | `comline diff <old> [<new>]` | Show schema changes between two built versions. Each argument is a version (`0.2.0`), a commit hash (4+ chars), or `HEAD` (`<new>` default). |
-| `comline clean [--dry-run]` | **Destructive.** Deletes `.comline/` — the whole version history, no undo — *and* generated code. Next `build` starts over at `0.0.1`. A split into a safe generated-code clean plus a guarded history reset is [planned](versioning.md#history-model). |
+| `comline clean [--dry-run]` | Remove generated code (the `generate` output root or files). Never touches `.comline/`. |
+| `comline reset [--force] [--dry-run]` | **Destructive.** Delete `.comline/` — the whole version history, no undo — *and* generated code. Next `build` starts over at `0.0.1`. On a terminal it shows how many versions will be lost and makes you type `reset`; without a terminal it refuses (exit `2`) unless `--force`. |
 | `comline completions <shell>` | Print a completion script to stdout. `bash` `zsh` `fish` `powershell` `elvish`. |
 
 `--out` / `--layout` / `--mode` override one target and need `--target` when
@@ -63,7 +64,7 @@ goes to stderr.
 |---|---|
 | `0` | success |
 | `1` | ran but failed — invalid schema, unresolved `diff` argument, generator or filesystem error |
-| `2` | precondition not met — not a Comline project, or nothing built yet (also `clap` usage errors) |
+| `2` | precondition not met — not a Comline project, nothing built yet, or `reset` not confirmed (also `clap` usage errors) |
 
 ## Versioning
 

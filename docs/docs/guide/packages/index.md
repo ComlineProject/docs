@@ -51,8 +51,8 @@ package with a version history worth keeping should either commit `.comline/` or
 once [publishing](#publishing-planned) exists, publish it.
 
 !!! warning
-    `comline clean` deletes `.comline/` — see
-    [Versioning rules](../../reference/versioning.md#history-model).
+    `comline reset` deletes `.comline/` (behind a confirmation). `comline clean`
+    does not — see [Versioning rules](../../reference/versioning.md#history-model).
 
 ## Consumer side — `comline.toml`
 

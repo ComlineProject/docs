@@ -45,12 +45,11 @@ The store is an append-only chain of immutable, content-addressed commits —
 git-inspired, no branches, never rewritten — so any past version stays
 reproducible.
 
-`comline clean` currently **deletes `.comline/` outright** along with generated
-code. Nothing else holds the history and there is no `publish` yet, so the next
-build starts over at `0.0.1` — with no undo. Treat it as destructive, not
-housekeeping; a split into a safe generated-code clean and a guarded
-`comline reset` is
-[planned](../design/ir-generation.md#comline-clean-is-destructive).
+Nothing else holds this history — there is no `publish` yet — so losing
+`.comline/` means the next build starts over at `0.0.1`, with no undo.
+`comline clean` leaves it alone; only **`comline reset`** deletes it, behind a
+typed confirmation (or `--force`). See
+[the `clean` / `reset` split](../design/ir-generation.md#the-clean-reset-split).
 
 ## Design notes
 
