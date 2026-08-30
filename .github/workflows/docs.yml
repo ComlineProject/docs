@@ -35,19 +35,22 @@ jobs:
         working-directory: docs
         run: poetry run zensical build --strict
 
-      - name: Upload site
-        uses: actions/upload-artifact@v4
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: site
           path: docs/site
-          retention-days: 7
 
-  # Deployment to GitHub Pages is disabled: the ComlineProject org currently
-  # blocks Pages creation ("organization administrators disabled Pages
-  # creation"). Once an org owner enables Pages and sets this repo's Pages
-  # source to "GitHub Actions" (Settings -> Pages), add a deploy job:
-  #
-  #   permissions: { contents: read, pages: write, id-token: write }
-  #   build:  ... + actions/upload-pages-artifact@v3 with path: docs/site
-  #   deploy: needs: build, environment: github-pages,
-  #           uses: actions/deploy-pages@v4  (only on push to main)
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
