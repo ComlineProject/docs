@@ -1,8 +1,8 @@
 # Generation — codegen, libgen, and the `generation` repo
 
-Status: **de-rot in progress** — G0 (build system: workspace, deps, CI) landed;
-the `rust` generator still lives in `core` and the `generation` crate bodies
-still match a pre-audit IR · Affects `ComlineProject/core`,
+Status: **de-rot in progress** — G0 (build system) + G1a (`rust` codegen ported
+into `generation`, compiles green) landed; G1b (delete `core`'s copy, point the
+CLI at `generation`) not started · Affects `ComlineProject/core`,
 `ComlineProject/generation`, `ComlineProject/cli`
 
 Companion to [Runtime & generation repository structure](runtime-repo-structure.md),
@@ -103,19 +103,33 @@ layer only — the crate bodies still don't compile (that is G1).
 fields, 1-vs-2-field `EnumVariant`, `basic_storage` imports, a dropped
 `package_from_path_without_context`). Those are G1.
 
-### G1 — move `rust` codegen out of `core`
+### G1a — working `rust` codegen in `generation` ✅
 
-6. Port the working `core/core/src/codelib_gen/rust.rs` over `generation`'s stale
-   `code_gen/rust/_1_7_0.rs` stub (the generation copy still matches
-   `EnumVariant(_)` and a `span`-less `Constant` — pre-audit IR).
-7. Make `generation/lib-gen/_core`'s `find_generator` the real entry point (it
-   already has the version-aware registry).
-8. Delete `core/core/src/codelib_gen/` and its `pub mod codelib_gen;`; move
-   `core/core/tests/codelib_gen/` into `generation`.
-9. Rewire `cli`: add a `comline-codelib-gen` dependency;
-   `generate.rs` / `clean.rs` call `comline_codelib_gen::find_generator`.
-10. Net CI effect — `core` loses the codegen tests, `generation` gains them,
-    `cli` now exercises the real end-to-end path.
+Landed (`generation` `chore/derot-g1`, PR #2, stacked on #1).
+
+6. Ported `core/core/src/codelib_gen/rust.rs` **verbatim** into
+   `code_gen/rust/generator.rs` (renamed from the pre-audit-IR `_1_7_0.rs`
+   stub). `generation` and `core` now emit byte-identical Rust, so the G1b
+   switch is output-neutral. `find_generator` keeps its version-keyed shape with
+   one `"1.70.0"` entry.
+7. **Gated for G2** (they call `basic_storage` / `package_from_path_without_context`,
+   removed from `core`) — bodies kept in-tree: `code_gen::rust_c_ffi`,
+   `code_gen::rust_abi_stable`, all of `lib_gen`. Deleted
+   `generate_frozen_schemas_into_path` — the CLI owns that orchestration.
+8. `_core` is the sole workspace member (`lua` / `luau` bodies have the same IR
+   drift → G2); dropped `abi_stable` / `cbindgen` / `toml_edit` / `glob` /
+   `heck`; ported `core`'s three codegen unit tests; CI back to blocking
+   (`cargo build` / `cargo test` green).
+
+### G1b — flip the switch (not started, needs `core` + `cli` PRs)
+
+9. Make `comline-codelib-gen` reachable as a dependency (git dep, or publish).
+10. `cli`: depend on it, call `comline_codelib_gen::find_generator` from
+    `generate.rs` / `clean.rs` instead of `comline_core::codelib_gen`.
+11. Delete `core/core/src/codelib_gen/` + `pub mod codelib_gen;`; drop
+    `core/core/tests/codelib_gen/` (ported to `generation` in G1a).
+12. Net CI effect — `core` loses the codegen tests, `cli` exercises the real
+    end-to-end path.
 
 ### G2 — libgen shape, then languages
 
@@ -129,9 +143,9 @@ fields, 1-vs-2-field `EnumVariant`, `basic_storage` imports, a dropped
 
 ## Open questions
 
-- **Order of G1 vs G0.** G1 is the valuable part; G0 is prerequisite only so far
-  as `generation` must compile to receive the port. A minimal G0 (items 1–2, 4)
-  may be enough to start G1.
+- **How `cli` reaches `comline-codelib-gen` (G1b).** `cli` pins `comline-core`
+  from crates.io with a commented local `[patch]`. Same for `comline-codelib-gen`
+  (needs a publish), or a git dep until the first release?
 - **`GeneratedFile` shape.** codegen today returns a bare `String`; libgen needs
   `(relative path, contents)` and possibly a file kind (source / manifest /
   build script). Unify on one return type across both.
