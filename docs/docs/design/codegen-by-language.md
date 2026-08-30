@@ -10,9 +10,9 @@ From this schema:
 
     ```ids
     struct Message {
-        receiver: String
-        subject: String
-        message: String
+        receiver: string
+        subject: string
+        message: string
     }
     ```
 

@@ -1,23 +1,27 @@
 # Runtime
-To be able to handle transportation, call system calls and message parsing,
-a runtime that handles it for you is necessary
-(and also convenient, so you don't write your own without being a need).
 
+Transport, message parsing, and routing a [protocol](../idl/protocol.md) call to
+its implementation all have to happen at run time. Comline provides a runtime
+that does this, so each project does not reinvent it.
 
-## Core Runtime
-So we have a core runtime(written in Rust) that will provide you the facilities
-as a base of any feature.
+## Core runtime
 
-This runtime can and is used as a basis for other language specific runtimes of comline,
-so for example lets say you need to use C++, the comline C++ runtime will speak to the
-core runtime, and the core will speak back so everything works together for the language
-you are using.
+A **core runtime**, written in Rust, provides the base facilities every feature
+builds on.
 
+## Per-language runtimes
 
-## Any Language Runtimes
-Runtimes can be different depending on what kind of language you are using, compiled AOT,
-compiled JIT, interpreted runtime, etc...
+Languages differ — AOT-compiled, JIT-compiled, interpreted — so each has its own
+thin runtime that speaks to the core runtime. If you use C++, the Comline C++
+runtime talks to the core and the core talks back, so the pieces work together
+for the language you are in. The intent is that integration is seamless from the
+user's side.
 
-[//]: # (Decide if this bit of text is necessary)
-As a user of comline you won't need to worry because it will make the integration seamless
-and without issues.
+## Call system
+
+The pluggable part — the call framing (JSON-RPC, a compact binary format, a
+custom one) and the message serialization — is the
+[call system](call-system.md).
+
+Generating the schema types the runtime needs is covered in
+[Runtime libraries](../codegen/runtime.md).

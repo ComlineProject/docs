@@ -1,25 +1,20 @@
 # Settings
-``` py linenums="1"
-setting {
-    index-all=True # Make structures, enums, errors protocols indexing explicit by default
-    index-structs=True # Make structures indexing explicit by default
-    index-enums=True # Make enums indexing explicit by default
-    index-errors=True # Make errors indexing explicit by default
-    index-protocols=True # Make protocols indexing explicit by default
 
-    forbid-default-index-all=False # Forbid indexing explicit for any component by default
-    forbid-default-index-structs=False # Forbid indexing explicit for structs by default
-    forbid-default-index-enums=False # Forbid indexing explicit for enums by default
-    forbid-default-index-errors=False # Forbid indexing explicit for errors by default
-    forbid-default-index-protocols=False # Forbid indexing explicit for protocols by default
-    
-    forbid-index-all=False # Forbid indexing entirely for any component by default
-    forbid-index-structs=False # Forbid indexing entirely for structs by default
-    forbid-index-enums=False # Forbid indexing entirely for enums by default
-    forbid-index-errors=False # Forbid indexing entirely for errors by default
-    forbid-index-protocols=False # Forbid indexing entirely for protocols by default
+!!! note "Planned"
+    `settings` is not in the schema grammar yet. It exists as a frozen IR unit
+    and the syntax below is the intended shape, not something the parser accepts
+    today.
+
+A **settings** block sets schema-wide rules — for example whether components must
+be explicitly indexed.
+
+``` py linenums="1"
+settings Project {
+    forbid_indexing=True
+    forbid_optional_indexing=True
 }
 ```
-Values for each **parameter** above are the **default** value, which you
-can change to affect the whole schema
 
+The values shown are the intended defaults; the exact key set is still being
+worked out alongside the [auto-versioning](../../design/ir-generation.md) design
+(which, if it lands, removes the need for manual field indexing entirely).
