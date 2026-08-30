@@ -27,8 +27,10 @@ struct Message {
 ```
 
 - **`optional`** — the field may be absent. Without it, the field is required.
-- **`= <value>`** — a default: an integer, a string literal, or an identifier
-  (`default` selects the type's own default, e.g. an enum's first variant).
+- **`= <value>`** — a default. Any value form a [constant](const.md) accepts —
+  a literal, another constant by name, a `::`-path, or an f-string — plus the
+  bare word `default` (the type's own default, e.g. an enum's first variant).
+  Non-literals are recorded but not resolved yet.
 
 ## Field types
 

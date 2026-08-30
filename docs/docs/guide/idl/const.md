@@ -13,9 +13,16 @@ const NAME: Type = value
 
 - **`NAME`** — a plain identifier (not scoped).
 - **`Type`** — any [type](structure.md#field-types); in practice a primitive.
-- **`value`** — a literal: an integer, a `"quoted string"`, or an identifier.
-  String literals are plain — no interpolation (that exists only in an
-  [`error`](error.md)'s `message`).
+- **`value`** — one of:
+    - a literal: an integer or a `"quoted string"` (plain, no interpolation)
+    - an identifier — another constant, by name
+    - a `::`-path — `u32::MIN`, `pkg::mod::DEFAULT`
+    - an **f-string** — `f"page {N} of {total}"`, with `{path}` placeholders and
+      `{{` / `}}` escapes (same interpolation as an [`error`](error.md)'s
+      `message`)
+
+Everything except a plain literal is recorded as text and **not resolved to a
+value yet** — including the `{N}` in an f-string.
 
 A constant can carry a [docstring](docstrings.md):
 
