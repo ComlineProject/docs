@@ -35,7 +35,7 @@ nav:
     - 'design/index.md'
     - Consumer generation configuration: 'design/consumer-generation-config.md'
     - Multi-version generation: 'design/multi-version-generation.md'
-    - IR generation & state.lock: 'design/ir-generation.md'
+    - IR freezing & the version state: 'design/ir-generation.md'
     - Codegen by language: 'design/codegen-by-language.md'
   - Proposals:
     - 'proposals/index.md'

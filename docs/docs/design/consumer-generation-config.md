@@ -203,10 +203,10 @@ schemas. What is *not* in a commit:
   doesn't exist*"), so the index-keyed diff misaligns if a file is added, removed
   or reordered mid-list.
 
-So `state.lock` is **half**-redundant: the CAS covers version history +
-diff-driven auto-versioning, i.e. the "track past/present state" half. It does
-**not** cover the "make a rebuild reproducible" half — freezing configuration and
-pinning imported / dependency schemas. For that, a version's tree needs (at
+So the CAS store covers only **half** of a state-freezing story: version history
++ diff-driven auto-versioning, i.e. the "track past/present state" half. It does
+**not** yet cover the "make a rebuild reproducible" half — freezing configuration
+and pinning imported / dependency schemas. For that, a version's tree needs (at
 least) the frozen config committed back alongside the schema entries, and — once
 dependency resolution exists — the resolved dependency set (identity + integrity
 hash, ideally content) captured in the commit.

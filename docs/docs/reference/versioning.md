@@ -43,11 +43,18 @@ lands (`ComlineProject/core` #6).
 
 The store is an append-only chain of immutable, content-addressed commits —
 git-inspired, no branches, never rewritten — so any past version stays
-reproducible. `comline clean` wipes it and the next build restarts at `0.0.1`.
+reproducible.
+
+`comline clean` currently **deletes `.comline/` outright** along with generated
+code. Nothing else holds the history and there is no `publish` yet, so the next
+build starts over at `0.0.1` — with no undo. Treat it as destructive, not
+housekeeping; a split into a safe generated-code clean and a guarded
+`comline reset` is
+[planned](../design/ir-generation.md#comline-clean-is-destructive).
 
 ## Design notes
 
-The rationale, and the open questions (a lockfile format, whether index
-annotations survive, how far the config diff should go) are in
-[IR generation & `state.lock`](../design/ir-generation.md) and
+The rationale, and the open questions (how far the config diff should go,
+reproducibility) are in
+[IR freezing & the version state](../design/ir-generation.md) and
 [Consumer generation configuration](../design/consumer-generation-config.md).

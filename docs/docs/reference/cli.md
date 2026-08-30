@@ -36,7 +36,7 @@ parse → resolve imports → validate → (freeze into .comline/) → (generate
 | `comline build [--release] [--watch]` | Compile, validate, freeze a new immutable version into `.comline/`; print the changelog and the bump. `--release` is currently a no-op. |
 | `comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--watch]` | Validate (no freeze), then write generated code. Location/layout from [`comline.toml`](comline-toml.md); targets from there or `config.idp`. |
 | `comline diff <old> [<new>]` | Show schema changes between two built versions. Each argument is a version (`0.2.0`), a commit hash (4+ chars), or `HEAD` (`<new>` default). |
-| `comline clean [--dry-run]` | Remove `.comline/` and `generate` output. Next `build` restarts history at `0.0.1`. |
+| `comline clean [--dry-run]` | **Destructive.** Deletes `.comline/` — the whole version history, no undo — *and* generated code. Next `build` starts over at `0.0.1`. A split into a safe generated-code clean plus a guarded history reset is [planned](versioning.md#history-model). |
 | `comline completions <shell>` | Print a completion script to stdout. `bash` `zsh` `fish` `powershell` `elvish`. |
 
 `--out` / `--layout` / `--mode` override one target and need `--target` when

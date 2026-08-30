@@ -1,44 +1,57 @@
-# Intermediate Representation Generation
+# IR freezing & the version state
 
-When compiling a schema, the schemas imported within it and details
-like metadata, state and so on are written into a lockfile `state.lock`
+`comline build` lowers each schema to its
+[Intermediate Representation](../guide/ir/index.md) and **freezes** it: the IR
+units are written into the project's
+[content-addressable store](../guide/ir/cas.md) at `.comline/`, as one immutable
+commit in an append-only chain. That store *is* the version state — there is no
+separate lockfile. (An early `state.lock` idea was dropped before it was built;
+the CAS covers what it was meant to.)
 
-This lockfile will contain frozen information about everything to be worried,
-the goal being to preserve relations, state, versioning of the schema(and related
-schemas) past and present
+Each build diffs the new frozen units against the previous commit, records the
+differential changes, and uses the largest of them to bump the package version.
 
-Upon locking, any changes made to any of the schemas and their relations, the state
-and the differential changes are tracked, and at the same time automatic version and
-state changes will be recorded
+## Version state
 
+Versioning follows SemVer. The first sketch of the rules here was only "new
+field → minor, changed field → major"; the implemented rules are richer and
+cover frozen-config changes too. The current table lives in
+[Versioning rules](../reference/versioning.md).
 
-## Version State
-Versioning follows SemVer (Semantic Versioning)
+## Components
 
-When adding new fields to a any of the [Components](#components), the minor version
-will be increased by 1 in the minor segment
+A *component* is any part of a schema that declares something:
 
-When making any change to an existing field in any of the [Components](#components), the
-major version will be increaded by 1 in the major segment
+- namespace
+- constant
+- settings
+- structure
+- enum
+- error
+- validator
+- protocol
 
+## `comline clean` is destructive
 
-**IMPORTANT TODO**: This makes `schema.ids` not need indexing manually anywhere,
-so the convention `#1 optional ...` where `#1` is indexing, can be removed entirely
-(if the system above is defined to substitute this feature, thread carefully)
+Today `comline clean` deletes `.comline/` outright, together with generated
+code. Nothing else holds the history and there is no `publish` yet, so the next
+build starts over at `0.0.1` with no way back.
 
+That conflates two very different things — regenerable output and the
+irreplaceable version history — under one unguarded verb. The intended split:
 
-**NOTE TODO**: The idea of a lockfile is to create state freezing, it can be
-a specific IR unit format of itself, or maybe a Json one? decide this
+- **`comline generate --clean`** (or `comline generate clean`) — removes only
+  generated code. Safe; no confirmation needed, or an opt-out `--yes`.
+- **`comline reset`** — deletes `.comline/`. Requires an explicit confirmation
+  (type the package name, or `--force`). It exists so "start the version history
+  over" during pre-1.0 churn is a sanctioned move rather than a manual
+  `rm -rf .comline`.
 
+`comline clean` itself would then either alias `generate --clean` or be removed.
 
-### Components
-A component is any part of the schema that does declarations, such being:
- - namespace
- - constant
- - settings
- - structure
- - enum
- - error
- - validator
- - protocol
+## Reproducibility
 
+The CAS covers version history and diff-driven auto-versioning, but not yet a
+fully reproducible rebuild — imported and dependency schemas are not pinned into
+the commit. See the
+[CAS reproducibility gap](consumer-generation-config.md#related-cas-reproducibility-gap).

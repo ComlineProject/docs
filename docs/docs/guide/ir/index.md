@@ -37,7 +37,7 @@ that comparison is what drives Comline's
 
 ## Related design notes
 
-- [IR generation & `state.lock`](../../design/ir-generation.md) — the lockfile
-  and the auto-versioning rules
+- [IR freezing & the version state](../../design/ir-generation.md) — freezing
+  into `.comline/`, and where versioning is defined
 - [Consumer generation configuration](../../design/consumer-generation-config.md)
   — what the frozen config does and does not cover
