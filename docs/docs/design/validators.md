@@ -162,15 +162,23 @@ Decisions baked into that shape:
 - **`params.*` are inlined at codegen.** `min_chars = 3` bakes the literal `3`
   into the check; an unbound property emits its declared default. No runtime
   parameter passing, no per-instance validator object.
-- **`value.*` accessor vocabulary** — small and fixed:
+- **`value.*` accessor vocabulary** — small, fixed, and **type-checked at the
+  use site**:
 
-  | path | meaning | lowers to (rust) |
+  | path | defined for | lowers to (rust) |
   |---|---|---|
-  | `value` | the field's value | `&self.<field>` |
-  | `value.length` | char / element count | `.chars().count()` (str), `.len()` (array) |
-  | `value.name` | the field name, for messages | `"<field>"` |
+  | `value` | any field | `&self.<field>` |
+  | `value.length` | `str`, arrays (`T[]`) | `.chars().count()` / `.len()` |
+  | `value.name` | any field (compile-time string) | `"<field>"` |
 
-  Anything else is a build error. The set grows deliberately and stays
+  `value` is whatever field the validator is attached to — its type is known
+  only where `@validators` names the validator, not in the `validator`
+  declaration. So each `value.<accessor>` is checked **per application**: when
+  `StringBounds(…)` is put on `recipient: str`, `value.length` resolves;
+  putting the same validator on an `s32` field is a `comline build` error at
+  that field. An unsupported or unknown accessor never reaches codegen — the
+  generator only ever sees accessor/type pairs that already type-checked. The
+  set grows deliberately and stays
   [non-computational](#constraint-stays-non-turing-complete).
 - **Operators** map straight through: `== != >= <= > <` → the rust operators,
   `and` / `or` → `&& ||`, each comparison parenthesised (the grammar has no
@@ -209,19 +217,23 @@ Operand    { ... }   // path "value.length" | integer | string
 |---|---|
 | 4a | Freeze the `validate` condition as a structured expression tree (keep the text + `references` the checks use). |
 | 4b | `rust` generator emits `fn validate(&self) -> Result<(), Vec<ValidationError>>`; stand up the `comline_rt` support crate with `ValidationError`; implement the `value.*` accessor set. |
-| 4c | Opt-in auto-validation on decode — `#[serde(try_from = "…")]` shim, or a documented "call `.validate()` after decode" contract. |
+| 4c | Auto-run `validate()` on decode as an opt-in `settings` toggle (`#[serde(try_from = "…")]` shim); default stays "the caller invokes `.validate()`". |
 | 4d | The other generators (python / typescript / luau) once they exist; imported / cross-schema validators (needs the imported schema's IR at generate time, like multi-version `generate`). |
+
+### Decided
+
+- **Trigger point.** `validate()` is always emitted (4b) and the caller invokes
+  it; auto-run on decode is an opt-in `settings` toggle (4c). Auto-run is the
+  safer default, but it costs a clone per decode and removes "parse now,
+  validate later" — so it stays opt-in.
+- **Unsupported `value` accessor.** A `comline build` error at the field that
+  applies the validator (see the [accessor table](#proposed-generated-shape-rust)).
+  `length` is an attribute of the types that have one; on a type that doesn't,
+  the schema never compiles — it never reaches codegen, let alone runtime.
+  There is no "emit vs. don't emit" fork.
 
 ### Open questions
 
-- **Trigger point (4c).** Explicit `.validate()` call, or always-run on
-  deserialize via `#[serde(try_from)]`? Auto-run is safer by default but costs a
-  clone on every decode and removes the "parse now, validate later" option.
-  Leaning: emit the method in 4b, make auto-run an opt-in `settings` toggle
-  in 4c.
-- **`value.length` on a type with no length.** A length check on an `s32` field
-  — reject at `comline build` (4a / `validator.rs`), or just don't emit? Reject:
-  it is always a mistake.
 - **Fail-fast vs collect-all.** The shape above is collect-all (`Vec<_>`). A
   `settings` knob could pick fail-fast. Not worth it until asked for.
 - **Runtime `params`.** Still assuming every arg is compile-time-known (literal
