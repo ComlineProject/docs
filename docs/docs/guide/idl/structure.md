@@ -36,10 +36,14 @@ struct Message {
 |---|---|
 | integers | `s8 s16 s32 s64`, `u8 u16 u32 u64` |
 | floats | `f32`, `f64` |
-| other | `bool`, `str`, `string` |
+| other | `bool`, `str` |
 | named | another `struct` / `enum`, scoped as `pkg::module::Type` |
 | array | `Message[]` (any length), `u8[16]` (fixed) |
 | union | `union(str u32)` |
+
+Use `str` for text. `string` is an accepted synonym the compiler steers you away
+from; `String` is generated-Rust, not IDL — see
+[`str` vs `string` vs `String`](index.md#str-vs-string-vs-string).
 
 ## Docstrings and annotations
 
