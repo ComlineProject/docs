@@ -21,6 +21,12 @@ Two properties are non-negotiable:
 - **Responsiveness** — the edit → IR → diagnostics → code loop keeps up with
   typing (target < ~1 frame of jank on the editor thread).
 
+**Scope for v1: everything** — compile + diagnostics + codegen + a working
+runtime demo. The compile/codegen loop is language-agnostic from day one (it is
+`core` + `comline-codelib-gen` in WASM); the *runtime demo* rolls out per
+language by how runnable that language is in a browser (see
+[Running handlers per language](#running-handlers-per-language)).
+
 ## The core decision: WASM vs a compile server
 
 | | client-side WASM | compile-queue server |
@@ -57,11 +63,40 @@ The full runtime is transport + call framing + routing + dispatch. In a browser:
   you can pause and delay to visualise latency, ordering, and back-pressure
   (this is what the `tutorial` README's "ping, requests/responses counts,
   graphs, simulate machines" asks for).
-- **the handler's language** — generated code is Rust or TS. A Rust handler
-  means another compile; **a TS handler runs natively in the browser**. So the
-  runtime demo generates TS types + a thin TS runtime shim, the user writes the
-  handler in a JS/TS editor, and the playground wires the loopback. Rust
-  handlers would need the compile server.
+- the loopback needs a **runtime shim in the target language** (pure that
+  language, speaking the loopback protocol) plus a way to **run the user's
+  handler** in that language.
+
+### Running handlers per language
+
+Whether a handler can run in the browser depends entirely on the target
+language. Two families:
+
+- **VM / interpreted** — ship the language's VM as WASM (or use the browser's
+  own), run the handler and a pure-language shim directly. No compiler needed.
+- **Compiled** — the handler has to be compiled first. In-browser compilers for
+  these are either enormous or immature, so they are **compile-server** work
+  (revive `compilation-queue-server`), not v1 client-side.
+
+| Language | Handler in browser via | Approx. payload | Shim |
+|---|---|---|---|
+| JavaScript | native | — | pure JS |
+| TypeScript | `esbuild-wasm` / `swc` transpile, then run | ~1–3 MB | pure TS |
+| Lua 5.4 | `wasmoon` (Lua→WASM) | ~200 KB | pure Lua |
+| Luau | emscripten build of Luau | ~1–2 MB | pure Luau |
+| Python 3.11+ | Pyodide (CPython→WASM) | ~6–10 MB core | pure Python |
+| C | `tcc.wasm` (limited) or `wasm-clang` (~25–30 MB) | small–huge | C→WASM, JS calls exports |
+| Rust / C++ / Go | no practical in-browser compiler | — | **compile server** |
+
+Rollout order follows payload and maturity: **JS/TS → Lua → Luau → Python**
+client-side; **Rust / C / Go** via the server. The compile/diagnostics/codegen
+loop is unaffected — it works for every target from the start.
+
+This is the piece to **research first**: confirm `rust-sitter` /
+`tree-sitter-c2rust` build clean for `wasm32-unknown-unknown`; measure the real
+Pyodide / wasmoon / Luau-wasm / esbuild-wasm payloads on a warm cache; check
+`tcc.wasm`'s language-feature ceiling. The matrix above is the hypothesis, not a
+verified result.
 
 ## The "same as the CLI" contract
 
@@ -100,28 +135,45 @@ The full runtime is transport + call framing + routing + dispatch. In a browser:
 
 ## Where it lives / embedding
 
-- The `web/` repo holds the `playground` and `tutorial` apps and shared libs.
-- The docs site (Zensical, static) can embed a `<comline-playground>` **web
-  component** into guide / tutorial pages, so "edit this schema and watch it
-  compile" is inline with the prose — the strongest form of the docs being the
-  home.
-- To decide: one deploy or three (docs / playground / tutorial); one domain or
-  subdomains; and whether the existing SvelteKit apps are carried forward or the
-  playground is rebuilt as a framework-neutral web component the docs can host
-  directly.
+**SvelteKit for the apps, framework-neutral for what's shared.** The
+`playground` and `tutorial` stay SvelteKit (the existing scaffold). Below them:
+
+- a **neutral TS package** — the WASM module + its JS wrapper (`parse`,
+  `validate`, `generate`, `runLoopback`), the per-language handler runners
+  (Pyodide / wasmoon / esbuild adapters), the loopback "wire" engine, and the
+  diagnostics / IR types. No framework. (This is what `web/shared/shared-compile`
+  and `shared-compilation` were reaching for.)
+- a **Svelte component library** (`shared-components`) for the editor, the
+  IR / code / message-flow panels, and the stats graphs — consumed by both
+  apps.
+
+For **docs embedding**: the docs site is Zensical (static, no Svelte runtime).
+Compile the playground shell as a **custom element** (`<svelte:options
+customElement>`) so a guide / tutorial page can `<script src>` it and drop
+`<comline-playground schema="...">` inline — no iframe, shares the page's theme.
+An iframe of the SvelteKit playground is the fallback if the custom-element path
+gets fiddly.
+
+To decide: one deploy or three (docs / playground / tutorial); one domain or
+subdomains.
+
+## Decided
+
+- **v1 scope** — everything: compile + diagnostics + codegen + a runtime demo.
+- **Framework** — SvelteKit for `playground` and `tutorial`; a neutral TS
+  package for the WASM/loopback/runner core; a Svelte component library, also
+  built as custom elements for the docs.
 
 ## Open questions
 
-- **v1 scope** — compile + diagnostics + codegen only, or include the runtime
-  loopback from the start?
-- **Runtime-demo language** — TS-only (browser-native), or also Rust (needs the
-  compile server)?
-- **The `compilation-queue-server`** — revive it for real `cargo build` /
-  multi-process demos, or drop it and commit to WASM-only for v1?
-- **Framework** — reuse the SvelteKit scaffold, or rebuild as a web component so
-  the Zensical docs can embed it without a Svelte runtime?
+- **The `compilation-queue-server`** — it *will* be needed for Rust / C / Go
+  handlers (and real `cargo build` of a `lib` crate). Revive it in parallel with
+  v1, or ship the VM-language loopback first and add it once those land?
+- **Language research** — the [handler matrix](#running-handlers-per-language) is
+  a hypothesis. Verify the WASM builds and payloads before committing an order.
 - **Tutorial content** — authored inside the `tutorial` app, or as Markdown in
-  `docs/` and rendered by both?
+  `docs/` and rendered by both? *(TBD.)*
+- **Deploy shape** — one deploy or three; one domain or subdomains.
 - **Version sync** — the playground pins `core` / `generation` revs; it inherits
   the same [git-rev treadmill](generation.md#open-questions) until those crates
   cut releases.
