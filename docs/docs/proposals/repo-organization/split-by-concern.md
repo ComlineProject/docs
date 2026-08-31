@@ -130,37 +130,65 @@ Python bug is working across repos and keeping two checkouts aligned.
 **"Has this language earned its own repo yet" is a judgement call every time.**
 There's no bright line, so each new heavy language reopens the same discussion.
 
-## Prior art
+## Example projects
 
-**gRPC** is organised almost exactly this way. `grpc/grpc` holds the C core and
-the C++, Python, Ruby, PHP and Objective-C libraries that wrap it — the ones
-that are cheap to keep together. Java, Go, Node, C#, Swift, Kotlin, Dart and
-grpc-web each got their own repository (`grpc/grpc-java`, `grpc/grpc-go`,
-`grpc/grpc-swift`, and so on) once they had a real ecosystem and toolchain of
-their own. Lightweight bindings stay in the core repo; heavyweight ones
-graduate. That's Step 1 and Step 3 of this proposal, and gRPC has run it for
-years.
+Scored against the same six traits: *✅ yes  ·  🟡 some languages  ·  ❌ no*.
 
-**Protocol Buffers** does the same. `protocolbuffers/protobuf` ships the
+**gRPC** is organised almost exactly this way.
+[`grpc/grpc`](https://github.com/grpc) holds the C core and the C++, Python,
+Ruby, PHP and Objective-C libraries that wrap it — the ones that are cheap to
+keep together. Java, Go, Node, C#, Swift, Kotlin, Dart and grpc-web each got
+their own repository (`grpc/grpc-java`, `grpc/grpc-go`, `grpc/grpc-swift`, and so
+on) once they had a real ecosystem and toolchain of their own, and each of those
+pairs the language's `protoc` plugin with its runtime. Lightweight bindings stay
+in the core repo; heavyweight ones graduate. That's Step 1 and Step 3 of this
+proposal, and gRPC has run it for years.
+
+| Trait | |
+|---|:--:|
+| Neutral core in its own repo | ❌ |
+| All code generators in one repo | ❌ |
+| One repo per target language | 🟡 |
+| Codegen + runtime together, per language | ✅ |
+| Heavy languages graduate; light ones stay bundled | ✅ |
+| One repo for the compiler + every language | ❌ |
+
+**Protocol Buffers** does the same.
+[`protocolbuffers/protobuf`](https://github.com/protocolbuffers) ships the
 `protoc` compiler together with the C++, Java, Python, C#, Ruby, PHP and
-Objective-C runtimes. Go lives in `protocolbuffers/protobuf-go`, and JavaScript
+Objective-C runtimes. Go lives in `protocolbuffers/protobuf-go` and JavaScript
 was moved out into `protocolbuffers/protobuf-javascript` — a
-compiler-plus-core-runtimes mono-repo with specific ecosystems split off.
+compiler-plus-core-runtimes mono-repo with specific ecosystems split off, each
+split repo carrying that language's plugin and runtime together.
 
-**Apache Thrift** is the counter-example. Its compiler and every `lib/<language>`
-implementation sit in one repository, so building it or contributing to it means
-dealing with the union of every language's toolchain at once. That
+| Trait | |
+|---|:--:|
+| Neutral core in its own repo | ❌ |
+| All code generators in one repo | 🟡 |
+| One repo per target language | 🟡 |
+| Codegen + runtime together, per language | 🟡 |
+| Heavy languages graduate; light ones stay bundled | ✅ |
+| One repo for the compiler + every language | ❌ |
+
+**Apache Thrift** is the counter-example.
+[`apache/thrift`](https://github.com/apache/thrift) keeps the compiler and every
+`lib/<language>` implementation in one repository, so building it or contributing
+to it means dealing with the union of every language's toolchain at once. That
 single-tree-for-everything arrangement is exactly what this proposal's Step 1
 moves away from.
+
+| Trait | |
+|---|:--:|
+| Neutral core in its own repo | ❌ |
+| All code generators in one repo | ✅ |
+| One repo per target language | ❌ |
+| Codegen + runtime together, per language | ❌ |
+| Heavy languages graduate; light ones stay bundled | ❌ |
+| One repo for the compiler + every language | ✅ |
 
 **prost / tonic** show the same split at crate granularity inside one Rust
 project: `prost` is the runtime, `prost-build` is the build-time code generator,
 and they're deliberately separate crates with separate dependency sets.
-
-For a trait-by-trait breakdown of each project, see
-[Prior art at a glance](index.md#prior-art-at-a-glance) in the overview. gRPC and
-Protocol Buffers are the ones that match this proposal: a core mono-repo, with
-the heavyweight languages graduated to their own repos.
 
 ## When this would be the right call
 
