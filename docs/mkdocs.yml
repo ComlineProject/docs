@@ -52,12 +52,10 @@ theme:
   name: material
   features:
     - navigation.tabs
+    - navigation.sections
     # A section whose first nav entry is a bare `index.md` becomes a clickable
-    # link itself (no dead header with the title repeated as a child below).
+    # link itself, instead of a dead header with the same title repeated below.
     - navigation.indexes
-    # ...and every section is expanded, so the whole tree is visible at once
-    # while still reading as a nested tree (not the flat `navigation.sections`).
-    - navigation.expand
     - navigation.top
     - search.suggest
     - search.highlight
