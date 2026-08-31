@@ -1,0 +1,11 @@
+/* Nav sections that also have an index page (e.g. "IDL / Schema") otherwise
+   render a dead, non-clickable label above a child link with the same text.
+   Material can only turn that label into a link via `navigation.indexes`, which
+   is incompatible with `toc.integrate`. So on the desktop sidebar we hide the
+   label; the section's index page stays as the first child link, with the rest
+   of the section under it. */
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--primary .md-nav__item--section > label.md-nav__link {
+    display: none;
+  }
+}
