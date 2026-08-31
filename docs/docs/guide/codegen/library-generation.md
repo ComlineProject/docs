@@ -12,8 +12,8 @@ in [`comline.toml`](../../reference/comline-toml.md) (`[generate] mode` or
 
 | `mode` | Output | Status |
 |---|---|---|
-| `code` | bare source files you place in a project yourself | **built today** |
-| `lib` | a buildable package (manifest + module tree) | planned |
+| `code` | bare source files you place in a project yourself | built |
+| `lib` | a buildable package (manifest + module tree) | **rust only** |
 | `dylib` | a package built with a **stable ABI** and compiled to a dynamic library any language's runtime can load | planned |
 
 ## `code` — source you wire in yourself
@@ -32,13 +32,18 @@ inside that project:
 - you want to control the surrounding build — your `serde` version, your feature
   flags, your module layout.
 
-This is the common case, and the only mode implemented today.
+This is the common case, and where every language generator starts.
 
 ## `lib` — a package other projects depend on
 
 A whole buildable package: the manifest with the right dependencies, a `src/`
-module tree, and a top-level module that re-exports every schema. The result is
+module tree, and a top-level module listing every schema. The result is
 something you `cargo add` / `pip install` / `luarocks install`, or publish.
+
+Implemented for **rust**: `<out>/rust/` gets a `Cargo.toml` (package name from
+the congregation, `serde` dependency), `src/lib.rs`, and `src/<namespace>.rs` per
+schema. Other languages, multi-version `lib` output, and a schema whose namespace
+is nested (`a/b`) are not done yet.
 
 **Use it when** the schema is shared:
 

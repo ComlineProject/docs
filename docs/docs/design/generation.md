@@ -1,9 +1,8 @@
 # Generation — codegen, libgen, and the `generation` repo
 
-Status: **G1 done** — codegen moved out of `core` (G0 + G1a + G1b landed);
-`generation` owns it, the CLI is the composition root. **G2b** (TypeScript
-`code` generator) merged. **G2a** (`mode = "lib"`) generation half up as
-generation#5; CLI half pending. G2c (FFI / `dylib`) not started · Affects
+Status: **G1 + G2a + G2b done** — codegen is out of `core` (the CLI is the
+composition root); `mode = "lib"` emits a buildable rust crate; TypeScript has a
+`code` generator. G2c (FFI / `dylib`) not started · Affects
 `ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/cli`
 
 Companion to [Runtime & generation repository structure](runtime-repo-structure.md),
@@ -149,25 +148,25 @@ works now: `(package metadata, [(namespace, &[FrozenUnit])], out dir) -> files`.
 
 Three independent tracks:
 
-#### G2a — `mode = "lib"` for plain rust
+#### G2a — `mode = "lib"` for plain rust ✅
 
-**Generation half up — generation#5.** The generator signature is now
-`fn(&GenRequest) -> Result<Vec<GeneratedFile>>` (the [contract](#generator-output-contract) below);
-`rust` handles `Lib` by returning:
+Generation: generation#5 (contract + rust `Lib`) + generation#6 (`autobins`).
+CLI: cli#17.
 
-- `Cargo.toml` — `name` / `version` (from `GenRequest.package`), `edition = "2021"`,
-  `serde` only
-- `src/lib.rs` — the `pub mod <namespace>;` list
-- `src/<namespace>.rs` — the same source `code` mode emits
+- Generator signature is `fn(&GenRequest) -> Result<Vec<GeneratedFile>>` (the
+  [contract](#generator-output-contract) below).
+- `rust` `Lib` returns `Cargo.toml` (`name` = congregation name, `version` =
+  package version or `0.0.0`, `edition = "2021"`, `autobins = false`, `serde`
+  only), `src/lib.rs` (the `pub mod` list), `src/<namespace>.rs`.
+- CLI: `t.mode` → `Mode`; per version, one `GenRequest` with every schema; the
+  returned files write under `<out>/<language>/` for `lib`, at `layout` for
+  `code`. `dylib` is rejected.
 
-No FFI, no compile step. Nested (`/`-joined) namespaces `bail` for now — a flat
-`pub mod` list can't express them. `typescript` `Lib` bails (packaging is later).
-
-**CLI half not started.** Thread `mode` + all schemas + `PackageMeta` through
-`generate.rs`; branch the write loop (`code` = per file at `layout`, `lib` = the
-returned tree under a crate root — `layout` places the root, not the insides);
-drop the `mode != "code"` error; `clean.rs` asks the generator for its paths;
-bump the `comline-codelib-gen` / `comline-core` git revs.
+No FFI, no compile step. Deliberately out of scope for now (each a documented
+error or noted follow-up): nested (`/`-joined) namespaces in `lib`, multi-version
+`lib`, `layout`-driven `lib` root, `typescript` `Lib`. A namespace literally
+named `main` / `lib` compiles but trips Rust's `special_module_name` warning —
+fix by nesting the schema modules under `src/schemas/`.
 
 #### G2b — TypeScript in `code` mode (generation#4)
 
@@ -289,14 +288,16 @@ type GeneratorFn = fn(&GenRequest) -> Result<Vec<GeneratedFile>>;
 
 Settled with it:
 
-- **Paths.** `layout` places the single `code` file, or the `lib` crate's
-  *root*; the crate's insides (`Cargo.toml`, `src/…`) are the generator's.
-- **No file "kind" tag** — `comline clean` will ask the generator "what paths
-  would you write?" rather than tag each file.
+- **Paths.** `layout` places the single `code` file; a `lib` crate goes under
+  `<out>/<language>/` and the crate's insides (`Cargo.toml`, `src/…`) are the
+  generator's. (`layout`-driven `lib` root is a follow-up.)
+- **No file "kind" tag** — `comline clean` can ask the generator "what paths
+  would you write?" rather than tag each file. `clean.rs` is unchanged so far;
+  its "dedicated `out` dir → remove wholesale" branch covers the common `lib`
+  config.
 - **Text only** — `contents: String`.
 
-Still open: the **CLI** side of the migration (`generate.rs` / `clean.rs` still
-call the old shape at a pinned rev) — that is the G2a CLI half.
+The CLI side (`generate.rs`) landed in cli#17.
 
 ## Open questions
 
