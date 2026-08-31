@@ -7,7 +7,7 @@ nav:
   - Guide:
     - Overview: 'guide/overview.md'
     - 'IDL / Schema':
-      - Overview: 'guide/idl/index.md'
+      - 'guide/idl/index.md'
       - Structures: 'guide/idl/structure.md'
       - Enums: 'guide/idl/enum.md'
       - Protocols: 'guide/idl/protocol.md'
@@ -18,14 +18,14 @@ nav:
       - Docstrings: 'guide/idl/docstrings.md'
       - Settings: 'guide/idl/settings.md'
     - 'Intermediate Representation':
-      - Overview: 'guide/ir/index.md'
+      - 'guide/ir/index.md'
       - Content-addressable storage: 'guide/ir/cas.md'
     - 'Code generation':
-      - Overview: 'guide/codegen/index.md'
+      - 'guide/codegen/index.md'
       - Generating code: 'guide/codegen/generating-code.md'
       - Library generation: 'guide/codegen/library-generation.md'
     - 'Runtime':
-      - Overview: 'guide/runtime/index.md'
+      - 'guide/runtime/index.md'
       - Call systems & serialization: 'guide/runtime/call-system.md'
     - 'Packages & dependencies': 'guide/packages/index.md'
   - Reference:
@@ -33,7 +33,7 @@ nav:
     - CLI: 'reference/cli.md'
     - Versioning rules: 'reference/versioning.md'
   - Design:
-    - Overview: 'design/index.md'
+    - 'design/index.md'
     - Consumer generation configuration: 'design/consumer-generation-config.md'
     - Multi-version generation: 'design/multi-version-generation.md'
     - IR freezing & the version state: 'design/ir-generation.md'
@@ -43,7 +43,7 @@ nav:
     - Runtime & generation repo structure: 'design/runtime-repo-structure.md'
     - Playground & tutorial: 'design/playground-and-tutorial.md'
   - Proposals:
-    - Overview: 'proposals/index.md'
+    - 'proposals/index.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
   - Resources: 'resources.md'
 
