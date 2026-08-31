@@ -158,6 +158,8 @@ scope.
 `mode` selects the emit form. Only `code` — plain source text you drop into your
 project — exists today. `lib` (a buildable crate skeleton) and `dylib` (that,
 compiled, for a language runtime to load) are planned.
+[Library generation](library-generation.md) explains each mode and when to reach
+for it.
 
 ## Gotchas
 
