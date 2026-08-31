@@ -105,7 +105,12 @@ result.
 
 - One `comline-playground` crate (in `web/` or `generation`) depends on
   `comline-core` + `comline-codelib-gen` and exposes a small `wasm-bindgen`
-  surface: `parse`, `validate`, `generate(target, mode)`.
+  surface: compile, then `generate(target, mode)`.
+- **Entry point: `comline_core::package::build::PackageSources`** (core#42) — the
+  filesystem-free twin of `compile_package`. `.config(src)` (optional; a minimal
+  congregation is synthesised) + `.schema(namespace_segments, src)` per editor
+  tab + `.compile() -> ProjectContext`. Same interpretation + validation pass as
+  the CLI, so diagnostics and IR match.
 - Reuse `render_validation_error` and the diagnostics module so errors render
   exactly as the CLI prints them.
 - Pin the crate revisions and show them in the UI — a playground bug report is
@@ -196,9 +201,9 @@ the bundle is small** — verified end to end:
   interpretation. None change the order of magnitude.
 
 `std::fs` / `glob` paths (reading `config.idp`, schema files) *compile* on wasm32
-but error at runtime — the playground must enter through source-string APIs
-(`IncrementalInterpreter::from_source`, and an equivalent for the config side),
-not the file-reading ones.
+but error at runtime — **resolved by `PackageSources`** (core#42), the
+filesystem-free entry that takes the config + schema sources as strings and runs
+the same interpretation pass as `compile_package`.
 
 ## Open questions
 
