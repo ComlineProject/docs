@@ -248,7 +248,7 @@ A patch/minor bump alone almost never changes output (struct / enum / trait +
 serde are stable across Rust 1.x), so a generator reads these only for the
 specific constructs that need them — none do yet.
 
-## Generator output contract (blocks G2a)
+## Generator output contract
 
 **Today a generator returns one string** — one file's worth of source for one
 schema. The CLI picks the filename (from `comline.toml` `layout`) and writes it.
