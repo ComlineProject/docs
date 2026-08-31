@@ -50,7 +50,7 @@ nav:
 
 
 extra_css:
-  - stylesheets/nav.css?v=6   # bump on every nav.css change — it is not cache-busted otherwise
+  - stylesheets/nav.css?v=7   # bump on every nav.css change — it is not cache-busted otherwise
 
 theme:
   name: material

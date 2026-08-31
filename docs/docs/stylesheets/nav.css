@@ -53,3 +53,15 @@
   font-size: 1.05rem;
   letter-spacing: 0.005em;
 }
+
+/* The mark is a flat single colour, so it needs a per-scheme swap: tomato
+   on the light (white) header, cream on the dark (near-black) one. Material
+   renders one <img>, so switch its source with `content:` per scheme. */
+[data-md-color-scheme="default"] .md-header__button.md-logo img,
+[data-md-color-scheme="default"] .md-nav__button.md-logo img {
+  content: url("../assets/comline-mark-light.svg");
+}
+[data-md-color-scheme="slate"] .md-header__button.md-logo img,
+[data-md-color-scheme="slate"] .md-nav__button.md-logo img {
+  content: url("../assets/comline-mark-dark.svg");
+}
