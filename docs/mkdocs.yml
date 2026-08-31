@@ -47,8 +47,8 @@ nav:
     - 'proposals/index.md'
     - 'Runtime & codegen repository organization':
       - 'proposals/repo-organization/index.md'
-      - 'Proposal A — split by concern': 'proposals/repo-organization/split-by-concern.md'
-      - 'Proposal B — split by language': 'proposals/repo-organization/split-by-language.md'
+      - 'Proposal A': 'proposals/repo-organization/split-by-concern.md'
+      - 'Proposal B': 'proposals/repo-organization/split-by-language.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
   - Resources: 'resources.md'
 

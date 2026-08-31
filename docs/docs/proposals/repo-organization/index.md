@@ -18,10 +18,10 @@ Two proposals answer it differently:
 | [Proposal A — split by concern](split-by-concern.md) | **concern** | `generation` stays one repo; `runtime` graduates heavyweight language runtimes to their own repos as each earns it | accepted — current direction |
 | [Proposal B — split by language](split-by-language.md) | **language** | one repo per target (`comline-python`, …) holds that language's codegen, libgen, and runtime together | under discussion |
 
-The difference is where the seam runs. **A** cuts between build-time tooling and
-the shipped runtime, keeping each concern's repo whole across languages. **B**
-cuts between languages, keeping each language's full stack whole and accepting
-that build-time tooling and runtime share a repo.
+It comes down to where you put the seam. **A** cuts between the build-time
+tooling and the shipped runtime — one repo for all the generators, one (then a
+few) for the runtimes. **B** cuts between languages — one repo per language with
+its whole stack inside, and the tooling and the runtime sharing that repo.
 
 Both are written to the same shape — **Shape · The case for it · The case
 against · When this would be the right call** — so they can be read side by side.

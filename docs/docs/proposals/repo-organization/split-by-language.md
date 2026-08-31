@@ -6,11 +6,11 @@ Status: **under discussion** · Alternative to
 **E** from that record, written up in full · See the
 [section overview](index.md) for the question both answer.
 
-**Proposal.** One repository per target language — `comline-python`,
-`comline-lua`, `comline-node`, … — each holding *that language's entire surface*:
-its code generator, its library generator, and its runtime, plus any
-language-specific standard-library extras. `core` stays language-agnostic;
-`generation` shrinks to a shared codegen support crate (or disappears into one).
+**The idea:** one repo per target language. `comline-python` holds the Python
+code generator, the Python library generator, the Python runtime, and any
+Python-specific standard-library extras — all together. `core` stays
+language-neutral, and `generation` shrinks to a shared helper crate that every
+language repo depends on.
 
 ## Shape
 
@@ -26,54 +26,73 @@ comline-lua/     … the same five directories
 comline-node/    …
 ```
 
-`core` (language-agnostic IR + compiler) and a shared `comline-codegen` support
-crate — the `GenRequest` / `GeneratedFile` contract and AST-walk helpers — are
-the only things every target repo depends on.
+The only things every language repo shares are `core` (the language-agnostic IR
+and compiler) and a small `comline-codegen` support crate — the `GeneratedFile`
+type, the generator interface, the IR-walking helpers.
 
 ## The case for it
 
-- **The codegen ↔ runtime contract becomes a same-repo invariant.** Generated
-  code has to match what the runtime expects at the FFI boundary. Here that
-  agreement is checked in one CI run, in one repo, on every PR — no cross-repo
-  version dance, no "which runtime version does this generator target" table.
-- **One place per language.** A contributor adding or fixing "Python support"
-  works in `comline-python` and nowhere else. Ownership is obvious.
-- **Native tooling end to end.** The repo is already a Python repo — its CI has
-  CPython, `maturin`, `pytest`; the libgen tests can actually build and import
-  the wheel they generate.
-- **New language = new repo from a template**, with zero impact on any other
-  target. No shared workspace to destabilise, no non-default-member juggling.
-- **Independent everything** — versioning, cadence, issue tracker, release
-  automation, even licence where an ecosystem demands it.
+**The generator and the runtime have to agree, and here that's checked in one
+place.** The generated Python code calls into the Python runtime across an FFI
+boundary, so the two sides have to line up exactly. Put them in the same repo
+and the same CI run builds the generator, runs it, builds the runtime, and runs
+the generated code against it — on every PR. No version table, no contract doc,
+no "did we remember to update the other repo". If the two don't match, CI is
+red, right there.
+
+**One obvious home per language.** Someone who wants to improve Python support
+clones `comline-python` and it's all in front of them. No cross-repo checkouts,
+and no guessing whether a bug is in the generator or the runtime — both are in
+the same tree.
+
+**Native tooling, end to end.** `comline-python`'s CI already has CPython,
+maturin, and pytest set up, so the library-generator tests can build the wheel
+they generate and actually import it. That kind of real end-to-end check is
+awkward when the generator lives off in a Rust-only repo.
+
+**Adding a language is copying a template.** A new target is a new repo from a
+template. It doesn't touch any existing repo, doesn't destabilise a shared
+workspace, and doesn't need anyone to wire up feature flags.
+
+**Everything about a language is independent** — version numbers, release
+cadence, issue tracker, even the licence if some ecosystem is fussy about it.
 
 ## The case against
 
-- **It conflates build-time tooling with a shipped dependency.** The code
-  generator runs inside the Comline toolchain on a developer's machine; the
-  runtime ships to end users. Different audiences, cadence, and security surface
-  — bundled here because they share a language, not a lifecycle.
-- **The repo is bilingual with mismatched toolchains.** The Python `code`
-  generator is light Rust that emits strings; sitting it next to `pyo3` and a
-  CPython build makes CI carry both for changes that touch only one.
-- **Shared codegen infra fragments.** Every target repo depends on
-  `comline-codegen` (or vendors it). A change to the `GeneratedFile` contract is
-  now an N-repo rollout — the cross-repo problem this layout claims to avoid,
-  moved from the runtime seam to the codegen seam.
-- **The CLI depends on N generator crates from N repos.** The `find_generator`
-  registry pulls a crate from each target repo; a release of any target can move
-  the CLI's lockfile.
-- **Cross-language consistency still needs a shared suite.** "Do the Rust and
-  Python generators treat an optional field the same way?" is only answerable by
-  a corpus spanning targets, which no single target repo owns.
-- **Heaviest coordination for `core` changes.** An IR change touches every target
-  repo; the `core` ↔ target contract becomes a public API across many repos.
+**It bundles a build tool with a shipped library just because they share a
+language.** The code generator runs inside the toolchain on a developer's
+machine; the runtime ships to end users. Different audiences, different release
+rhythms, different security exposure — and now they're in one repo with one
+version number and one release.
+
+**The repo ends up bilingual with two toolchains.** The Python code generator is
+light Rust that emits strings. Sitting it next to pyo3 and a CPython build means
+every CI run pulls in both, even for a change that only touches string
+formatting.
+
+**The shared codegen layer fragments.** Every language repo still depends on
+`comline-codegen`. Change that interface and you're rolling it out across every
+language repo, one at a time — the same cross-repo coordination this layout was
+meant to avoid, just moved from the runtime side to the codegen side.
+
+**The CLI depends on a crate from every language repo.** `comline generate` has
+to know about all of them, so the CLI pulls N generator crates from N repos, and
+a release of any one of them can move the CLI's lockfile.
+
+**You still need a cross-language test suite somewhere.** "Do the Rust and
+Python generators treat an optional field the same way?" can't be answered
+inside a single language repo. That needs a corpus spanning all of them, and no
+one repo naturally owns it.
+
+**An IR change hits every repo.** Change something in `core` and you're updating
+every `comline-<lang>` against it. The `core` ↔ target boundary becomes a public
+API you have to version carefully, because a lot of repos consume it.
 
 ## When this would be the right call
 
-If Comline reaches a point where each supported language has its own dedicated
-maintainer or team, ecosystem-native distribution is mandatory across the board,
-and the `core` ↔ target contract is stable enough to be a real versioned API,
-then per-language target repos stop being overhead and become the natural unit of
-ownership. That is the same end state
-[Proposal A](split-by-concern.md) tends toward for runtimes — this proposal
-applies it to the whole per-language surface, sooner, and to codegen as well.
+Once each language genuinely has its own maintainer or team, ecosystem-native
+packaging is non-negotiable across the board, and the `core` ↔ target contract
+has settled enough to be a real versioned API — at that point a per-language
+repo isn't overhead, it's just the unit people already work in. It's where
+[Proposal A](split-by-concern.md) ends up for runtimes anyway; this proposal
+gets there sooner and brings codegen along too.

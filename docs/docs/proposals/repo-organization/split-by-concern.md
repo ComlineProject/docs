@@ -5,25 +5,26 @@ Status: **accepted** — the direction the current
 against [Proposal B — split by language](split-by-language.md) · See the
 [section overview](index.md) for the question both answer.
 
-**Proposal.** Keep `generation` (codegen + libgen) as a single repository for the
-long run, and let `runtime` start as one repository that graduates *individual*
-heavyweight language runtimes into their own repositories as each earns it. The
-two split at the same conceptual seam — a language-agnostic core plus per-language
-parts — but on very different timelines, because the two are different kinds of
-software.
+**The idea:** the generator and the runtime are different kinds of software, so
+draw the repo lines along *that* boundary rather than along languages. All the
+code and library generators live in one repo (`generation`). The runtime lives
+in another (`runtime`) that starts out holding everything and only spins a
+language's runtime off into its own repo once that language actually needs it.
 
-The org-wide rollout (the phased plan, the options weighed, the graduation
-criteria) is the decision record in
-[Design → Runtime & generation repository structure](../../design/runtime-repo-structure.md).
+The full options analysis and the phased rollout are in the
+[design record](../../design/runtime-repo-structure.md); this page is the case
+for going this way.
 
 ## Shape
 
-Two repositories, split at the language-agnostic-core / per-language seam.
+Two repos, cut at the line between "language-agnostic core" and "per-language
+parts".
 
-**`generation` — one repository, long-term.** `code` generation is string
-emission with one dependency (`comline-core`). `lib` / `dylib` generation adds
-per-ecosystem manifest templating and, for `dylib`, FFI tooling (`cbindgen`,
-`abi_stable`) — medium weight, still far lighter than a runtime binding.
+**`generation` stays one repo, probably forever.** Writing a code generator is
+mostly string formatting — the TypeScript one we already have is small and has
+no unusual dependencies. Library generation adds some manifest templating and,
+for `dylib`, a bit of FFI tooling (`cbindgen`, `abi_stable`). None of that is
+heavy, so there's no reason to split it up:
 
 ```
 generation/
@@ -35,16 +36,16 @@ generation/
   crates/lib-node       `lib` for node — package.json + napi glue            ┘ behind features
 ```
 
-A root `cargo build` builds `codegen` only; each `lib-*` crate is a non-default
-member with its own path-filtered CI job. The generator registry
-(`find_generator`) moves into the CLI behind cargo features when the first
-`lib-*` crate lands — see
+A plain `cargo build` builds `codegen` and nothing else; each `lib-*` crate is
+opt-in with its own CI job, so a change to the Python lib generator never builds
+the Lua one. The registry that maps a language name to its generator moves into
+the CLI behind cargo features once the first `lib-*` crate exists — details in
 [Design → Generation](../../design/generation.md#generator-crate-layout).
 
-**`runtime` — one repository that sheds weight.** It graduates a language only
-when that language needs its own release cadence to an ecosystem registry, or
-gets a maintainer outside the core team. Toolchain weight alone is handled
-in-repo by non-default members and path-filtered CI.
+**`runtime` starts as one repo and sheds weight over time.** A language binding
+stays in `runtime` as long as it's cheap to keep there. It moves out when it
+needs to ship to its own registry on its own schedule, or when someone outside
+the core team takes ownership of it:
 
 ```
 Now → Step 1 (in place, one repo):
@@ -52,30 +53,31 @@ runtime/
   crates/runtime        comline-runtime — `std` is a feature; the core_no-std fork is gone
   crates/std-extra      comline-runtime-std-extra — opt-in, out of the core build graph
   langs/c  langs/lua  langs/luau  langs/python
-                        non-default members; one path-filtered CI job per language
+                        opt-in members; one CI job per language
   conformance/          schema + expected-behaviour corpus every runtime must pass
 
 End state:
 runtime/                comline-runtime + the light bindings (c, lua, luau)
-runtime-python/         graduated — pyo3, PyPI wheels, independent cadence
-runtime-node/           napi, npm (born graduated)
+runtime-python/         graduated — pyo3, PyPI wheels, its own release schedule
+runtime-node/           napi, npm (starts out on its own)
 runtime-<lang>/         … as each earns it
 ```
 
-The org grows by roughly **one repository per heavyweight language** (Python,
-Node, later perhaps Go or Swift) — not one per language.
+So the org grows by about **one repo per genuinely heavy language** — Python,
+Node, maybe Go or Swift down the line — not one per language.
 
-**The seam.** Generated code imports the runtime. The `lib` generator for
-language *X* writes a manifest that depends on **`comline-runtime` for X** at a
-compatible version — so `generation` carries, per target language, a small table
-of *strings* (the runtime package name and its version range), kept in step with
-the `core ↔ runtime` contract. Not a code dependency between the repositories.
+**How the two stay in sync.** Generated code imports the runtime, so the library
+generator for a language writes a manifest (`Cargo.toml`, `pyproject.toml`, and
+so on) that pins a compatible `comline-runtime` version. `generation` keeps a
+small per-language table of "runtime package name, version range" that tracks
+the `core ↔ runtime` contract. It's data in a table, not a code dependency
+between the repos:
 
 ```
 runtime releases vX
         │
         ▼
-core ↔ runtime contract doc:  "IR feature Y requires runtime ≥ vX"
+core ↔ runtime contract doc:  "IR feature Y needs runtime ≥ vX"
         │
         ▼
 lib generator for X emits:    depends on comline-runtime-X  ">= vX"
@@ -83,51 +85,56 @@ lib generator for X emits:    depends on comline-runtime-X  ">= vX"
 
 ## The case for it
 
-- **It follows the actual fault lines.** Codegen runs at build time inside the
-  toolchain; the runtime ships to end users at execution time. Different
-  audiences, cadence, security surface — and different dependency weight:
+**It matches how the two are actually built and used.** The generator is a build
+tool. It runs on a developer's machine during `comline generate`, writes some
+files, and is never shipped anywhere. The runtime is the opposite — it ends up
+as a dependency in someone's real application, published to PyPI or npm or
+crates.io. The two get changed for different reasons, released on different
+schedules, and a CVE in one means something completely different from a CVE in
+the other. Separate repos line up with that reality; one repo papers over it.
 
-  |  | codegen / libgen — `generation` | runtime — `runtime` |
-  |---|---|---|
-  | When it runs | build time, in `comline generate` | execution time, in the user's app |
-  | Depends on it | the Comline CLI | the *generated code*, as an ecosystem dependency |
-  | Shipped to users | no — only its output is | yes — crate / wheel / rock / npm |
-  | Weight | light: string emission, manifest templating | heavy: `pyo3`/`napi`/`mlua` want a full native toolchain |
+**The expensive parts stay quarantined.** Almost all the weight is on the
+runtime side. A Python *runtime* needs pyo3, CPython headers, and a wheel build
+matrix across Python versions and operating systems. A Python *generator* needs
+none of that. If they share a workspace, everyone who touches the toolchain pays
+the CPython cost for no reason. Keep them apart and the generator repo stays
+light no matter how long the language list gets.
 
-- **The weight is quarantined where it actually is.** A Python *code generator*
-  is as light as the existing TypeScript one; a Python *runtime* needs CPython
-  headers and multi-platform wheels. Keeping them apart means the toolchain side
-  never drags in a language SDK.
-- **Minimal repo growth.** Lightweight bindings (c, lua, luau) never leave
-  `runtime`; only genuinely heavy languages get their own repo. `generation`
-  stays a single repo indefinitely.
-- **Independent release cadence** for the two concerns, and for each graduated
-  runtime, without a repo-per-language explosion.
+**No repo explosion.** Plenty of bindings are cheap to maintain — Lua, Luau, C.
+Those never need their own repo; they sit in `runtime` behind a feature flag and
+a CI job. Only the heavy ones move out. Twelve languages doesn't mean twelve
+repos, it means `runtime` plus two or three spin-offs.
+
+**Each side moves at its own pace.** The generator can ship a fix without
+waiting on a runtime release. A graduated `runtime-python` can cut a patch
+release for a new-CPython wheel without anything else being involved.
 
 ## The case against
 
-- **A change that spans both** — a new IR feature that needs generator *and*
-  runtime support — touches two repos and the contract doc between them, in
-  sequence, rather than one PR.
-- **The seam is indirect.** The generator↔runtime agreement is a version range
-  in emitted text, mediated by a hand-maintained contract doc and a
-  per-language name/version table. Nothing fails to compile if that table drifts
-  — only the conformance corpus catches it.
-- **"Where does Python live" has two answers** — the generator in `generation`,
-  the runtime in `runtime` or `runtime-python`. A contributor working on Python
-  support crosses repos.
-- **Two conformance surfaces to keep honest** — the corpus lives with the
-  runtime, but it is really testing the generator's output too, from across a
-  repo boundary.
-- **The graduation call is a judgement, not a rule** — "does this language need
-  its own repo yet?" gets re-litigated per language.
+**Some changes naturally want both repos at once.** Add an IR feature like
+streaming responses and you probably need the generator to emit new code *and*
+the runtime to handle the new call shape. Here that's two PRs across two repos
+plus a bump to the contract doc, done in order. One repo would have been one PR.
+
+**The link between the two is soft.** The generator writes "depends on
+comline-runtime >= 1.4" into a manifest, but nothing verifies that's true at
+build time. If the generator and the runtime drift apart, the only thing that
+notices is the conformance suite. A hand-maintained "which runtime version does
+this generator target" table is exactly the kind of thing that quietly goes
+stale.
+
+**"Where's the Python code" has two answers.** The generator is in `generation`,
+the runtime is in `runtime` or `runtime-python`. Anyone chasing an end-to-end
+Python bug is working across repos and keeping two checkouts aligned.
+
+**"Has this language earned its own repo yet" is a judgement call every time.**
+There's no bright line, so each new heavy language reopens the same discussion.
 
 ## When this would be the right call
 
-When build-time tooling and the shipped runtime genuinely have different
-audiences and cadence — which they do now — and when most target languages are
-lightweight bindings with only one or two heavy outliers. It fits a core team
-that owns the toolchain centrally and wants to add languages without standing up
-a repo, a release pipeline, and a CI matrix for each. It is the conservative
-choice: it defers the per-language split until a specific language's weight and
-ownership make it unavoidable.
+This is the conservative option, and it fits where the project is now: a core
+team that owns the whole toolchain, a language list that's mostly lightweight
+bindings, and no appetite for standing up a repo, a release pipeline, and a CI
+matrix for every language. It keeps per-language repos available as a later move
+without committing to them up front. If the language list is going to stay
+small-to-medium and mostly light, this is the pragmatic choice.
