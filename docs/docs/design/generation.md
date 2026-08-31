@@ -236,66 +236,53 @@ specific constructs that need them — none do yet.
 
 ## Generator output contract (blocks G2a)
 
-**Today.** A generator is `fn(&Vec<FrozenUnit>) -> String` (+ a file extension
-from the registry). It takes the frozen IR for **one namespace** and returns
-**one blob of source**. The CLI does the rest: for each namespace, call the
-generator, compute the path from `comline.toml` `layout`
-(`{{language}}/{{namespace}}.{{ext}}`), write one file.
+**Today a generator returns one string** — one file's worth of source for one
+schema. The CLI picks the filename (from `comline.toml` `layout`) and writes it.
+Fine for `mode = "code"`: "give me the types as source I'll paste in."
 
-**Why `mode = "lib"` (G2a) breaks it.** A `lib` build is not one-file-per-
-namespace, it is a *crate*:
+**`mode = "lib"` asks for a whole buildable package, not a snippet.** A Rust
+package is a small folder, not one file:
 
-- `Cargo.toml` — a **manifest**, not source; fixed path at the crate root;
-  derived from the package config, not from any namespace.
-- `src/lib.rs` — an **aggregator**: `pub mod foo; pub mod bar;` synthesised
-  from *all* namespaces at once.
-- `src/foo.rs`, `src/bar.rs` — the per-namespace source.
-- later, maybe `build.rs`, `rust-toolchain.toml`, `.gitignore`.
-
-So libgen's output is **N files of different kinds, at a structure the generator
-owns**, needing **all** namespaces in scope. `fn(&[FrozenUnit]) -> String` can
-express none of that.
-
-**Proposed.** One return type both modes share, so the registry has one
-signature and the CLI one write-loop:
-
-```rust
-struct GeneratedFile {
-    path: PathBuf,      // relative to the target's output root
-    contents: String,
-}
-
-// generator: all the package's schemas + metadata + the mode -> the files
-fn(&GenInput) -> Vec<GeneratedFile>
+```
+Cargo.toml       project settings — name, version, the serde dependency
+src/lib.rs       an index: "there is a module `message`, a module `user`"
+src/message.rs   the code for one schema
+src/user.rs      …and the next
 ```
 
-- `code` mode, rust → `vec![GeneratedFile { path: "message.rs", contents }]` —
-  one entry, wrapping today's `String`.
-- `lib` mode, rust → `Cargo.toml`, `src/lib.rs`, `src/message.rs`, … — many.
-- CLI: `for f in files { write(out_root.join(&f.path), &f.contents) }` — same
-  code both modes.
+A function that returns *one string* can't hand back a folder of different
+files. Some of those files (`Cargo.toml`, `src/lib.rs`) also aren't "one
+schema's code" at all — `lib.rs` lists *every* schema, so the generator needs
+them all in view, not one at a time.
 
-**Sub-decisions:**
+**Fix: a generator returns a list of files**, each just *"here's the path,
+here's the text"*:
 
-- **Path ownership vs. `layout`.** Today the CLI owns paths via the `layout`
-  template. If `GeneratedFile.path` is generator-decided, `layout` still makes
-  sense for `code` mode (generator emits a bare name, CLI applies `layout`) but
-  not inside a `lib` crate (`Cargo.toml` / `src/…` is fixed structure). Likely:
-  `layout` places the `code`-mode file or the `lib`-mode crate *root*; the
-  crate's internals are the generator's.
-- **All namespaces at once.** `GenInput` carries `&[(Namespace, Vec<FrozenUnit>)]`
-  so a generator can build `src/lib.rs`; `code` mode just returns one file per
-  namespace and no aggregator.
-- **A `kind` tag?** Skip it for now. Its only consumer would be `comline clean`
-  (which recomputes paths today) or a future "don't clobber an edited manifest"
-  policy — and `clean` can instead ask the generator "what paths would you
-  emit?" and delete exactly those.
-- **Text only.** `contents: String`; no generator needs to emit a binary asset
-  yet.
+```rust
+struct GeneratedFile { path: PathBuf, contents: String }
+```
 
-Settle this before writing `lib_gen::rust` — the type is the CLI ↔ generator
-contract, and changing it later touches `find_generator`, the registry types,
-every generator, and the CLI's `generate` / `clean` paths.
+- `mode = "code"` → the list has **1** file (wrapping today's string).
+- `mode = "lib"` → the list has **several** (`Cargo.toml`, `src/lib.rs`, the
+  per-schema files).
+- The CLI writes whatever is in the list — one loop, same for both modes.
+
+**Sub-decisions once the list shape is agreed:**
+
+- **Who names the paths.** Today the CLI does, via `layout`. With a file list,
+  `layout` still places the single `code`-mode file (or the `lib`-mode folder's
+  *root*); the folder's *insides* (`Cargo.toml`, `src/…`) are the generator's to
+  name.
+- **All schemas in one call**, so the generator can build `src/lib.rs`.
+  `code` mode just returns one file and no index.
+- **No file "kind" tag** for now — the only user would be `comline clean`, and it
+  can instead ask the generator "what paths would you write?" and delete those.
+- **Text only** — no generator needs to emit a binary yet.
+
+**Settle this before writing `lib_gen::rust`.** "What a generator returns" is the
+contract between the CLI and *every* generator (rust now, typescript / python
+later). Getting it wrong after the fact means changing it in all of them plus the
+CLI's `generate` / `clean` paths.
 
 ## Open questions
 
