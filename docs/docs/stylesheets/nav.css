@@ -2,10 +2,20 @@
    render a dead, non-clickable label above a child link with the same text.
    Material can only turn that label into a link via `navigation.indexes`, which
    is incompatible with `toc.integrate`. So on the desktop sidebar we hide the
-   label; the section's index page stays as the first child link, with the rest
-   of the section under it. */
+   label and indent the section's pages under its index link, which is the
+   first child. */
 @media screen and (min-width: 76.25em) {
   .md-sidebar--primary .md-nav__item--section > label.md-nav__link {
     display: none;
+  }
+
+  /* Every page in the section except its index (the first child) sits nested
+     under it. */
+  .md-sidebar--primary
+    .md-nav__item--section
+    > .md-nav
+    > .md-nav__list
+    > .md-nav__item:not(:first-child) {
+    margin-left: 0.8rem;
   }
 }
