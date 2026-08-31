@@ -2,9 +2,9 @@
 
 Status: **G1 done** — codegen moved out of `core` (G0 + G1a + G1b landed);
 `generation` owns it, the CLI is the composition root. **G2b** (TypeScript
-`code` generator) up as generation#4. G2a (`mode = "lib"`) and G2c (FFI /
-`dylib`) not started · Affects `ComlineProject/core`, `ComlineProject/generation`,
-`ComlineProject/cli`
+`code` generator) merged. **G2a** (`mode = "lib"`) generation half up as
+generation#5; CLI half pending. G2c (FFI / `dylib`) not started · Affects
+`ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/cli`
 
 Companion to [Runtime & generation repository structure](runtime-repo-structure.md),
 which covers how the repos are split; this page fixes what the pieces *are* and
@@ -151,17 +151,23 @@ Three independent tracks:
 
 #### G2a — `mode = "lib"` for plain rust
 
-Make `comline.toml` `mode = "lib"` real (today "not started"). A `lib_gen::rust`
-function that takes the per-namespace IR the CLI already has, plus package
-metadata, and returns a buildable crate:
+**Generation half up — generation#5.** The generator signature is now
+`fn(&GenRequest) -> Result<Vec<GeneratedFile>>` (the [contract](#generator-output-contract) below);
+`rust` handles `Lib` by returning:
 
-- `Cargo.toml` (from the frozen package config — name, version, `serde` dep)
-- `src/lib.rs` — the `pub mod <namespace>;` tree
-- `src/<namespace>.rs` — reuses `code_gen::rust::generate_rust`
+- `Cargo.toml` — `name` / `version` (from `GenRequest.package`), `edition = "2021"`,
+  `serde` only
+- `src/lib.rs` — the `pub mod <namespace>;` list
+- `src/<namespace>.rs` — the same source `code` mode emits
 
-CLI `mode = "lib"` calls it instead of writing bare source. No FFI, no compile
-step. Re-adds `toml_edit` (+ maybe `heck`) to `_core`. Depends on the
-`GeneratedFile` shape below being settled (libgen is multi-file).
+No FFI, no compile step. Nested (`/`-joined) namespaces `bail` for now — a flat
+`pub mod` list can't express them. `typescript` `Lib` bails (packaging is later).
+
+**CLI half not started.** Thread `mode` + all schemas + `PackageMeta` through
+`generate.rs`; branch the write loop (`code` = per file at `layout`, `lib` = the
+returned tree under a crate root — `layout` places the root, not the insides);
+drop the `mode != "code"` error; `clean.rs` asks the generator for its paths;
+bump the `comline-codelib-gen` / `comline-core` git revs.
 
 #### G2b — TypeScript in `code` mode (generation#4)
 
@@ -263,33 +269,34 @@ files. Some of those files (`Cargo.toml`, `src/lib.rs`) also aren't "one
 schema's code" at all — `lib.rs` lists *every* schema, so the generator needs
 them all in view, not one at a time.
 
-**Decided: a generator returns a list of files**, each just *"here's the path,
-here's the text"*:
+**Landed (generation#5): a generator returns a list of files.**
 
 ```rust
-struct GeneratedFile { path: PathBuf, contents: String }
+struct GeneratedFile { path: PathBuf, contents: String }   // relative to the output root
+enum   Mode { Code, Lib }
+struct GenRequest<'a> {
+    mode: Mode,
+    schemas: &'a [(String, Vec<FrozenUnit>)],               // every namespace + its IR
+    package: PackageMeta,                                    // name, version — for the Lib manifest
+}
+type GeneratorFn = fn(&GenRequest) -> Result<Vec<GeneratedFile>>;
 ```
 
-- `mode = "code"` → the list has **1** file (wrapping today's string).
-- `mode = "lib"` → the list has **several** (`Cargo.toml`, `src/lib.rs`, the
-  per-schema files).
-- The CLI writes whatever is in the list — one loop, same for both modes.
+- `mode = "code"` → one file per schema (the old string, wrapped).
+- `mode = "lib"` → `Cargo.toml`, `src/lib.rs`, the per-schema files.
+- The generator sees **all** schemas (for `src/lib.rs`) and returns paths; the
+  CLI writes the list — one loop, both modes.
 
-**Sub-decisions to confirm when G2a starts:**
+Settled with it:
 
-- **Who names the paths.** Today the CLI does, via `layout`. With a file list,
-  `layout` still places the single `code`-mode file (or the `lib`-mode folder's
-  *root*); the folder's *insides* (`Cargo.toml`, `src/…`) are the generator's to
-  name.
-- **All schemas in one call**, so the generator can build `src/lib.rs`.
-  `code` mode just returns one file and no index.
-- **No file "kind" tag** for now — the only user would be `comline clean`, and it
-  can instead ask the generator "what paths would you write?" and delete those.
-- **Text only** — no generator needs to emit a binary yet.
+- **Paths.** `layout` places the single `code` file, or the `lib` crate's
+  *root*; the crate's insides (`Cargo.toml`, `src/…`) are the generator's.
+- **No file "kind" tag** — `comline clean` will ask the generator "what paths
+  would you write?" rather than tag each file.
+- **Text only** — `contents: String`.
 
-The migration touches every generator (rust + typescript today) and the CLI's
-`generate` / `clean` paths, so it lands as one change when G2a starts — the
-`code`-mode generators just wrap their string in a one-element list.
+Still open: the **CLI** side of the migration (`generate.rs` / `clean.rs` still
+call the old shape at a pinned rev) — that is the G2a CLI half.
 
 ## Open questions
 
