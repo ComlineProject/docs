@@ -1,21 +1,19 @@
-/* Nav sections that also have an index page (e.g. "IDL / Schema") otherwise
-   render a dead, non-clickable label above a child link with the same text.
-   Material can only turn that label into a link via `navigation.indexes`, which
-   is incompatible with `toc.integrate`. So on the desktop sidebar we hide the
-   label and indent the section's pages under its index link, which is the
-   first child. */
+/* A nav section that also has an index page (e.g. "IDL / Schema") renders a
+   dead, non-clickable bold label above a child link with the same text.
+   Material only makes that label a link via `navigation.indexes`, which is
+   incompatible with `toc.integrate`. On the desktop sidebar: hide the label,
+   and restore the nesting indent Material zeroes out for section children
+   (they normally sit flush under that bold heading — which is now gone). */
 @media screen and (min-width: 76.25em) {
   .md-sidebar--primary .md-nav__item--section > label.md-nav__link {
-    display: none;
+    display: none !important;
   }
 
-  /* Every page in the section except its index (the first child) sits nested
-     under it. */
   .md-sidebar--primary
+    .md-nav__list
     .md-nav__item--section
     > .md-nav
-    > .md-nav__list
-    > .md-nav__item:not(:first-child) {
-    margin-left: 0.8rem;
+    > .md-nav__list {
+    margin-left: 0.6rem !important;
   }
 }
