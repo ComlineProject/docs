@@ -188,17 +188,27 @@ changed the read:
 | `cli` | the generator registry pulls a generator crate from each `comline-<lang>` repo behind cargo features; `comline generate` composes them |
 | *new* | `comline-<lang>` per target language; a **conformance corpus** (own repo or a `core` dir) that every target must pass |
 
-### Prerequisites — do these first
+## Rollout order
 
-- **The `core` ↔ target contract doc.** Under E it is a public API across many
-  repos, not a "later" nicety: the frozen-IR format, the frozen-IR-to-types
-  mapping, the core-runtime API surface, the call-system framing, the FFI/ABI.
-- **Semver releases of `comline-core` and `comline-codegen`** to crates.io, so
-  target repos depend on versions, not git revs — this also ends the git-rev
-  pinning that currently couples `generation` and `cli` to `core` commit hashes.
-- **The conformance corpus**, standing, before the second target repo exists —
-  it is the only thing keeping the generators consistent once they no longer
-  share a repo.
+The prerequisites gate everything else, so they come first. Nothing here needs a
+big-bang; each step leaves the tree working.
+
+| # | Step | Kind | Notes |
+|---|---|---|---|
+| 1 | **Release `comline-core`** to crates.io | code / release | Ends the git-rev pin treadmill `generation` and `cli` are on now — immediate payoff, independent of the rest. |
+| 2 | **`generation` → `comline-codegen`**: strip to contract + helpers + `Registry`, release it | code | The `rust` / `typescript` generator bodies come *out* in step 4; what's left is language-neutral. |
+| 3 | **`core ↔ target` contract doc** | design doc | Frozen-IR format, IR→types mapping, core-runtime API surface, call-system framing, FFI/ABI. It is a public API across many repos now. Its own design record. |
+| 4 | **Conformance corpus** — schema + expected behaviour, standing before the *second* target repo | code | The only thing keeping generators consistent once they don't share a repo. Own repo, or a `core` dir. |
+| 5 | **`comline-typescript`** — the pilot target repo | code / infra | `code` mode only, no runtime, no FFI — cleanest first cut. Establishes the repo template. |
+| 6 | **`comline-rust`** — generator + the rust runtime from `runtime-langs/` | code / infra | First repo that also carries a runtime; shakes out the `comline-runtime` dependency edge. |
+| 7 | **CLI feature-gated `Registry`** — compose steps 5–6 behind `--features` | code | `find_generator` → a registry built from the enabled `comline-<lang>` crates. |
+| 8 | **`runtime` → `comline-runtime` only**; `std` a feature; `runtime-std-extra` opt-in | code | The leftover `runtime-langs/*` move into their `comline-<lang>` repos as those land. |
+| 9 | **Remaining languages** — `comline-python`, `comline-lua`, `comline-luau`, … each from the template | infra | No change to the others. |
+
+Steps 1–2 are worth doing now regardless — they pay off (no more rev bumps in
+two repos) before any repo split. Steps 3–4 are the real prerequisites for a
+*second* target repo. `generation`'s G3 in [Generation → G3](generation.md#g3-split-to-per-language-repos)
+is steps 2 + 5 + 6 + 7 from the codegen side.
 
 ## Ownership & packaging
 
@@ -217,9 +227,11 @@ skeleton, and the `comline-core` / `comline-codegen` dependency wiring.
 
 ## Still applies regardless
 
+Independent of the layout, and unchanged by the reversal:
+
 - **`runtime-std-extra`** is optional functionality — opt-in, never in a core
   build graph.
 - **`core_no-std`** — a `std` feature flag on one crate, not a parallel fork.
-- **A language-agnostic conformance corpus** — now a hard prerequisite, not a
-  nice-to-have (see above).
-- **A versioned `core` ↔ target contract doc** — likewise now a prerequisite.
+- **The conformance corpus** and the **`core` ↔ target contract doc** — under
+  the phased plan these were "later"; under E they are hard prerequisites for a
+  second target repo (Rollout order, steps 3–4).
