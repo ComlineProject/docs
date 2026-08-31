@@ -14,7 +14,7 @@ in [`comline.toml`](../../reference/comline-toml.md) (`[generate] mode` or
 |---|---|---|
 | `code` | bare source files you place in a project yourself | **built today** |
 | `lib` | a buildable package (manifest + module tree) | planned |
-| `dylib` | `lib`, compiled to a dynamic library a runtime loads at run time | planned |
+| `dylib` | a package built with a **stable ABI** and compiled to a dynamic library any language's runtime can load | planned |
 
 ## `code` — source you wire in yourself
 
@@ -47,19 +47,26 @@ something you `cargo add` / `pip install` / `luarocks install`, or publish.
 - you want it installable from the language's package manager;
 - the schema and the code that uses it live in different repositories.
 
-## `dylib` — a compiled object a runtime loads
+## `dylib` — one compiled object, loadable from any language
 
-`lib`, then compiled to a `.so` / `.dll` / `.dylib`. A language
-[runtime](../runtime/index.md) loads it at run time and dispatches calls through
-it; the consuming program never adds Comline — or a Comline build step — to its
-own toolchain.
+The package is built with a **stable ABI** — a C-compatible / `abi_stable`
+surface, not Rust's own unstable one — and then compiled to a `.so` / `.dll` /
+`.dylib`. A plain compiled crate can only be called from the language it was
+written in; a stable-ABI object can be `dlopen`ed and called by anything.
 
-**Use it when** the schema is loaded dynamically:
+The Comline [runtime](../runtime/index.md) for the consumer's language loads the
+object at run time and dispatches through that ABI. The schema's types and
+protocol surface become usable **without a code generator for that language** —
+only a runtime is required. On load, the runtime checks which schema and version
+the object carries.
 
-- a running service picks up schema types without being rebuilt;
-- the consumer is in a language with no native Comline generator, but there is a
-  runtime for it;
-- you want to swap schema versions without recompiling the host.
+**Use it when** the schema is consumed across languages or loaded dynamically:
+
+- the consumer's language has a Comline runtime but no code generator — the
+  `dylib`, generated once (e.g. from Rust), serves it and every other language
+  the same way;
+- a running host loads schema types, or swaps schema versions, without being
+  rebuilt.
 
 ## Status
 
