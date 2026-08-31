@@ -41,6 +41,7 @@ nav:
     - Validators: 'design/validators.md'
     - Generation: 'design/generation.md'
     - Runtime & generation repo structure: 'design/runtime-repo-structure.md'
+    - Playground & tutorial: 'design/playground-and-tutorial.md'
   - Proposals:
     - 'proposals/index.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
