@@ -187,9 +187,25 @@ core#8. Not scoped until that is.
   `core`, `cli` → both). Fine as interim, but every `core` IR change now needs a
   rev bump in two repos. First `comline-core` + `comline-codelib-gen` releases
   would let `cli` pin versions like it used to.
-- **Version-exact `find_generator`.** `generation` only registers `"1.70.0"`. A
-  fallback to the sole generator for a language — or more version keys — before
-  anyone targets another Rust version.
+- **The `#<version>` axis is under-modeled.** `generation`'s `find_generator`
+  selects by exact string key (`rust::GENERATORS` has one: `"1.70.0"`), so
+  `rust#1.75.0` or `rust#1.70` gives "no generator". `core`'s old one ignored the
+  arg entirely. Neither is right — one string is carrying two separate meanings:
+  - **min-version** — "emit code valid on ≥ this": a construct stabilised at
+    version X (`async fn` in traits @1.75, `let`-else @1.65; Python `type` @3.12,
+    `X | Y` @3.10; TS `satisfies` @4.9). A blind fallback to "the one generator"
+    is wrong here — it would emit ≥1.75 output for a project pinned to 1.60.
+  - **edition / target** — a distinct dimension `#1.70.0` can't express: Rust
+    edition (2015/2018/2021/2024 — `dyn`, `crate::`), TS `target` (ES2015…ESNext),
+    …. Changes emitted *syntax*, not just capability.
+
+  A patch/minor bump alone almost never changes output (struct / enum / trait +
+  serde are stable across Rust 1.x). Likely shape: `find_generator("rust", _)`
+  returns the single rust generator (version-independent today); the generator
+  consults a *parsed* version + edition/target only for the constructs that need
+  it (none do yet); add an explicit `edition` / `target` field to the language
+  declaration when the first such need appears, rather than overloading the
+  version string.
 - **`GeneratedFile` shape (blocks G2a).** codegen today returns a bare `String`;
   libgen emits many files — `(relative path, contents)`, maybe a kind (source /
   manifest / build script). Pick one return type; `code_gen` can wrap its single
