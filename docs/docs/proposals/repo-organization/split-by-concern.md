@@ -157,6 +157,13 @@ moves away from.
 project: `prost` is the runtime, `prost-build` is the build-time code generator,
 and they're deliberately separate crates with separate dependency sets.
 
+| Project | Kept in one repo | Graduated to its own repo |
+|---|---|---|
+| [gRPC](https://github.com/grpc) | C core + C++, Python, Ruby, PHP, Obj-C | Java, Go, Node, C#, Swift, Kotlin, Dart, Web |
+| [Protocol Buffers](https://github.com/protocolbuffers) | `protoc` + C++, Java, Python, C#, Ruby, PHP, Obj-C | Go, JavaScript |
+| [Apache Thrift](https://github.com/apache/thrift) | compiler + every language library | *nothing — the counter-example* |
+| [prost](https://github.com/tokio-rs/prost) | one repo, but `prost` (runtime) and `prost-build` (codegen) are separate crates | — |
+
 ## When this would be the right call
 
 This is the conservative option, and it fits where the project is now: a core

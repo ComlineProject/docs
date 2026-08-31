@@ -114,6 +114,13 @@ idea: the code generator — a derive macro, a compiler plugin — ships alongsi
 the runtime library, `serde` with `serde_derive`, the kotlinx.serialization
 plugin with its core.
 
+| Project | Language-neutral core | Per-language repo — codegen + runtime together |
+|---|---|---|
+| [Smithy](https://github.com/smithy-lang) | `smithy-lang/smithy` | `smithy-rs`, `smithy-typescript`, `smithy-go`, `smithy-swift`, `smithy-kotlin`, `smithy-python`, … |
+| [Cap'n Proto](https://github.com/capnproto) | `capnproto/capnproto` (C++ reference) | `capnproto-rust`, `capnproto-java`, … |
+| [protobuf-go / grpc-go](https://github.com/protocolbuffers/protobuf-go) | protobuf & gRPC cores, elsewhere | `protobuf-go` = `protoc-gen-go` + runtime; `grpc-go` = `protoc-gen-go-grpc` + runtime |
+| [Serde](https://github.com/serde-rs/serde) / kotlinx.serialization | — (single language) | derive macro / compiler plugin + runtime, one repo |
+
 ## When this would be the right call
 
 Once each language genuinely has its own maintainer or team, ecosystem-native
