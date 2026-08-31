@@ -54,11 +54,12 @@ compiler + IR. They landed in `generation` as an intermediate.
 generator lives in its `comline-<lang>` repo**, next to that language's runtime.
 `generation` becomes **`comline-codegen`** — the shared, language-neutral support
 crate (contract + `FrozenUnit` helpers + `Registry` type, one dep on
-`comline-core`, published to crates.io) that every `comline-<lang>` depends on.
+`comline-core`) that every `comline-<lang>` depends on.
 
-- **No `comline-core-ir` carve-out.** `comline-core` is already the published
-  unit. `comline-codegen` and every `comline-<lang>` depend on it *by version*
-  from crates.io.
+- **No `comline-core-ir` carve-out.** `comline-core` is the whole unit.
+  `comline-codegen` and every `comline-<lang>` depend on it **by git rev** — no
+  crates.io publishing at this stage (see the
+  [repo decision](runtime-repo-structure.md)); the cost is coordinated rev bumps.
 - **The CLI is the composition root.** It depends on `comline-core` (source → IR)
   and, behind cargo features, the `comline-<lang>` generator crates (IR → code /
   lib), and wires them together. `core` knows nothing about codegen.
@@ -206,11 +207,11 @@ CLI-driven functions. G3 takes them the rest of the way, per the
 
 1. **`generation` → `comline-codegen`.** Strip it to the contract
    (`GenRequest` / `GeneratedFile` / `Mode`), the `FrozenUnit` walk helpers, and
-   the `Registry` type. No language code. Publish it to crates.io.
+   the `Registry` type. No language code.
 2. **`comline-rust`, `comline-typescript`.** The two generators that exist move
    into their target repos, each joining that language's runtime (lifted from
-   `runtime-langs/*`). They depend on published `comline-codegen` +
-   `comline-core`.
+   `runtime-langs/*`). They depend on `comline-codegen` + `comline-core` by git
+   rev.
 3. **CLI features.** `find_generator` becomes a feature-gated `Registry` the CLI
    builds from the enabled `comline-<lang>` crates (see
    [The registry](#the-registry)).
@@ -218,8 +219,9 @@ CLI-driven functions. G3 takes them the rest of the way, per the
    change to the others.
 
 Blocked on the prerequisites in the
-[repo decision](runtime-repo-structure.md): the `core ↔ target` contract doc,
-and the first `comline-core` / `comline-codegen` releases.
+[repo decision](runtime-repo-structure.md): the `core ↔ target` contract doc and
+the conformance corpus (before the second target repo). No release step —
+everything stays on git revs.
 
 ## Generator crate layout
 
@@ -369,10 +371,11 @@ The CLI side (`generate.rs`) landed in cli#17.
 
 ## Open questions
 
-- **Cut releases** — now a **G3 prerequisite**, not optional. Everything is
-  wired with git-rev deps (`generation` → `core`, `cli` → both); every `core` IR
-  change needs a rev bump in two repos. `comline-core` + `comline-codegen`
-  releases end that and let `comline-<lang>` repos depend on versions.
+- **Git revs, not releases** — decided. `generation` → `core`, `cli` → both, and
+  every `comline-<lang>` → `comline-core` + `comline-codegen` stay on git revs.
+  Every `core` IR change means a coordinated rev bump across the consuming repos.
+  Publishing to crates.io is a later call, taken if that coordination gets
+  painful — it slots in without reordering anything.
 - **First `comline-<lang>` repos: `comline-rust` and `comline-typescript`** —
   the two generators that exist. `comline-typescript` is the cleaner pilot
   (`code` mode only, no runtime, no FFI). `comline-python` / `comline-lua` /

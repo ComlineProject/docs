@@ -152,7 +152,7 @@ or third parties — in whatever repo they like.
 `comline-python`, `comline-lua`, `comline-luau`, `comline-c`, … Each holds that
 language's **code generator, library generator, runtime, and language-specific
 std extras** together. `core` stays language-neutral. Every target repo depends
-on two released, language-neutral crates and nothing else from the org:
+on two language-neutral crates and nothing else from the org:
 
 - **`comline-core`** — the IR and compiler (unchanged).
 - **`comline-codegen`** — what `generation` becomes: the shared codegen support
@@ -160,6 +160,13 @@ on two released, language-neutral crates and nothing else from the org:
   generator trait). No language-specific code.
 
 `runtime` keeps only `comline-runtime`, the language-agnostic core runtime.
+
+**Dependency mechanism: git revs, not crates.io.** At this stage publishing is
+overhead with no payoff, so `comline-core` and `comline-codegen` are consumed by
+git rev — the way `generation` and `cli` already consume `core`. The cost is
+coordinated rev bumps across repos (and one `comline-core` in any given tree, so
+the CLI composes targets pinned to the same rev). Publishing to crates.io is a
+later call, not a prerequisite for anything below.
 
 ### Why the reversal
 
@@ -170,7 +177,7 @@ changed the read:
 - The **codegen ↔ runtime agreement is a same-repo, same-CI invariant** here —
   one PR builds the generator, runs it, builds the runtime, and runs the
   generated code against it. The phased path deferred that and leaned on a
-  hand-maintained version table plus a conformance suite to catch drift.
+  hand-maintained version/rev table plus a conformance suite to catch drift.
 - **"Which languages are heavy enough to graduate"** turned out to be a
   recurring judgement call. Making every language its own repo from the start
   removes the question entirely.
@@ -190,36 +197,41 @@ changed the read:
 
 ## Rollout order
 
-The prerequisites gate everything else, so they come first. Nothing here needs a
+Everything is wired by git rev (see the Decision note). Nothing here needs a
 big-bang; each step leaves the tree working.
 
 | # | Step | Kind | Notes |
 |---|---|---|---|
-| 1 | **Release `comline-core`** to crates.io | code / release | Ends the git-rev pin treadmill `generation` and `cli` are on now — immediate payoff, independent of the rest. |
-| 2 | **`generation` → `comline-codegen`**: strip to contract + helpers + `Registry`, release it | code | The `rust` / `typescript` generator bodies come *out* in step 4; what's left is language-neutral. |
-| 3 | **`core ↔ target` contract doc** | design doc | Frozen-IR format, IR→types mapping, core-runtime API surface, call-system framing, FFI/ABI. It is a public API across many repos now. Its own design record. |
-| 4 | **Conformance corpus** — schema + expected behaviour, standing before the *second* target repo | code | The only thing keeping generators consistent once they don't share a repo. Own repo, or a `core` dir. |
-| 5 | **`comline-typescript`** — the pilot target repo | code / infra | `code` mode only, no runtime, no FFI — cleanest first cut. Establishes the repo template. |
-| 6 | **`comline-rust`** — generator + the rust runtime from `runtime-langs/` | code / infra | First repo that also carries a runtime; shakes out the `comline-runtime` dependency edge. |
-| 7 | **CLI feature-gated `Registry`** — compose steps 5–6 behind `--features` | code | `find_generator` → a registry built from the enabled `comline-<lang>` crates. |
-| 8 | **`runtime` → `comline-runtime` only**; `std` a feature; `runtime-std-extra` opt-in | code | The leftover `runtime-langs/*` move into their `comline-<lang>` repos as those land. |
-| 9 | **Remaining languages** — `comline-python`, `comline-lua`, `comline-luau`, … each from the template | infra | No change to the others. |
+| 1 | **`generation` → `comline-codegen`**: strip to contract + helpers + `Registry` | code | The `rust` / `typescript` generator bodies come *out* in step 4; what's left is language-neutral. Consumed by git rev. |
+| 2 | **`core ↔ target` contract doc** | design doc | Frozen-IR format, IR→types mapping, core-runtime API surface, call-system framing, FFI/ABI. It is a public API across many repos now. Its own design record. |
+| 3 | **Conformance corpus** — schema + expected behaviour, standing before the *second* target repo | code | The only thing keeping generators consistent once they don't share a repo. Own repo, or a `core` dir. |
+| 4 | **`comline-typescript`** — the pilot target repo | code / infra | `code` mode only, no runtime, no FFI — cleanest first cut. Establishes the repo template. |
+| 5 | **`comline-rust`** — generator + the rust runtime from `runtime-langs/` | code / infra | First repo that also carries a runtime; shakes out the `comline-runtime` dependency edge. |
+| 6 | **CLI feature-gated `Registry`** — compose steps 4–5 behind `--features` | code | `find_generator` → a registry built from the enabled `comline-<lang>` crates. |
+| 7 | **`runtime` → `comline-runtime` only**; `std` a feature; `runtime-std-extra` opt-in | code | The leftover `runtime-langs/*` move into their `comline-<lang>` repos as those land. |
+| 8 | **Remaining languages** — `comline-python`, `comline-lua`, `comline-luau`, … each from the template | infra | No change to the others. |
 
-Steps 1–2 are worth doing now regardless — they pay off (no more rev bumps in
-two repos) before any repo split. Steps 3–4 are the real prerequisites for a
-*second* target repo. `generation`'s G3 in [Generation → G3](generation.md#g3-split-to-per-language-repos)
-is steps 2 + 5 + 6 + 7 from the codegen side.
+Steps 2–3 are the real prerequisites for a *second* target repo. `generation`'s
+G3 in [Generation → G3](generation.md#g3-split-to-per-language-repos) is steps
+1 + 4 + 5 + 6 from the codegen side.
+
+**Publishing to crates.io** stays an open call for later. If the coordinated
+git-rev bumps across `comline-<lang>` repos get painful, that is the trigger to
+revisit — releasing `comline-core` and `comline-codegen` with semver is the fix,
+and it slots in without reordering anything here.
 
 ## Ownership & packaging
 
 Every target language is its own repo from the start, so there is no
 "graduation" — but the packaging rules still hold and matter more:
 
-**Org-owned registry namespaces.** The `ComlineProject` account holds the PyPI
-project / npm scope / LuaRocks module / crates.io name for each `comline-<lang>`.
-Maintainers are granted publish rights, not sole ownership. Publishing runs
+**Org-owned registry namespaces.** *If and when* a `comline-<lang>` publishes to
+an ecosystem registry for end users — a wheel to PyPI, a package to npm, a rock
+to LuaRocks, the crate to crates.io — the `ComlineProject` account holds that
+name. Maintainers are granted publish rights, not sole ownership. Publishing runs
 through CI **trusted publishing (OIDC)**, no long-lived tokens. A maintainer
 stepping away never orphans a published package, and the name stays protected.
+(This is separate from inter-repo deps, which are git revs — see the Decision.)
 
 **A repo template.** New target = new repo from a template carrying the standard
 layout (`codegen/`, `libgen/`, `runtime/`, `std-extra/`, `conformance/`), the CI
@@ -234,4 +246,4 @@ Independent of the layout, and unchanged by the reversal:
 - **`core_no-std`** — a `std` feature flag on one crate, not a parallel fork.
 - **The conformance corpus** and the **`core` ↔ target contract doc** — under
   the phased plan these were "later"; under E they are hard prerequisites for a
-  second target repo (Rollout order, steps 3–4).
+  second target repo (Rollout order, steps 2–3).
