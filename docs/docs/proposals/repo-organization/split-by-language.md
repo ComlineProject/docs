@@ -1,9 +1,10 @@
-# Per-language target repositories
+# Proposal B — split by language
 
 Status: **under discussion** · Alternative to
-[Runtime & codegen repositories](runtime-and-codegen-repos.md) (the direction the
-current [design record](../design/runtime-repo-structure.md) follows) · This is
-Option **E** from that record, written up in full.
+[Proposal A — split by concern](split-by-concern.md) (the direction the current
+[design record](../../design/runtime-repo-structure.md) follows) · This is Option
+**E** from that record, written up in full · See the
+[section overview](index.md) for the question both answer.
 
 **Proposal.** One repository per target language — `comline-python`,
 `comline-lua`, `comline-node`, … — each holding *that language's entire surface*:
@@ -74,6 +75,5 @@ maintainer or team, ecosystem-native distribution is mandatory across the board,
 and the `core` ↔ target contract is stable enough to be a real versioned API,
 then per-language target repos stop being overhead and become the natural unit of
 ownership. That is the same end state
-[Runtime & codegen repositories](runtime-and-codegen-repos.md) tends toward for
-runtimes — this proposal applies it to the whole per-language surface, sooner,
-and to codegen as well.
+[Proposal A](split-by-concern.md) tends toward for runtimes — this proposal
+applies it to the whole per-language surface, sooner, and to codegen as well.

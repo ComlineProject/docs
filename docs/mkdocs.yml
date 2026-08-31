@@ -45,8 +45,10 @@ nav:
     - Brand assets: 'design/brand-assets.md'
   - Proposals:
     - 'proposals/index.md'
-    - Runtime & codegen repositories: 'proposals/runtime-and-codegen-repos.md'
-    - Per-language target repositories: 'proposals/per-language-target-repos.md'
+    - 'Runtime & codegen repository organization':
+      - 'proposals/repo-organization/index.md'
+      - 'Proposal A — split by concern': 'proposals/repo-organization/split-by-concern.md'
+      - 'Proposal B — split by language': 'proposals/repo-organization/split-by-language.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
   - Resources: 'resources.md'
 

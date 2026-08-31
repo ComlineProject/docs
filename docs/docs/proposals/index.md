@@ -21,15 +21,17 @@ the others become rejected or superseded with a one-line reason.
 
 ## By area
 
-### Repository structure
+### [Runtime & codegen repository organization](repo-organization/index.md)
 
 How the per-language surface — codegen, libgen, runtime — is split across
-repositories. Two competing answers:
+repositories. Two competing proposals, read to the same shape:
 
-| Proposal | Split by | Status |
-|---|---|---|
-| [Runtime & codegen repositories](runtime-and-codegen-repos.md) | **concern** — `generation` stays one repo; `runtime` graduates heavyweight language runtimes to their own repos | accepted (current direction) |
-| [Per-language target repositories](per-language-target-repos.md) | **language** — one repo per target holds that language's codegen, libgen, and runtime together | under discussion |
+- [Proposal A — split by concern](repo-organization/split-by-concern.md) —
+  `generation` stays one repo; `runtime` graduates heavyweight language runtimes
+  to their own repos. *accepted — current direction.*
+- [Proposal B — split by language](repo-organization/split-by-language.md) — one
+  repo per target holds that language's codegen, libgen, and runtime together.
+  *under discussion.*
 
 Org-wide decision record:
 [Design → Runtime & generation repository structure](../design/runtime-repo-structure.md).
