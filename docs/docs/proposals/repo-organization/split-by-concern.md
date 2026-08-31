@@ -130,6 +130,33 @@ Python bug is working across repos and keeping two checkouts aligned.
 **"Has this language earned its own repo yet" is a judgement call every time.**
 There's no bright line, so each new heavy language reopens the same discussion.
 
+## Prior art
+
+**gRPC** is organised almost exactly this way. `grpc/grpc` holds the C core and
+the C++, Python, Ruby, PHP and Objective-C libraries that wrap it — the ones
+that are cheap to keep together. Java, Go, Node, C#, Swift, Kotlin, Dart and
+grpc-web each got their own repository (`grpc/grpc-java`, `grpc/grpc-go`,
+`grpc/grpc-swift`, and so on) once they had a real ecosystem and toolchain of
+their own. Lightweight bindings stay in the core repo; heavyweight ones
+graduate. That's Step 1 and Step 3 of this proposal, and gRPC has run it for
+years.
+
+**Protocol Buffers** does the same. `protocolbuffers/protobuf` ships the
+`protoc` compiler together with the C++, Java, Python, C#, Ruby, PHP and
+Objective-C runtimes. Go lives in `protocolbuffers/protobuf-go`, and JavaScript
+was moved out into `protocolbuffers/protobuf-javascript` — a
+compiler-plus-core-runtimes mono-repo with specific ecosystems split off.
+
+**Apache Thrift** is the counter-example. Its compiler and every `lib/<language>`
+implementation sit in one repository, so building it or contributing to it means
+dealing with the union of every language's toolchain at once. That
+single-tree-for-everything arrangement is exactly what this proposal's Step 1
+moves away from.
+
+**prost / tonic** show the same split at crate granularity inside one Rust
+project: `prost` is the runtime, `prost-build` is the build-time code generator,
+and they're deliberately separate crates with separate dependency sets.
+
 ## When this would be the right call
 
 This is the conservative option, and it fits where the project is now: a core

@@ -88,6 +88,32 @@ one repo naturally owns it.
 every `comline-<lang>` against it. The `core` ↔ target boundary becomes a public
 API you have to version carefully, because a lot of repos consume it.
 
+## Prior art
+
+**Smithy** — the IDL and SDK-generation framework behind the AWS SDKs — is built
+exactly this way. The language-neutral model tooling is in `smithy-lang/smithy`;
+then `smithy-lang/smithy-rs`, `smithy-typescript`, `smithy-go`, `smithy-swift`,
+`smithy-kotlin`, `smithy-python` and others each hold **both** the code
+generator and the runtime libraries for that one language. AWS generates every
+one of its SDKs from this layout.
+
+**Cap'n Proto** does it for every language except its C++ reference.
+`capnproto/capnproto` is the C++ compiler and runtime; `capnproto/capnproto-rust`
+bundles the `capnpc` compiler plugin, the `capnp` runtime and the RPC layer;
+`capnproto/capnproto-java` bundles its plugin and its runtime. Each language repo
+carries its whole stack.
+
+**protobuf-go and grpc-go** show that even mono-repo-first projects organise
+their *graduated* languages this way. `protocolbuffers/protobuf-go` ships
+`protoc-gen-go` next to the `google.golang.org/protobuf` runtime;
+`grpc/grpc-go` ships `protoc-gen-go-grpc` next to the gRPC runtime. Codegen and
+runtime for the language, in one repo.
+
+**Serde** and **kotlinx.serialization** are the single-language version of the
+idea: the code generator — a derive macro, a compiler plugin — ships alongside
+the runtime library, `serde` with `serde_derive`, the kotlinx.serialization
+plugin with its core.
+
 ## When this would be the right call
 
 Once each language genuinely has its own maintainer or team, ecosystem-native

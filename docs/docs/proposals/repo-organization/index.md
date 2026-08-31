@@ -24,7 +24,14 @@ few) for the runtimes. **B** cuts between languages — one repo per language wi
 its whole stack inside, and the tooling and the runtime sharing that repo.
 
 Both are written to the same shape — **Shape · The case for it · The case
-against · When this would be the right call** — so they can be read side by side.
+against · Prior art · When this would be the right call** — so they can be read
+side by side, and each cites real projects built that way.
+
+**They can also combine.** gRPC and Protocol Buffers are Proposal A at the top
+level — a core mono-repo plus a graduated repo per heavyweight language — but
+each graduated repo (`grpc-go`, `protobuf-go`) is itself organised like Proposal
+B, with that language's codegen and runtime together. "A now, B inside the repos
+that graduate" is a real option.
 
 The org-wide decision record, with the full options analysis (A–F) and the
 phased rollout, is
