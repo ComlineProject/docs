@@ -41,6 +41,7 @@ nav:
     - Validators: 'design/validators.md'
     - Generation: 'design/generation.md'
     - Runtime & generation repo structure: 'design/runtime-repo-structure.md'
+    - core ↔ target contract: 'design/core-target-contract.md'
     - Playground & tutorial: 'design/playground-and-tutorial.md'
     - Brand assets: 'design/brand-assets.md'
   - Proposals:

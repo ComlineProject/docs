@@ -26,6 +26,9 @@ Each page carries a status and links the issues / PRs that carry it out.
   keep the runtime and libgen trees from getting heavy as languages are added.
   *Decided — one repo per target language (Option E); reverses the earlier
   phased plan.*
+- [The `core` ↔ target contract](core-target-contract.md) — the boundary every
+  `comline-<lang>` repo builds against: schema IR, config IR, the codegen
+  contract, the core-runtime API, the FFI ABI. *Draft.*
 - [Playground & tutorial](playground-and-tutorial.md) — an in-browser, real-time
   compile / codegen / runtime demo, and the WASM vs compile-server question
   behind it. *Discussion.*
