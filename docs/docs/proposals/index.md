@@ -1,10 +1,40 @@
 # Proposals
 
-Here will be any kind of proposals for the project, from the authors and contributors
-that got minimally triaged for fitting context.
+Ideas for the project from authors and contributors, triaged for fit. A proposal
+captures a direction and its trade-offs. Once the team commits to one, the
+rationale and rollout move to a [Design](../design/index.md) record and the
+proposal is marked **accepted**.
 
-- [Automatic documentation](auto-documentation.md) — deriving human-readable docs
-  from the schema and project files, as an optional tool.
-- [Runtime & codegen repositories](runtime-and-codegen-repos.md) — `generation`
-  stays one repo; `runtime` graduates heavyweight language runtimes into their
-  own repos as each earns it, with a version-range seam between the two.
+## How a proposal is written
+
+Each page opens with a `Status:` line, house style — a status in bold followed by
+` · `-separated notes:
+
+- **draft** — being written, not yet up for discussion
+- **under discussion** — open for feedback
+- **accepted** — the team is going this way; see the linked Design record
+- **rejected** / **superseded** — with a note saying why, and by what
+
+Proposals may **compete**: two pages proposing different answers to the same
+question. They are grouped together below and stay open until one is accepted;
+the others become rejected or superseded with a one-line reason.
+
+## By area
+
+### Repository structure
+
+How the per-language surface — codegen, libgen, runtime — is split across
+repositories. Two competing answers:
+
+| Proposal | Split by | Status |
+|---|---|---|
+| [Runtime & codegen repositories](runtime-and-codegen-repos.md) | **concern** — `generation` stays one repo; `runtime` graduates heavyweight language runtimes to their own repos | accepted (current direction) |
+| [Per-language target repositories](per-language-target-repos.md) | **language** — one repo per target holds that language's codegen, libgen, and runtime together | under discussion |
+
+Org-wide decision record:
+[Design → Runtime & generation repository structure](../design/runtime-repo-structure.md).
+
+### Tooling
+
+- [Automatic documentation](auto-documentation.md) — derive human-readable docs
+  from the schema and project files, as an optional tool. *draft.*

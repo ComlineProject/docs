@@ -1,5 +1,10 @@
 # Runtime & codegen repositories
 
+Status: **accepted** — the direction the current
+[design record](../design/runtime-repo-structure.md) follows · Re-examined
+against [Per-language target repositories](per-language-target-repos.md), which
+splits by language instead of by concern.
+
 **Proposal.** Keep `generation` (codegen + libgen) as a single repository for the
 long run, and let `runtime` start as one repository that graduates *individual*
 heavyweight language runtimes into their own repositories as each earns it. The

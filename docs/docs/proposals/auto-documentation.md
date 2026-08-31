@@ -1,4 +1,7 @@
 # Automatic Documentation
+
+Status: **draft**
+
 Since the change and versioning of APIs is incremental due to the nature of the CAS,
 most components of the Schema and the Project files can be somewhat automatically documented
 

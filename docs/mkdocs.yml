@@ -45,8 +45,9 @@ nav:
     - Brand assets: 'design/brand-assets.md'
   - Proposals:
     - 'proposals/index.md'
-    - Automatic documentation: 'proposals/auto-documentation.md'
     - Runtime & codegen repositories: 'proposals/runtime-and-codegen-repos.md'
+    - Per-language target repositories: 'proposals/per-language-target-repos.md'
+    - Automatic documentation: 'proposals/auto-documentation.md'
   - Resources: 'resources.md'
 
 
