@@ -53,6 +53,8 @@ extra_css:
 
 theme:
   name: material
+  logo: assets/comline-mark.svg
+  favicon: assets/favicon.svg
   features:
     - navigation.tabs
     - navigation.sections
