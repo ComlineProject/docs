@@ -7,7 +7,9 @@ per-language as earned; D/E rejected, F is the end state) · Affects
 The `generation` side — what codegen / libgen / runtime each mean, where the
 generators live, and how to clean the repo up — is settled separately in
 [Generation](generation.md). This page is about repo granularity for the
-*runtime* tree.
+*runtime* tree. For the demonstrated end shape of the two repositories and the
+seam between them, see
+[Proposals → Runtime & codegen repositories](../proposals/runtime-and-codegen-repos.md).
 
 ## Problem
 
