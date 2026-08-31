@@ -21,10 +21,11 @@ Two properties are non-negotiable:
 - **Responsiveness** — the edit → IR → diagnostics → code loop keeps up with
   typing (target < ~1 frame of jank on the editor thread).
 
-**Scope for v1: everything** — compile + diagnostics + codegen + a working
-runtime demo. The compile/codegen loop is language-agnostic from day one (it is
-`core` + `comline-codelib-gen` in WASM); the *runtime demo* rolls out per
-language by how runnable that language is in a browser (see
+**The target is everything** — compile + diagnostics + codegen + a working
+runtime demo; there is no cut-down "just the editor" first release. The
+compile/codegen loop is language-agnostic from the outset (it is `core` +
+`comline-codelib-gen` in WASM); the *runtime demo* fills in per language by how
+runnable that language is in a browser (see
 [Running handlers per language](#running-handlers-per-language)).
 
 ## The core decision: WASM vs a compile server
@@ -50,7 +51,8 @@ a pure-Rust tree-sitter runtime (`rust-sitter` → `tree-sitter-c2rust`). No
   emitting the `lib`-mode file tree.
 - **The `compilation-queue-server`, later and optional** — only for what WASM
   genuinely can't do: `cargo build` of a generated crate, a real multi-process
-  runtime demo. v1 can ship without it.
+  runtime demo. The editor / diagnostics / codegen experience does not depend
+  on it.
 
 ## The runtime demo
 
@@ -76,7 +78,7 @@ language. Two families:
   own), run the handler and a pure-language shim directly. No compiler needed.
 - **Compiled** — the handler has to be compiled first. In-browser compilers for
   these are either enormous or immature, so they are **compile-server** work
-  (revive `compilation-queue-server`), not v1 client-side.
+  (revive `compilation-queue-server`), not client-side.
 
 | Language | Handler in browser via | Approx. payload | Shim |
 |---|---|---|---|
@@ -92,11 +94,14 @@ Rollout order follows payload and maturity: **JS/TS → Lua → Luau → Python*
 client-side; **Rust / C / Go** via the server. The compile/diagnostics/codegen
 loop is unaffected — it works for every target from the start.
 
-This is the piece to **research first**: confirm `rust-sitter` /
-`tree-sitter-c2rust` build clean for `wasm32-unknown-unknown`; measure the real
-Pyodide / wasmoon / Luau-wasm / esbuild-wasm payloads on a warm cache; check
-`tcc.wasm`'s language-feature ceiling. The matrix above is the hypothesis, not a
-verified result.
+This is the piece to **research first**. The `core` side is
+[promising](#findings-so-far) — its parser deps are pure Rust and its `build.rs`
+already targets wasm32; still to do is an end-to-end wasm build with `clang`
+installed, then measure the `.wasm` payload (the tree-sitter tables, `regex` and
+`blake3` will dominate). For the handlers: measure the real Pyodide / wasmoon /
+Luau-wasm / esbuild-wasm payloads on a warm cache and check `tcc.wasm`'s
+language-feature ceiling. The matrix above is the hypothesis, not a verified
+result.
 
 ## The "same as the CLI" contract
 
@@ -159,18 +164,36 @@ subdomains.
 
 ## Decided
 
-- **v1 scope** — everything: compile + diagnostics + codegen + a runtime demo.
+- **Target** — everything: compile + diagnostics + codegen + a runtime demo. No
+  cut-down first release; the runtime demo simply fills in per language.
 - **Framework** — SvelteKit for `playground` and `tutorial`; a neutral TS
   package for the WASM/loopback/runner core; a Svelte component library, also
   built as custom elements for the docs.
 
+## Findings so far
+
+- **`comline-core` builds for `wasm32` by design.** Its normal dependency tree
+  is C-free and browser-safe — `rust-sitter` → `tree-sitter-c2rust` (pure Rust),
+  no `tokio` / `libloading` / `abi_stable`. Its `build.rs` (via
+  `rust-sitter-tool` 0.4.5) has explicit wasm32 support: it writes a minimal
+  `wasm-sysroot` (`stdint.h` / `stdlib.h` / `stdio.h` / `stdbool.h`) so the
+  generated tree-sitter `parser.c` cross-compiles.
+- **The one build requirement is `clang` + `lld`** for that C step — a
+  one-liner in CI, not available in every dev sandbox. Not yet run end to end
+  (this environment has no clang).
+- `std::fs` / `glob` paths (reading `config.idp`, schema files) *compile* on
+  wasm32 but error at runtime — the playground must enter through
+  source-string APIs (`IncrementalInterpreter::from_source`, and an equivalent
+  for the config side), not the file-reading ones.
+
 ## Open questions
 
 - **The `compilation-queue-server`** — it *will* be needed for Rust / C / Go
-  handlers (and real `cargo build` of a `lib` crate). Revive it in parallel with
-  v1, or ship the VM-language loopback first and add it once those land?
+  handlers (and real `cargo build` of a `lib` crate). Revive it alongside the
+  WASM work, or ship the VM-language loopback first and add it once those land?
 - **Language research** — the [handler matrix](#running-handlers-per-language) is
-  a hypothesis. Verify the WASM builds and payloads before committing an order.
+  a hypothesis. Verify each VM's WASM build and payload before committing an
+  order.
 - **Tutorial content** — authored inside the `tutorial` app, or as Markdown in
   `docs/` and rendered by both? *(TBD.)*
 - **Deploy shape** — one deploy or three; one domain or subdomains.
