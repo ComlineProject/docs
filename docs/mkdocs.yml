@@ -42,6 +42,7 @@ nav:
     - Generation: 'design/generation.md'
     - Runtime & generation repo structure: 'design/runtime-repo-structure.md'
     - Playground & tutorial: 'design/playground-and-tutorial.md'
+    - Brand assets: 'design/brand-assets.md'
   - Proposals:
     - 'proposals/index.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
