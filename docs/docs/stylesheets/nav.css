@@ -26,3 +26,12 @@
     padding-left: 1.4rem !important;
   }
 }
+
+/* On a tab's own page (Home, Getting started, …) Material hides the page's
+   nav link in the sidebar — the tab bar already shows it — leaving the
+   integrated TOC with no parent heading. Bring it back as the TOC's parent. */
+@media screen and (min-width: 76.25em) {
+  .md-nav--lifted > .md-nav__list > .md-nav__item--active > a.md-nav__link {
+    display: flex !important;
+  }
+}
