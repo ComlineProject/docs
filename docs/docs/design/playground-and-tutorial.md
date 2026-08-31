@@ -95,10 +95,8 @@ client-side; **Rust / C / Go** via the server. The compile/diagnostics/codegen
 loop is unaffected — it works for every target from the start.
 
 This is the piece to **research first**. The `core` side is
-[promising](#findings-so-far) — its parser deps are pure Rust and its `build.rs`
-already targets wasm32; still to do is an end-to-end wasm build with `clang`
-installed, then measure the `.wasm` payload (the tree-sitter tables, `regex` and
-`blake3` will dominate). For the handlers: measure the real Pyodide / wasmoon /
+[settled](#findings-so-far): it builds for wasm32 and the bundle is ~163 KB
+gzipped. What's left is the **handlers** — measure the real Pyodide / wasmoon /
 Luau-wasm / esbuild-wasm payloads on a warm cache and check `tcc.wasm`'s
 language-feature ceiling. The matrix above is the hypothesis, not a verified
 result.
@@ -172,19 +170,35 @@ subdomains.
 
 ## Findings so far
 
-- **`comline-core` builds for `wasm32` by design.** Its normal dependency tree
-  is C-free and browser-safe — `rust-sitter` → `tree-sitter-c2rust` (pure Rust),
-  no `tokio` / `libloading` / `abi_stable`. Its `build.rs` (via
-  `rust-sitter-tool` 0.4.5) has explicit wasm32 support: it writes a minimal
-  `wasm-sysroot` (`stdint.h` / `stdlib.h` / `stdio.h` / `stdbool.h`) so the
-  generated tree-sitter `parser.c` cross-compiles.
-- **The one build requirement is `clang` + `lld`** for that C step — a
-  one-liner in CI, not available in every dev sandbox. Not yet run end to end
-  (this environment has no clang).
-- `std::fs` / `glob` paths (reading `config.idp`, schema files) *compile* on
-  wasm32 but error at runtime — the playground must enter through
-  source-string APIs (`IncrementalInterpreter::from_source`, and an equivalent
-  for the config side), not the file-reading ones.
+**`comline-core` + `comline-codelib-gen` build for `wasm32-unknown-unknown` and
+the bundle is small** — verified end to end:
+
+- The normal dependency tree is C-free and browser-safe: `rust-sitter` →
+  `tree-sitter-c2rust` (pure Rust), no `tokio` / `libloading` / `abi_stable`.
+- `comline-core`'s `build.rs` (via `rust-sitter-tool` 0.4.5) already targets
+  wasm32 — it writes a minimal `wasm-sysroot` (`stdint.h` / `stdlib.h` /
+  `stdio.h` / `stdbool.h`) so the generated tree-sitter `parser.c`
+  cross-compiles. The one build requirement is **`clang`** for that C step
+  (trivial in CI).
+- A `cdylib` size probe — `opt-level = "z"` + LTO + `strip` + `panic = "abort"`,
+  exercising **parse → IR → validate → diagnostics → codegen** (rust + ts, code
+  + lib) for **both** grammars (IDL and `config.idp`):
+
+  | | raw | gzip | xz |
+  |---|---|---|---|
+  | probe `.wasm` | 527 KB | **163 KB** | 128 KB |
+
+  Valid MVP module (no SIMD / bulk-memory). `code` 383 KB, `data` 135 KB
+  (parser tables + regex DFAs + literals). The tree-sitter-c2rust tables are
+  compact — the size worry did not materialise.
+- **Not yet in the number:** `wasm-bindgen` glue + data marshalling (tens of KB),
+  `wasm-opt -Oz` (would take ~10–20 % off), and project-aware multi-schema
+  interpretation. None change the order of magnitude.
+
+`std::fs` / `glob` paths (reading `config.idp`, schema files) *compile* on wasm32
+but error at runtime — the playground must enter through source-string APIs
+(`IncrementalInterpreter::from_source`, and an equivalent for the config side),
+not the file-reading ones.
 
 ## Open questions
 
