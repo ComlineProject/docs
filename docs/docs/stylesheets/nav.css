@@ -2,18 +2,14 @@
    dead, non-clickable bold label above a child link with the same text.
    Material only makes that label a link via `navigation.indexes`, which is
    incompatible with `toc.integrate`. On the desktop sidebar: hide the label,
-   and restore the nesting indent Material zeroes out for section children
-   (they normally sit flush under that bold heading — which is now gone). */
+   and shift the section's collapsed nav block (its index link + its pages)
+   right, so the group reads as nested where the hidden heading was. */
 @media screen and (min-width: 76.25em) {
   .md-sidebar--primary .md-nav__item--section > label.md-nav__link {
     display: none !important;
   }
 
-  .md-sidebar--primary
-    .md-nav__list
-    .md-nav__item--section
-    > .md-nav
-    > .md-nav__list {
-    margin-left: 0.6rem !important;
+  .md-sidebar--primary .md-nav__item--section > .md-nav {
+    margin-left: 0.7rem !important;
   }
 }
