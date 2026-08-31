@@ -181,31 +181,65 @@ the old `comline::` crate path and pre-audit IR).
 dylib-loading story ([runtime structure](runtime-repo-structure.md)) and needs
 core#8. Not scoped until that is.
 
+## Language version & dialect
+
+`generation`'s `find_generator` selects by an exact `(language, version)` string
+key — `rust::GENERATORS` has one entry, `"1.70.0"` — so `rust#1.75.0` or
+`rust#1.70` gives "no generator". `core`'s old one ignored the version arg
+entirely. Neither is right: that one string is standing in for several
+independent things, and how many differs per language.
+
+| Language | "how new can syntax be" (monotonic) | non-monotonic dialect axis |
+|---|---|---|
+| Rust | release — `1.75` (`async fn` in traits, `let`-else) | **edition** 2015 / 2018 / 2021 / 2024 |
+| Python | interpreter — `3.12` (`type` stmt, `X \| Y`, `match`) | — |
+| TypeScript | lang version — `5.4` (`satisfies`, `const` type params) | **`target`** ES2015…ESNext, **`module`** CJS/ESM/NodeNext |
+| Luau | Roblox release | — |
+| C | — | **`std`** — c89 / c99 / c11 / c23 *is* the whole axis |
+| Go | `go 1.21` line (generics @1.18) — monotonic | — |
+
+So: some languages have zero axes that matter (defaults are fine), most have
+one, Rust and TypeScript have two or more, and for C the "version" *is* a
+dialect. No single fixed schema fits.
+
+**No language actually selects a different *generator* by version.** `rustc` is
+one binary that takes `--edition`; `tsc` takes `--target` / `--module`; `gcc`
+takes `-std=`. Version / edition / target are generator **configuration**, not
+generator **selection**.
+
+**Proposed shape:**
+
+- `find_generator` keys on **language name only** — one generator per language.
+- The language declaration carries an **`options` string-map** — opaque to
+  `core`, the IR, and the CLI; meaningful to that generator, which documents and
+  validates its own keys:
+
+  ```
+  rust    { edition = "2021", min_version = "1.75" }
+  python  { min_version = "3.12" }
+  ts      { target = "ES2022", module = "ESNext" }
+  c       { std = "c11" }
+  (most)  { }
+  ```
+
+- The container is uniform (`Map<String, String>` frozen verbatim into the IR);
+  the contents are the generator's contract. A new TypeScript option later
+  touches only the TypeScript generator — not `core`, the IR, or the CLI.
+- `rust#1.70.0` becomes sugar for / is replaced by `rust = { … }` in
+  `config.idp`.
+- Feeds G2a: the rust generator's `options.edition` is exactly what the
+  generated `Cargo.toml` needs.
+
+A patch/minor bump alone almost never changes output (struct / enum / trait +
+serde are stable across Rust 1.x), so a generator reads these only for the
+specific constructs that need them — none do yet.
+
 ## Open questions
 
 - **Cut releases.** G1b wires everything with **git-rev deps** (`generation` →
   `core`, `cli` → both). Fine as interim, but every `core` IR change now needs a
   rev bump in two repos. First `comline-core` + `comline-codelib-gen` releases
   would let `cli` pin versions like it used to.
-- **The `#<version>` axis is under-modeled.** `generation`'s `find_generator`
-  selects by exact string key (`rust::GENERATORS` has one: `"1.70.0"`), so
-  `rust#1.75.0` or `rust#1.70` gives "no generator". `core`'s old one ignored the
-  arg entirely. Neither is right — one string is carrying two separate meanings:
-  - **min-version** — "emit code valid on ≥ this": a construct stabilised at
-    version X (`async fn` in traits @1.75, `let`-else @1.65; Python `type` @3.12,
-    `X | Y` @3.10; TS `satisfies` @4.9). A blind fallback to "the one generator"
-    is wrong here — it would emit ≥1.75 output for a project pinned to 1.60.
-  - **edition / target** — a distinct dimension `#1.70.0` can't express: Rust
-    edition (2015/2018/2021/2024 — `dyn`, `crate::`), TS `target` (ES2015…ESNext),
-    …. Changes emitted *syntax*, not just capability.
-
-  A patch/minor bump alone almost never changes output (struct / enum / trait +
-  serde are stable across Rust 1.x). Likely shape: `find_generator("rust", _)`
-  returns the single rust generator (version-independent today); the generator
-  consults a *parsed* version + edition/target only for the constructs that need
-  it (none do yet); add an explicit `edition` / `target` field to the language
-  declaration when the first such need appears, rather than overloading the
-  version string.
 - **`GeneratedFile` shape (blocks G2a).** codegen today returns a bare `String`;
   libgen emits many files — `(relative path, contents)`, maybe a kind (source /
   manifest / build script). Pick one return type; `code_gen` can wrap its single
