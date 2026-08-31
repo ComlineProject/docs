@@ -1,22 +1,28 @@
 /* A nav section that also has an index page (e.g. "IDL / Schema") renders a
    dead, non-clickable bold label above a child link with the same text.
    Material only makes that label a link via `navigation.indexes`, which is
-   incompatible with `toc.integrate`.
-
-   Desktop sidebar: hide the label, so the section's index page becomes the
-   entry (at the same indent as any other top-level page), and step its
-   sibling pages in under it. */
+   incompatible with `toc.integrate`. Desktop sidebar fix, in three parts. */
 @media screen and (min-width: 76.25em) {
+  /* 1. hide the dead label */
   .md-sidebar--primary .md-nav__item--section > label.md-nav__link {
     display: none !important;
   }
 
-  /* every page in the section except its index (the first child) */
+  /* 2. the section's nested list sits flush with the outer list, so its index
+     page lines up with plain top-level entries like "Overview" */
+  .md-sidebar--primary .md-nav__item--section > .md-nav > .md-nav__list {
+    margin-left: 0 !important;
+  }
+
+  /* 3. the section's own pages step in under its index page (padding on the
+     link itself — flex, honours it reliably; the index page is the first
+     child and stays put) */
   .md-sidebar--primary
     .md-nav__item--section
     > .md-nav
     > .md-nav__list
-    > .md-nav__item:not(:first-child) {
-    margin-left: 0.7rem !important;
+    > .md-nav__item:not(:first-child)
+    > .md-nav__link {
+    padding-left: 1.4rem !important;
   }
 }
