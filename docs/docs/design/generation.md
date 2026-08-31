@@ -5,6 +5,17 @@ composition root); `mode = "lib"` emits a buildable rust crate; TypeScript has a
 `code` generator. G2c (FFI / `dylib`) not started · Affects
 `ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/cli`
 
+!!! warning "Endpoint superseded"
+    [Runtime & generation repository structure](runtime-repo-structure.md) now
+    decides **one repo per target language** (Option E). Under that decision the
+    per-language `code` and `lib` generators do **not** settle in one
+    `generation` repo — they continue into each `comline-<lang>` repo, and
+    `generation` becomes `comline-codegen`, the shared support crate they all
+    depend on. Everything here about getting the generators *out of `core`* still
+    holds and is the necessary first step; the "Generator crate layout" and
+    "registry in the CLI" sections need reworking against the per-language-repo
+    target.
+
 Companion to [Runtime & generation repository structure](runtime-repo-structure.md),
 which covers how the repos are split; this page fixes what the pieces *are* and
 plans the `generation` cleanup.

@@ -1,9 +1,9 @@
 # Proposal B — split by language
 
-Status: **under discussion** · Alternative to
-[Proposal A — split by concern](split-by-concern.md) (the direction the current
-[design record](../../design/runtime-repo-structure.md) follows) · This is Option
-**E** from that record, written up in full · See the
+Status: **accepted** — adopted directly by the
+[design record](../../design/runtime-repo-structure.md), reversing its earlier
+phased plan · This is Option **E** from that record, written up in full ·
+Supersedes [Proposal A — split by concern](split-by-concern.md) · See the
 [section overview](index.md) for the question both answer.
 
 **The idea:** one repo per target language. `comline-python` holds the Python

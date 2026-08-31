@@ -24,7 +24,8 @@ Each page carries a status and links the issues / PRs that carry it out.
   *Partly built.*
 - [Runtime & generation repository structure](runtime-repo-structure.md) — how to
   keep the runtime and libgen trees from getting heavy as languages are added.
-  *Decided — phased (C-light now, per-language repos as earned).*
+  *Decided — one repo per target language (Option E); reverses the earlier
+  phased plan.*
 - [Playground & tutorial](playground-and-tutorial.md) — an in-browser, real-time
   compile / codegen / runtime demo, and the WASM vs compile-server question
   behind it. *Discussion.*

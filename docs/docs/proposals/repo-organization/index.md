@@ -11,17 +11,21 @@ Today they are all in two mono-repos — `generation` (both generators) and
 drops its native toolchain into that one workspace. That cost is linear in the
 number of languages and is starting to bite.
 
-Two proposals answer it differently:
+Two proposals answered it differently. **Proposal B is now accepted** — the
+design record adopts it directly, reversing an earlier phased plan.
 
 | | Splits by | In one line | Status |
 |---|---|---|---|
-| [Proposal A — split by concern](split-by-concern.md) | **concern** | `generation` stays one repo; `runtime` graduates heavyweight language runtimes to their own repos as each earns it | accepted — current direction |
-| [Proposal B — split by language](split-by-language.md) | **language** | one repo per target (`comline-python`, …) holds that language's codegen, libgen, and runtime together | under discussion |
+| [Proposal A](split-by-concern.md) | **Concern** | `generation` stays one repo; `runtime` graduates heavyweight language runtimes to their own repos as each earns it | rejected — superseded by B |
+| [Proposal B](split-by-language.md) | **Language** | one repo per target (`comline-python`, …) holds that language's codegen, libgen, and runtime together | **accepted** |
 
 It comes down to where you put the seam. **A** cuts between the build-time
 tooling and the shipped runtime — one repo for all the generators, one (then a
 few) for the runtimes. **B** cuts between languages — one repo per language with
-its whole stack inside, and the tooling and the runtime sharing that repo.
+its whole stack inside, and the tooling and the runtime sharing that repo. B won
+on two points: the codegen ↔ runtime agreement becomes a same-repo, same-CI
+invariant, and there is no recurring "is this language heavy enough to graduate"
+call to make.
 
 Both proposals are written to the same shape — **Shape · The case for it · The
 case against · Example projects · When this would be the right call** — so they
@@ -29,12 +33,10 @@ can be read side by side. Each **Example projects** section scores real projects
 (Thrift, Protocol Buffers, gRPC, Cap'n Proto, Smithy) against the same six repo
 traits.
 
-**They can also combine.** gRPC and Protocol Buffers are Proposal A at the top
-level — a core mono-repo plus a graduated repo per heavyweight language — but
-each graduated repo (`grpc-go`, `protobuf-go`) is itself organised like Proposal
-B, with that language's codegen and runtime together. "A now, B inside the repos
-that graduate" is a real option.
+**Proposal A isn't wasted context.** gRPC and Protocol Buffers are A at the top
+level — a core mono-repo plus a repo per heavyweight language — but each of those
+per-language repos (`grpc-go`, `protobuf-go`) is itself organised like B. The
+per-language repo is where the industry converges either way.
 
-The org-wide decision record, with the full options analysis (A–F) and the
-phased rollout, is
+The org-wide decision record, with the full options analysis (A–F), is
 [Design → Runtime & generation repository structure](../../design/runtime-repo-structure.md).

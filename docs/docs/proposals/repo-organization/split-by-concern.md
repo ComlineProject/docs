@@ -1,9 +1,17 @@
 # Proposal A — split by concern
 
-Status: **accepted** — the direction the current
-[design record](../../design/runtime-repo-structure.md) follows · Re-examined
-against [Proposal B — split by language](split-by-language.md) · See the
-[section overview](index.md) for the question both answer.
+Status: **rejected** — superseded by
+[Proposal B — split by language](split-by-language.md), which the
+[design record](../../design/runtime-repo-structure.md) adopted directly. Kept
+for the reasoning. · See the [section overview](index.md) for the question both
+answer.
+
+> **Why it was passed over.** This was the accepted direction for a while — the
+> conservative, low-migration path. Proposal B won on two points: the
+> codegen ↔ runtime agreement becomes a same-repo, same-CI invariant instead of
+> a hand-maintained version table, and "which languages are heavy enough to
+> graduate" stops being a recurring judgement call. The de-rot that got the
+> generators out of `core` already did the expensive part.
 
 **The idea:** the generator and the runtime are different kinds of software, so
 draw the repo lines along *that* boundary rather than along languages. All the
@@ -11,9 +19,9 @@ code and library generators live in one repo (`generation`). The runtime lives
 in another (`runtime`) that starts out holding everything and only spins a
 language's runtime off into its own repo once that language actually needs it.
 
-The full options analysis and the phased rollout are in the
+The full options analysis is in the
 [design record](../../design/runtime-repo-structure.md); this page is the case
-for going this way.
+that was made for going this way.
 
 ## Shape
 

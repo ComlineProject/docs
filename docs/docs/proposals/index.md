@@ -26,12 +26,12 @@ the others become rejected or superseded with a one-line reason.
 How the per-language surface — codegen, libgen, runtime — is split across
 repositories. Two competing proposals, read to the same shape:
 
-- [Proposal A — split by concern](repo-organization/split-by-concern.md) —
-  `generation` stays one repo; `runtime` graduates heavyweight language runtimes
-  to their own repos. *accepted — current direction.*
 - [Proposal B — split by language](repo-organization/split-by-language.md) — one
   repo per target holds that language's codegen, libgen, and runtime together.
-  *under discussion.*
+  ***accepted*** — adopted directly by the design record.
+- [Proposal A — split by concern](repo-organization/split-by-concern.md) —
+  `generation` stays one repo; `runtime` graduates heavyweight language runtimes
+  to their own repos. *rejected — superseded by B; kept for the reasoning.*
 
 Org-wide decision record:
 [Design → Runtime & generation repository structure](../design/runtime-repo-structure.md).
