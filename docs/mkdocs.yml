@@ -53,9 +53,7 @@ theme:
   features:
     - navigation.tabs
     - navigation.sections
-    # A section whose first nav entry is a bare `index.md` becomes a clickable
-    # link itself, instead of a dead header with the same title repeated below.
-    - navigation.indexes
+    - toc.integrate
     - navigation.top
     - search.suggest
     - search.highlight
