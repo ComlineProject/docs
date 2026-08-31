@@ -52,8 +52,10 @@ theme:
   name: material
   features:
     - navigation.tabs
-    - navigation.sections
-    - toc.integrate
+    # Section headers (e.g. "IDL / Schema") are clickable links to their own
+    # index.md, with children nested under them — no dead header repeated as a
+    # child. Incompatible with `toc.integrate`, so the page TOC moves right.
+    - navigation.indexes
     - navigation.top
     - search.suggest
     - search.highlight
