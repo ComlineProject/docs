@@ -35,3 +35,21 @@
     display: flex !important;
   }
 }
+
+/* ── Header: logo + wordmark ─────────────────────────────────────────────
+   The stock header logo renders at 1.2rem — undersized beside the title.
+   Enlarge it and trim the button box so the header keeps its 2.4rem. */
+.md-header__button.md-logo {
+  padding: 0.15rem;
+  margin: 0.2rem 0.15rem 0.2rem 0.35rem;
+}
+.md-header__button.md-logo img {
+  height: 1.7rem;
+}
+
+/* The wordmark: a step up in size, with the cramped -0.025em default
+   tracking eased back. Weight stays bold (set by the theme). */
+.md-header__title {
+  font-size: 1.05rem;
+  letter-spacing: 0.005em;
+}
