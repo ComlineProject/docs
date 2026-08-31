@@ -2,7 +2,7 @@ site_name: Comline
 site_url: https://comlineproject.github.io/docs/
 
 nav:
-  - Home: 'index.md'
+  - Welcome to Comline: 'index.md'
   - Getting started: 'getting-started.md'
   - Guide:
     - Overview: 'guide/overview.md'
