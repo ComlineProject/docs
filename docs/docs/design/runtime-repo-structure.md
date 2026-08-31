@@ -1,6 +1,7 @@
 # Runtime & generation repository structure
 
-Status: **discussion** — no decision, no issues filed · Affects
+Status: **decided — phased** (C-light now · contract + releases next · B
+per-language as earned; D/E rejected, F is the end state) · Affects
 `ComlineProject/runtime` and `ComlineProject/generation`
 
 The `generation` side — what codegen / libgen / runtime each mean, where the
@@ -47,7 +48,11 @@ The cost is linear in the number of languages, and it is starting to bite.
 4. **`runtime-std-extra` coupling** — bundled with the core runtime vs an opt-in
    dependency.
 
-## Options
+## Options considered
+
+The six layouts weighed before landing on the phased path in the Decision
+section below. The chosen route threads **C** (now) → **B** (per language, as
+earned), with **F** as the end state.
 
 | | Isolation | Cross-cutting change | Ecosystem-native dist | Migration cost |
 |---|---|---|---|---|
@@ -136,51 +141,72 @@ or third parties — in whatever repo they like.
   versioning work); fragmentation risk (three half-done Python runtimes);
   official-support story unclear; premature at alpha.
 
-## Cross-cutting — independent of A–F
+## Decision — phased, not big-bang
 
-- **`runtime-std-extra` → its own opt-in crate / package**, whatever the layout.
-  It is optional functionality; it should not be in the core runtime's build.
-- **`core_no-std`** — prefer `std` as a feature flag on one crate over a
-  parallel `core_no-std` crate; features scale, a fork does not.
-- **Path-filtered, per-language CI jobs** in whichever repo — removes most of the
-  "heavy" with no repo move.
-- **A versioned `core` ↔ runtime contract doc** — the frozen-IR format, the
-  core-runtime API, the call-system framing. This is the single thing that
-  decides whether any multi-repo split is tolerable.
-- **A language-agnostic conformance corpus** — schema + expected behaviour that
-  every runtime must pass. Matters more the more the tree is split.
+Adopt the phased path below. **D and E are rejected** — they relocate the
+weight and couple lifecycles that must stay apart (build-time tooling vs a
+shipped runtime). **F is the intended end state**, but only after step 2's
+contract doc exists and has held stable across a release or two.
 
-## Recommendation — phased, not big-bang
+### Step 1 — now, in the existing `runtime` repo (Option C, lightly)
 
-1. **Now.** In the existing `runtime` repo: make every `runtime-langs/*` a
-   non-default workspace member, split CI into path-filtered per-language jobs,
-   extract `runtime-std-extra`. Most of the pain, near-zero migration. This is
-   Option **C** applied lightly.
-2. **Before the 2nd or 3rd language gets real.** Write the core-runtime +
-   call-system + IR-mapping **contract** as a design doc, and start
-   semver-releasing `comline-runtime` to crates.io so bindings depend on a
-   version, not a path.
-3. **When a specific language earns it** — its own maintainer, its own cadence,
-   a heavy native toolchain (Python, Node) — graduate *that one* to its own repo
-   (Option **B**, incrementally). Light bindings stay in the mono-repo. The tree
-   settles into a natural hybrid: `runtime` (core + lightweight bindings) plus
-   `runtime-python`, `runtime-node`, … as each earns it.
+Near-zero migration, takes most of the pain out:
 
-Avoid **D** and **E** — they relocate the weight and couple lifecycles that
-should stay apart (build-time tooling vs shipped runtime). **F** is the right
-long-term end state, but only once the contract doc from step 2 exists.
+- every `runtime-langs/*` becomes a **non-default workspace member** — a root
+  `cargo build` / `cargo test` builds the core runtime only;
+- **CI splits into path-filtered per-language jobs** — a Python PR never
+  installs the Lua toolchain, and vice versa;
+- **`runtime-std-extra` moves to its own opt-in crate**, out of the core
+  runtime's build graph;
+- **`core_no-std` collapses into a `std` feature** on `comline-runtime` — one
+  crate with a feature flag, not a parallel fork.
+
+### Step 2 — before the 2nd or 3rd language gets real
+
+- Write the **`core` ↔ runtime contract** as a design doc: the frozen-IR
+  format, the frozen-IR-to-types mapping, the core-runtime API surface, the
+  call-system framing, the FFI/ABI. This doc is the single thing that decides
+  whether any multi-repo split is tolerable.
+- Start **semver-releasing `comline-runtime`** to crates.io so bindings depend
+  on a version, not a path. Do the same for `comline-core` /
+  `comline-codelib-gen` on the generation side — it ends the git-rev pinning
+  that currently couples `generation` and `cli` to `core` commit hashes.
+- Stand up a **language-agnostic conformance corpus** — schema + expected
+  behaviour every runtime must pass. It matters more the more the tree splits.
+
+### Step 3 — graduate one language at a time (Option B, incrementally)
+
+When a binding meets the criteria below, move *that one* to its own repo
+(`runtime-python`, `runtime-node`, …) depending on a released `comline-runtime`
+and owning its ecosystem packaging. Light bindings stay in the mono-repo. The
+tree settles into a hybrid: `runtime` (core + lightweight bindings) plus a
+handful of graduated per-language repos.
 
 For `generation`'s side, [Generator crate layout](generation.md#generator-crate-layout)
-takes the same "split at the concept boundary, centralise the light part" line:
-`code` generators stay together, `lib` / `dylib` go per-language.
+takes the same line: `code` generators stay together, `lib` / `dylib` go
+per-language.
 
-## Open questions
+## Graduation criteria & ownership
 
-- **Trigger for step 3.** What concretely promotes a binding to its own repo — a
-  named maintainer, a release-cadence divergence, CI minutes, toolchain weight?
-- **Org vs ecosystem ownership.** For a language whose runtime graduates, does
-  the packaging (PyPI/npm/LuaRocks account) sit with the org or with a
-  maintainer?
+**What triggers step 3 for a binding.** It stays in the mono-repo as long as
+non-default members + path-filtered CI keep it cheap for everyone else.
+Toolchain weight or CI minutes **alone are not a trigger** — that is exactly
+what step 1 handles. A binding graduates to its own repo when **either**:
+
+- it must **publish to an ecosystem registry** (PyPI / npm / LuaRocks) on a
+  cadence independent of `core` releases — the point where "one tag ships
+  everything" actually breaks; **or**
+- a **maintainer outside the core team owns it** end to end.
+
+On current shape, expect **Python** and **Node** to clear the bar; `mlua` /
+`luau` bindings likely will not.
+
+**Who owns the packaging.** For any graduated language the registry namespace
+is **org-owned** — the `ComlineProject` account holds the PyPI project / npm
+scope / LuaRocks module; maintainers are granted publish rights, not sole
+ownership. Publishing runs through CI **trusted publishing (OIDC)**, no
+long-lived tokens. A maintainer stepping away never orphans a published
+package, and the name stays protected.
 
 `generation` vs `core` for codegen is **resolved** in [Generation](generation.md):
 the generators move to `generation`, `core` ships none, and there is no
