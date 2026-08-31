@@ -234,15 +234,74 @@ A patch/minor bump alone almost never changes output (struct / enum / trait +
 serde are stable across Rust 1.x), so a generator reads these only for the
 specific constructs that need them — none do yet.
 
+## Generator output contract (blocks G2a)
+
+**Today.** A generator is `fn(&Vec<FrozenUnit>) -> String` (+ a file extension
+from the registry). It takes the frozen IR for **one namespace** and returns
+**one blob of source**. The CLI does the rest: for each namespace, call the
+generator, compute the path from `comline.toml` `layout`
+(`{{language}}/{{namespace}}.{{ext}}`), write one file.
+
+**Why `mode = "lib"` (G2a) breaks it.** A `lib` build is not one-file-per-
+namespace, it is a *crate*:
+
+- `Cargo.toml` — a **manifest**, not source; fixed path at the crate root;
+  derived from the package config, not from any namespace.
+- `src/lib.rs` — an **aggregator**: `pub mod foo; pub mod bar;` synthesised
+  from *all* namespaces at once.
+- `src/foo.rs`, `src/bar.rs` — the per-namespace source.
+- later, maybe `build.rs`, `rust-toolchain.toml`, `.gitignore`.
+
+So libgen's output is **N files of different kinds, at a structure the generator
+owns**, needing **all** namespaces in scope. `fn(&[FrozenUnit]) -> String` can
+express none of that.
+
+**Proposed.** One return type both modes share, so the registry has one
+signature and the CLI one write-loop:
+
+```rust
+struct GeneratedFile {
+    path: PathBuf,      // relative to the target's output root
+    contents: String,
+}
+
+// generator: all the package's schemas + metadata + the mode -> the files
+fn(&GenInput) -> Vec<GeneratedFile>
+```
+
+- `code` mode, rust → `vec![GeneratedFile { path: "message.rs", contents }]` —
+  one entry, wrapping today's `String`.
+- `lib` mode, rust → `Cargo.toml`, `src/lib.rs`, `src/message.rs`, … — many.
+- CLI: `for f in files { write(out_root.join(&f.path), &f.contents) }` — same
+  code both modes.
+
+**Sub-decisions:**
+
+- **Path ownership vs. `layout`.** Today the CLI owns paths via the `layout`
+  template. If `GeneratedFile.path` is generator-decided, `layout` still makes
+  sense for `code` mode (generator emits a bare name, CLI applies `layout`) but
+  not inside a `lib` crate (`Cargo.toml` / `src/…` is fixed structure). Likely:
+  `layout` places the `code`-mode file or the `lib`-mode crate *root*; the
+  crate's internals are the generator's.
+- **All namespaces at once.** `GenInput` carries `&[(Namespace, Vec<FrozenUnit>)]`
+  so a generator can build `src/lib.rs`; `code` mode just returns one file per
+  namespace and no aggregator.
+- **A `kind` tag?** Skip it for now. Its only consumer would be `comline clean`
+  (which recomputes paths today) or a future "don't clobber an edited manifest"
+  policy — and `clean` can instead ask the generator "what paths would you
+  emit?" and delete exactly those.
+- **Text only.** `contents: String`; no generator needs to emit a binary asset
+  yet.
+
+Settle this before writing `lib_gen::rust` — the type is the CLI ↔ generator
+contract, and changing it later touches `find_generator`, the registry types,
+every generator, and the CLI's `generate` / `clean` paths.
+
 ## Open questions
 
 - **Cut releases.** G1b wires everything with **git-rev deps** (`generation` →
   `core`, `cli` → both). Fine as interim, but every `core` IR change now needs a
   rev bump in two repos. First `comline-core` + `comline-codelib-gen` releases
   would let `cli` pin versions like it used to.
-- **`GeneratedFile` shape (blocks G2a).** codegen today returns a bare `String`;
-  libgen emits many files — `(relative path, contents)`, maybe a kind (source /
-  manifest / build script). Pick one return type; `code_gen` can wrap its single
-  string in it.
 - **Second language: TypeScript** (decided) — `code` mode, no runtime needed,
   most greenfield. `luau` / `python` / `lua` after.
