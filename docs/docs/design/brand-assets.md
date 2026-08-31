@@ -89,6 +89,6 @@ instead.
 - **`tokens.json` → build input.** Nothing consumes `tokens.json` yet. A web
   build could generate a CSS custom-property file from it so the colours are
   never retyped.
-- **Publishing `brand`.** The repo exists locally; it needs to be created under
-  the `ComlineProject` org and pushed (`git push -u origin main` — the remote is
-  already set).
+- **Other consumers.** `package-registry-frontend`, `shared-web`, and the
+  landing site still carry their originals; each should re-copy from `brand` and
+  add a provenance note the way the docs site now does.
