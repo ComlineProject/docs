@@ -1,9 +1,10 @@
 # Generation — codegen, libgen, and the `generation` repo
 
 Status: **G1 done** — codegen moved out of `core` (G0 + G1a + G1b landed);
-`generation` owns it, the CLI is the composition root. G2 (libgen `mode = "lib"`,
-TypeScript, then FFI/`dylib`) not started · Affects `ComlineProject/core`,
-`ComlineProject/generation`, `ComlineProject/cli`
+`generation` owns it, the CLI is the composition root. **G2b** (TypeScript
+`code` generator) up as generation#4. G2a (`mode = "lib"`) and G2c (FFI /
+`dylib`) not started · Affects `ComlineProject/core`, `ComlineProject/generation`,
+`ComlineProject/cli`
 
 Companion to [Runtime & generation repository structure](runtime-repo-structure.md),
 which covers how the repos are split; this page fixes what the pieces *are* and
@@ -162,17 +163,24 @@ CLI `mode = "lib"` calls it instead of writing bare source. No FFI, no compile
 step. Re-adds `toml_edit` (+ maybe `heck`) to `_core`. Depends on the
 `GeneratedFile` shape below being settled (libgen is multi-file).
 
-#### G2b — TypeScript in `code` mode
+#### G2b — TypeScript in `code` mode (generation#4)
 
-A new `comline-codelib-gen-typescript` crate — `code_gen` only, no runtime
-needed. IR → `.ts` source: `interface` per struct, `enum` / union per enum, a
-`type` per protocol. Only `lib-gen/typescript/docs/implementation plan.md`
-exists today, so it is greenfield against the current IR; target shape in
-[Codegen by language](codegen-by-language.md). Its own workspace member with a
-path-filtered CI job, per the
-[repo-structure playbook](runtime-repo-structure.md#recommendation-phased-not-big-bang).
-`luau` / `python` / `lua` follow the same pattern later (their skeletons are on
-the old `comline::` crate path and pre-audit IR).
+IR → `.ts` source: `export interface` per struct, `export enum` with string
+values per enum, `export interface` (one method per function) per protocol.
+Type map: `string`/`str` → `string`, `bool` → `boolean`, every int/float width
+→ `number`, `T[]` → `T[]`, `optional` → `name?: type`.
+
+Lives as a **module in `_core`** (`code_gen/typescript/`) alongside `rust`, not
+a separate crate — it is pure string generation with no native deps, and `_core`
+is the single dispatch point `find_generator` serves. Separate per-language
+crates, with the registry assembled at the CLI, are the shape for generators
+that pull **heavy native deps** — the `lua` / `luau` / `python` runtime-binding
+work — and that refactor can land with the first of those. `lib-gen/typescript/`
+keeps its `implementation plan.md` for the eventual TS `lib` / `dylib` side.
+
+Registered under `typescript` and `ts`, version key `"5.0"`. No CLI change —
+`find_generator` dispatch is generic; a target picks it up once `cli` bumps its
+`comline-codelib-gen` rev.
 
 #### G2c — FFI / abi_stable / `mode = "dylib"` — deferred
 
@@ -255,7 +263,7 @@ files. Some of those files (`Cargo.toml`, `src/lib.rs`) also aren't "one
 schema's code" at all — `lib.rs` lists *every* schema, so the generator needs
 them all in view, not one at a time.
 
-**Fix: a generator returns a list of files**, each just *"here's the path,
+**Decided: a generator returns a list of files**, each just *"here's the path,
 here's the text"*:
 
 ```rust
@@ -267,7 +275,7 @@ struct GeneratedFile { path: PathBuf, contents: String }
   per-schema files).
 - The CLI writes whatever is in the list — one loop, same for both modes.
 
-**Sub-decisions once the list shape is agreed:**
+**Sub-decisions to confirm when G2a starts:**
 
 - **Who names the paths.** Today the CLI does, via `layout`. With a file list,
   `layout` still places the single `code`-mode file (or the `lib`-mode folder's
@@ -279,10 +287,9 @@ struct GeneratedFile { path: PathBuf, contents: String }
   can instead ask the generator "what paths would you write?" and delete those.
 - **Text only** — no generator needs to emit a binary yet.
 
-**Settle this before writing `lib_gen::rust`.** "What a generator returns" is the
-contract between the CLI and *every* generator (rust now, typescript / python
-later). Getting it wrong after the fact means changing it in all of them plus the
-CLI's `generate` / `clean` paths.
+The migration touches every generator (rust + typescript today) and the CLI's
+`generate` / `clean` paths, so it lands as one change when G2a starts — the
+`code`-mode generators just wrap their string in a one-element list.
 
 ## Open questions
 

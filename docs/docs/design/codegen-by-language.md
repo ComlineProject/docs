@@ -43,12 +43,16 @@ From this schema:
 === "TypeScript"
 
     ```ts
-    interface Message {
-        receiver: string
-        subject: string
-        message: string
+    export interface Message {
+        receiver: string;
+        subject: string;
+        message: string;
     }
     ```
+
+    Implemented ([generation#4](https://github.com/ComlineProject/generation/pull/4)) —
+    enums become `export enum` with string values, protocols an `export
+    interface` of methods.
 
 === "Luau"
 
