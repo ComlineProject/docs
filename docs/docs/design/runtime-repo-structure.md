@@ -26,11 +26,13 @@ wants Lua headers, pyo3 wants a CPython, a Node binding would want napi. Every
 contributor builds all of it, CI builds all of it on every push, one lockfile
 couples the versions, one tag releases everything at once.
 
-`ComlineProject/generation` has the same shape for `lib-gen/*`
-(`c, lua, luau, python, typescript`), and codegen is split between
-`core/core/src/codelib_gen/` (the live `rust` generator) and `generation`'s
-`code-gen/*` (commented out) — so *where target code for language X lives* is
-already unsettled.
+`ComlineProject/generation` faces the mirror of this on the codegen side. The
+de-rot settled it at the `code` / `lib` boundary — every language's `code`
+generator in one crate (`comline-codelib-gen`), one crate per language for
+`lib` / `dylib` where the heavy deps (`pyo3`, `mlua`, `cbindgen`, `abi_stable`)
+live, and the registry moving to the CLI behind cargo features when the first
+per-language `lib` crate lands. See
+[Generation → Generator crate layout](generation.md#generator-crate-layout).
 
 The cost is linear in the number of languages, and it is starting to bite.
 
@@ -166,8 +168,11 @@ or third parties — in whatever repo they like.
 
 Avoid **D** and **E** — they relocate the weight and couple lifecycles that
 should stay apart (build-time tooling vs shipped runtime). **F** is the right
-long-term end state, but only once the contract doc from step 2 exists. The same
-playbook applies to `generation/lib-gen/*`.
+long-term end state, but only once the contract doc from step 2 exists.
+
+For `generation`'s side, [Generator crate layout](generation.md#generator-crate-layout)
+takes the same "split at the concept boundary, centralise the light part" line:
+`code` generators stay together, `lib` / `dylib` go per-language.
 
 ## Open questions
 

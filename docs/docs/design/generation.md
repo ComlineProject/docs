@@ -175,13 +175,10 @@ values per enum, `export interface` (one method per function) per protocol.
 Type map: `string`/`str` → `string`, `bool` → `boolean`, every int/float width
 → `number`, `T[]` → `T[]`, `optional` → `name?: type`.
 
-Lives as a **module in `_core`** (`code_gen/typescript/`) alongside `rust`, not
-a separate crate — it is pure string generation with no native deps, and `_core`
-is the single dispatch point `find_generator` serves. Separate per-language
-crates, with the registry assembled at the CLI, are the shape for generators
-that pull **heavy native deps** — the `lua` / `luau` / `python` runtime-binding
-work — and that refactor can land with the first of those. `lib-gen/typescript/`
-keeps its `implementation plan.md` for the eventual TS `lib` / `dylib` side.
+Lives as a module in `comline-codelib-gen` (`code_gen/typescript/`) alongside
+`rust` — see [Generator crate layout](#generator-crate-layout) for why every
+`code` generator stays in one crate. `lib-gen/typescript/` keeps its
+`implementation plan.md` for the eventual TS `lib` / `dylib` side.
 
 Registered under `typescript` and `ts`, version key `"5.0"`. No CLI change —
 `find_generator` dispatch is generic; a target picks it up once `cli` bumps its
@@ -193,6 +190,40 @@ Registered under `typescript` and `ts`, version key `"5.0"`. No CLI change —
 `builder.rs` (which shells `cargo build --release`). Tied to the dormant runtime
 dylib-loading story ([runtime structure](runtime-repo-structure.md)) and needs
 core#8. Not scoped until that is.
+
+## Generator crate layout
+
+Whether each language's generator is its own crate comes down to the `code` /
+`lib` split, not "which language":
+
+- **`code` mode is pure string work over `FrozenUnit`** for *every* language,
+  Python and Lua included — a Python `code` generator emits `.py` text and never
+  touches `pyo3`. No dependency pressure. → **every `code` generator stays in
+  one crate** (`comline-codelib-gen` today). A crate per 20-line module is
+  ceremony.
+- **`lib` / `dylib` mode carries the heavy deps** — `toml_edit`, `pyproject`
+  writers, `cbindgen`, `pyo3`, `mlua`, `abi_stable`. One crate holding all of
+  those bloats every build, including a consumer who only wants rust. → **one
+  crate per language for `lib` / `dylib`** (`comline-codelib-gen-lib-rust`,
+  `-lib-python`, …), each carrying its own.
+
+### The registry
+
+`find_generator` is a hardcoded `HashMap` in `comline-codelib-gen`. That works
+while every generator is a module there. When the first per-language `lib` crate
+lands (G2c, or a `lib_gen::python` push), `comline-codelib-gen` can no longer
+depend on all of them without pulling their deps back in. At that point:
+
+- `comline-codelib-gen` becomes the **contract** — `GeneratedFile` /
+  `GenRequest` / `Mode` / a `Registry` type + shared `FrozenUnit` helpers.
+- the **CLI is the composition root**: it depends on the generator crates it
+  enables, behind **cargo features**, and builds the `Registry` at startup — a
+  build with only `--features rust` never compiles the TypeScript or Python
+  crates. This also lets a third party ship `comline-codelib-gen-elixir` from
+  their own repo.
+
+Not before then: the dynamic registry + per-feature CLI wiring is real work with
+no payoff while there is one `code` crate.
 
 ## Language version & dialect
 
