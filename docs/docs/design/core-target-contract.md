@@ -5,8 +5,8 @@ solid and ready to build a `code` generator on; surface 4 (runtime API +
 generated protocol) has a worked design in §4 — `no_std`-first, borrowed
 generated types, memory configured once at setup, a zero-alloc call budget and a
 hardening baseline (§4.6), call addressing, error grouping and `synchronous` /
-one-way (§4.4) decided; the `WireFormat` axis, runtime behavior contracts and
-per-call settings (§4.4) still open · Affects
+one-way (§4.4) decided; transport / framing / format and per-call settings
+(§4.4) still open · Affects
 `ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/runtime`,
 `ComlineProject/comline-<lang>`, `ComlineProject/cli`
 
@@ -108,6 +108,10 @@ emits (`Cargo.toml`, `pyproject.toml`, …). `CodeGeneration` is a *capability
 declaration* — "this package supports being generated as `rust`" — not consumer
 config; where the code lands is the consumer's `comline.toml`.
 `SpecificationVersion` is the manifest format version (`u8`, currently `1`).
+
+Slated: a **transport-requirements** unit (`reliable` / `ordered` / `duplex` /
+`max_message_bytes` / one-way delivery-ack), the same capability-declaration
+kind as `CodeGeneration`, read by the runtime at connect time (§4.4).
 
 ## 3 — Codegen contract
 
@@ -363,37 +367,64 @@ belongs in the schema, and it is already carried by `_return`.
 **One-way means no *application* response.** TCP still gives byte-delivery;
 UDP / lossy transports are best-effort.
 
-#### Runtime behavior contracts — needs design
+#### Transport, framing & format — needs design
 
-Two guarantees a project may need to rely on or tune, neither of which is a
-per-function schema property:
+Three layers, mostly orthogonal, **none named in the schema**:
 
-- **Delivery ack for one-way calls.** Default: fire-and-forget. A deployment can
-  turn on a minimal ack frame for one-way calls (setup knob, like §4.6's memory
-  config) so `notify(...) -> Result<(), TransportError>` also fails on no ack in
-  a window — still no *value*, just confirmed receipt. An API where a lost
-  notification is unacceptable can **declare this as a requirement** so the
-  generated client / setup enforces it.
-- **In-order processing.** Default: in-order on one connection with the §4.6 sync
-  dispatcher. The `std` `AsyncDispatch` layer may start / complete handlers out
-  of order. A stateful protocol (`open()` before `write()`) can **declare it
-  needs in-order handling**; a throughput-oriented one can opt into concurrent.
+| Layer | Examples |
+|---|---|
+| transport | TCP, UDP, QUIC, Unix socket, WebSocket, in-process |
+| framing / call system | JSON-RPC, a compact length-prefixed binary framing, gRPC-style |
+| serialization (`WireFormat`, §4.3) | JSON, MessagePack, bincode, CBOR |
 
-Both fit the same shape: a **default**, a **runtime-setup knob**, and a
-**project-declared requirement** (in the congregation, or a schema `settings`
-block — [guide](../guide/idl/settings.md)) that makes the generated code assert
-the chosen runtime can provide it. This overlaps **per-call settings** (below)
-and the config IR (§2); it wants its own design pass before `comline-rust`.
+Per §4.6 the generated code is `serde`-only and codec-agnostic, so there is
+nothing format-specific to generate — nothing to forward-declare.
 
-#### Serialization — a `WireFormat` trait, needs design
+**The schema declares *requirements*, not mechanisms.** In the congregation (a
+config `FrozenUnit`, like `CodeGeneration`), or a schema `settings` block
+([guide](../guide/idl/settings.md)):
 
-`JsonRPCv2` hard-codes `serde_json`; the [call-system guide](../guide/runtime/call-system.md)
-frames framing and message serialization as *two* pluggable axes. A `WireFormat`
-trait (§4.3) keeps the generated code `serde`-only and picks the encoder at
-setup. The tension to design through: a framing like JSON-RPC assumes a JSON
-payload, so "MessagePack inside JSON-RPC" isn't free — either the framing is
-also generic over `WireFormat` (JSON-RPC-with-msgpack-params via base64/bytes),
-or framings declare which formats they accept and the setup is checked.
+- **`reliable`** — no silent message loss
+- **`ordered`** — per-connection ordering (a stateful protocol, `open()` before
+  `write()`, needs this)
+- **`duplex`** — the peer can push (needed once streaming exists)
+- **`max_message_bytes`**
+- **delivery ack for one-way calls** — default fire-and-forget; an API where a
+  lost notification is unacceptable declares it required, and the generated
+  `notify(...) -> Result<(), TransportError>` then also fails on no ack in a
+  window (still no *value*, just confirmed receipt)
+
+A one-way-only API can **waive** `reliable` / `ordered` — that is what makes it
+legal over UDP.
+
+**The runtime picks the concrete stack and checks it.** Transport + framing +
+`WireFormat` are chosen at `.serving()` / `.connect()` (like §4.6's memory
+config). Setup **verifies the composed stack meets the declared requirements** —
+compile-time via generator options where it can, runtime assert otherwise
+(`reliable + ordered` → TCP / QUIC-stream / Unix / in-process qualify; raw UDP
+does not). **A connection handshake** exchanges IR hash + wire-format id +
+framing id + capabilities in the first frame; a mismatch refuses the connection
+— this is what catches "one end msgpack, the other JSON", which no-declaration
+otherwise leaves as garbage at runtime.
+
+**Datagram vs stream is the one real structural fork.** Stream (TCP,
+QUIC-stream, Unix) → framing length-prefixes for message boundaries. Datagram
+(UDP, QUIC-datagram) → one message per datagram, size-bounded; request/response
+then needs the framing to own correlation + retransmit + dedup, or to restrict
+to one-way. A framing declares stream-vs-datagram, a transport declares what it
+provides, setup checks compat. QUIC's stream *and* datagram multiplexing is a
+later opportunity, not now.
+
+**In-order processing.** Default: in-order on one connection with the §4.6 sync
+dispatcher. The `std` `AsyncDispatch` layer may start / complete handlers out of
+order; a stateful protocol declares `ordered`, a throughput-oriented one opts
+into concurrent.
+
+Optionally, a `default_wire = "msgpack"` hint in the package — advisory, for
+tooling and `comline new`, not a constraint.
+
+This wants its own design pass before `comline-rust`, and it adds a config
+`FrozenUnit` on the §2 side.
 
 #### Per-call settings — needs architecture
 
@@ -570,10 +601,10 @@ Git revs, so there is no semver gate — the discipline is:
 Surfaces 1–3 are ready to build a `code` generator on now (`comline-typescript`,
 rollout step 4). The live design work is all in **surface 4**:
 
-- §4.4 — the `WireFormat` axis, runtime behavior contracts (delivery ack,
-  in-order processing), per-call settings — each needs a decision before
-  `comline-rust`, step 5. Call addressing, error grouping and `synchronous` /
-  one-way are decided.
+- §4.4 — transport / framing / format (the `WireFormat` axis + schema-declared
+  requirements + the connection handshake) and per-call settings — each needs a
+  decision before `comline-rust`, step 5. Call addressing, error grouping and
+  `synchronous` / one-way are decided.
 - §4.6 — decided (`no_std`-first, borrowed-default, memory-set-up-once, the
   hardening trio); the runtime doesn't implement it yet, and the arena `Alloc`
   mode is a follow-on after the global default.
