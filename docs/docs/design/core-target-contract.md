@@ -190,11 +190,13 @@ built and tested (no more `todo!()` on this path):
 - **`Kind`** carries either an `Id(u16)` (index into the protocol's call list) or
   a `Named(&'static str)`; `Kind::resolve(&[&str])` maps either to an ordinal.
 
-Still open, to fix as part of this design (7f+):
+**Framing is a pluggable axis** (built — [runtime#10](https://github.com/ComlineProject/runtime/pull/10) + [comline-rust#8](https://github.com/ComlineProject/comline-rust/pull/8)). `contract::Framing` is orthogonal to `WireFormat` — `Client<T, W, F>` / `Server<D, W, F>` are generic over one, default `DatagramFraming`. `framing::JsonRpcFraming` (std) is the name-oriented alternative: `{"jsonrpc":"2.0","method":…,"params":…,"id":N}`, a raised schema error → a JSON-RPC `error` object keyed by ordinal, pairs with `format::Json`. `Dispatch` writes into a `Reply` (framing-agnostic ok/err/none) instead of an `Envelope` buffer, and exposes `calls()` so a method name resolves to an ordinal; the generated stub passes `Call::new(id, name)` (both addresses, the framing picks).
+
+Still open, to fix as part of this design:
 
 - The `Alloc` seam for owned bits (`.to_owned()`, decoded collection spines).
-- JSON-RPC as a *framing* option under the same `Client` / `Server` (name-
-  oriented `Kind`, `{jsonrpc, method, params, id}` envelope).
+- A framing *selector* on the generated `connect` / `serve` helpers (they're
+  datagram-only today) + how a schema/config declares its framing.
 - The async (`std`) layer — `AsyncDispatch` + an executor, emitted additively.
 
 ### 4.2 — The generated protocol
@@ -682,11 +684,12 @@ what remains is below the decision line:
 - **§4.4** — the design is settled, the `WireFormat` / `Transport` / framing
   trait signatures are built (7b–7e), and the IR changes the decisions imply are
   landed (`Function.parameters`, `KindValue::Unit`, drop `synchronous` — core#46;
-  `throws: Vec<u16>` + error ordinals — core#47). The connection handshake is
-  built (runtime#8 + comline-rust#6). Still open at the wire level: JSON-RPC as a
-  name-oriented framing, a `WarnOnly` handshake mode, multi-`throws` (`! A, B`)
-  grammar, version-diff enforcement of the ordinal append-only rule, and the
-  transport-requirements config unit.
+  `throws: Vec<u16>` + error ordinals — core#47). The connection handshake
+  (runtime#8 + comline-rust#6) and pluggable framing incl. JSON-RPC (runtime#10 +
+  comline-rust#8) are built. Still open at the wire level: a framing selector on
+  the generated helpers + how a schema declares its framing, a `WarnOnly`
+  handshake mode, multi-`throws` (`! A, B`) grammar, version-diff enforcement of
+  the ordinal append-only rule, and the transport-requirements config unit.
 - **§4.6** — decided; the buffer-reuse budget is met by 7d–7e (`Client` /
   `Server`), the dispatcher's reply-body scratch and the arena `Alloc` mode are
   the follow-ons.
