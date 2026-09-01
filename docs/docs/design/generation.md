@@ -205,16 +205,18 @@ G0–G2 got the generators out of `core` and into `generation` as pure,
 CLI-driven functions. G3 takes them the rest of the way, per the
 [repo decision](runtime-repo-structure.md):
 
-1. **`generation` → `comline-codegen`.** Strip it to the contract
-   (`GenRequest` / `GeneratedFile` / `Mode`), the `FrozenUnit` walk helpers, and
-   the `Registry` type. No language code.
-2. **`comline-rust`, `comline-typescript`.** The two generators that exist move
-   into their target repos, each joining that language's runtime (lifted from
-   `runtime-langs/*`). They depend on `comline-codegen` + `comline-core` by git
-   rev.
+1. **`generation` → `comline-codegen`.** ✅ Split into `comline-codegen` (the
+   contract + a `Registry` type replacing the hardcoded static + `FrozenUnit`
+   helpers) plus `comline-codegen-rust` / `comline-codegen-typescript` crates.
+   The CLI composes a `Registry` at startup via each crate's `register()`.
+2. **`comline-typescript`.** ✅ `codegen-typescript` extracted to
+   `ComlineProject/comline-typescript`, the first per-language target repo;
+   `cli` and `generation`'s conformance corpus depend on it by git rev.
+   `comline-rust` follows (its FFI/dylib work is G2c).
 3. **CLI features.** `find_generator` becomes a feature-gated `Registry` the CLI
    builds from the enabled `comline-<lang>` crates (see
-   [The registry](#the-registry)).
+   [The registry](#the-registry)). *Not yet — both generators are always
+   registered.*
 4. Each further language is a new `comline-<lang>` repo from the template — zero
    change to the others.
 
