@@ -219,6 +219,38 @@ runtime trait names (`CallSystemConsumer`, `Dispatch`, `WireFormat`,
 on `Msg` and `*Params`: generated types borrow from the receive buffer rather
 than owning copies (§4.6).
 
+#### How params, results and errors are carried
+
+There is **no runtime message object** — no `Message`, no `Parameter`, no
+`Vec<arg>`. The schema is fully known at codegen time, so every call site is
+statically typed and the generator emits a named struct per function instead:
+
+| Piece | Emitted as |
+|---|---|
+| params | `struct <Proto><Fn>Params<'de> { … }` — one field per argument, in declaration order |
+| result | the return type directly (`Ack`, a primitive, …) |
+| error | `enum <Proto><Fn>Error { <Named>(<Named>), …, Runtime(RuntimeError) }` |
+| envelope | a small runtime type: `{ ok: R }` \| `{ err: { name, body } }` |
+
+The params struct **is** the message. It is a stack struct literal at the call
+site (zero cost), serialized in one pass straight into the call system's reused
+buffer, and on the receiving side decoded as a borrow into the receive buffer.
+
+`Message` / `Parameter` (`setup/abstract_call.rs`) were built for a *dynamic,
+runtime-assembled* argument list (`&dyn Any`) — a model Comline doesn't need, and
+one that can't serialize anyway (`dyn Any` has no `Serialize`). They are deleted.
+
+Cases:
+
+- **Zero args** (`function poke();`) — no params struct; empty payload;
+  `call(Kind::Id(n), &())`.
+- **Many args** — one struct, or a tuple where the framing wants positional
+  params (JSON-RPC arrays); field / element order is declaration order.
+- **`AbstractCall<M>`** — its only content was `{ settings, parameters }`. Per-call
+  settings are deferred (§4.4), so `call` takes `&P` directly and `AbstractCall`
+  + `CallProtocolMeta::make_call` are dropped; a thin wrapper returns only if
+  settings land. `CallProtocolMeta` keeps `calls_names()` / `call_name_from_id()`.
+
 ### 4.3 — Runtime additions this needs
 
 Shapes chosen for the §4.6 budget — sync core, write-into-buffer, borrowed decode:
@@ -344,9 +376,9 @@ The error path may allocate.
 - **`Kind::Id(u16)` is the hot path** — a `u16`, no alloc. `Kind::Named` is
   `&'static str` (the `calls_names()` entries already are), never an owned
   `String`. The current `json_rpc` code building `Kind::Named(String)` is a bug.
-- **Delete `Message` / `Parameter`.** A `Vec<Parameter>` of `&dyn Any` is a
-  per-call allocation *and* defeats monomorphisation. The params struct is the
-  message.
+- **No runtime message object** — a `Vec<Parameter>` of `&dyn Any` is a per-call
+  allocation *and* defeats monomorphisation. The generated params struct is the
+  message (§4.2).
 - **Sync core `Dispatch`.** `async fn` in a `dyn` trait forces a boxed future
   per call. So the core `Dispatch` is **sync** and the generated provider trait
   is **sync by default**; the provider is generic over `D: Dispatch` (static
