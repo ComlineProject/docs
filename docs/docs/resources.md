@@ -17,7 +17,9 @@ Publishing tooling (`comlinepm`) lives in the package-management sources; see
 
 ## Prior art
 
-Schema / IDL / RPC systems Comline compares against or borrows from:
+### Schema / IDL / RPC
+
+Systems that Comline is inspired, compares against or borrows from:
 
 - [Protocol Buffers](https://protobuf.dev/) — schema + gRPC
 - [Cap'n Proto](https://capnproto.org/) — zero-copy successor to Protobuf
@@ -26,7 +28,10 @@ Schema / IDL / RPC systems Comline compares against or borrows from:
 - [Apache Thrift](https://thrift.apache.org/docs/idl) — cross-language services
 - [MIDL](https://learn.microsoft.com/en-us/windows/win32/midl/midl-start-page) — Microsoft's IDL for COM / RPC
 - [OpenRPC](https://open-rpc.org/) · [JSON-RPC](https://www.jsonrpc.org/) — call formats a Comline [runtime](guide/runtime/call-system.md) can speak
+
+### Data Formats / Carriers
 - [MessagePack](https://msgpack.org/) — a compact binary serialization Comline can target
+
 
 ## Background
 

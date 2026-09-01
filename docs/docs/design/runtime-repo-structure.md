@@ -204,7 +204,7 @@ big-bang; each step leaves the tree working.
 |---|---|---|---|
 | 1 | **`generation` → `comline-codegen`**: strip to contract + helpers + `Registry` | code | The `rust` / `typescript` generator bodies come *out* in step 4; what's left is language-neutral. Consumed by git rev. |
 | 2 | **[`core ↔ target` contract doc](core-target-contract.md)** ✅ drafted | design doc | Frozen-IR format, IR→types mapping, core-runtime API surface, call-system framing, FFI/ABI. It is a public API across many repos now. |
-| 3 | **Conformance corpus** — schema + expected behaviour, standing before the *second* target repo | code | The only thing keeping generators consistent once they don't share a repo. Own repo, or a `core` dir. |
+| 3 | **Conformance corpus** — schema + expected output, standing before the *second* target repo | code | The only thing keeping generators consistent once they don't share a repo. *Codegen half started* — `generation`'s `comline-conformance` crate (hand-built `FrozenUnit` fixtures × every generator, golden-diffed). The runtime half follows once a runtime exists. |
 | 4 | **`comline-typescript`** — the pilot target repo | code / infra | `code` mode only, no runtime, no FFI — cleanest first cut. Establishes the repo template. |
 | 5 | **`comline-rust`** — generator + the rust runtime from `runtime-langs/` | code / infra | First repo that also carries a runtime; shakes out the `comline-runtime` dependency edge. |
 | 6 | **CLI feature-gated `Registry`** — compose steps 4–5 behind `--features` | code | `find_generator` → a registry built from the enabled `comline-<lang>` crates. |
