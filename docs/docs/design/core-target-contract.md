@@ -4,9 +4,10 @@ Status: **draft** — surfaces 1–3 (schema IR, config IR, codegen contract) ar
 solid and ready to build a `code` generator on; surface 4 (runtime API +
 generated protocol) has a worked design in §4 — `no_std`-first, borrowed
 generated types, memory configured once at setup, a zero-alloc call budget and a
-hardening baseline (§4.6), call addressing, error grouping and `synchronous` /
-one-way (§4.4) decided; transport / framing / format and per-call settings
-(§4.4) still open · Affects
+hardening baseline (§4.6), and every §4.4 decision (call addressing, error
+grouping, `synchronous` / one-way, transport / framing / format, per-call
+settings) made — only wire-level formats and the runtime implementation remain ·
+Affects
 `ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/runtime`,
 `ComlineProject/comline-<lang>`, `ComlineProject/cli`
 
@@ -51,7 +52,8 @@ The variants a generator will actually match on:
 - `Function { docstring, name, synchronous, arguments, _return, throws, span }`
   — `arguments` are `FrozenArgument { name, kind, span }`, `_return` is
   `Option<KindValue>` (`None` ⟹ one-way, §4.4). Slated: drop `synchronous`;
-  `throws` becomes `Vec<u16>` (schema-global error ordinals) at freeze (§4.4)
+  `throws` becomes `Vec<u16>` (schema-global error ordinals) at freeze; add
+  `parameters: Vec<FrozenUnit>` for `@key=value` annotations (§4.4)
 - `Error { docstring, parameters, name, message, fields }`
 - `Constant { docstring, name, kind_value, span }`
 - `Validator`, `ValidatorRef`, `ExpressionBlock`, `Assert`, `Settings` — the
@@ -444,17 +446,41 @@ tooling and `comline new`, not a constraint.
 This wants its own design pass before `comline-rust`, and it adds a config
 `FrozenUnit` on the §2 side.
 
-#### Per-call settings — needs architecture
+#### Per-call settings — **decided**
 
-The schema allows `@timeout_ms=1000` on a function
-([guide](../guide/idl/protocol.md)); the runtime has
-`AbstractCall.settings: &'static [(&'static str, &'static Setting)]` with
-`Setting::{ None, Num(usize), Str(&'static str) }`. But **`FrozenUnit::Function`
-has no annotations slot today** — `Struct` / `Field` / `Protocol` carry
-`parameters: Vec<FrozenUnit>`, `Function` does not — so there is no IR source for
-these. Order of work: (1) add function annotations to the IR, (2) decide the
-knob set (timeout, retry?, priority?) and its types, (3) consumer-side override
-vs schema-declared default. Deferred from the generated path until (1).
+**IR.** `FrozenUnit::Function` gains `parameters: Vec<FrozenUnit>` (like
+`Struct` / `Protocol`) holding `@key=value` function annotations as
+`Property { name, expression }`. Open namespace — the runtime documents and
+validates the keys it acts on and ignores the rest (forward-compat, same as the
+generator `options` map in [Generation](generation.md#language-version-dialect)).
+
+**v1 knob set — two:**
+
+| annotation | meaning | travels? |
+|---|---|---|
+| `@timeout_ms = N` | how long the client waits for the response; request/response only | no — local wait |
+| `@idempotent` | marker: calling twice is safe. **No behavior yet** — the gate a future `retry` will require | no — advisory metadata |
+
+`priority` / `deadline` (would travel) / `retry` / `compression` are named as
+*later*, each with its wire implication noted when it lands.
+
+**`idempotent` is a function property, not a call option** — it's fixed per
+function, baked into generated metadata (e.g. `CallProtocolMeta::is_idempotent(id)`),
+never in `CallOptions`.
+
+**`timeout` resolves through three levels**, call-site wins:
+
+1. `@timeout_ms` — the schema's default.
+2. consumer `comline.toml` — override for a whole dependency
+   (`[calls."pkg::chat"] timeout_ms = 5000`).
+3. call-site — `client.with_options(CallOptions { timeout: Some(d) }).send(msg)`.
+   `.with_options(…)` returns a lightweight view with the **same method set**, so
+   the bare `client.send(msg)?` (§4.6) is untouched and no `_with` variant
+   doubles the method count.
+
+Falls back to a runtime global default if none is set. **Nothing travels in
+v1**; when `deadline` / `priority` land they go in the frame and the handshake
+advertises support.
 
 ### 4.6 — `no_std`, memory, and the performance budget
 
@@ -617,17 +643,17 @@ Git revs, so there is no semver gate — the discipline is:
 ## Where this is unresolved
 
 Surfaces 1–3 are ready to build a `code` generator on now (`comline-typescript`,
-rollout step 4). The live design work is all in **surface 4**:
+rollout step 4). Surface 4's design decisions are **all made** (§4.4 + §4.6);
+what remains is below the decision line:
 
-- §4.4 — transport / framing / format (the `WireFormat` axis + schema-declared
-  requirements + the connection handshake) and per-call settings — each needs a
-  decision before `comline-rust`, step 5. Call addressing, error grouping and
-  `synchronous` / one-way are decided.
-- §4.6 — decided (`no_std`-first, borrowed-default, memory-set-up-once, the
-  hardening trio); the runtime doesn't implement it yet, and the arena `Alloc`
-  mode is a follow-on after the global default.
-- §4.7 — the per-language-runtime seam, streaming.
-- §5 — the FFI ABI, parked with G2c.
+- **§4.4** — the design is settled. Open at the wire level: the concrete
+  `WireFormat` / framing trait signatures, the handshake frame layout, and the
+  IR changes the decisions imply (`Function.parameters`, `throws: Vec<u16>`,
+  `KindValue::Unit`, drop `synchronous`, the transport-requirements config unit).
+- **§4.6** — decided; not yet implemented. The arena `Alloc` mode is a follow-on
+  after the global default.
+- **§4.7** — the per-language-runtime seam, streaming — deliberately later.
+- **§5** — the FFI ABI, parked with G2c.
 
 Smaller, outside surface 4: float primitives are commented out in `core`
 (surface 1); whether the schema IR gets an explicit `FrozenUnit::IrVersion`
