@@ -7,7 +7,8 @@ generated types, memory configured once at setup, a zero-alloc call budget and a
 hardening baseline (§4.6), and every §4.4 decision (call addressing, error
 grouping, `synchronous` / one-way, transport / framing / format, per-call
 settings) made. §4.3's trait-level types are built in `comline-runtime`'s
-`contract` module (rollout step 7a); a `WireFormat` impl and `setup/` rework are
+`contract` module, with a MessagePack `WireFormat` (7b) and an end-to-end
+`Dispatch` round-trip test proving the surface fits (7c); the `setup/` rework is
 next ·
 Affects
 `ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/runtime`,
@@ -215,7 +216,7 @@ impl<T: Chat> Dispatch for ChatDispatcher<T> {
     fn dispatch<W: WireFormat>(&self, call: Kind, params: &[u8], fmt: &W, out: &mut dyn BufMut)
         -> Result<(), RuntimeError>
     {
-        match call.index(Chat::CALLS)? {                          // index-based jump table
+        match call.resolve(Chat::CALLS).ok_or(RuntimeError::UnknownCall)? {  // index jump table
             0 => { let p: ChatSendParams = fmt.decode(params)?;   // borrows `params`, no copy
                    encode_envelope(self.inner.send(p.msg), fmt, out) }
             1 => { let p: ChatHistoryParams = fmt.decode(params)?;
