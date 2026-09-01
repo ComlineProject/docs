@@ -4,9 +4,9 @@ Status: **draft** — surfaces 1–3 (schema IR, config IR, codegen contract) ar
 solid and ready to build a `code` generator on; surface 4 (runtime API +
 generated protocol) has a worked design in §4 — `no_std`-first, borrowed
 generated types, memory configured once at setup, a zero-alloc call budget and a
-hardening baseline (§4.6), call addressing and error grouping (§4.4) decided;
-`synchronous`, the `WireFormat` axis and per-call settings (§4.4) still open ·
-Affects
+hardening baseline (§4.6), call addressing, error grouping and `synchronous` /
+one-way (§4.4) decided; the `WireFormat` axis, runtime behavior contracts and
+per-call settings (§4.4) still open · Affects
 `ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/runtime`,
 `ComlineProject/comline-<lang>`, `ComlineProject/cli`
 
@@ -50,8 +50,8 @@ The variants a generator will actually match on:
 - `Protocol { docstring, parameters, name, functions, span }` — `functions` are `Function`
 - `Function { docstring, name, synchronous, arguments, _return, throws, span }`
   — `arguments` are `FrozenArgument { name, kind, span }`, `_return` is
-  `Option<KindValue>`, `throws` is `Vec<String>` today (names, unresolved) —
-  slated to become `Vec<u16>`, schema-global error ordinals, at freeze (§4.4)
+  `Option<KindValue>` (`None` ⟹ one-way, §4.4). Slated: drop `synchronous`;
+  `throws` becomes `Vec<u16>` (schema-global error ordinals) at freeze (§4.4)
 - `Error { docstring, parameters, name, message, fields }`
 - `Constant { docstring, name, kind_value, span }`
 - `Validator`, `ValidatorRef`, `ExpressionBlock`, `Assert`, `Settings` — the
@@ -74,9 +74,10 @@ enum KindValue {
 
 `Primitive` carries an optional literal value (its default). Widths are explicit
 (`u8`…`u128`, `s8`…`s128`); there is no bare `int`. Float variants are commented
-out in `core` today — **a generator must not assume `f32`/`f64` exist yet**.
-Mapping this enum to a language's type system is the bulk of a `code` generator
-and is worked in [Codegen by language](codegen-by-language.md).
+out in `core` today — **a generator must not assume `f32`/`f64` exist yet**. A
+`Unit` variant is slated (for `-> ()`, §4.4). Mapping this enum to a language's
+type system is the bulk of a `code` generator and is worked in
+[Codegen by language](codegen-by-language.md).
 
 ### Stability
 
@@ -338,25 +339,51 @@ substitution locally. Only `fields` travel; the template is baked into codegen.
 `! Foo(name = x)` ([guide](../guide/idl/error.md)); the generated Rust *impl*
 returns a fully-built `Foo { name }`, so this language gap doesn't block codegen.
 
-#### `synchronous` / one-way — needs design
+#### `synchronous` / one-way — **decided**
 
-The IR carries **both** `Function.synchronous: bool` **and**
-`Function._return: Option<KindValue>`, and the [guide](../guide/idl/protocol.md)
-says "omit [the return] for a one-way call" (`function poke();`). That's a
-redundancy to resolve. Proposal:
+`Function.synchronous: bool` conflated three things: whether the call has a
+response (a wire fact), whether the generated API blocks or `.await`s (a binding
+choice), and how the peer schedules handlers (server config). Only the first
+belongs in the schema, and it is already carried by `_return`.
 
-- **One-way ⟺ `_return == None`.** No response frame (a JSON-RPC notification —
-  no `id`), and `! Errors` is rejected by the compiler on such a function
-  (nowhere to deliver them). This is a wire-level fact and travels.
-- **Blocking vs async is a *binding* concern, not a protocol one.** Per §4.6 the
-  generated core trait is **sync** (`no_std`, no boxed futures); an `async`
-  trait + client `.await` is emitted additively behind the `std` feature. Which
-  one a given language defaults to is a generator option (Rust: both; Python:
-  sync). It does not travel and is not `synchronous`.
-- Which leaves **`synchronous` with no job** — candidate for removal from the IR,
-  unless it's meant to express something the return type can't (e.g. "the caller
-  must observe completion even though there's no value" — a `-> ()` that still
-  gets an ack). Needs a call.
+- **`synchronous` is removed from the IR.**
+- **One-way ⟺ `_return == None`.** No request id, no response frame; `! E` on
+  such a function is a **compile error** (nowhere to deliver it). The generated
+  caller returns `Result<(), TransportError>` — it can learn the frame didn't
+  leave the box, never a remote outcome. One-way calls are inherently sync on
+  the client (nothing to await) even under the async layer.
+- **`KindValue` gains `Unit`** so `-> ()` is expressible and *distinct* from
+  omitting the return: `commit() -> ()` gets an empty `ok` ack; `log(msg)`
+  doesn't reply. Without it, "ack, no value" would force an empty `struct` per
+  call. (Streaming, when designed, extends this further —
+  `Return::{ None, One(KindValue), Stream(KindValue) }`, §4.7.)
+- **Blocking vs async** is the §4.6 generator option — sync core trait always,
+  `async` additive behind `std`. Not in the schema, does not travel.
+
+**One-way means no *application* response.** TCP still gives byte-delivery;
+UDP / lossy transports are best-effort.
+
+#### Runtime behavior contracts — needs design
+
+Two guarantees a project may need to rely on or tune, neither of which is a
+per-function schema property:
+
+- **Delivery ack for one-way calls.** Default: fire-and-forget. A deployment can
+  turn on a minimal ack frame for one-way calls (setup knob, like §4.6's memory
+  config) so `notify(...) -> Result<(), TransportError>` also fails on no ack in
+  a window — still no *value*, just confirmed receipt. An API where a lost
+  notification is unacceptable can **declare this as a requirement** so the
+  generated client / setup enforces it.
+- **In-order processing.** Default: in-order on one connection with the §4.6 sync
+  dispatcher. The `std` `AsyncDispatch` layer may start / complete handlers out
+  of order. A stateful protocol (`open()` before `write()`) can **declare it
+  needs in-order handling**; a throughput-oriented one can opt into concurrent.
+
+Both fit the same shape: a **default**, a **runtime-setup knob**, and a
+**project-declared requirement** (in the congregation, or a schema `settings`
+block — [guide](../guide/idl/settings.md)) that makes the generated code assert
+the chosen runtime can provide it. This overlaps **per-call settings** (below)
+and the config IR (§2); it wants its own design pass before `comline-rust`.
 
 #### Serialization — a `WireFormat` trait, needs design
 
@@ -543,9 +570,10 @@ Git revs, so there is no semver gate — the discipline is:
 Surfaces 1–3 are ready to build a `code` generator on now (`comline-typescript`,
 rollout step 4). The live design work is all in **surface 4**:
 
-- §4.4 — `synchronous` / one-way, the `WireFormat` axis, per-call settings
-  (each needs a decision before `comline-rust`, step 5). Call addressing and
-  error grouping are decided.
+- §4.4 — the `WireFormat` axis, runtime behavior contracts (delivery ack,
+  in-order processing), per-call settings — each needs a decision before
+  `comline-rust`, step 5. Call addressing, error grouping and `synchronous` /
+  one-way are decided.
 - §4.6 — decided (`no_std`-first, borrowed-default, memory-set-up-once, the
   hardening trio); the runtime doesn't implement it yet, and the arena `Alloc`
   mode is a follow-on after the global default.
