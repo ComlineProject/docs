@@ -1,4 +1,11 @@
 # Welcome to Comline
+
+!!! warning "Early days"
+    Comline is in heavy development and changes constantly. Much of this
+    documentation is working design material rather than a polished reference —
+    parts are dense and read closer to notes than prose. It will be rewritten
+    for people, end to end, once the design settles.
+
 Comline is an agnostic schema, RPC/IPC (or any other similar terminologies)
 library, similar to ones like:
 
