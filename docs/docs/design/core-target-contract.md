@@ -4,8 +4,9 @@ Status: **draft** — surfaces 1–3 (schema IR, config IR, codegen contract) ar
 solid and ready to build a `code` generator on; surface 4 (runtime API +
 generated protocol) has a worked design in §4 — `no_std`-first, borrowed
 generated types, memory configured once at setup, a zero-alloc call budget and a
-hardening baseline (§4.6) decided; error grouping, `synchronous`, the
-`WireFormat` axis and per-call settings (§4.4) still open · Affects
+hardening baseline (§4.6), call addressing and error grouping (§4.4) decided;
+`synchronous`, the `WireFormat` axis and per-call settings (§4.4) still open ·
+Affects
 `ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/runtime`,
 `ComlineProject/comline-<lang>`, `ComlineProject/cli`
 
@@ -49,7 +50,8 @@ The variants a generator will actually match on:
 - `Protocol { docstring, parameters, name, functions, span }` — `functions` are `Function`
 - `Function { docstring, name, synchronous, arguments, _return, throws, span }`
   — `arguments` are `FrozenArgument { name, kind, span }`, `_return` is
-  `Option<KindValue>`, `throws` is `Vec<String>` (names, unresolved)
+  `Option<KindValue>`, `throws` is `Vec<String>` today (names, unresolved) —
+  slated to become `Vec<u16>`, schema-global error ordinals, at freeze (§4.4)
 - `Error { docstring, parameters, name, message, fields }`
 - `Constant { docstring, name, kind_value, span }`
 - `Validator`, `ValidatorRef`, `ExpressionBlock`, `Assert`, `Settings` — the
@@ -176,20 +178,23 @@ For `protocol Chat { function send(msg: Msg) -> Ack ! Rejected; function history
 #[derive(Serialize, Deserialize)] struct ChatSendParams   { msg: Msg }
 #[derive(Serialize, Deserialize)] struct ChatHistoryParams { limit: u32 }
 
-// 2. one error enum per function: its `! Errors` plus a runtime variant
-enum ChatSendError    { Rejected(Rejected), Runtime(RuntimeError) }
-enum ChatHistoryError { Runtime(RuntimeError) }
+// 2. one *schema-only* error enum per function — its `! Errors`, no runtime types (§4.4)
+enum ChatSendError    { Rejected(Rejected) }
+enum ChatHistoryError { /* no `!` → empty */ }
+// + a per-protocol union, additive, for one broad handler:
+enum ChatError { Rejected(Rejected) /* ∪ every `!` in Chat */ }
+impl From<ChatSendError> for ChatError { /* … */ }
 
-// 3. provider trait — the user implements this  (sync core; async is additive, §4.6)
+// 3. provider trait — the user implements this; schema errors only (sync core; async is additive, §4.6)
 trait Chat {
     fn send(&self, msg: Msg<'_>) -> Result<Ack, ChatSendError>;
     fn history(&self, limit: u32) -> Result<Vec<Msg<'static>>, ChatHistoryError>;
 }
 
-// 4. consumer stub — generated, wraps a CallSystemConsumer
+// 4. consumer stub — wraps a CallSystemConsumer; CallError<E> adds infra failure
 struct ChatClient<C> { cs: C }
 impl<C: CallSystemConsumer> ChatClient<C> {
-    fn send(&mut self, msg: Msg<'_>) -> Result<Ack, ChatSendError> {
+    fn send(&mut self, msg: Msg<'_>) -> Result<Ack, CallError<ChatSendError>> {
         self.cs.call(Kind::Id(0), &ChatSendParams { msg })   // encodes into a reused buffer,
     }                                                        // decodes the ok/err envelope borrowed
     // history → Kind::Id(1) …
@@ -231,8 +236,8 @@ statically typed and the generator emits a named struct per function instead:
 |---|---|
 | params | `struct <Proto><Fn>Params<'de> { … }` — one field per argument, in declaration order |
 | result | the return type directly (`Ack`, a primitive, …) |
-| error | `enum <Proto><Fn>Error { <Named>(<Named>), …, Runtime(RuntimeError) }` |
-| envelope | a small runtime type: `{ ok: R }` \| `{ err: { name, body } }` |
+| error | `enum <Proto><Fn>Error { <Named>(<Named>), … }` — schema `!` errors only; plus a per-protocol union `<Proto>Error`. The client wraps in `CallError<E>` for infra failure (§4.4) |
+| envelope | a small runtime type: `{ ok: R }` \| `{ err: { id: u16, body: &'de [u8] } }` (§4.4) |
 
 The params struct **is** the message. It is a stack struct literal at the call
 site (zero cost), serialized in one pass straight into the call system's reused
@@ -261,9 +266,10 @@ Shapes chosen for the §4.6 budget — sync core, write-into-buffer, borrowed de
 |---|---|---|
 | `RuntimeError` | `enum { Transport, Serialization, Framing, Timeout, UnknownCall, Remote { name, raw } }` — `core::error::Error`, no `String` on the happy path | replace `Result<T, ()>` everywhere |
 | `trait Dispatch` | `fn dispatch(&self, Kind, params: &[u8], &dyn WireFormat, out: &mut dyn BufMut) -> Result<(), RuntimeError>` — sync, no return alloc | provider call system holds `&D` / `Arc<D>` (generic, not `dyn`) and routes inbound frames to it |
-| `CallSystemConsumer::call<'de, P, R>` | `fn call<P: Serialize, R: Deserialize<'de>>(&'de mut self, Kind, &P) -> Result<R, RemoteError>` — `R` borrows the response buffer | replaces `send_async_call<M>` (the one-type-param bug) |
+| `CallSystemConsumer::call<'de, P, R, E>` | `fn call<P: Serialize, R: Deserialize<'de>, E>(&'de mut self, Kind, &P) -> Result<R, CallError<E>>` — `R` / `E` borrow the response buffer | replaces `send_async_call<M>` (the one-type-param bug) |
+| `enum CallError<E>` | `{ App(E), Runtime(RuntimeError) }` | the one runtime type that adds infra failure to a schema-only error enum (§4.4) |
 | `trait WireFormat` | `encode<T: Serialize>(&self, &T, out: &mut dyn BufMut)` / `decode<'de, T: Deserialize<'de>>(&self, &'de [u8]) -> Result<T, _>` — no `Vec` return, borrow on decode | the serialization axis; call systems are generic over / configured with one |
-| wire envelope | tag byte + `ok: R` \| `err { name: &str, body: &[u8] }` — both borrowed | carry a named thrown error back to the client stub |
+| wire envelope | tag byte + `ok: R` \| `err { id: u16, body: &'de [u8] }` — schema-global error ordinal + the error's fields, both borrowed (§4.4) | carry a raised error back to the client stub |
 | `trait BufMut` | minimal `no_std` append target (`put_slice`, `put_u8`, …); `Vec<u8>` and `&mut [u8]` implement it | the receive + encode buffers, **injected once at setup** (§4.6), reset not realloc'd per call |
 | `trait Alloc` | seam for owned bits — global (`alloc`) \| arena \| none; chosen once at setup | `.to_owned()` copies and decoded collection spines |
 
@@ -283,22 +289,54 @@ reorder or a slot reuse is a detectable breaking change). `Kind::Named` stays on
 the wire for debuggability and for framings that are name-oriented (JSON-RPC);
 `Kind::Id` is the compact form.
 
-#### Error grouping — leaning per-function, needs polish
+#### Error grouping — **decided**
 
-Per-function (`ChatSendError`) over per-protocol (`ChatError`): the enum then
-lists exactly that function's `! Errors` plus `Runtime(RuntimeError)`, so an
-exhaustive `match` at the call site is precise. Open:
+**Generated types.**
 
-- **Name-only `throws`.** The IR's `throws: Vec<String>` is a bare reference; the
-  generator maps each name to `Variant(NamedErrorStruct)` and a decode arm keyed
-  on the envelope's `err.name`. The [schema](../guide/idl/error.md) can't yet
-  bind field values at the raise site — but the generated Rust *impl* returns a
-  fully-built error value, so this doesn't block codegen.
-- **`RemoteError` shape.** What the client reconstructs from `err` when the name
-  isn't one the local generated code knows (peer newer than us): a catch-all
-  `Runtime(RuntimeError::Remote { name, raw })`.
-- Whether the per-protocol union is *also* emitted, for callers that want one
-  `match`.
+- **Per-function schema-error enum** — `<Proto><Fn>Error`, one variant per `! E`
+  in that function, `Variant(E)` where `E` is the generated struct from the
+  `error` decl. Pure schema: no runtime types, `no_std`, reusable. A function
+  with no `!` gets an empty enum (or `Infallible`).
+- **Per-protocol union** — `<Proto>Error` over every `!` in the protocol, with
+  `From<<Proto><Fn>Error>` for each function. Additive, for a caller that wants
+  one `match` for the whole service.
+- **`enum CallError<E> { App(E), Runtime(RuntimeError) }`** — the *one* runtime
+  type that adds infra failure. Not generated; lives in `comline-runtime`.
+
+**Where each lands.**
+
+| side | signature | why |
+|---|---|---|
+| provider trait | `fn send(&self, …) -> Result<Ack, ChatSendError>` | schema errors only — the impl can't fabricate a `RuntimeError` |
+| client stub | `fn send(&mut self, …) -> Result<Ack, CallError<ChatSendError>>` | the caller *can* hit transport / timeout / a garbage frame |
+| broad client handler | `CallError<ChatError>` via `?` and the `From` impls | one `match` for the service |
+
+**On the wire — schema-global error ordinal.** The envelope's `err` carries
+`{ id: u16, body: &'de [u8] }`. `id` is the error's position in the schema's
+frozen `Error`-unit sequence — **compiler-assigned, frozen into the IR,
+version-diff enforced** (an `error` decl is retired in place, never deleted or
+reordered; its ordinal is never reused). `throws` in the IR shifts from
+`Vec<String>` to `Vec<u16>` (names resolved at freeze) so the ordinal is itself
+version-checked. `body` is the error struct's `fields`, borrowed from the
+receive buffer.
+
+- **Name-oriented framings** (JSON-RPC) put the error *name* on the wire instead;
+  the generator has the ordinal↔name↔struct mapping both directions. Mirrors
+  `Kind::{ Id, Named }`.
+- **A `use`d cross-schema error** gets a re-export slot in the importing schema's
+  ordinal space, so the wire `id` stays a single `u16`.
+- **Unknown ordinal** (newer peer raised an `! E` past what the client
+  generated) → `CallError::Runtime(RuntimeError::Remote { name, raw })`, borrowed
+  per §4.6. Adding `! E` is a compatible change (old peers land here); removing a
+  `!` reference is compatible (dead variant).
+
+**`message` renders client-side.** `error Foo { message = "…{self.name}…" }` →
+a generated `Display` / `core::error::Error` impl that does the `{self.field}`
+substitution locally. Only `fields` travel; the template is baked into codegen.
+
+**Raise-site field values** — the schema can't yet write
+`! Foo(name = x)` ([guide](../guide/idl/error.md)); the generated Rust *impl*
+returns a fully-built `Foo { name }`, so this language gap doesn't block codegen.
 
 #### `synchronous` / one-way — needs design
 
@@ -505,8 +543,9 @@ Git revs, so there is no semver gate — the discipline is:
 Surfaces 1–3 are ready to build a `code` generator on now (`comline-typescript`,
 rollout step 4). The live design work is all in **surface 4**:
 
-- §4.4 — error grouping, `synchronous` / one-way, the `WireFormat` axis,
-  per-call settings (each needs a decision before `comline-rust`, step 5).
+- §4.4 — `synchronous` / one-way, the `WireFormat` axis, per-call settings
+  (each needs a decision before `comline-rust`, step 5). Call addressing and
+  error grouping are decided.
 - §4.6 — decided (`no_std`-first, borrowed-default, memory-set-up-once, the
   hardening trio); the runtime doesn't implement it yet, and the arena `Alloc`
   mode is a follow-on after the global default.
