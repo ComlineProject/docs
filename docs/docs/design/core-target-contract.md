@@ -199,7 +199,7 @@ Still open, to fix as part of this design (7f+):
 
 ### 4.2 — The generated protocol
 
-*Built for Rust — `comline-codegen-rust`'s `code` / `lib` output ([comline-rust#2](https://github.com/ComlineProject/comline-rust/pull/2)); a `tests/compiles.rs` generates a protocol crate and `cargo build`s it against `comline-runtime`.* Owned generated types for now (borrowed `<'de>` is a follow-up); `_return: None` and `KindValue::Unit` both render `-> ()` until the runtime has fire-and-forget; `Function.parameters` (per-call settings) not consumed yet.
+*Built for Rust — `comline-codegen-rust`'s `code` / `lib` output ([comline-rust#2](https://github.com/ComlineProject/comline-rust/pull/2)); a `tests/compiles.rs` generates a protocol crate and `cargo build`s it against `comline-runtime`.* A `str` arg is decoded **borrowed** — `<Proto><Fn>Params<'a> { #[serde(borrow)] name: &'a str }`, the trait/client take `&str` ([comline-rust#3](https://github.com/ComlineProject/comline-rust/pull/3)); array-of-string args, nested struct args and all return/data types are still owned (threading `<'a>` through the data types forces an owned/borrowed split on returns). `_return: None` and `KindValue::Unit` both render `-> ()` until the runtime has fire-and-forget; `Function.parameters` (per-call settings) not consumed yet.
 
 For `protocol Chat { function send(msg: Msg) -> Ack ! Rejected; function history(limit: u32) -> Msg[]; }`:
 
