@@ -2,10 +2,12 @@
 
 Status: **draft** — surfaces 1–3 (schema IR, config IR, codegen contract) are
 solid and ready to build a `code` generator on; surface 4 (runtime API +
-generated protocol) has a worked design in §4 — including a `no_std` layering and
-a zero-alloc / borrowed-buffer performance budget (§4.6) — with named decisions
-still open · Affects `ComlineProject/core`, `ComlineProject/generation`,
-`ComlineProject/runtime`, `ComlineProject/comline-<lang>`, `ComlineProject/cli`
+generated protocol) has a worked design in §4 — `no_std`-first, borrowed
+generated types, memory configured once at setup, a zero-alloc call budget and a
+hardening baseline (§4.6) decided; error grouping, `synchronous`, the
+`WireFormat` axis and per-call settings (§4.4) still open · Affects
+`ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/runtime`,
+`ComlineProject/comline-<lang>`, `ComlineProject/cli`
 
 Under the [repo decision](runtime-repo-structure.md), every `comline-<lang>` repo
 builds against `comline-core` and `comline-codegen` — nothing else from the org.
@@ -262,7 +264,8 @@ Shapes chosen for the §4.6 budget — sync core, write-into-buffer, borrowed de
 | `CallSystemConsumer::call<'de, P, R>` | `fn call<P: Serialize, R: Deserialize<'de>>(&'de mut self, Kind, &P) -> Result<R, RemoteError>` — `R` borrows the response buffer | replaces `send_async_call<M>` (the one-type-param bug) |
 | `trait WireFormat` | `encode<T: Serialize>(&self, &T, out: &mut dyn BufMut)` / `decode<'de, T: Deserialize<'de>>(&self, &'de [u8]) -> Result<T, _>` — no `Vec` return, borrow on decode | the serialization axis; call systems are generic over / configured with one |
 | wire envelope | tag byte + `ok: R` \| `err { name: &str, body: &[u8] }` — both borrowed | carry a named thrown error back to the client stub |
-| `trait BufMut` | minimal `no_std` append target (`put_slice`, `put_u8`, …); `Vec<u8>` implements it | reused scratch buffer, one per call system, reset not realloc'd per call |
+| `trait BufMut` | minimal `no_std` append target (`put_slice`, `put_u8`, …); `Vec<u8>` and `&mut [u8]` implement it | the receive + encode buffers, **injected once at setup** (§4.6), reset not realloc'd per call |
+| `trait Alloc` | seam for owned bits — global (`alloc`) \| arena \| none; chosen once at setup | `.to_owned()` copies and decoded collection spines |
 
 An **`AsyncDispatch`** / async client `.call().await` layer sits behind the
 `std` feature (§4.6); the generator emits it additively.
@@ -339,11 +342,36 @@ these. Order of work: (1) add function annotations to the IR, (2) decide the
 knob set (timeout, retry?, priority?) and its types, (3) consumer-side override
 vs schema-declared default. Deferred from the generated path until (1).
 
-### 4.6 — `no_std` and the performance budget
+### 4.6 — `no_std`, memory, and the performance budget
 
-Both are first-class constraints on this surface, and they point the same way:
-**no per-call allocation, no payload copies, minimal processing on the call
-path.** The shapes in §4.2–4.3 were chosen to hit that.
+**Decided:** `no_std`-first (one crate, `alloc` / `std` additive); borrowed
+generated types by default with `.to_owned()` as the escape; **memory is
+configured once at setup, never threaded through a call**; the hardening
+measures below. Open: the arena `Alloc` mode ships after the global-default one.
+
+#### The user-facing rule
+
+> Set memory up at the start *if you want to*. After that, calls and handlers
+> are plain — no buffer, no allocator, no lifetime past the borrow.
+
+```rust
+// configure once — or skip it entirely under the `alloc` feature
+let service = ProviderSetup::with_transporter(tcp)
+    .with_call_system(JsonRPCv2::new)
+    // .with_buffers(recv, send)   // default: growable Vec<u8> (alloc); required &mut [u8; N] under no-alloc
+    // .with_arena(&mut region)    // opt-in: bump region, reset per call
+    .serving(MyChat);
+
+// every call site, forever:
+impl Chat for MyChat {
+    fn send(&self, msg: Msg<'_>) -> Result<Ack, ChatSendError> { /* … */ }
+}
+client.send(msg)?;                 // no buffer, no allocator in the signature
+```
+
+The only ambient complexity at a call site is the `'_` on borrowed args — the
+deliberate cost of borrowed-by-default (§4.2), and what makes "wipe after use"
+actually work.
 
 #### The budget
 
@@ -362,46 +390,64 @@ One call, transport already connected, is designed to cost:
 Anything that breaks "zero allocations on the happy path" has to justify itself.
 The error path may allocate.
 
-#### What that requires
+#### Memory
 
-- **Borrowed generated types.** When a schema type has a `str` / `bytes` field
-  (or nests one), the generator emits `struct Msg<'de> { body: &'de str, … }` and
-  decodes it as a view into the receive buffer. An owned form is emitted only
-  where the value must outlive the call (it escapes the handler). This is a
-  generator-contract requirement, and it means `Deserialize<'de>`, not
-  `DeserializeOwned`, throughout §4.3.
-- **Write-into-buffer, never return `Vec`.** `WireFormat::encode` and
-  `Dispatch::dispatch` append to a caller-owned `BufMut`; the call system holds
-  one scratch buffer and `clear()`s it per call.
-- **`Kind::Id(u16)` is the hot path** — a `u16`, no alloc. `Kind::Named` is
-  `&'static str` (the `calls_names()` entries already are), never an owned
-  `String`. The current `json_rpc` code building `Kind::Named(String)` is a bug.
-- **No runtime message object** — a `Vec<Parameter>` of `&dyn Any` is a per-call
-  allocation *and* defeats monomorphisation. The generated params struct is the
-  message (§4.2).
-- **Sync core `Dispatch`.** `async fn` in a `dyn` trait forces a boxed future
-  per call. So the core `Dispatch` is **sync** and the generated provider trait
-  is **sync by default**; the provider is generic over `D: Dispatch` (static
-  dispatch, no vtable, no box). Async server concurrency is an `AsyncDispatch` +
-  executor layer behind the `std` feature — emitted additively, never on the
-  `no_std` path.
+- **Buffers are injected once, at setup.** After `.serving(…)` / `.connect(…)`
+  the call system owns the receive and encode buffers and reuses them —
+  `clear()` / reset per call, never realloc'd. Default under `alloc`: a growable
+  `Vec<u8>`. Under no-`alloc`: the caller passes `&mut [u8; N]` and an over-long
+  frame is a `RuntimeError`, not a panic.
+- **An `Alloc` mode, also chosen once at setup**, for the *owned bits* —
+  `.to_owned()` copies and the spine of a decoded `Vec<T>` / `BTreeMap` (the
+  elements borrow; the container can't, unless the wire format is already laid
+  out as `&'de [T]`):
+
+  | mode | what it is | for |
+  |---|---|---|
+  | **global** — default, `alloc` feature | the registered `#[global_allocator]` | you don't want to think about it |
+  | **arena** — opt-in | a caller-supplied bump region, reset (not freed) per call; doubles as the zeroization unit | embedded, throughput, hardening |
+  | **none** — no-`alloc` | — | the generator then rejects schemas whose types need heap, or forces those fields to `&'de` |
+
+  `Vec` / `String` / `Box` are `alloc`, **not `std`** — they work in `no_std`
+  with a `#[global_allocator]`. The strict tier is `no_std` *and* no `alloc`.
+  Rust's per-container allocator API (`Vec::new_in`, `Allocator`) is still
+  nightly, so the arena is its own seam, not `alloc::Vec` with a custom `A`.
+- Ship the **global-default** first; the arena is a follow-on on the same seam.
+
+#### Hardening (decided, independent of the above)
+
+- **Bounded decode.** `WireFormat` decoders enforce a max frame size, max
+  collection length and max nesting depth; a hostile length prefix is rejected
+  *before* any allocation.
+- **Buffer zeroization.** The receive + encode buffers (and the arena, if used)
+  are `zeroize`d after each call, behind a `hardening` feature that is **on by
+  default**.
+- **No `unsafe`.** `#![forbid(unsafe_code)]` in generated code and in the decode
+  path.
+
+#### Sync core `Dispatch`
+
+`async fn` in a `dyn` trait forces a boxed future per call, so the core
+`Dispatch` is **sync** and the generated provider trait is **sync by default**;
+the provider is generic over `D: Dispatch` (static dispatch, no vtable, no box).
+Async server concurrency is an `AsyncDispatch` + executor layer behind the `std`
+feature — emitted additively, never on the `no_std` path.
 
 #### `no_std` layering
 
-The repo decision folds `core_no-std` into a `std` feature on one crate. Under
-that:
+The repo decision folds `core_no-std` into a `std` feature on one crate:
 
 | Tier | Has | Contents |
 |---|---|---|
-| **core** (`no_std`, no `alloc`) | — | `CallProtocolMeta`, `Dispatch`, `WireFormat`, `RuntimeError`, `Kind`, `BufMut`, the envelope. Pure `(&[u8], id) -> Result<(), _>` transforms. |
-| **`alloc`** feature | `alloc` | anything needing `Vec` / `String` — owned generated types, some `WireFormat` impls |
+| **core** (`no_std`, no `alloc`) | — | `CallProtocolMeta`, `Dispatch`, `WireFormat`, `RuntimeError`, `Kind`, `BufMut`, the envelope, the `Alloc` seam. Pure `(&[u8], id) -> Result<(), _>` transforms over injected buffers. |
+| **`alloc`** feature | `alloc` | the global `Alloc` mode, owned generated types, `Vec`-returning `WireFormat` impls |
 | **`std`** feature | `std` | tokio transport, TCP, the `Arc<RwLock>` setup builders, the `watch`-channel events, `AsyncDispatch`, blocking wrappers |
 
 **Transport is not in the `no_std` core** — an embedded target hands the runtime
 bytes in and takes bytes out itself. The `no_std` runtime *is* framing + dispatch
-+ (de)serialization over borrowed buffers. Generated code (`comline-rust` output)
-targets the core traits and is `#![no_std]` + `extern crate alloc` by default;
-`std` conveniences are additive.
++ (de)serialization over borrowed, injected buffers. Generated code
+(`comline-rust` output) targets the core traits and is `#![no_std]` +
+`extern crate alloc` by default; `std` conveniences are additive.
 
 ### 4.7 — Still open beyond the above
 
@@ -461,8 +507,9 @@ rollout step 4). The live design work is all in **surface 4**:
 
 - §4.4 — error grouping, `synchronous` / one-way, the `WireFormat` axis,
   per-call settings (each needs a decision before `comline-rust`, step 5).
-- §4.6 — the `no_std` layering and the zero-alloc / borrowed-buffer budget are
-  set here as constraints; the runtime doesn't implement them yet.
+- §4.6 — decided (`no_std`-first, borrowed-default, memory-set-up-once, the
+  hardening trio); the runtime doesn't implement it yet, and the arena `Alloc`
+  mode is a follow-on after the global default.
 - §4.7 — the per-language-runtime seam, streaming.
 - §5 — the FFI ABI, parked with G2c.
 
