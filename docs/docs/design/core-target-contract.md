@@ -6,7 +6,9 @@ generated protocol) has a worked design in §4 — `no_std`-first, borrowed
 generated types, memory configured once at setup, a zero-alloc call budget and a
 hardening baseline (§4.6), and every §4.4 decision (call addressing, error
 grouping, `synchronous` / one-way, transport / framing / format, per-call
-settings) made — only wire-level formats and the runtime implementation remain ·
+settings) made. §4.3's trait-level types are built in `comline-runtime`'s
+`contract` module (rollout step 7a); a `WireFormat` impl and `setup/` rework are
+next ·
 Affects
 `ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/runtime`,
 `ComlineProject/comline-<lang>`, `ComlineProject/cli`
@@ -210,7 +212,7 @@ impl<C: CallSystemConsumer> ChatClient<C> {
 // 5. dispatcher — generated, implements the runtime `Dispatch` trait
 struct ChatDispatcher<T: Chat> { inner: T }
 impl<T: Chat> Dispatch for ChatDispatcher<T> {
-    fn dispatch(&self, call: Kind, params: &[u8], fmt: &dyn WireFormat, out: &mut dyn BufMut)
+    fn dispatch<W: WireFormat>(&self, call: Kind, params: &[u8], fmt: &W, out: &mut dyn BufMut)
         -> Result<(), RuntimeError>
     {
         match call.index(Chat::CALLS)? {                          // index-based jump table
@@ -267,18 +269,20 @@ Cases:
 
 ### 4.3 — Runtime additions this needs
 
-Shapes chosen for the §4.6 budget — sync core, write-into-buffer, borrowed decode:
+Shapes chosen for the §4.6 budget — sync core, write-into-buffer, borrowed
+decode. The trait-level ones landed in `comline-runtime`'s `contract` module
+(rollout step 7a); rows below reflect what was built.
 
 | Add | Shape | For |
 |---|---|---|
-| `RuntimeError` | `enum { Transport, Serialization, Framing, Timeout, UnknownCall, Remote { name, raw } }` — `core::error::Error`, no `String` on the happy path | replace `Result<T, ()>` everywhere |
-| `trait Dispatch` | `fn dispatch(&self, Kind, params: &[u8], &dyn WireFormat, out: &mut dyn BufMut) -> Result<(), RuntimeError>` — sync, no return alloc | provider call system holds `&D` / `Arc<D>` (generic, not `dyn`) and routes inbound frames to it |
-| `CallSystemConsumer::call<'de, P, R, E>` | `fn call<P: Serialize, R: Deserialize<'de>, E>(&'de mut self, Kind, &P) -> Result<R, CallError<E>>` — `R` / `E` borrow the response buffer | replaces `send_async_call<M>` (the one-type-param bug) |
-| `enum CallError<E>` | `{ App(E), Runtime(RuntimeError) }` | the one runtime type that adds infra failure to a schema-only error enum (§4.4) |
-| `trait WireFormat` | `encode<T: Serialize>(&self, &T, out: &mut dyn BufMut)` / `decode<'de, T: Deserialize<'de>>(&self, &'de [u8]) -> Result<T, _>` — no `Vec` return, borrow on decode | the serialization axis; call systems are generic over / configured with one |
-| wire envelope | tag byte + `ok: R` \| `err { id: u16, body: &'de [u8] }` — schema-global error ordinal + the error's fields, both borrowed (§4.4) | carry a raised error back to the client stub |
-| `trait BufMut` | minimal `no_std` append target (`put_slice`, `put_u8`, …); `Vec<u8>` and `&mut [u8]` implement it | the receive + encode buffers, **injected once at setup** (§4.6), reset not realloc'd per call |
-| `trait Alloc` | seam for owned bits — global (`alloc`) \| arena \| none; chosen once at setup | `.to_owned()` copies and decoded collection spines |
+| `RuntimeError` | `enum { Transport, Serialization, Framing, Timeout, UnknownCall, Remote { id: u16 } }` — `core::error::Error`, **lifetime-free** (`'static`, storable) | replace `Result<T, ()>` everywhere |
+| `trait Dispatch` | `fn dispatch<W: WireFormat>(&self, Kind, params: &[u8], &W, out: &mut dyn BufMut) -> Result<(), RuntimeError>` — sync; **generic over the format** (a `&dyn WireFormat` isn't object-safe — generic methods), the provider is generic over `D` anyway (no vtable) | provider call system holds `&D` and routes inbound frames to it |
+| `CallSystemConsumer::call<'de, P, R, E>` | `fn call<P: Serialize, R: Deserialize<'de>, E>(&'de mut self, Kind, &P) -> Result<R, CallError<E>>` — `R` / `E` borrow the response buffer | replaces `send_async_call<M>` (the one-type-param bug). *Not built yet.* |
+| `enum CallError<E>` | `{ App(E), Runtime(RuntimeError) }` + `From<RuntimeError>` | the one runtime type that adds infra failure to a schema-only error enum (§4.4) |
+| `trait WireFormat` | `encode<T: Serialize + ?Sized>(&self, &T, &mut dyn BufMut) -> Result<(), RuntimeError>` / `decode<'de, T: Deserialize<'de>>(&self, &'de [u8]) -> Result<T, RuntimeError>` — no `Vec` return, borrow on decode. *Trait only — a MessagePack impl is 7b.* | the serialization axis; the call system is generic over one |
+| wire envelope | `Envelope<'a>` — `Ok(&'a [u8])` \| `Err { id: u16, body: &'a [u8] }`, one tag byte (`0` / `1`) then `id` little-endian; `encode_ok` / `encode_err` / `decode` helpers | carry a raised error back to the client stub |
+| `trait BufMut` | `put_slice` (+ `put_u8` / `put_u16_le` / `put_u64_le` defaults); `Vec<u8>` impls it under `alloc`; **`SliceBuf<'a>`** wraps a fixed `&mut [u8]` with an `overflowed` flag for the no-`alloc` tier | the receive + encode buffers, **injected once at setup** (§4.6), reset not realloc'd per call |
+| `trait Alloc` | seam for owned bits — global (`alloc`) \| arena \| none; chosen once at setup. *Not built yet.* | `.to_owned()` copies and decoded collection spines |
 
 An **`AsyncDispatch`** / async client `.call().await` layer sits behind the
 `std` feature (§4.6); the generator emits it additively.
