@@ -214,10 +214,10 @@ CLI-driven functions. G3 takes them the rest of the way, per the
    `ComlineProject/comline-rust`); `cli` and `generation`'s conformance corpus
    depend on them by git rev. `generation` is now just `comline-codegen` +
    `comline-conformance`. `comline-rust`'s FFI/dylib work is still G2c.
-3. **CLI features.** `find_generator` becomes a feature-gated `Registry` the CLI
-   builds from the enabled `comline-<lang>` crates (see
-   [The registry](#the-registry)). *Not yet — both generators are always
-   registered.*
+3. **CLI features.** ✅ `comline-codegen-rust` / `-typescript` are optional deps
+   behind `gen-rust` / `gen-typescript` (both default); `generator_registry()`
+   `#[cfg]`-guards each `register()`. A build can drop a generator crate and its
+   whole dependency tree. See [The registry](#the-registry).
 4. Each further language is a new `comline-<lang>` repo from the template — zero
    change to the others.
 
