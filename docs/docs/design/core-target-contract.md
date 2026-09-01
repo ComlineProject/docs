@@ -199,7 +199,7 @@ Still open, to fix as part of this design (7f+):
 
 ### 4.2 — The generated protocol
 
-*Built for Rust — `comline-codegen-rust`'s `code` / `lib` output ([comline-rust#2](https://github.com/ComlineProject/comline-rust/pull/2)); a `tests/compiles.rs` generates a protocol crate and `cargo build`s it against `comline-runtime`.*
+*Built for Rust — `comline-codegen-rust`'s `code` / `lib` output ([comline-rust#2](https://github.com/ComlineProject/comline-rust/pull/2)); a `tests/compiles.rs` generates a protocol crate and `cargo build`s it against `comline-runtime`. The full pipeline is exercised end to end in `cli` ([cli#24](https://github.com/ComlineProject/cli/pull/24)): a `.comline` schema → the real `comline generate` binary → the crate compiled against `comline-runtime` → a `ChatClient` ⇆ `ChatDispatcher` round-trip over `duplex()` (request/response, a typed raised error, a one-way notify).*
 
 - **Borrowed str args** ([comline-rust#3](https://github.com/ComlineProject/comline-rust/pull/3)) — a `str` arg decodes borrowed: `<Proto><Fn>Params<'a> { #[serde(borrow)] name: &'a str }`, trait/client take `&str`. Array-of-string args, nested struct args and all return/data types are still owned (threading `<'a>` through the data types forces an owned/borrowed split on returns).
 - **One-way** ([comline-rust#4](https://github.com/ComlineProject/comline-rust/pull/4) + [runtime#6](https://github.com/ComlineProject/runtime/pull/6)) — `_return: None` generates fire-and-forget: trait method `fn f(&self, …);` (no `Result`, no error enum), the dispatcher writes no `Envelope`, the client method is `-> Result<(), RuntimeError>` over `Client::notify`. `_return: Some(KindValue::Unit)` stays request/response with an empty ack.
