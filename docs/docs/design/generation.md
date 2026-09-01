@@ -1,9 +1,12 @@
 # Generation — codegen, libgen, and the `generation` repo
 
-Status: **G1 + G2a + G2b done** — codegen is out of `core` (the CLI is the
+Status: **G1 + G2a + G2b + G3 done** — codegen is out of `core` (the CLI is the
 composition root); `mode = "lib"` emits a buildable rust crate; TypeScript has a
-`code` generator. G2c (FFI / `dylib`) not started. **G3 (split to per-language
-repos) is the new endpoint** — see below · Affects `ComlineProject/core`,
+`code` generator; each generator now lives in its own `comline-<lang>` repo.
+`comline-codegen-rust` also generates the **RPC shape** for a `protocol` —
+params structs, error enums (from `throws` ordinals), a provider trait, a
+`Dispatch` impl, and a `Client` stub against `comline-runtime` ([surface 4.2](core-target-contract.md#42-the-generated-protocol)).
+G2c (FFI / `dylib`) not started · Affects `ComlineProject/core`,
 `ComlineProject/generation`, `ComlineProject/cli`, `ComlineProject/comline-<lang>`
 
 Companion to [Runtime & generation repository structure](runtime-repo-structure.md),

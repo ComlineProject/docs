@@ -197,7 +197,9 @@ Still open, to fix as part of this design (7f+):
   oriented `Kind`, `{jsonrpc, method, params, id}` envelope).
 - The async (`std`) layer — `AsyncDispatch` + an executor, emitted additively.
 
-### 4.2 — The generated protocol (proposed)
+### 4.2 — The generated protocol
+
+*Built for Rust — `comline-codegen-rust`'s `code` / `lib` output ([comline-rust#2](https://github.com/ComlineProject/comline-rust/pull/2)); a `tests/compiles.rs` generates a protocol crate and `cargo build`s it against `comline-runtime`.* Owned generated types for now (borrowed `<'de>` is a follow-up); `_return: None` and `KindValue::Unit` both render `-> ()` until the runtime has fire-and-forget; `Function.parameters` (per-call settings) not consumed yet.
 
 For `protocol Chat { function send(msg: Msg) -> Ack ! Rejected; function history(limit: u32) -> Msg[]; }`:
 
