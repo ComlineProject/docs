@@ -446,26 +446,13 @@ compile-time via generator options where it can, runtime assert otherwise
 (`reliable + ordered` → TCP / QUIC-stream / Unix / in-process qualify; raw UDP
 does not).
 
-**A connection handshake, on by default, that can be turned off.** It exchanges
-IR hash + wire-format id + framing id + capabilities in the first frame and
-refuses on mismatch — catching "one end msgpack, the other JSON", which
-no-declaration otherwise leaves as garbage at runtime. But some peers can't take
-part: a legacy JSON-RPC server, a hand-rolled client, a one-way UDP fan-out with
-no back-channel, an embedded target that can't spend the round trip.
-`.with_handshake(…)`:
+**A connection handshake — built ([runtime#8](https://github.com/ComlineProject/runtime/pull/8) + [comline-rust#6](https://github.com/ComlineProject/comline-rust/pull/6)).** Each end sends `Handshake { ir_hash, wire_format, framing, capabilities }` as the first frame and `check`s the peer's — refuses (`RuntimeError::Handshake`) on an `ir_hash` / `wire_format` / `framing` mismatch (capability bits may differ). Catches "one end msgpack, the other JSON", which no-declaration otherwise leaves as garbage at runtime.
 
-| mode | behavior |
-|---|---|
-| `Negotiate` *(default)* | exchange, **refuse on mismatch** |
-| `WarnOnly` | exchange, log a mismatch, proceed — for migrations |
-| `AssumeAligned { wire, framing, schema }` | no exchange; you **assert** the peer's stack, in writing |
+- `wire_format` / `framing` are carried as an **FNV-1a `name_hash` of a name**, not a numeric id — `WireFormat::name()` (`"msgpack"`), a user add-on picks a namespaced name; no central id registry. `Handshake` stays fixed-size (31 bytes) and `Copy`.
+- **Two modes.** `Client::connect` / `Server::serve_handshaked` (checked) vs `Client::new` / `Server::serve` (**skip it — "misaligned mode"**, documented, for a legacy peer / no back-channel / an embedded target that can't spend the round trip). The generator emits `<Proto>Client::connect` and `<Proto>Dispatcher::serve` for the checked path, filling the `Handshake` from a generated `IR_HASH` const.
+- Still open: a `WarnOnly` middle mode (exchange, log, proceed) for migrations; a canonical cross-language `ir_hash` from `core`'s CAS (today it's FNV over the generator's frozen-unit `Debug` view, threaded per-generator).
 
-`AssumeAligned` is the unaligned / unchecked mode. It takes an explicit config
-rather than a bare "skip" flag so the assumption is *recorded*, and the runtime
-logs a one-time startup warning. A wrong assertion is garbage decode or silent
-misbehavior — on the caller. The schema's transport requirements still constrain
-*your* stack selection at setup, but nothing cross-checks that the peer honours
-them.
+The schema's transport requirements still constrain *your* stack selection at setup; nothing cross-checks that the peer honours them.
 
 **Datagram vs stream is the one real structural fork.** Stream (TCP,
 QUIC-stream, Unix) → framing length-prefixes for message boundaries. Datagram
@@ -695,10 +682,11 @@ what remains is below the decision line:
 - **§4.4** — the design is settled, the `WireFormat` / `Transport` / framing
   trait signatures are built (7b–7e), and the IR changes the decisions imply are
   landed (`Function.parameters`, `KindValue::Unit`, drop `synchronous` — core#46;
-  `throws: Vec<u16>` + error ordinals — core#47). Still open at the wire level:
-  the handshake frame layout, JSON-RPC as a name-oriented framing, multi-`throws`
-  (`! A, B`) grammar, version-diff enforcement of the ordinal append-only rule,
-  and the transport-requirements config unit.
+  `throws: Vec<u16>` + error ordinals — core#47). The connection handshake is
+  built (runtime#8 + comline-rust#6). Still open at the wire level: JSON-RPC as a
+  name-oriented framing, a `WarnOnly` handshake mode, multi-`throws` (`! A, B`)
+  grammar, version-diff enforcement of the ordinal append-only rule, and the
+  transport-requirements config unit.
 - **§4.6** — decided; the buffer-reuse budget is met by 7d–7e (`Client` /
   `Server`), the dispatcher's reply-body scratch and the arena `Alloc` mode are
   the follow-ons.
