@@ -209,10 +209,11 @@ CLI-driven functions. G3 takes them the rest of the way, per the
    contract + a `Registry` type replacing the hardcoded static + `FrozenUnit`
    helpers) plus `comline-codegen-rust` / `comline-codegen-typescript` crates.
    The CLI composes a `Registry` at startup via each crate's `register()`.
-2. **`comline-typescript`.** ✅ `codegen-typescript` extracted to
-   `ComlineProject/comline-typescript`, the first per-language target repo;
-   `cli` and `generation`'s conformance corpus depend on it by git rev.
-   `comline-rust` follows (its FFI/dylib work is G2c).
+2. **`comline-typescript`, `comline-rust`.** ✅ Both generators extracted to
+   their own repos (`ComlineProject/comline-typescript`,
+   `ComlineProject/comline-rust`); `cli` and `generation`'s conformance corpus
+   depend on them by git rev. `generation` is now just `comline-codegen` +
+   `comline-conformance`. `comline-rust`'s FFI/dylib work is still G2c.
 3. **CLI features.** `find_generator` becomes a feature-gated `Registry` the CLI
    builds from the enabled `comline-<lang>` crates (see
    [The registry](#the-registry)). *Not yet — both generators are always
