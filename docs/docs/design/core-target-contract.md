@@ -11,8 +11,10 @@ settings) made. §4.3's trait-level types are built in `comline-runtime`'s
 `Dispatch` round-trip test proving the surface fits (7c). The stubbed `setup/`
 layer is replaced by real `wire` (framing) + `transport` (`Transport` trait,
 `InMemory` + `Tcp` impls) + `serve` (`Server<D, W>`) + `client` (`Client<T, W>`)
-modules (7d–7e), tested end to end over both transports. Open: the `Alloc` seam,
-a JSON-RPC framing option, the async layer (7f+) ·
+modules (7d–7e), tested end to end over both transports. The §4.4 IR changes are
+landed in `comline-core` (drop `synchronous`, `Function.parameters`,
+`KindValue::Unit` — core#46; `throws: Vec<u16>` + error ordinals — core#47).
+Open: the `Alloc` seam, a JSON-RPC framing option, the async layer (7f+) ·
 Affects
 `ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/runtime`,
 `ComlineProject/comline-<lang>`, `ComlineProject/cli`
@@ -55,12 +57,18 @@ The variants a generator will actually match on:
 - `Field { docstring, parameters, optional, name, kind_value, span }`
 - `Enum { docstring, name, variants, span }` — `variants` are `EnumVariant(KindValue, span)`
 - `Protocol { docstring, parameters, name, functions, span }` — `functions` are `Function`
-- `Function { docstring, name, synchronous, arguments, _return, throws, span }`
+- `Function { docstring, parameters, name, arguments, _return, throws, span }`
   — `arguments` are `FrozenArgument { name, kind, span }`, `_return` is
-  `Option<KindValue>` (`None` ⟹ one-way, §4.4). Slated: drop `synchronous`;
-  `throws` becomes `Vec<u16>` (schema-global error ordinals) at freeze; add
-  `parameters: Vec<FrozenUnit>` for `@key=value` annotations (§4.4)
-- `Error { docstring, parameters, name, message, fields }`
+  `Option<KindValue>` (`None` ⟹ one-way, `Some(KindValue::Unit)` ⟹ empty ack,
+  §4.4); `throws` is `Vec<u16>` — schema-global error ordinals resolved at
+  freeze; `parameters` are `Property { name, expression }` from `@key=value`
+  function annotations. (`synchronous` dropped — core#46; `throws`/ordinals —
+  core#47.)
+- `Error { docstring, parameters, ordinal, imported_from, name, message, fields }`
+  — `ordinal` is this error's schema-global slot (the `u16` in the envelope's
+  `err` id); `imported_from` is `Some(ns)` when the unit is a re-export slot
+  for a `use`d foreign error a `throws` names (`<unresolved: Name>` if it
+  couldn't be located), `None` for a local `error`
 - `Constant { docstring, name, kind_value, span }`
 - `Validator`, `ValidatorRef`, `ExpressionBlock`, `Assert`, `Settings` — the
   [validators](validators.md) surface; a `code` generator can ignore all of
@@ -339,20 +347,24 @@ the wire for debuggability and for framings that are name-oriented (JSON-RPC);
 | client stub | `fn send(&mut self, …) -> Result<Ack, CallError<ChatSendError>>` | the caller *can* hit transport / timeout / a garbage frame |
 | broad client handler | `CallError<ChatError>` via `?` and the `From` impls | one `match` for the service |
 
-**On the wire — schema-global error ordinal.** The envelope's `err` carries
-`{ id: u16, body: &'de [u8] }`. `id` is the error's position in the schema's
-frozen `Error`-unit sequence — **compiler-assigned, frozen into the IR,
-version-diff enforced** (an `error` decl is retired in place, never deleted or
-reordered; its ordinal is never reused). `throws` in the IR shifts from
-`Vec<String>` to `Vec<u16>` (names resolved at freeze) so the ordinal is itself
-version-checked. `body` is the error struct's `fields`, borrowed from the
-receive buffer.
+**On the wire — schema-global error ordinal.** *(Built — core#47.)* The
+envelope's `err` carries `{ id: u16, body: &'de [u8] }`. `id` is
+`FrozenUnit::Error.ordinal` — **compiler-assigned at freeze** (`plan_error_space`
+in `incremental.rs`): local `error` decls take `0..N` in declaration order, and
+each foreign error a `throws` names is appended a re-export slot. `Function.throws`
+is `Vec<u16>` of those ordinals. Append-only discipline (retire in place, never
+reorder or reuse) is the author's to keep; version-diff *enforcement* of it is a
+follow-up. `body` is the error struct's `fields`, borrowed from the receive
+buffer.
 
 - **Name-oriented framings** (JSON-RPC) put the error *name* on the wire instead;
   the generator has the ordinal↔name↔struct mapping both directions. Mirrors
   `Kind::{ Id, Named }`.
 - **A `use`d cross-schema error** gets a re-export slot in the importing schema's
-  ordinal space, so the wire `id` stays a single `u16`.
+  ordinal space (`FrozenUnit::Error` with `imported_from: Some(ns)`, fields +
+  message carried over from the source schema), so the wire `id` stays a single
+  `u16`. An unresolvable `! Name` still gets a stable slot, marked
+  `<unresolved: Name>`.
 - **Unknown ordinal** (newer peer raised an `! E` past what the client
   generated) → `CallError::Runtime(RuntimeError::Remote { name, raw })`, borrowed
   per §4.6. Adding `! E` is a compatible change (old peers land here); removing a
@@ -366,24 +378,25 @@ substitution locally. Only `fields` travel; the template is baked into codegen.
 `! Foo(name = x)` ([guide](../guide/idl/error.md)); the generated Rust *impl*
 returns a fully-built `Foo { name }`, so this language gap doesn't block codegen.
 
-#### `synchronous` / one-way — **decided**
+#### `synchronous` / one-way — **decided; IR changes built (core#46)**
 
 `Function.synchronous: bool` conflated three things: whether the call has a
 response (a wire fact), whether the generated API blocks or `.await`s (a binding
 choice), and how the peer schedules handlers (server config). Only the first
 belongs in the schema, and it is already carried by `_return`.
 
-- **`synchronous` is removed from the IR.**
+- **`synchronous` is removed from the IR.** *(Done.)*
 - **One-way ⟺ `_return == None`.** No request id, no response frame; `! E` on
   such a function is a **compile error** (nowhere to deliver it). The generated
   caller returns `Result<(), TransportError>` — it can learn the frame didn't
   leave the box, never a remote outcome. One-way calls are inherently sync on
   the client (nothing to await) even under the async layer.
-- **`KindValue` gains `Unit`** so `-> ()` is expressible and *distinct* from
-  omitting the return: `commit() -> ()` gets an empty `ok` ack; `log(msg)`
-  doesn't reply. Without it, "ack, no value" would force an empty `struct` per
-  call. (Streaming, when designed, extends this further —
-  `Return::{ None, One(KindValue), Stream(KindValue) }`, §4.7.)
+- **`KindValue` gains `Unit`** *(done)* so `-> ()` is expressible and *distinct*
+  from omitting the return: `commit() -> ()` freezes as
+  `_return: Some(KindValue::Unit)` and gets an empty `ok` ack; `commit();`
+  freezes as `_return: None` and doesn't reply. Without it, "ack, no value"
+  would force an empty `struct` per call. (Streaming, when designed, extends this
+  further — `Return::{ None, One(KindValue), Stream(KindValue) }`, §4.7.)
 - **Blocking vs async** is the §4.6 generator option — sync core trait always,
   `async` additive behind `std`. Not in the schema, does not travel.
 
@@ -673,11 +686,13 @@ Surfaces 1–3 are ready to build a `code` generator on now (`comline-typescript
 rollout step 4). Surface 4's design decisions are **all made** (§4.4 + §4.6);
 what remains is below the decision line:
 
-- **§4.4** — the design is settled, and the `WireFormat` / `Transport` / framing
-  trait signatures are now built (7b–7e). Still open at the wire level: the
-  handshake frame layout, JSON-RPC as a name-oriented framing, and the IR
-  changes the decisions imply (`Function.parameters`, `throws: Vec<u16>`,
-  `KindValue::Unit`, drop `synchronous`, the transport-requirements config unit).
+- **§4.4** — the design is settled, the `WireFormat` / `Transport` / framing
+  trait signatures are built (7b–7e), and the IR changes the decisions imply are
+  landed (`Function.parameters`, `KindValue::Unit`, drop `synchronous` — core#46;
+  `throws: Vec<u16>` + error ordinals — core#47). Still open at the wire level:
+  the handshake frame layout, JSON-RPC as a name-oriented framing, multi-`throws`
+  (`! A, B`) grammar, version-diff enforcement of the ordinal append-only rule,
+  and the transport-requirements config unit.
 - **§4.6** — decided; the buffer-reuse budget is met by 7d–7e (`Client` /
   `Server`), the dispatcher's reply-body scratch and the arena `Alloc` mode are
   the follow-ons.
