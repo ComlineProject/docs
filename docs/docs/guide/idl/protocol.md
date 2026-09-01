@@ -35,6 +35,23 @@ protocol Mail {
 Functions take [docstrings](docstrings.md) (including the `/// @name:` form for
 arguments) and `@key=value` annotations.
 
+## Protocol annotations
+
+A `@key=value` annotation on the `protocol` itself configures the whole service.
+
+``` py linenums="1"
+@framing = "jsonrpc"
+protocol Mail {
+    function send_message(message: Message) -> str ! RecipientNotFound;
+}
+```
+
+- **`@framing`** picks the wire framing the generated client and server use.
+  `"jsonrpc"` (`json-rpc`, `jsonrpc-2.0`) emits a
+  [JSON-RPC 2.0](https://www.jsonrpc.org/specification) stack; omit it for the
+  default compact datagram framing. Both ends of a connection must agree — the
+  [handshake](../runtime/call-system.md) refuses a mismatch.
+
 How a call travels between caller and implementation is the
 [runtime](../runtime/index.md)'s job, over a pluggable
 [call system](../runtime/call-system.md).
