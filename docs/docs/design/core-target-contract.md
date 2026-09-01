@@ -402,10 +402,28 @@ legal over UDP.
 config). Setup **verifies the composed stack meets the declared requirements** —
 compile-time via generator options where it can, runtime assert otherwise
 (`reliable + ordered` → TCP / QUIC-stream / Unix / in-process qualify; raw UDP
-does not). **A connection handshake** exchanges IR hash + wire-format id +
-framing id + capabilities in the first frame; a mismatch refuses the connection
-— this is what catches "one end msgpack, the other JSON", which no-declaration
-otherwise leaves as garbage at runtime.
+does not).
+
+**A connection handshake, on by default, that can be turned off.** It exchanges
+IR hash + wire-format id + framing id + capabilities in the first frame and
+refuses on mismatch — catching "one end msgpack, the other JSON", which
+no-declaration otherwise leaves as garbage at runtime. But some peers can't take
+part: a legacy JSON-RPC server, a hand-rolled client, a one-way UDP fan-out with
+no back-channel, an embedded target that can't spend the round trip.
+`.with_handshake(…)`:
+
+| mode | behavior |
+|---|---|
+| `Negotiate` *(default)* | exchange, **refuse on mismatch** |
+| `WarnOnly` | exchange, log a mismatch, proceed — for migrations |
+| `AssumeAligned { wire, framing, schema }` | no exchange; you **assert** the peer's stack, in writing |
+
+`AssumeAligned` is the unaligned / unchecked mode. It takes an explicit config
+rather than a bare "skip" flag so the assumption is *recorded*, and the runtime
+logs a one-time startup warning. A wrong assertion is garbage decode or silent
+misbehavior — on the caller. The schema's transport requirements still constrain
+*your* stack selection at setup, but nothing cross-checks that the peer honours
+them.
 
 **Datagram vs stream is the one real structural fork.** Stream (TCP,
 QUIC-stream, Unix) → framing length-prefixes for message boundaries. Datagram
