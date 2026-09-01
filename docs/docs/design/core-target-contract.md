@@ -9,9 +9,10 @@ grouping, `synchronous` / one-way, transport / framing / format, per-call
 settings) made. §4.3's trait-level types are built in `comline-runtime`'s
 `contract` module, with a MessagePack `WireFormat` (7b) and an end-to-end
 `Dispatch` round-trip test proving the surface fits (7c). The stubbed `setup/`
-layer is now replaced by real `wire` (framing) + `transport` (`Transport` trait
-+ in-memory impl) + `serve` (`Server<D, W>`) modules (7d); the consumer-side
-`Client` and a TCP transport are next (7e) ·
+layer is replaced by real `wire` (framing) + `transport` (`Transport` trait,
+`InMemory` + `Tcp` impls) + `serve` (`Server<D, W>`) + `client` (`Client<T, W>`)
+modules (7d–7e), tested end to end over both transports. Open: the `Alloc` seam,
+a JSON-RPC framing option, the async layer (7f+) ·
 Affects
 `ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/runtime`,
 `ComlineProject/comline-<lang>`, `ComlineProject/cli`
@@ -158,31 +159,35 @@ the rest still to design).
 
 ### 4.1 — What the runtime already commits to
 
-In `comline-runtime` (`runtime` repo), after rollout steps 7a–7d the shapes are
+In `comline-runtime` (`runtime` repo), after rollout steps 7a–7e the shapes are
 built and tested (no more `todo!()` on this path):
 
 - **Three layers, cleanly separated.** Transport (`transport::Transport` —
-  frame-oriented `send` / `recv`, sync; `InMemory` mpsc impl today, TCP next) →
-  framing (`wire` — `[call_id][request_id][params]` request, `[request_id]` +
-  `Envelope` response) → generated code (a `Dispatch` impl on the provider, a
-  client stub on the consumer).
+  frame-oriented `send` / `recv`, sync; `InMemory` mpsc + `Tcp` length-prefixed
+  stream impls) → framing (`wire` — `[call_id][request_id][params]` request,
+  `[request_id]` + `Envelope` response) → generated code (a `Dispatch` impl on
+  the provider via `serve::Server`, a stub over `client::Client` on the
+  consumer).
 - **Args are a serde value, not `dyn Any`.** `WireFormat::{encode, decode}` take
   `T: Serialize` / `T: Deserialize<'de>`; the old `Message` / `Parameter(&dyn Any)`
   dynamic path is gone.
 - **The serialization axis is a trait.** `WireFormat`; `format::MsgPack` is the
   first impl. Nothing hard-codes `serde_json`.
+- **Request / response, not one type parameter.** `Client::call<P>(call_id, &P)`
+  returns `(Envelope<'_>, &W)` — the generated stub decodes `Ok` as `R` or maps
+  an `Err` ordinal to its schema-error enum, all under one `&mut self` borrow
+  (one call outstanding; pipelining is additive).
 - **Sync core.** No `async_trait`, no tokio on the contract path — an async layer
   sits behind the `std` feature and is emitted additively (§4.6).
 - **`Kind`** carries either an `Id(u16)` (index into the protocol's call list) or
   a `Named(&'static str)`; `Kind::resolve(&[&str])` maps either to an ordinal.
 
-Still open, to fix as part of this design (7e+):
+Still open, to fix as part of this design (7f+):
 
-- The consumer-side `call<'de, P, R, E>` helper — request *and* response types,
-  not `send_async_call<M>`'s one type parameter.
 - The `Alloc` seam for owned bits (`.to_owned()`, decoded collection spines).
-- A stream transport (TCP) needs length-prefixed framing on top of `wire`'s
-  datagram frames.
+- JSON-RPC as a *framing* option under the same `Client` / `Server` (name-
+  oriented `Kind`, `{jsonrpc, method, params, id}` envelope).
+- The async (`std`) layer — `AsyncDispatch` + an executor, emitted additively.
 
 ### 4.2 — The generated protocol (proposed)
 
@@ -279,18 +284,19 @@ Cases:
 Shapes chosen for the §4.6 budget — sync core, write-into-buffer, borrowed
 decode. The trait-level ones landed in `comline-runtime`'s `contract` module
 (rollout step 7a); the MessagePack `WireFormat` in `format` (7b); the framing +
-transport + serve path in `wire` / `transport` / `serve` (7d). Rows below
-reflect what was built; `call` and `Alloc` are still open (7e+).
+transport + `serve` path in `wire` / `transport` / `serve` (7d); the `client`
+side and a `Tcp` transport (7e). Rows below reflect what was built; only the
+`Alloc` seam is still open.
 
 | Add | Shape | For |
 |---|---|---|
 | `RuntimeError` | `enum { Transport, Serialization, Framing, Timeout, UnknownCall, Remote { id: u16 } }` — `core::error::Error`, **lifetime-free** (`'static`, storable) | replace `Result<T, ()>` everywhere |
 | `trait Dispatch` | `fn dispatch<W: WireFormat>(&self, Kind, params: &[u8], &W, out: &mut dyn BufMut) -> Result<(), RuntimeError>` — sync; **generic over the format** (a `&dyn WireFormat` isn't object-safe — generic methods), the provider is generic over `D` anyway (no vtable) | provider call system holds `&D` and routes inbound frames to it |
-| `CallSystemConsumer::call<'de, P, R, E>` | `fn call<P: Serialize, R: Deserialize<'de>, E>(&'de mut self, Kind, &P) -> Result<R, CallError<E>>` — `R` / `E` borrow the response buffer | replaces `send_async_call<M>` (the one-type-param bug). *Not built yet.* |
+| `Client::call<P>` | `fn call<P: Serialize + ?Sized>(&mut self, call_id: u16, &P) -> Result<(Envelope<'_>, &W), RuntimeError>` — frames + sends, blocks for the reply, hands back the envelope (borrowing the recv buffer) **and** the format, both out of one `&mut self`. The generated stub decodes `Ok` → `R` or maps an `Err` ordinal → `CallError<E>`. Replaces `send_async_call<M>` (the one-type-param bug). *Built (7e); one call outstanding, pipelining additive.* |
 | `enum CallError<E>` | `{ App(E), Runtime(RuntimeError) }` + `From<RuntimeError>` | the one runtime type that adds infra failure to a schema-only error enum (§4.4) |
 | `trait WireFormat` | `encode<T: Serialize + ?Sized>(&self, &T, &mut dyn BufMut) -> Result<(), RuntimeError>` / `decode<'de, T: Deserialize<'de>>(&self, &'de [u8]) -> Result<T, RuntimeError>` — no `Vec` return, borrow on decode. `format::MsgPack` implements it over `rmp-serde` (7b, `std`-gated). | the serialization axis; the call system is generic over one |
-| `wire` framing | free fns — `encode_request(call_id: u16, request_id: u64, params, &mut dyn BufMut)` / `decode_request(&[u8]) -> Option<(u16, u64, &[u8])>` and the response pair (`request_id` + envelope). `no_std`, alloc-free, borrow on decode | one frame per message; datagram-oriented |
-| `trait Transport` + `Server` | `Transport::{send(&[u8]), recv(&mut Vec<u8>)}` — sync, frame-oriented; `InMemory` mpsc impl + `duplex()` under `std`. `Server<D, W>` holds `D` + `W` + three reused buffers, `serve_one` / `serve` | the provider loop; `alloc`-gated (`Vec` buffers) |
+| `wire` framing | free fns — `encode_request` / `encode_request_header` (client frames the header then serializes params in after it) / `decode_request(&[u8]) -> Option<(u16, u64, &[u8])>` and the response pair (`request_id` + envelope). `no_std`, alloc-free, borrow on decode | one frame per message; datagram-oriented |
+| `trait Transport` + `Server` / `Client` | `Transport::{send(&[u8]), recv(&mut Vec<u8>)}` — sync, frame-oriented; `InMemory` (mpsc, `duplex()`) and `Tcp` (`u32`-length-prefixed stream, `MAX_FRAME`-bounded) impls under `std`. `Server<D, W>` holds `D` + `W` + 3 reused buffers; `Client<T, W>` owns the transport + format + request-id counter + 2 reused buffers | the provider loop and the consumer call side; `alloc`-gated (`Vec` buffers) |
 | wire envelope | `Envelope<'a>` — `Ok(&'a [u8])` \| `Err { id: u16, body: &'a [u8] }`, one tag byte (`0` / `1`) then `id` little-endian; `encode_ok` / `encode_err` / `decode` helpers | carry a raised error back to the client stub |
 | `trait BufMut` | `put_slice` (+ `put_u8` / `put_u16_le` / `put_u64_le` defaults); `Vec<u8>` impls it under `alloc`; **`SliceBuf<'a>`** wraps a fixed `&mut [u8]` with an `overflowed` flag for the no-`alloc` tier | the receive + encode buffers, **injected once at setup** (§4.6), reset not realloc'd per call |
 | `trait Alloc` | seam for owned bits — global (`alloc`) \| arena \| none; chosen once at setup. *Not built yet.* | `.to_owned()` copies and decoded collection spines |
@@ -545,6 +551,12 @@ One call, transport already connected, is designed to cost:
 Anything that breaks "zero allocations on the happy path" has to justify itself.
 The error path may allocate.
 
+7e's `Client::call` and `Server::serve_one` already hold to this — request-id
+counter aside, they only `clear()` and refill buffers they own. Still to close:
+the dispatcher needs a reusable scratch for the reply body before it becomes an
+`Envelope` (the per-arm `Vec` in the hand-written test dispatchers) — either a
+buffer `serve` hands down or one the generated dispatcher owns.
+
 #### Memory
 
 - **Buffers are injected once, at setup.** After `.serving(…)` / `.connect(…)`
@@ -595,8 +607,8 @@ The repo decision folds `core_no-std` into a `std` feature on one crate:
 | Tier | Has | Contents |
 |---|---|---|
 | **core** (`no_std`, no `alloc`) | — | `contract/` — `Dispatch`, `WireFormat`, `RuntimeError`, `Kind`, `BufMut` + `SliceBuf`, `Envelope`, `CallError` — plus `wire` framing. Pure `(&[u8], id) -> Result<(), _>` transforms over injected buffers. *(Built: 7a + 7d.)* |
-| **`alloc`** feature | `alloc` | `serve::Server`, the `transport::Transport` trait, owned generated types, the `Alloc` seam. *(Built: 7d; `Alloc` open.)* |
-| **`std`** feature | `std` | `format::MsgPack`, `transport::InMemory` (mpsc), `package_abi`; later — a TCP transport, `AsyncDispatch` + executor, blocking wrappers. *(Built: 7b MsgPack, 7d InMemory.)* |
+| **`alloc`** feature | `alloc` | `serve::Server`, `client::Client`, the `transport::Transport` trait, owned generated types, the `Alloc` seam. *(Built: 7d–7e; `Alloc` open.)* |
+| **`std`** feature | `std` | `format::MsgPack`, `transport::{InMemory, Tcp}`, `package_abi`; later — `AsyncDispatch` + executor, blocking wrappers. *(Built: 7b MsgPack, 7d InMemory, 7e Tcp.)* |
 
 **Transport is not in the `no_std` core** — an embedded target hands the runtime
 bytes in and takes bytes out itself. The `no_std` runtime *is* framing + dispatch
@@ -661,12 +673,14 @@ Surfaces 1–3 are ready to build a `code` generator on now (`comline-typescript
 rollout step 4). Surface 4's design decisions are **all made** (§4.4 + §4.6);
 what remains is below the decision line:
 
-- **§4.4** — the design is settled. Open at the wire level: the concrete
-  `WireFormat` / framing trait signatures, the handshake frame layout, and the
-  IR changes the decisions imply (`Function.parameters`, `throws: Vec<u16>`,
+- **§4.4** — the design is settled, and the `WireFormat` / `Transport` / framing
+  trait signatures are now built (7b–7e). Still open at the wire level: the
+  handshake frame layout, JSON-RPC as a name-oriented framing, and the IR
+  changes the decisions imply (`Function.parameters`, `throws: Vec<u16>`,
   `KindValue::Unit`, drop `synchronous`, the transport-requirements config unit).
-- **§4.6** — decided; not yet implemented. The arena `Alloc` mode is a follow-on
-  after the global default.
+- **§4.6** — decided; the buffer-reuse budget is met by 7d–7e (`Client` /
+  `Server`), the dispatcher's reply-body scratch and the arena `Alloc` mode are
+  the follow-ons.
 - **§4.7** — the per-language-runtime seam, streaming — deliberately later.
 - **§5** — the FFI ABI, parked with G2c.
 
