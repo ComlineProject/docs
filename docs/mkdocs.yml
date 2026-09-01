@@ -44,6 +44,7 @@ nav:
     - core ↔ target contract: 'design/core-target-contract.md'
     - Playground & tutorial: 'design/playground-and-tutorial.md'
     - Brand assets: 'design/brand-assets.md'
+    - Licensing: 'design/licensing.md'
   - Proposals:
     - 'proposals/index.md'
     - 'Runtime & codegen repository organization':
@@ -133,4 +134,5 @@ markdown_extensions:
 
 
 copyright: |
-  &copy; 2023&ndash;present <a href="https://github.com/ComlineProject/"  target="_blank" rel="noopener">Comline</a>
+  &copy; 2023&ndash;present <a href="https://github.com/ComlineProject/"  target="_blank" rel="noopener">Comline</a> &middot;
+  docs licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC&nbsp;BY&nbsp;4.0</a>
