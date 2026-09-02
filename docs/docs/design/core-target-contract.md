@@ -457,7 +457,8 @@ does not).
 
 - `wire_format` / `framing` are carried as an **FNV-1a `name_hash` of a name**, not a numeric id — `WireFormat::name()` (`"msgpack"`), a user add-on picks a namespaced name; no central id registry. `Handshake` stays fixed-size (31 bytes) and `Copy`.
 - **Two modes.** `Client::connect` / `Server::serve_handshaked` (checked) vs `Client::new` / `Server::serve` (**skip it — "misaligned mode"**, documented, for a legacy peer / no back-channel / an embedded target that can't spend the round trip). The generator emits `<Proto>Client::connect` and `<Proto>Dispatcher::serve` for the checked path, filling the `Handshake` from a generated `IR_HASH` const.
-- Still open: a `WarnOnly` middle mode (exchange, log, proceed) for migrations; a canonical cross-language `ir_hash` from `core`'s CAS (today it's FNV over the generator's frozen-unit `Debug` view, threaded per-generator).
+- **`ir_hash` is canonical** ([core#49](https://github.com/ComlineProject/core/pull/49) + generation#18 + comline-rust#11) — `comline_core::schema::ir::frozen::schema_ir_hash`: BLAKE3 over the schema's `bincode` encoding (the CAS's own blob serialization), folded to `u64`. Every generator embeds the same value, so two ends generated from one schema agree regardless of target language. Replaced each generator's FNV-over-`Debug` fingerprint.
+- Still open: a `WarnOnly` middle mode (exchange, log, proceed) for migrations.
 
 The schema's transport requirements still constrain *your* stack selection at setup; nothing cross-checks that the peer honours them.
 
@@ -690,9 +691,10 @@ what remains is below the decision line:
   trait signatures are built (7b–7e), and the IR changes the decisions imply are
   landed (`Function.parameters`, `KindValue::Unit`, drop `synchronous` — core#46;
   `throws: Vec<u16>` + error ordinals — core#47). The connection handshake
-  (runtime#8 + comline-rust#6), pluggable framing incl. JSON-RPC (runtime#10 +
-  comline-rust#8), the per-`protocol` `@framing` selector on the generated
-  `connect` / `serve` helpers (comline-rust#9), and its `comline.toml`
+  (runtime#8 + comline-rust#6) with a canonical `ir_hash` from `core`
+  (core#49 + generation#18 + comline-rust#11), pluggable framing incl. JSON-RPC
+  (runtime#10 + comline-rust#8), the per-`protocol` `@framing` selector on the
+  generated `connect` / `serve` helpers (comline-rust#9), and its `comline.toml`
   package-wide `default_framing` (generation#17 + comline-rust#10 + cli#27) are
   built. Still open at the wire level: a `WarnOnly` handshake mode,
   multi-`throws` (`! A, B`) grammar, version-diff enforcement of the ordinal
