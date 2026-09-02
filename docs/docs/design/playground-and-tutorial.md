@@ -129,6 +129,20 @@ result.
 - `wasm-opt`, `opt-level = "z"` vs `"s"`, and SIMD are worth trying once there
   is a size number to move.
 
+## Near-term: the language server
+
+`ComlineProject/language-server` (`comline-lsp`, `tower-lsp` + `comline-core`)
+gives the same edit → parse → diagnostics loop **in a real editor today**, no
+WASM or SvelteKit needed — the faster manual-test vehicle while the playground
+comes together. It parses `.ids` with `comline-core`'s grammar and provides
+diagnostics, an outline, hover, go-to-definition and find-references; completion,
+rename, formatting and semantic-tokens handlers exist but aren't all wired into
+`backend.rs` yet.
+
+Revived against current `core` and pinned by git rev like the rest of the tree
+(language-server#1); it shares `comline-core` with the eventual WASM path, so
+work on the analysis layer benefits both.
+
 ## Playground vs tutorial
 
 - **Playground** — a free-form scratchpad. Shareable: encode the editor state in
