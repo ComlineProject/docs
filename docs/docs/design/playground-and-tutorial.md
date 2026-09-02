@@ -1,9 +1,13 @@
 # Playground & tutorial
 
-Status: **discussion** — a `web/` scaffold exists (SvelteKit `playground` and
-`tutorial` apps, a `compilation-queue-server`, shared Svelte libs), last touched
-early 2024 and not wired to the current `core` / `generation` / `runtime` ·
-Affects `ComlineProject/web`, and how `core` / `generation` build to WASM
+Status: **building** — a first static WASM playground is live
+([ComlineProject/playground#1](https://github.com/ComlineProject/playground/pull/1)):
+`wasm/` (`comline-playground-wasm` — `wasm-bindgen` over the real `comline-core` +
+`comline-codegen` + the rust / typescript generators) and `app/` (Vite +
+vanilla TS, the WASM in a Web Worker), deploying to GitHub Pages. It covers the
+compile → diagnostics → IR → codegen loop for one schema; the stale early-2024
+SvelteKit scaffold was dropped. The runtime demo and multi-file support are the
+open work below · Affects `ComlineProject/playground`
 
 ## Goal
 
@@ -128,6 +132,27 @@ result.
   a revisit is warm.
 - `wasm-opt`, `opt-level = "z"` vs `"s"`, and SIMD are worth trying once there
   is a size number to move.
+
+## What's built (playground#1)
+
+A statically-deployable first cut, matching the recommendation above:
+
+- **`wasm/`** — `comline-playground-wasm`, a `wasm-bindgen` crate depending on
+  `comline-core` + `comline-codegen` + `comline-codegen-rust` /
+  `-typescript` by git rev. `compile(source) -> { ok, diagnostics, ir, units }`
+  (parse → `IncrementalInterpreter` → `validation::validate`, same as the CLI
+  and the LSP — diagnostics carry byte spans) and
+  `generate(source, target, mode) -> { files, error }`. ~600 KB after
+  `wasm-opt`.
+- **`app/`** — Vite + vanilla TS, no framework. The WASM runs in a Web Worker;
+  a debounced compile drives a diagnostics list, the frozen-IR dump, and a
+  generated-code view (rust / typescript × code / lib). `base: "./"` for
+  `/<repo>/`.
+- **deploy** — a workflow builds the WASM with `wasm-pack`, builds the site with
+  Vite, publishes `app/dist` to Pages; runs (build only) on PRs too.
+
+Not yet: multi-file packages, a real editor (CodeMirror), config (`config.idp` /
+`comline.toml`) input, the runtime demo, docs embedding.
 
 ## Near-term: the language server
 
