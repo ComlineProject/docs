@@ -34,7 +34,7 @@ Each page carries a status and links the issues / PRs that carry it out.
   behind it. *Discussion.*
 - [Playground simulation — Phase 1](playground-simulation.md) — wiring two
   protocol instances over `@comline/runtime`'s in-memory transport, with a frame
-  inspector: the buildable plan for the "simulate machines" demo. *Building — 1a–1c landed.*
+  inspector: the buildable plan for the "simulate machines" demo. *Building — 1a–1d landed.*
 - [Brand assets](brand-assets.md) — `ComlineProject/brand` as the single source
   of truth for the mark and colours, and how consumers vendor a pinned copy.
   *In use.*

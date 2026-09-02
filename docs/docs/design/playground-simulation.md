@@ -11,7 +11,11 @@ in, and the drift guard — route B's frames byte-for-byte against the generated
 `ChatDispatcher`'s — passes in CI. **1c** is done
 ([playground#17](https://github.com/ComlineProject/playground/pull/17)): the six
 behaviours, the `Session` model, and `engine.connect` — the sim runs end to end
-from a script. Buildable because `@comline/runtime` already
+from a script. **1d** is done
+([playground#18](https://github.com/ComlineProject/playground/pull/18)): the
+full-width simulate view — palette, canvas + SVG wire, inspector with per-function
+behaviour pickers, the IR-driven call form — with the acceptance driven through a
+real DOM (`linkedom`) in CI. Buildable because `@comline/runtime` already
 ships the pieces the wire needs: `duplex()` for a
 connected in-memory `Transport` pair, `Client.connect` / `Server.serveHandshaked`
 that run the real handshake and refuse on an `IR_HASH` mismatch, `Reply` with
