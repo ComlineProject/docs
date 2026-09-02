@@ -1,6 +1,6 @@
 # Playground simulation — Phase 1
 
-Status: **building** — Phase 1 spec for the ["simulate machines"](playground-and-tutorial.md#the-runtime-demo)
+Status: **built** — Phase 1 spec for the ["simulate machines"](playground-and-tutorial.md#the-runtime-demo)
 runtime demo. **1a** is done
 ([playground#15](https://github.com/ComlineProject/playground/pull/15)):
 `describe_project` turns the frozen IR into the protocol description below, its
@@ -14,8 +14,12 @@ behaviours, the `Session` model, and `engine.connect` — the sim runs end to en
 from a script. **1d** is done
 ([playground#18](https://github.com/ComlineProject/playground/pull/18)): the
 full-width simulate view — palette, canvas + SVG wire, inspector with per-function
-behaviour pickers, the IR-driven call form — with the acceptance driven through a
-real DOM (`linkedom`) in CI. Buildable because `@comline/runtime` already
+behaviour pickers, the IR-driven call form — driven through a real DOM
+(`linkedom`) in CI. **1e** is done
+([playground#19](https://github.com/ComlineProject/playground/pull/19)): the
+expandable frame inspector (decoded envelope, hex, framing, Δ latency) and the
+handshake-refusal path — edit a schema, resync one end, watch the connection be
+refused. **Phase 1 is complete.** Buildable because `@comline/runtime` already
 ships the pieces the wire needs: `duplex()` for a
 connected in-memory `Transport` pair, `Client.connect` / `Server.serveHandshaked`
 that run the real handshake and refuse on an `IR_HASH` mismatch, `Reply` with
