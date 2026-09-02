@@ -1,12 +1,30 @@
 # Playground simulation — Phase 1
 
-Status: **planned** — a Phase 1 spec for the ["simulate machines"](playground-and-tutorial.md#the-runtime-demo)
-runtime demo, buildable now because `@comline/runtime` already ships the pieces
-it needs: `duplex()` for a connected in-memory `Transport` pair,
-`Client.connect` / `Server.serveHandshaked` that run the real handshake and
-refuse on an `IR_HASH` mismatch, `Reply` with `ok` / `err` / `none` outcomes,
-and both framings. Nothing here needs a `comline-core` change beyond one
-read-only WASM function. Two shape decisions are settled: the simulation is a
+Status: **built** — Phase 1 spec for the ["simulate machines"](playground-and-tutorial.md#the-runtime-demo)
+runtime demo. **1a** is done
+([playground#15](https://github.com/ComlineProject/playground/pull/15)):
+`describe_project` turns the frozen IR into the protocol description below, its
+`ir_hash` verified to equal what the generators emit. **1b** is done
+([playground#16](https://github.com/ComlineProject/playground/pull/16)): the
+runtime is vendored, `TappedTransport` + `GenericClient` / `GenericDispatch` are
+in, and the drift guard — route B's frames byte-for-byte against the generated
+`ChatDispatcher`'s — passes in CI. **1c** is done
+([playground#17](https://github.com/ComlineProject/playground/pull/17)): the six
+behaviours, the `Session` model, and `engine.connect` — the sim runs end to end
+from a script. **1d** is done
+([playground#18](https://github.com/ComlineProject/playground/pull/18)): the
+full-width simulate view — palette, canvas + SVG wire, inspector with per-function
+behaviour pickers, the IR-driven call form — driven through a real DOM
+(`linkedom`) in CI. **1e** is done
+([playground#19](https://github.com/ComlineProject/playground/pull/19)): the
+expandable frame inspector (decoded envelope, hex, framing, Δ latency) and the
+handshake-refusal path — edit a schema, resync one end, watch the connection be
+refused. **Phase 1 is complete.** Buildable because `@comline/runtime` already
+ships the pieces the wire needs: `duplex()` for a
+connected in-memory `Transport` pair, `Client.connect` / `Server.serveHandshaked`
+that run the real handshake and refuse on an `IR_HASH` mismatch, `Reply` with
+`ok` / `err` / `none` outcomes, and both framings. Nothing here needs a
+`comline-core` change beyond one read-only WASM function. Two shape decisions are settled: the simulation is a
 **full-width view** (the canvas, inspector and frame log do not fit the existing
 right pane), and `@comline/runtime` is **vendored** into the app (it is an
 unpublished workspace package, and this matches how the WASM crate pins
@@ -153,19 +171,28 @@ Mapping rules:
   an empty `ok` reply.
 - **throws** — each `u16` ordinal joined to the matching `FrozenUnit::Error` by
   `ordinal`; an unresolved slot keeps its number with `name: "<unresolved>"`.
-- **TypeRef from KindValue** — `Primitive(p)` → `{ prim, p.name() }`;
-  `Namespaced(n, _)` → `{ ref, n }` if `n` names a struct/enum in this schema,
-  else a primitive; `Unit` → `{ unit }`; `Union(v)` → `{ union, of: map(v) }`.
-- **ir_hash** — `comline_core::schema::ir::frozen::schema_ir_hash(&units)` over
+- **TypeRef from KindValue** — a frozen signature type is `Unit` → `{ unit }`,
+  `Union(v)` → `{ union, of: map(v) }`, `Primitive(p)` → `{ prim, p.name() }`
+  (rare — only literal defaults), or `Namespaced(n, _)`. For a `Namespaced`
+  string: an `[]` suffix → `{ array, of: <rest> }`; a name declared as a
+  struct/enum anywhere in the project → `{ ref, n }`; anything else → `{ prim, n }`.
+  The only decision is "a type this project declares" (render its fields) vs.
+  "anything else" (one scalar input) — the grammar reserves the primitive
+  keywords, so a declared name can't collide with `u64` / `string` / …, which
+  makes the IR-built name set the single source of truth (no primitive-name list
+  to sync with `comline-core`).
+- **ir_hash** — `comline_core::schema::ir::frozen::schema_ir_hash(units)` over
   the same `Vec<FrozenUnit>` (leading `Namespace` unit included) the generator
-  hashes. **Must be asserted equal to the generated `IR_HASH` constant** — see
-  [Open questions](#open-questions).
+  hashes. This is the **exact call** `comline-codegen-rust` and
+  `comline-codegen-typescript` make; identical by construction — a Node check
+  against the built wasm confirms `describe_project`'s value equals the emitted
+  `IR_HASH` for the same schema.
 
-!!! warning "Array types — unconfirmed"
-    `KindValue` has no `Array` variant in the source read for this spec; `T[]`
-    may arrive as a `Namespaced` wrapper or elsewhere. Until confirmed,
-    `describe_project` emits `{ kind: "array", of: … }` when it can and the args
-    form falls back to a raw-JSON field for anything non-scalar.
+!!! note "Array types — confirmed"
+    Frozen function args / returns / fields go through `build_kind_value(_, None)`:
+    a `Type::Array` lands as `KindValue::Namespaced("T[]", None)` (the `[]` is
+    appended by `type_to_string`). `TypeRef` peels the suffix; nested arrays
+    recurse.
 
 ## Runtime & wire (route B)
 
@@ -345,13 +372,12 @@ acceptance check green.
 
 ## Open questions
 
-- **ir_hash parity** *(blocks 1a)* — `schema_ir_hash` vs. the value the TS
-  generator emits as `IR_HASH` must be identical, or connections in the sim will
-  not mirror real ones. If they differ, the generator wins and `describe_project`
-  matches it.
-- **Array / collection kinds** — `KindValue` showed no `Array` variant; confirm
-  how `T[]` freezes before the arg form can render lists. Raw-JSON fallback
-  covers it meanwhile.
+- ~~**ir_hash parity**~~ *(resolved in 1a)* — both generators call
+  `comline_core::schema::ir::frozen::schema_ir_hash` directly, and
+  `describe_project` makes the same call on the same units vec; a wasm-level
+  check confirms the values match.
+- ~~**Array / collection kinds**~~ *(resolved in 1a)* — `T[]` freezes as
+  `KindValue::Namespaced("T[]", None)`; `TypeRef` peels the suffix.
 - **Route-B drift** — a second copy of the generator's client/dispatch glue can
   diverge silently; the conformance test against `chat.ts` is the guard.
 - **Vendored runtime staleness** — the copy under `sim/runtime/` will not track
@@ -365,7 +391,9 @@ acceptance check green.
 ## Deferred to Phase 2+
 
 Named so the Phase 1 model leaves room and reviewers know what is intentionally
-missing.
+missing. All of the below are now specced in
+[Playground simulation — Phase 2](playground-simulation-phase-2.md), staged as
+milestones 2a–2i.
 
 - Multiple connections, fan-out (one server, many clients), node-to-node
   forwarding, a node hosting several instances.
