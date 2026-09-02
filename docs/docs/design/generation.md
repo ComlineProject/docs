@@ -194,7 +194,9 @@ JSDoc, a `<PROTO>_CALLS` table, a `<Proto>Dispatcher` (`implements Dispatch`), a
 Type map: `string`/`str` → `string`, `bool` → `boolean`, `u128`/`i128`/`s128`
 → `bigint`, every other int/float width → `number`, `T[]` → `T[]`, `optional`
 → `name?: type`, `()` → `void`.
-`lib` mode (an npm package) is next.
+`lib` mode (comline-typescript#9) wraps the per-schema `.ts` output in an npm
+package — `package.json` (declaring `@comline/runtime`), `tsconfig.json`, a
+`src/index.ts` barrel.
 
 Lives as a module in `comline-codelib-gen` (`code_gen/typescript/`) alongside
 `rust` for now; G3 moves it to `comline-typescript`. `lib-gen/typescript/` keeps

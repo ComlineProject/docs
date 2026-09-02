@@ -59,7 +59,9 @@ From this schema:
     interfaces, a provider interface of `Promise`-returning methods, a
     `<PROTO>_CALLS` table, a `<Proto>Dispatcher`, a `<Proto>Client` (+ static
     `connect`), and a `serve<Proto>` helper — framing from `@framing` / the
-    package default. `lib` mode (an npm package) is next.
+    package default. `lib` mode (comline-typescript#9) wraps the per-schema
+    output in an npm package — `package.json` (declaring `@comline/runtime`),
+    `tsconfig.json`, and a `src/index.ts` barrel.
 
 === "Luau"
 
