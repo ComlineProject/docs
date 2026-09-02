@@ -135,24 +135,31 @@ result.
 
 ## What's built (playground#1)
 
-A statically-deployable first cut, matching the recommendation above:
+A statically-deployable playground, matching the recommendation above:
 
-- **`wasm/`** — `comline-playground-wasm`, a `wasm-bindgen` crate depending on
-  `comline-core` + `comline-codegen` + `comline-codegen-rust` /
-  `-typescript` by git rev. `compile(source) -> { ok, diagnostics, ir, units }`
-  (parse → `IncrementalInterpreter` → `validation::validate`, same as the CLI
-  and the LSP — diagnostics carry byte spans) and
-  `generate(source, target, mode) -> { files, error }`. ~600 KB after
-  `wasm-opt`.
-- **`app/`** — Vite + vanilla TS, no framework. The WASM runs in a Web Worker;
-  a debounced compile drives a diagnostics list, the frozen-IR dump, and a
-  generated-code view (rust / typescript × code / lib). `base: "./"` for
-  `/<repo>/`.
+- **`wasm/`** — `comline-playground-wasm`, a `wasm-bindgen` crate over
+  `comline-core` + `comline-codegen` + `comline-codegen-rust` / `-typescript`
+  **and `comline-language-server`** (git rev; the LSP crate with
+  `default-features = false`, so no `tower-lsp` — it builds for wasm32).
+  `compile(source) -> { ok, diagnostics, ir, units }` runs the LSP's own
+  `all_diagnostics` (parse errors + `comline-core` validation);
+  `generate(source, target, mode) -> { files, error }`;
+  `semantic_tokens` / `hover` / `completions` are the LSP handlers verbatim.
+- **`app/`** — Vite; a **CodeMirror 6** editor whose highlighting
+  (token decorations), diagnostics (linter), hover and autocomplete are all
+  fed from the WASM — i.e. the *same code* `comline-lsp` runs. The WASM is in a
+  Web Worker. Panels: the frozen-IR dump and the generated-code view (rust /
+  typescript × code / lib). `base: "./"` for `/<repo>/`.
 - **deploy** — a workflow builds the WASM with `wasm-pack`, builds the site with
   Vite, publishes `app/dist` to Pages; runs (build only) on PRs too.
 
-Not yet: multi-file packages, a real editor (CodeMirror), config (`config.idp` /
-`comline.toml`) input, the runtime demo, docs embedding.
+This is the **no-duplication** shape from the near-term note below: the browser
+editor and `comline-vscode` both consume one Rust analysis layer
+(`comline-language-server`). Highlighting is its `semantic_tokens` handler — no
+separate Lezer / TextMate grammar to keep in sync.
+
+Not yet: multi-file packages, config (`config.idp` / `comline.toml`) input, the
+runtime demo, docs embedding.
 
 ## Near-term: the language server
 
