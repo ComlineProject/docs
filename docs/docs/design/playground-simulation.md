@@ -1,11 +1,15 @@
 # Playground simulation — Phase 1
 
 Status: **building** — Phase 1 spec for the ["simulate machines"](playground-and-tutorial.md#the-runtime-demo)
-runtime demo. Milestone 1a is done
+runtime demo. **1a** is done
 ([playground#15](https://github.com/ComlineProject/playground/pull/15)):
-`describe_project` turns the frozen IR into the protocol description below, and
-its `ir_hash` is verified to equal what the generators emit. Buildable because
-`@comline/runtime` already ships the pieces the wire needs: `duplex()` for a
+`describe_project` turns the frozen IR into the protocol description below, its
+`ir_hash` verified to equal what the generators emit. **1b** is done
+([playground#16](https://github.com/ComlineProject/playground/pull/16)): the
+runtime is vendored, `TappedTransport` + `GenericClient` / `GenericDispatch` are
+in, and the drift guard — route B's frames byte-for-byte against the generated
+`ChatDispatcher`'s — passes in CI. Buildable because `@comline/runtime` already
+ships the pieces the wire needs: `duplex()` for a
 connected in-memory `Transport` pair, `Client.connect` / `Server.serveHandshaked`
 that run the real handshake and refuse on an `IR_HASH` mismatch, `Reply` with
 `ok` / `err` / `none` outcomes, and both framings. Nothing here needs a
