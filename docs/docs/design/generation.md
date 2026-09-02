@@ -179,18 +179,22 @@ error or noted follow-up): nested (`/`-joined) namespaces in `lib`, multi-versio
 named `main` / `lib` compiles but trips Rust's `special_module_name` warning —
 fix by nesting the schema modules under `src/schemas/`.
 
-#### G2b — TypeScript in `code` mode (generation#4, comline-typescript#5)
+#### G2b — TypeScript in `code` mode (generation#4, comline-typescript#5, #8)
 
-IR → `.ts` source: `export interface` per `struct` / `error`, `export enum`
-with string values per enum. A `protocol` emits the RPC shape — an `IR_HASH`
-bigint const (the canonical `schema_ir_hash`), a `<Proto><Fn>Params` interface
-per function, per-function and per-protocol discriminated-union error types from
-each `!` (`{ code: <ordinal>; name; data }`), and an `export interface` of
-`Promise`-returning methods with `@throws` JSDoc.
+IR → `.ts` source: `export interface` per `struct`; per `error` an
+`export interface` (wire payload) plus an `export class <Name>Error extends
+Error` (`.data` + a static `.ordinal`); `export enum` with string values per
+enum. A `protocol` emits the full RPC shape against `@comline/runtime` — an
+`IR_HASH` bigint const (the canonical `schema_ir_hash`), `<Proto><Fn>Params`
+interfaces, a provider interface of `Promise`-returning methods with `@throws`
+JSDoc, a `<PROTO>_CALLS` table, a `<Proto>Dispatcher` (`implements Dispatch`), a
+`<Proto>Client` (+ static `connect`, running the handshake), and a
+`serve<Proto>` helper. Framing follows `@framing` / the package
+`default_framing` (`DatagramFraming` default, `JsonRpcFraming` for `jsonrpc`).
 Type map: `string`/`str` → `string`, `bool` → `boolean`, `u128`/`i128`/`s128`
 → `bigint`, every other int/float width → `number`, `T[]` → `T[]`, `optional`
 → `name?: type`, `()` → `void`.
-A `<Proto>Client` / dispatcher and a TS runtime package are the next step.
+`lib` mode (an npm package) is next.
 
 Lives as a module in `comline-codelib-gen` (`code_gen/typescript/`) alongside
 `rust` for now; G3 moves it to `comline-typescript`. `lib-gen/typescript/` keeps

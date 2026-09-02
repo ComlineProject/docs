@@ -51,14 +51,15 @@ From this schema:
     ```
 
     Implemented ([generation#4](https://github.com/ComlineProject/generation/pull/4),
-    [comline-typescript#5](https://github.com/ComlineProject/comline-typescript/pull/5)) —
-    `struct` / `error` become `export interface`, `enum` an `export enum` with
-    string values. A `protocol` emits the RPC shape: an `IR_HASH` (the
-    canonical `schema_ir_hash`, so a TS peer and a Rust peer agree), a
-    `<Proto><Fn>Params` interface per function, discriminated-union error types
-    from each `!` keyed by ordinal, and an `export interface` of
-    `Promise`-returning methods. A `<Proto>Client` / dispatcher and a runtime
-    package to link them against are the next step.
+    comline-typescript#5, #8) — `struct` becomes `export interface`; `error`
+    an `export interface` (wire payload) plus an `export class <Name>Error`
+    throwable; `enum` an `export enum` with string values. A `protocol` emits
+    the full RPC shape against `@comline/runtime`: an `IR_HASH` (the canonical
+    `schema_ir_hash`, so a TS peer and a Rust peer agree), `<Proto><Fn>Params`
+    interfaces, a provider interface of `Promise`-returning methods, a
+    `<PROTO>_CALLS` table, a `<Proto>Dispatcher`, a `<Proto>Client` (+ static
+    `connect`), and a `serve<Proto>` helper — framing from `@framing` / the
+    package default. `lib` mode (an npm package) is next.
 
 === "Luau"
 
