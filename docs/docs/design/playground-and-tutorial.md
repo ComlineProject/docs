@@ -60,6 +60,13 @@ a pure-Rust tree-sitter runtime (`rust-sitter` → `tree-sitter-c2rust`). No
 
 ## The runtime demo
 
+> The concrete, now-buildable plan for this is
+> [Playground simulation — Phase 1](playground-simulation.md): two protocol
+> instances on a canvas, wired over `@comline/runtime`'s in-memory `duplex()`,
+> with a frame inspector. It drives the frozen IR through the real runtime — no
+> codegen or transpile on the path — so a `comline-core` change is not needed
+> beyond one read-only WASM function.
+
 The full runtime is transport + call framing + routing + dispatch. In a browser:
 
 - **serialisation** (`rmp-serde` / `serde_json`), **call framing** (JSON-RPC),
