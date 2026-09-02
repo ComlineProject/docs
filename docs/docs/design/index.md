@@ -32,6 +32,9 @@ Each page carries a status and links the issues / PRs that carry it out.
 - [Playground & tutorial](playground-and-tutorial.md) — an in-browser, real-time
   compile / codegen / runtime demo, and the WASM vs compile-server question
   behind it. *Discussion.*
+- [Playground simulation — Phase 1](playground-simulation.md) — wiring two
+  protocol instances over `@comline/runtime`'s in-memory transport, with a frame
+  inspector: the buildable plan for the "simulate machines" demo. *Planned.*
 - [Brand assets](brand-assets.md) — `ComlineProject/brand` as the single source
   of truth for the mark and colours, and how consumers vendor a pinned copy.
   *In use.*
