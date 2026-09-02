@@ -44,6 +44,7 @@ nav:
     - core ↔ target contract: 'design/core-target-contract.md'
     - Playground & tutorial: 'design/playground-and-tutorial.md'
     - Playground simulation — Phase 1: 'design/playground-simulation.md'
+    - Playground simulation — Phase 2: 'design/playground-simulation-phase-2.md'
     - Brand assets: 'design/brand-assets.md'
     - Licensing: 'design/licensing.md'
   - Proposals:

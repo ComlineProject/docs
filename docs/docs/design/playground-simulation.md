@@ -391,7 +391,9 @@ acceptance check green.
 ## Deferred to Phase 2+
 
 Named so the Phase 1 model leaves room and reviewers know what is intentionally
-missing.
+missing. All of the below are now specced in
+[Playground simulation — Phase 2](playground-simulation-phase-2.md), staged as
+milestones 2a–2i.
 
 - Multiple connections, fan-out (one server, many clients), node-to-node
   forwarding, a node hosting several instances.
