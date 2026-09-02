@@ -159,9 +159,13 @@ Mapping rules:
 - **TypeRef from KindValue** — a frozen signature type is `Unit` → `{ unit }`,
   `Union(v)` → `{ union, of: map(v) }`, `Primitive(p)` → `{ prim, p.name() }`
   (rare — only literal defaults), or `Namespaced(n, _)`. For a `Namespaced`
-  string: an `[]` suffix → `{ array, of: <rest> }`; a known primitive name →
-  `{ prim, n }`; a struct/enum name anywhere in the project → `{ ref, n }`;
-  otherwise `{ prim, n }` (an opaque scalar).
+  string: an `[]` suffix → `{ array, of: <rest> }`; a name declared as a
+  struct/enum anywhere in the project → `{ ref, n }`; anything else → `{ prim, n }`.
+  The only decision is "a type this project declares" (render its fields) vs.
+  "anything else" (one scalar input) — the grammar reserves the primitive
+  keywords, so a declared name can't collide with `u64` / `string` / …, which
+  makes the IR-built name set the single source of truth (no primitive-name list
+  to sync with `comline-core`).
 - **ir_hash** — `comline_core::schema::ir::frozen::schema_ir_hash(units)` over
   the same `Vec<FrozenUnit>` (leading `Namespace` unit included) the generator
   hashes. This is the **exact call** `comline-codegen-rust` and
