@@ -18,6 +18,7 @@ Defaults for every target.
 | `layout` | string (template) | `"{{language}}/{{namespace}}.{{ext}}"` | Path of each generated file under `out`. Handlebars, strict. |
 | `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. Only `code` is implemented. |
 | `package_versions` | `"latest"` \| `"all"` \| list | `"latest"` | Which package versions to emit — see [below](#package_versions). |
+| `default_framing` | string | — | Wire framing for protocols that don't pick one with [`@framing`](../guide/idl/protocol.md#protocol-annotations) — see [below](#default_framing). |
 
 ## `[[generate.target]]`
 
@@ -28,7 +29,7 @@ be repeated here to override it for this target only.
 |---|---|---|
 | `language` | string | **Required.** Must be one the manifest declares under `code_generation.languages`. |
 | `lang_version` | string | Optional; selects a version-specific generator. Defaults to what `config.idp` declared. |
-| `out`, `layout`, `mode`, `package_versions` | — | Per-target override of the `[generate]` value. |
+| `out`, `layout`, `mode`, `package_versions`, `default_framing` | — | Per-target override of the `[generate]` value. |
 
 ```toml
 [generate]
@@ -69,6 +70,31 @@ paths. Old schemas are emitted with the *current* generator.
 [generate]
 package_versions = "all"
 layout           = "{{language}}/{{package_version}}/{{namespace}}.{{ext}}"
+```
+
+## `default_framing`
+
+The wire framing the generated `connect` / `serve` helpers use for any
+`protocol` that does not set its own [`@framing`](../guide/idl/protocol.md#protocol-annotations).
+Unset ⇒ the generator's built-in default (a compact datagram framing for Rust).
+
+| Value | Effect |
+|---|---|
+| `"jsonrpc"` (`"json-rpc"`, `"jsonrpc-2.0"`) | JSON-RPC 2.0 framing. |
+| `"datagram"` (`"comline.datagram"`) | The datagram default, stated explicitly. |
+
+A value the target generator doesn't recognise leaves its built-in default in
+place. A single protocol overrides the package setting either way with
+`@framing` — including `@framing = "datagram"` to opt back out of a `jsonrpc`
+default.
+
+```toml
+[generate]
+default_framing = "jsonrpc"
+
+[[generate.target]]
+language        = "rust"
+default_framing = "datagram"   # this target only
 ```
 
 ## Precedence

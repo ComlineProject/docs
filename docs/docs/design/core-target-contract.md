@@ -14,9 +14,10 @@ layer is replaced by real `wire` (framing) + `transport` (`Transport` trait,
 modules (7d–7e), tested end to end over both transports. The §4.4 IR changes are
 landed in `comline-core` (drop `synchronous`, `Function.parameters`,
 `KindValue::Unit` — core#46; `throws: Vec<u16>` + error ordinals — core#47).
-Pluggable framing with a JSON-RPC impl (runtime#10 + comline-rust#8) and the
-per-`protocol` `@framing` selector (comline-rust#9) are built.
-Open: the `Alloc` seam, a config-level framing default, the async layer (7f+) ·
+Pluggable framing with a JSON-RPC impl (runtime#10 + comline-rust#8), the
+per-`protocol` `@framing` selector (comline-rust#9), and the `comline.toml`
+package-wide `default_framing` (generation#17 + comline-rust#10 + cli#27) are
+built. Open: the `Alloc` seam, the async layer (7f+) ·
 Affects
 `ComlineProject/core`, `ComlineProject/generation`, `ComlineProject/runtime`,
 `ComlineProject/comline-<lang>`, `ComlineProject/cli`
@@ -194,14 +195,13 @@ built and tested (no more `todo!()` on this path):
 
 **Framing is a pluggable axis** (built — [runtime#10](https://github.com/ComlineProject/runtime/pull/10) + [comline-rust#8](https://github.com/ComlineProject/comline-rust/pull/8)). `contract::Framing` is orthogonal to `WireFormat` — `Client<T, W, F>` / `Server<D, W, F>` are generic over one, default `DatagramFraming`. `framing::JsonRpcFraming` (std) is the name-oriented alternative: `{"jsonrpc":"2.0","method":…,"params":…,"id":N}`, a raised schema error → a JSON-RPC `error` object keyed by ordinal, pairs with `format::Json`. `Dispatch` writes into a `Reply` (framing-agnostic ok/err/none) instead of an `Envelope` buffer, and exposes `calls()` so a method name resolves to an ordinal; the generated stub passes `Call::new(id, name)` (both addresses, the framing picks).
 
-**A schema selects its framing** ([comline-rust#9](https://github.com/ComlineProject/comline-rust/pull/9)). `@framing = "jsonrpc"` on a `protocol` (frozen into `Protocol.parameters` as a `Property`, same path as `@timeout_ms` / `@provider` — no core change) makes the generator emit the JSON-RPC stack instead of the datagram one: `<Proto>Client` wraps `Client<T, W, JsonRpcFraming>`, `connect` / `serve` call `Client::connect_with_framing` / `Server::with_framing`, and the `Handshake` carries `framing.name()` rather than `FRAMING_DATAGRAM`. Absent / unrecognised keeps the datagram default byte-for-byte. Recognised: `jsonrpc`, `json-rpc`, `jsonrpc-2.0`.
+**A schema selects its framing** ([comline-rust#9](https://github.com/ComlineProject/comline-rust/pull/9)). `@framing = "jsonrpc"` on a `protocol` (frozen into `Protocol.parameters` as a `Property`, same path as `@timeout_ms` / `@provider` — no core change) makes the generator emit the JSON-RPC stack instead of the datagram one: `<Proto>Client` wraps `Client<T, W, JsonRpcFraming>`, `connect` / `serve` call `Client::connect_with_framing` / `Server::with_framing`, and the `Handshake` carries `framing.name()` rather than `FRAMING_DATAGRAM`. Absent / unrecognised keeps the datagram default byte-for-byte. Recognised: `jsonrpc`, `json-rpc`, `jsonrpc-2.0`, plus `datagram` to opt a single protocol back out.
+
+**A package-wide default** ([generation#17](https://github.com/ComlineProject/generation/pull/17) + [comline-rust#10](https://github.com/ComlineProject/comline-rust/pull/10) + [cli#27](https://github.com/ComlineProject/cli/pull/27)). `comline.toml`'s `[generate] default_framing` (per-`[[generate.target]]` overridable) rides `GenRequest.default_framing` to the generator and applies to every protocol with no `@framing` of its own. Resolution is `@framing` → package default → datagram. The contract crate treats the value as an opaque name; the target generator validates it.
 
 Still open, to fix as part of this design:
 
 - The `Alloc` seam for owned bits (`.to_owned()`, decoded collection spines).
-- A `comline.toml` / config-level framing default (the schema annotation is
-  per-`protocol`; a package-wide `default_framing` is the same shape as
-  `default_wire`).
 - The async (`std`) layer — `AsyncDispatch` + an executor, emitted additively.
 
 ### 4.2 — The generated protocol
@@ -691,9 +691,10 @@ what remains is below the decision line:
   landed (`Function.parameters`, `KindValue::Unit`, drop `synchronous` — core#46;
   `throws: Vec<u16>` + error ordinals — core#47). The connection handshake
   (runtime#8 + comline-rust#6), pluggable framing incl. JSON-RPC (runtime#10 +
-  comline-rust#8), and the per-`protocol` `@framing` selector on the generated
-  `connect` / `serve` helpers (comline-rust#9) are built. Still open at the wire
-  level: a package-wide framing default in config, a `WarnOnly` handshake mode,
+  comline-rust#8), the per-`protocol` `@framing` selector on the generated
+  `connect` / `serve` helpers (comline-rust#9), and its `comline.toml`
+  package-wide `default_framing` (generation#17 + comline-rust#10 + cli#27) are
+  built. Still open at the wire level: a `WarnOnly` handshake mode,
   multi-`throws` (`! A, B`) grammar, version-diff enforcement of the ordinal
   append-only rule, and the transport-requirements config unit.
 - **§4.6** — decided; the buffer-reuse budget is met by 7d–7e (`Client` /
