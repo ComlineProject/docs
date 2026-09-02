@@ -8,7 +8,10 @@ runtime demo. **1a** is done
 ([playground#16](https://github.com/ComlineProject/playground/pull/16)): the
 runtime is vendored, `TappedTransport` + `GenericClient` / `GenericDispatch` are
 in, and the drift guard — route B's frames byte-for-byte against the generated
-`ChatDispatcher`'s — passes in CI. Buildable because `@comline/runtime` already
+`ChatDispatcher`'s — passes in CI. **1c** is done
+([playground#17](https://github.com/ComlineProject/playground/pull/17)): the six
+behaviours, the `Session` model, and `engine.connect` — the sim runs end to end
+from a script. Buildable because `@comline/runtime` already
 ships the pieces the wire needs: `duplex()` for a
 connected in-memory `Transport` pair, `Client.connect` / `Server.serveHandshaked`
 that run the real handshake and refuse on an `IR_HASH` mismatch, `Reply` with
