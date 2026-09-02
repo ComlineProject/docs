@@ -179,12 +179,18 @@ error or noted follow-up): nested (`/`-joined) namespaces in `lib`, multi-versio
 named `main` / `lib` compiles but trips Rust's `special_module_name` warning —
 fix by nesting the schema modules under `src/schemas/`.
 
-#### G2b — TypeScript in `code` mode (generation#4)
+#### G2b — TypeScript in `code` mode (generation#4, comline-typescript#5)
 
-IR → `.ts` source: `export interface` per struct, `export enum` with string
-values per enum, `export interface` (one method per function) per protocol.
-Type map: `string`/`str` → `string`, `bool` → `boolean`, every int/float width
-→ `number`, `T[]` → `T[]`, `optional` → `name?: type`.
+IR → `.ts` source: `export interface` per `struct` / `error`, `export enum`
+with string values per enum. A `protocol` emits the RPC shape — an `IR_HASH`
+bigint const (the canonical `schema_ir_hash`), a `<Proto><Fn>Params` interface
+per function, per-function and per-protocol discriminated-union error types from
+each `!` (`{ code: <ordinal>; name; data }`), and an `export interface` of
+`Promise`-returning methods with `@throws` JSDoc.
+Type map: `string`/`str` → `string`, `bool` → `boolean`, `u128`/`i128`/`s128`
+→ `bigint`, every other int/float width → `number`, `T[]` → `T[]`, `optional`
+→ `name?: type`, `()` → `void`.
+A `<Proto>Client` / dispatcher and a TS runtime package are the next step.
 
 Lives as a module in `comline-codelib-gen` (`code_gen/typescript/`) alongside
 `rust` for now; G3 moves it to `comline-typescript`. `lib-gen/typescript/` keeps

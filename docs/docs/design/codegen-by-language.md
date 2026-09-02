@@ -50,9 +50,15 @@ From this schema:
     }
     ```
 
-    Implemented ([generation#4](https://github.com/ComlineProject/generation/pull/4)) —
-    enums become `export enum` with string values, protocols an `export
-    interface` of methods.
+    Implemented ([generation#4](https://github.com/ComlineProject/generation/pull/4),
+    [comline-typescript#5](https://github.com/ComlineProject/comline-typescript/pull/5)) —
+    `struct` / `error` become `export interface`, `enum` an `export enum` with
+    string values. A `protocol` emits the RPC shape: an `IR_HASH` (the
+    canonical `schema_ir_hash`, so a TS peer and a Rust peer agree), a
+    `<Proto><Fn>Params` interface per function, discriminated-union error types
+    from each `!` keyed by ordinal, and an `export interface` of
+    `Promise`-returning methods. A `<Proto>Client` / dispatcher and a runtime
+    package to link them against are the next step.
 
 === "Luau"
 
