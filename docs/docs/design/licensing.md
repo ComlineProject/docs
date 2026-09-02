@@ -7,8 +7,8 @@ Status: **decided** · Supersedes the `MIT OR Apache-2.0` set in
 
 | repo(s) | license | why |
 |---|---|---|
-| `core`, `generation`, `comline-rust`, `comline-typescript`, `cli` | **GPL-3.0-only** | the **toolchain** — the compiler and code generators; everything that links `comline-core` |
-| `runtime` (`comline-runtime`) | **MPL-2.0** | linked *into user applications* |
+| `core`, `generation`, `cli`, and each `comline-<lang>` repo's `codegen/` | **GPL-3.0-only** | the **toolchain** — the compiler and code generators; everything that links `comline-core` |
+| `runtime` (`comline-runtime`) and each `comline-<lang>` repo's `runtime/` (e.g. `@comline/runtime`, MPL) | **MPL-2.0** | linked *into user applications* |
 | generated `<namespace>` files | *the user's* — no Comline license attaches | output of a tool is not a derivative of the tool |
 | `docs` | **CC-BY-4.0** | prose, not code |
 | `brand` | **not open-licensed** — trademark reserved, nominative use granted (`brand/TRADEMARK.md`) | a fork may copy the code; it may not *be* "Comline" |
@@ -102,5 +102,7 @@ can still opt into a future GPL deliberately if one lands that it likes.
   terms by anyone who already has it — a licence grant cannot be revoked
   retroactively. Every release from the switch forward is GPL-3.0-only /
   MPL-2.0.
-- Contributions are taken under the repo's license (GPL-3.0-only for toolchain
-  repos, MPL-2.0 for `runtime`), no CLA.
+- Contributions are taken under the license of the part they touch
+  (GPL-3.0-only for toolchain code — `core`, `generation`, `cli`, the `codegen/`
+  in each target repo; MPL-2.0 for runtime code — `comline-runtime` and each
+  target repo's `runtime/`), no CLA.
