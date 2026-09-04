@@ -1,9 +1,9 @@
 # Playground simulation — Phase 2
 
-Status: **in progress** — 2a–2f and the full engine port are done, as PRs #1–#10
+Status: **in progress** — 2a–2g and the full engine port are done, as PRs #1–#10
 against [`ComlineProject/simulator`](https://github.com/ComlineProject/simulator).
-Remaining: 2g (framing / codec matrix), rewiring the playground UI onto the new
-engine, and 2i (the tutorial embed). 2h is **subsumed** — see below.
+Remaining: rewiring the playground UI onto the new engine, and 2i (the tutorial
+embed). 2h is **subsumed** — see below.
 
 Phase 1 proved one call between two services on the real `@comline/runtime`.
 Phase 2 turns that into a place to reason about *distributed* behaviour: many
@@ -116,7 +116,7 @@ Three core generalisations carry the rest:
 | **2d** | **Virtual clock** — the discrete-event queue; step / advance / play; deterministic given a seed | a delay fault + stepped clock: `send` is issued, `step` fires one event at a time, the reply lands only after time passes the delay; same seed ⇒ same frame order twice | ✅ |
 | **2e** | **Record & replay + shareable session** — `Session` ⇄ `#s=…` link; input capture; replay | a recorded session replays to a byte-identical frame log; a link round-trips a fan-out and reconnects it | ✅ |
 | **2f** | **User-written behaviours** — a sandboxed **Rhai** script as an 8th behaviour kind; the canned ones stay | a script returning `#{ body: params[0] }` drives `send`; an infinite-loop script is stopped (operations limit), not hung; `state` persists between calls | ✅ |
-| **2g** | **Framing / codec matrix** — the same call through datagram + JSON-RPC, JSON + MessagePack, side by side | one `send` rendered four ways; the decoded bodies match; the JSON-RPC and datagram request frames differ only as their specs say | ▫ next |
+| **2g** | **Framing / codec matrix** — the same call through datagram + JSON-RPC, JSON + MessagePack, side by side | one `send` rendered three ways (`jsonrpc/msgpack` isn't a real combo — JSON-RPC is JSON-only); the decoded bodies match; the JSON-RPC and datagram request frames differ only as their specs say | ✅ |
 | **2h** | ~~Route A — transpile the generated TS in-browser~~ | — | **subsumed** — the Rust engine already runs the real `comline-runtime` contract; there is no re-implementation to reconcile |
 | **2i** | **Embeddable `<sim>`** — a fixed, partly-locked topology; no header / edit view; the lean (`--no-default-features`) wasm | the tutorial's "two services talk" lesson embeds the sim with `chat-1` / `chat-2` pre-wired and the palette hidden | ▫ |
 
@@ -263,17 +263,22 @@ Not in scope: importing modules, multiple files, a type-checked script surface.
 
 ## Framing / codec matrix (2g)
 
-A **compare** view: pick a client, a function, params once, and run the call over
-a throwaway connection in each of `{datagram, jsonrpc} × {json, msgpack}`,
-showing the four frame sets side by side with a shared body view. It asserts the
-decoded request params and the decoded reply are equal across all four;
-divergence is a bug in a framing or a codec.
+The crate side predates the playground UI: `Sim::compare()` runs one call over a
+throwaway connection in every framing/codec combo the protocol supports and
+returns each combo's frames plus its decoded outcome; `Sim::set_transport()`
+pins a live connection to a specific combo instead of `auto`.
 
-This lands in the crate: a JSON-RPC `Framing` alongside `DatagramFraming`, and a
-MessagePack `WireFormat` alongside the JSON one. The `Shape` already carries a
-protocol's `framing`; the engine's per-wire framing becomes a small enum instead
-of hard-wired datagram, and `framedecode` gains the JSON-RPC path (its
-`DecodeCtx` already takes the framing).
+The playground's CALL tab gets a **compare** button next to `send` on each
+function block, params filled in once: it renders a verdict — `✓ all N combos
+agree` or `⚠ combos disagree` — plus a table of combo → wire bytes → decoded
+outcome, so a divergence (a bug in a framing or a codec) is visible at a glance.
+The connection inspector's read-only `framing` fact becomes an editable framing /
+wire-format picker, calling `set_transport`.
+
+Three combos ship, not the four originally planned: `datagram/json`,
+`datagram/msgpack`, `jsonrpc/json`. `jsonrpc/msgpack` is never offered —
+JSON-RPC's own spec is JSON text, so a MessagePack-encoded JSON-RPC envelope
+isn't a meaningful combination, and `compare()` never returns it.
 
 ## Embeddable `<sim>` (2i)
 
