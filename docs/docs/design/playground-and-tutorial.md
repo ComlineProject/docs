@@ -6,8 +6,12 @@ Status: **building** — a first static WASM playground is live
 `comline-codegen` + the rust / typescript generators) and `app/` (Vite +
 vanilla TS, the WASM in a Web Worker), deploying to GitHub Pages. It covers the
 compile → diagnostics → IR → codegen loop for one schema; the stale early-2024
-SvelteKit scaffold was dropped. The runtime demo and multi-file support are the
-open work below · Affects `ComlineProject/playground`
+SvelteKit scaffold was dropped. **The runtime demo is built too** — see
+[Playground simulation — Phase 1](playground-simulation.md) and
+[Phase 2](playground-simulation-phase-2.md) — on a Rust → WASM
+`comline-simulator` engine rather than the browser-side runtime this doc
+originally scoped. Multi-file support is still open · Affects
+`ComlineProject/playground`
 
 ## Goal
 
@@ -165,8 +169,10 @@ editor and `comline-vscode` both consume one Rust analysis layer
 (`comline-language-server`). Highlighting is its `semantic_tokens` handler — no
 separate Lezer / TextMate grammar to keep in sync.
 
-Not yet: multi-file packages, config (`config.idp` / `comline.toml`) input, the
-runtime demo, docs embedding.
+Not yet: multi-file packages, config (`config.idp` / `comline.toml`) input, docs
+embedding. The runtime demo is covered separately — see
+[Playground simulation — Phase 1](playground-simulation.md) /
+[Phase 2](playground-simulation-phase-2.md).
 
 ## Near-term: the language server
 
@@ -192,9 +198,22 @@ work on the analysis layer benefits both.
   validators → imports → generate → runtime. The `tutorial` README wants each
   step to *simulate* running machines with distinct local/remote panels and live
   stats — the loopback runtime above is the engine for that.
-- Both consume the same WASM module and the same component library.
+- **Not sharing yet, in practice.** The one lesson built so far ("two services
+  talk") is a standalone widget (`ComlineProject/tutorial`'s
+  `Simulation.svelte`) driving `comline-simulator` directly — it reuses neither
+  the playground's `comline-playground-wasm` (the editor) nor its `sim/ui/*.ts`
+  components. The "same WASM module and component library" plan below hasn't
+  materialised for the runtime piece; revisit once more lessons exist.
 
 ## Where it lives / embedding
+
+**Reality diverged from the "SvelteKit for both" plan below.** The playground
+ended up Vite + vanilla TS + CodeMirror (see the status line above); only the
+tutorial is SvelteKit. There's no neutral TS package or shared Svelte component
+library — the tutorial's one interactive lesson so far is a standalone widget
+against `comline-simulator` directly (see
+[Playground vs tutorial](#playground-vs-tutorial)). The plan as originally
+written:
 
 **SvelteKit for the apps, framework-neutral for what's shared.** The
 `playground` and `tutorial` stay SvelteKit (the existing scaffold). Below them:
@@ -222,9 +241,10 @@ subdomains.
 
 - **Target** — everything: compile + diagnostics + codegen + a runtime demo. No
   cut-down first release; the runtime demo simply fills in per language.
-- **Framework** — SvelteKit for `playground` and `tutorial`; a neutral TS
-  package for the WASM/loopback/runner core; a Svelte component library, also
-  built as custom elements for the docs.
+- **Framework** — *superseded in practice*: the playground shipped Vite +
+  vanilla TS + CodeMirror, not SvelteKit; only the tutorial is SvelteKit, and
+  its one interactive lesson is a standalone widget, not a shared component
+  library. See [Where it lives / embedding](#where-it-lives-embedding).
 
 ## Findings so far
 

@@ -36,9 +36,10 @@ Each page carries a status and links the issues / PRs that carry it out.
   protocol instances over `@comline/runtime`'s in-memory transport, with a frame
   inspector: the buildable plan for the "simulate machines" demo. *Built (Phase 1).*
 - [Playground simulation — Phase 2](playground-simulation-phase-2.md) — many
-  connections, fault injection, a virtual clock, record & replay, sandboxed
-  user behaviours, and route A (the real generated module in the browser). The
-  staged plan for everything Phase 1 deferred. *Planned.*
+  connections, gateway forwarding, fault injection, a virtual clock, record &
+  replay, sandboxed user behaviours, and a framing/codec comparison — on a
+  Rust → WASM engine that runs the real runtime contract directly, no
+  in-browser transpile needed. *Built (Phase 2).*
 - [Brand assets](brand-assets.md) — `ComlineProject/brand` as the single source
   of truth for the mark and colours, and how consumers vendor a pinned copy.
   *In use.*
