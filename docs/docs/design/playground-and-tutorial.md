@@ -244,7 +244,7 @@ subdomains.
 - **Framework** — *superseded in practice*: the playground shipped Vite +
   vanilla TS + CodeMirror, not SvelteKit; only the tutorial is SvelteKit, and
   its one interactive lesson is a standalone widget, not a shared component
-  library. See [Where it lives / embedding](#where-it-lives--embedding).
+  library. See [Where it lives / embedding](#where-it-lives-embedding).
 
 ## Findings so far
 
