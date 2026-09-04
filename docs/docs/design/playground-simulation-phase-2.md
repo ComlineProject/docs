@@ -1,9 +1,9 @@
 # Playground simulation — Phase 2
 
-Status: **in progress** — 2a–2g and the full engine port are done, as PRs #1–#10
-against [`ComlineProject/simulator`](https://github.com/ComlineProject/simulator).
-Remaining: rewiring the playground UI onto the new engine, and 2i (the tutorial
-embed). 2h is **subsumed** — see below.
+Status: **complete** — 2a–2g and the full engine port shipped as PRs #1–#10
+against [`ComlineProject/simulator`](https://github.com/ComlineProject/simulator);
+the playground UI is rewired onto that engine. 2h is **subsumed** and 2i shipped
+differently than planned — both below.
 
 Phase 1 proved one call between two services on the real `@comline/runtime`.
 Phase 2 turns that into a place to reason about *distributed* behaviour: many
@@ -118,11 +118,11 @@ Three core generalisations carry the rest:
 | **2f** | **User-written behaviours** — a sandboxed **Rhai** script as an 8th behaviour kind; the canned ones stay | a script returning `#{ body: params[0] }` drives `send`; an infinite-loop script is stopped (operations limit), not hung; `state` persists between calls | ✅ |
 | **2g** | **Framing / codec matrix** — the same call through datagram + JSON-RPC, JSON + MessagePack, side by side | one `send` rendered three ways (`jsonrpc/msgpack` isn't a real combo — JSON-RPC is JSON-only); the decoded bodies match; the JSON-RPC and datagram request frames differ only as their specs say | ✅ |
 | **2h** | ~~Route A — transpile the generated TS in-browser~~ | — | **subsumed** — the Rust engine already runs the real `comline-runtime` contract; there is no re-implementation to reconcile |
-| **2i** | **Embeddable `<sim>`** — a fixed, partly-locked topology; no header / edit view; the lean (`--no-default-features`) wasm | the tutorial's "two services talk" lesson embeds the sim with `chat-1` / `chat-2` pre-wired and the palette hidden | ▫ |
+| **2i** | **Interactive lesson, not an embedded `<sim>`** — `ComlineProject/tutorial` ships its own small `Simulation.svelte` driving `comline-simulator` directly (the lean, `--no-default-features` wasm); no canvas, palette, or inspector reused | the "two services talk" lesson (part 1, "Try it") wires `chat-1` / `chat-2`, lets you pick the server's `send` behaviour, and sends a live call | ✅ |
 
-Also on the list before Phase 2 closes: **rewire the playground UI** — replace
-`app/src/sim/*.ts` with a thin view over `Sim`, and delete the vendored
-`@comline/runtime` + the drift-guard test.
+Also done before Phase 2 closed: the **playground UI rewire** — `app/src/sim/*.ts`
+is a thin view over `Sim`; the vendored `@comline/runtime` and the drift-guard
+test are gone.
 
 ## Topology (2a–2b)
 
@@ -280,14 +280,21 @@ Three combos ship, not the four originally planned: `datagram/json`,
 JSON-RPC's own spec is JSON text, so a MessagePack-encoded JSON-RPC envelope
 isn't a meaningful combination, and `compare()` never returns it.
 
-## Embeddable `<sim>` (2i)
+## Interactive lesson, not an embedded `<sim>` (2i)
 
-The tutorial mounts the sim with a fixed topology and some controls locked, no
-header or edit view, and never touching the URL fragment. Because the engine is
-already a packaged crate with a `Sim` facade, "embed" is mostly a host-side view:
-the tutorial links the **lean** (`--no-default-features`) wasm, ships a
-precompiled `Shape` and a session link for the lesson, and renders a cut-down
-canvas + inspector + frame log over it.
+The plan was to embed a locked-down version of the playground's own canvas +
+inspector + frame log. What shipped instead, in `ComlineProject/tutorial`, is
+simpler: `src/lib/sim/Simulation.svelte` is a ~250-line, purpose-built widget
+that links `comline-simulator` (the **lean**, `--no-default-features` wasm)
+directly and draws its own minimal UI — a client/server wire diagram, a
+`send`-behaviour picker (reply / echo / drop), a call form, and a plain frame
+list — over a baked lesson (`src/lib/sim/lessons/chat.{ids,lesson.json}`, one
+`Chat` client and server pre-wired).
+
+None of the playground's `sim/ui/*.ts` components are reused; the engine's `Sim`
+facade was enough of a shared surface that a bespoke, much smaller consumer was
+less work than cutting the playground's own UI down to size. It ships on the
+"two services talk" lesson (part 1, "Try it").
 
 ## Open questions
 
