@@ -14,7 +14,7 @@ my-api/
 
 ## The manifest — `config.idp`
 
-```
+```idp
 congregation my_api
 specification_version = 1
 

@@ -1,3 +1,7 @@
 # Docs build
 .cache/
 site/
+
+# Python bytecode (pygments-comline is a real installed package now)
+__pycache__/
+*.pyc

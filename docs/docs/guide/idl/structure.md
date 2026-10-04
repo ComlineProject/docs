@@ -3,7 +3,7 @@
 A **structure** (`struct`, also called a *message*) is a named data shape. It
 carries typed **fields**.
 
-``` py linenums="1"
+```ids linenums="1"
 struct Message {
     sender: str
     recipient: str
@@ -17,7 +17,7 @@ struct Message {
 A field is `name: Type`, one per line, in declaration order. A field may be
 marked `optional` and may carry a default.
 
-``` py linenums="1"
+```ids linenums="1"
 struct Message {
     body: string
     optional subject: str
@@ -52,7 +52,7 @@ from; `String` is generated-Rust, not IDL — see
 A [docstring](docstrings.md) (`///` lines) and `@key=value` annotations attach to
 a struct or an individual field.
 
-``` py linenums="1"
+```ids linenums="1"
 /// A message routed through the mail protocol.
 struct Message {
     body: string

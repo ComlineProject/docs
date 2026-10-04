@@ -3,7 +3,7 @@
 A **protocol** — a *service* in Protobuf, an *interface* in Cap'n Proto — is a
 set of **functions** a caller can invoke.
 
-``` py linenums="1"
+```ids linenums="1"
 protocol Mail {
     function send_message(message: Message) -> bool;
     function fetch_inbox() -> Message[];
@@ -23,7 +23,7 @@ function NAME( [args] ) [-> ReturnType] [! ErrorName] ;
 - **`! ErrorName`** declares that the function can raise a given `error`.
 - Every function ends with `;`.
 
-``` py linenums="1"
+```ids linenums="1"
 /// Mail API for sending and receiving messages.
 protocol Mail {
 
@@ -39,7 +39,7 @@ arguments) and `@key=value` annotations.
 
 A `@key=value` annotation on the `protocol` itself configures the whole service.
 
-``` py linenums="1"
+```ids linenums="1"
 @framing = "jsonrpc"
 protocol Mail {
     function send_message(message: Message) -> str ! RecipientNotFound;

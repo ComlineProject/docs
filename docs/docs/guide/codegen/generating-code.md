@@ -22,7 +22,7 @@ call, not the package author's, so it lives in `comline.toml`.
 
 ## Declaring targets — `config.idp`
 
-```
+```idp
 congregation my_api
 specification_version = 1
 

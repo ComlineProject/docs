@@ -15,6 +15,7 @@ pillow = "^12.3.0"
 # cairosvg = "^2.7.0"
 mike = "^2.2.0"
 zensical = ">=0.0.57,<0.1.0"
+comline-pygments = { path = "pygments-comline", develop = true }
 
 
 

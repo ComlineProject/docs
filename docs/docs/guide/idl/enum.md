@@ -2,7 +2,7 @@
 
 An **enum** is a closed set of named variants.
 
-``` py linenums="1"
+```ids linenums="1"
 enum Deliver {
     To
     Reply
@@ -12,7 +12,7 @@ enum Deliver {
 
 Use it as a field type, optionally with a default:
 
-``` py linenums="1"
+```ids linenums="1"
 struct Message {
     deliver: Deliver = default   // first variant, `To`
 }

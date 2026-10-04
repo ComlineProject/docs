@@ -3,7 +3,7 @@
 An **error** is a named failure a [protocol](protocol.md) function can raise. It
 has a required `message` and, optionally, fields.
 
-``` py linenums="1"
+```ids linenums="1"
 /// Raised when a message is sent to an unknown recipient.
 error RecipientNotFound {
     message = "no recipient named {self.name}"
@@ -29,7 +29,7 @@ docstrings. They carry the data the `message` placeholders read.
 
 A function declares the errors it can raise with `! ErrorName`:
 
-``` py linenums="1"
+```ids linenums="1"
 protocol Mail {
     function send(message: Message) -> bool ! RecipientNotFound;
 }

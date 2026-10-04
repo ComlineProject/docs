@@ -14,7 +14,7 @@ Nothing *runs* them against data yet.
 
 ### The `validator` declaration
 
-```
+```ids
 /// Checks a string's length is within bounds.
 /// @min_chars: minimum length
 /// @max_chars: maximum length
@@ -50,7 +50,7 @@ validator StringBounds {
 
 ### The `@validators` field annotation
 
-```
+```ids
 struct Message {
     @validators = [StringBounds(min_chars = 3, max_chars = 12)]
     recipient: str

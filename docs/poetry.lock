@@ -253,6 +253,23 @@ files = [
 ]
 
 [[package]]
+name = "comline-pygments"
+version = "0.1.0"
+description = "Pygments lexers for Comline's .ids and .idp languages"
+optional = false
+python-versions = "^3.14"
+groups = ["main"]
+files = []
+develop = true
+
+[package.dependencies]
+pygments = ">=2.0"
+
+[package.source]
+type = "directory"
+url = "pygments-comline"
+
+[[package]]
 name = "deepmerge"
 version = "3.0"
 description = "A toolset for deeply merging Python dictionaries."
@@ -1086,4 +1103,4 @@ tomli = ">=2.4.0"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.14"
-content-hash = "b6d00678cfde179b6985733730f90018333db622662889e4bd3c6e638b72d008"
+content-hash = "c044feecea816c4ccfe369c5975a1fb097f901b65a335764c8c5d56eb66224d5"
