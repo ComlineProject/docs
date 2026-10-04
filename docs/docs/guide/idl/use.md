@@ -52,3 +52,18 @@ struct Session {
 The alias (`UUID`) and the full path (`external::uuid::Uuid`) both work; the
 original bare name (`Uuid`) does not. Aliases apply to single-item and
 whole-namespace imports, not to `{ ... }` or `*`.
+
+## When nothing matches
+
+`comline check` and `comline build` reject a `use` that matches no schema of the
+package or of its [dependencies](../packages/index.md#dependencies), naming the
+closest match when there is one:
+
+| `use` | Error |
+|---|---|
+| `use typse::User` (no schema `typse`) | `no schema in this package or its dependencies matches 'typse::User' - did you mean 'types'?` |
+| `use types::Usr` (`types` has no `Usr`) | `schema 'types' doesn't declare 'Usr' - did you mean 'User'?` |
+
+The editor reports the same errors as you type, with a quick fix to the closest
+name. Paths under `std::` aren't checked yet: std's schemas don't ship with the
+toolchain.
