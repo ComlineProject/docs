@@ -40,33 +40,7 @@ A schema is a flat list of declarations, in any order:
 | [`const`](const.md) | a compile-time constant: `const NAME: type = value` |
 | [`settings`](settings.md) | schema-wide switches (`key = value`) — recorded, not yet enforced |
 | [`validator`](validator.md) | a named, parameterised field check — recorded, not yet enforced |
-| [`use`](use.md) / `import` | pull declarations in from another schema or package |
-
-## Types
-
-Primitives:
-
-| Group | Types |
-|---|---|
-| signed integers | `s8` `s16` `s32` `s64` |
-| unsigned integers | `u8` `u16` `u32` `u64` |
-| floats | `f32` `f64` |
-| boolean | `bool` |
-| text | `str` (see below) |
-
-Plus any `struct` / `enum` name (scoped: `pkg::module::Type`), arrays (`Type[]`
-or fixed `Type[10]`), and unions (`union(TypeA TypeB)`).
-
-### `str` vs `string` vs `String`
-
-- **`str`** — the text type. Use this. It is what the examples and the
-  compiler's diagnostics treat as canonical.
-- **`string`** — currently an accepted **synonym** for `str`: it parses,
-  validates, and generates identically. The compiler nudges you toward `str`
-  (`did you mean 'str'?`). Whether `string` is kept, removed, or given a distinct
-  meaning later is unsettled — prefer `str`.
-- **`String`** (capitalised) — **not** Comline syntax. It is the Rust type that
-  `str` generates into, so you see it in generated Rust, never in a `.ids` file.
+| [`use`](use.md) | pull declarations in from another schema or package |
 
 ## Comments and docs
 
@@ -83,4 +57,4 @@ use parent::common::*
 ```
 
 `self::`, `parent::` and `crate::` prefixes resolve relative to the current
-schema. `import path` is the older form, still accepted. See [Imports](use.md).
+schema. See [Imports](use.md).

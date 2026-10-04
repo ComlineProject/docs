@@ -52,13 +52,3 @@ struct Session {
 The alias (`UUID`) and the full path (`external::uuid::Uuid`) both work; the
 original bare name (`Uuid`) does not. Aliases apply to single-item and
 whole-namespace imports, not to `{ ... }` or `*`.
-
-## `import`
-
-`import path` is the older single-item form, kept for compatibility:
-
-```
-import std::validators::string_bounds::StringBounds
-```
-
-Prefer `use`.

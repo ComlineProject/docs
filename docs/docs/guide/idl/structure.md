@@ -45,7 +45,7 @@ struct Message {
 
 Use `str` for text. `string` is an accepted synonym the compiler steers you away
 from; `String` is generated-Rust, not IDL — see
-[`str` vs `string` vs `String`](index.md#str-vs-string-vs-string).
+[`str` vs `string` vs `String`](types.md#str-vs-string-vs-string).
 
 ## Docstrings and annotations
 

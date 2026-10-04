@@ -6,7 +6,7 @@ Comline takes a schema you write by hand and carries it through a fixed pipeline
 
 Each stage has its own page in this guide; this is the map.
 
-## 1. Write a schema — [IDL](idl/index.md)
+## 1. Writing a [Schema / IDL](idl/index.md)
 
 A project is a directory with a package manifest (`config.idp`) and one or more
 `.ids` schema files under `src/`. The schema language defines
