@@ -42,8 +42,12 @@ something you `cargo add` / `pip install` / `luarocks install`, or publish.
 
 Implemented for **rust**: `<out>/rust/` gets a `Cargo.toml` (package name from
 the congregation, `serde` dependency), `src/lib.rs`, and `src/<namespace>.rs` per
-schema. Other languages, multi-version `lib` output, and a schema whose namespace
-is nested (`a/b`) are not done yet.
+schema — `<language>/` keeps this target's crate from colliding with another
+`lib` target sharing the same `out`; a target with `out` to itself can set
+[`flatten = true`](../../reference/comline-toml.md#flatten) to skip that and
+land the crate straight into `out`. `layout` plays no part in any of this —
+it only applies to `code` mode. Other languages, multi-version `lib` output,
+and a schema whose namespace is nested (`a/b`) are not done yet.
 
 **Use it when** the schema is shared:
 

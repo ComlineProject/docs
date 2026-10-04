@@ -16,7 +16,7 @@ Defaults for every target.
 |---|---|---|---|
 | `out` | string (path) | `"generated"` | Output root, relative to `comline.toml`. |
 | `layout` | string (template) | `"{{language}}/{{namespace}}.{{ext}}"` | Path of each generated file under `out`. Handlebars, strict. |
-| `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. Only `code` is implemented. |
+| `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. `code` is implemented for every generator; `lib` for `rust`; `dylib` is planned — see [Library generation](../guide/codegen/library-generation.md). |
 | `package_versions` | `"latest"` \| `"all"` \| list | `"latest"` | Which package versions to emit — see [below](#package_versions). |
 | `default_framing` | string | — | Wire framing for protocols that don't pick one with [`@framing`](../guide/idl/protocol.md#protocol-annotations) — see [below](#default_framing). |
 
@@ -30,6 +30,7 @@ be repeated here to override it for this target only.
 | `language` | string | **Required.** Must be one the manifest declares under `code_generation.languages`. |
 | `lang_version` | string | Optional; selects a version-specific generator. Defaults to what `config.idp` declared. |
 | `out`, `layout`, `mode`, `package_versions`, `default_framing` | — | Per-target override of the `[generate]` value. |
+| `flatten` | bool | `lib`/`dylib` only, target-only (no `[generate]` default): write the crate straight into `out` instead of `out/<language>/`. See [below](#flatten). |
 
 ```toml
 [generate]
@@ -41,6 +42,29 @@ language     = "rust"
 lang_version = "1.70.0"
 out          = "src/generated"
 ```
+
+### `flatten`
+
+`layout` only governs `code` mode's one-file-per-schema paths — a `lib`-mode
+target ignores it entirely (`comline generate` warns if one is set) and
+always writes the crate's fixed internal shape (`Cargo.toml`, `src/lib.rs`, a
+file per schema under `src/`) rooted at `out/<language>/`, so two `lib`
+targets can safely share one `out` without their files colliding.
+
+A target with its own dedicated `out` doesn't need that disambiguation —
+`flatten = true` skips it, writing the crate straight into `out`:
+
+```toml
+[[generate.target]]
+language = "rust"
+mode     = "lib"
+out      = "../my-rust-crate/"
+flatten  = true   # crate lands at out/, not out/rust/
+```
+
+Only set this when the target's `out` is exclusively its own — flattening a
+shared `out` across more than one `lib` target reintroduces the collision
+the default layout avoids.
 
 ## Layout variables
 
