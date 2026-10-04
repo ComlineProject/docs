@@ -1,6 +1,6 @@
 # Dependency packages in the editor
 
-Status: **Partly implemented** · `ComlineProject/language-server` (+ `core` and `cli` pieces) · Relates to core#6, core#50, core#59, core#60, cli#38, language-server#24, language-server#25, language-server#26
+Status: **Partly implemented** · `ComlineProject/language-server` (+ `core` and `cli` pieces) · Relates to core#6, core#50, core#59, core#60, core#61, cli#38, cli#39, language-server#24, language-server#25, language-server#26, language-server#27
 
 How `use shared_types::foo::X` should work in the editor when `shared_types` is a
 dependency declared in `config.idp`: hover, go-to-definition into the
@@ -18,6 +18,7 @@ doesn't exist. The language server never fetches anything itself.
 | Editor: `use` of a local schema | ✅ resolved across the whole package, open or not (language-server#22–#25) |
 | Editor: `use` of a dependency | ✅ resolved for path dependencies and fetched git pins; hover, go-to-definition, completion work into them (language-server#26) |
 | Unresolved imports | ✅ rejected by `comline check` / `build` (core#59, cli#38) and reported by the editor with a "did you mean" quick fix (language-server#26) |
+| Editor: completion for `use` paths | ✅ namespaces, dependencies, declarations, `*` / `{…}` (language-server#27) |
 | `std::` | ❌ not resolved by `comline build` either (see below) |
 | [Packages guide](../guide/packages/index.md) | ✅ updated alongside this record (it still said dependencies weren't implemented) |
 
@@ -109,13 +110,17 @@ On top of that:
 
 ### 3. Completion for `use` paths
 
-A `use` line gets no completion today (`use` counts as a declaration keyword, so
-nothing is offered after it). With the project view above:
+A `use` line got no completion (`use` counts as a declaration keyword, so
+nothing was offered after it). With the project view above, language-server#27
+completes one segment at a time:
 
 - `use ` → the package's top-level namespaces, its dependency names, `std`,
   `self`, `parent`, `package`.
 - `use shared_types::` → the dependency's namespaces.
 - `use shared_types::foo::` → its declarations, plus `{` and `*`.
+- `use shared_types::foo::{A, ` → the declarations not listed yet.
+
+Paths resolve the way the build resolves them, relative prefixes included.
 
 ### 4. `config.idp`
 
@@ -156,12 +161,14 @@ waits for a registry.
    dependencies under their namespace, so resolution, completion, hover and
    definition work into dependencies, plus the "not fetched" diagnostics
    (language-server#26).
-3. **language-server**: ✅ unresolved-import errors, worded like the build's,
-   with a "did you mean" quick fix (language-server#26). Still to do: `use`
-   path completion.
+3. ✅ **language-server**: unresolved-import errors, worded like the build's,
+   with a "did you mean" quick fix (language-server#26), and completion for
+   `use` paths (language-server#27).
 4. **cli**: `comline add`. Not started.
 5. **core**: ✅ reject unresolved imports in builds (core#59, in the CLI since
-   cli#38). Resolving `std` waits until its schemas ship with the toolchain.
+   cli#38). That also rejected relative prefixes in glob and `{ ... }`
+   imports, which never resolved; core#61 fixed them (cli#39). Resolving
+   `std` waits until its schemas ship with the toolchain.
 
 ## Decisions (2026-10-04)
 

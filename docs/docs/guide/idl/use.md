@@ -20,7 +20,11 @@ use parent::common::Error
 | whole namespace | `use pkg::module` | everything in that module, bare or qualified (`Type` or `pkg::module::Type`) |
 | multi | `use pkg::module::{A, B, C}` | several items from one module (plain names, no nesting or `as` inside the braces) |
 | glob | `use pkg::module::*` | everything in that module |
-| relative | `use self::sibling::Type`, `use parent::common::Error`, `use package::root::Type` | resolved against the current schema's location (`package::` is the package root) |
+| relative | `use parent::common::Error`, `use self::nested::Type`, `use package::types::User` | resolved against the current schema: `parent::` is one level up, `self::` the schema itself (`self::nested` is a schema under it), `package::` the package root |
+
+A relative prefix works in every form, but a glob or `{ ... }` needs a segment
+after it: `use parent::common::*` works, while `use parent::*` and
+`use parent::{Error}` don't parse.
 
 ## Referring to what you imported
 
