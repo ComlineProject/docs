@@ -4,6 +4,14 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:   # manual retrigger, no commit needed
+  schedule:
+    # Safety net: a push to `main` that never dispatches this workflow (a
+    # dropped webhook/event — rare, but observed) would otherwise leave
+    # Pages silently stale with no error anywhere. This rebuilds and
+    # redeploys from `main` daily regardless, so staleness self-heals
+    # within a day instead of needing someone to notice.
+    - cron: '0 6 * * *'
 
 permissions:
   contents: read
@@ -36,14 +44,14 @@ jobs:
         run: poetry run zensical build --strict
 
       - name: Upload Pages artifact
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
         with:
           path: docs/site
 
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       pages: write
