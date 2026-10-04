@@ -145,4 +145,13 @@ like any other package.
   `config.idp`, and imports from it aren't checked until it is. More in
   [Dependency packages in the editor](../../design/editor-dependency-packages.md).
 
-There is no `comline add` command yet: write the entry by hand.
+`comline add` writes an entry for you, after resolving the dependency (a git pin
+is fetched), with its `hash` pinned to what it just compiled:
+
+```bash
+comline add shared_types ../shared-types
+comline add net --git https://github.com/acme/net --commit 4f2c9e1 --version 1.2.0
+```
+
+The rest of `config.idp` is left as written. `--no-hash` skips the pin, say for
+a path dependency you're still working on.

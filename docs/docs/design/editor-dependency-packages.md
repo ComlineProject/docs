@@ -1,6 +1,6 @@
 # Dependency packages in the editor
 
-Status: **Partly implemented** · `ComlineProject/language-server` (+ `core` and `cli` pieces) · Relates to core#6, core#50, core#59, core#60, core#61, cli#38, cli#39, language-server#24, language-server#25, language-server#26, language-server#27
+Status: **Implemented**, except resolving `std` · `ComlineProject/language-server` (+ `core` and `cli` pieces) · Relates to core#6, core#50, core#59, core#60, core#61, cli#38, cli#39, cli#40, language-server#24, language-server#25, language-server#26, language-server#27
 
 How `use shared_types::foo::X` should work in the editor when `shared_types` is a
 dependency declared in `config.idp`: hover, go-to-definition into the
@@ -14,7 +14,7 @@ doesn't exist. The language server never fetches anything itself.
 | `dependencies` block in `config.idp` (`Path` / `Git` / `Registry`) | ✅ parsed (core#50) |
 | `Path` + `Git` resolution, hash check, CAS vendoring | ✅ `comline-core`'s opt-in `deps` feature (core#50); the CLI enables it, so `comline check` / `build` resolve dependencies |
 | `Registry` dependencies | parsed, then rejected: there's no registry server yet (`package-registry` is on hold) |
-| `comline add` | doesn't exist |
+| `comline add` | ✅ resolves the dependency, then writes its entry with `hash` pinned (cli#40) |
 | Editor: `use` of a local schema | ✅ resolved across the whole package, open or not (language-server#22–#25) |
 | Editor: `use` of a dependency | ✅ resolved for path dependencies and fetched git pins; hover, go-to-definition, completion work into them (language-server#26) |
 | Unresolved imports | ✅ rejected by `comline check` / `build` (core#59, cli#38) and reported by the editor with a "did you mean" quick fix (language-server#26) |
@@ -134,20 +134,23 @@ Key completion and hover for dependency entries already exist client-side
 Checking the declared `hash` needs a full compile of the dependency. That stays
 with `comline check`.
 
-### 5. `comline add` (doesn't exist yet)
+### 5. `comline add`
 
 ```
-comline add shared_types --path ../shared-types
+comline add shared_types ../shared-types
 comline add net --git https://github.com/acme/net --commit 4f2c9e1 --version 1.2.0
 ```
 
-It would:
+Shipped in cli#40. A path dependency is a positional directory rather than
+`--path`, which is already the CLI's global "run against this directory" flag.
+It:
 
-1. write the entry into `config.idp` as a text edit, preserving the file's
-   formatting;
-2. resolve it once (fetch, compile, hash) with the existing `deps::resolve`;
-3. write `hash = "blake3:…"`. That's the pin `resolve` already computes and only
-   logs today ("Consider pinning").
+1. resolves the dependency once (fetch, compile, hash) with the existing
+   `deps::resolve`, so an entry that wouldn't resolve is never written;
+2. writes the entry into `config.idp` as a text edit, preserving the file's
+   formatting, and reads it back with core's parser before saving;
+3. writes `hash = "blake3:…"`: the pin `resolve` computes, and otherwise only
+   suggests ("Consider pinning"). `--no-hash` leaves it out.
 
 A side effect that helps the editor: after `comline add`, a `Git` dependency's
 cache checkout exists, so the editor can index it immediately. The registry form
@@ -164,7 +167,7 @@ waits for a registry.
 3. ✅ **language-server**: unresolved-import errors, worded like the build's,
    with a "did you mean" quick fix (language-server#26), and completion for
    `use` paths (language-server#27).
-4. **cli**: `comline add`. Not started.
+4. ✅ **cli**: `comline add` (cli#40).
 5. **core**: ✅ reject unresolved imports in builds (core#59, in the CLI since
    cli#38). That also rejected relative prefixes in glob and `{ ... }`
    imports, which never resolved; core#61 fixed them (cli#39). Resolving
