@@ -1,6 +1,6 @@
 # Dependency packages in the editor
 
-Status: **Implemented**, except resolving `std` · `ComlineProject/language-server` (+ `core` and `cli` pieces) · Relates to core#6, core#50, core#59, core#60, core#61, cli#38, cli#39, cli#40, language-server#24, language-server#25, language-server#26, language-server#27
+Status: **Implemented** · `ComlineProject/language-server` (+ `core` and `cli` pieces) · Relates to core#6, core#50, core#59, core#60, core#61, cli#38, cli#39, cli#40, cli#42, language-server#24, language-server#25, language-server#26, language-server#27, language-server#28
 
 How `use shared_types::foo::X` should work in the editor when `shared_types` is a
 dependency declared in `config.idp`: hover, go-to-definition into the
@@ -19,7 +19,7 @@ doesn't exist. The language server never fetches anything itself.
 | Editor: `use` of a dependency | ✅ resolved for path dependencies and fetched git pins; hover, go-to-definition, completion work into them (language-server#26) |
 | Unresolved imports | ✅ rejected by `comline check` / `build` (core#59, cli#38) and reported by the editor with a "did you mean" quick fix (language-server#26) |
 | Editor: completion for `use` paths | ✅ namespaces, dependencies, declarations, `*` / `{…}` (language-server#27) |
-| `std::` | ❌ not resolved by `comline build` either (see below) |
+| `std::` | ✅ embedded in core and merged into a build when imported (core#62, cli#42); the editor resolves it too (language-server#28) |
 | [Packages guide](../guide/packages/index.md) | ✅ updated alongside this record (it still said dependencies weren't implemented) |
 
 ## How the build resolves a dependency `use`
@@ -45,7 +45,8 @@ From core#50 (`core/src/package/deps.rs`):
   builds), but also `use shard_types::foo::X` with a typo: `comline build`
   accepted it without a word. A glob or whole-namespace `use` of an unknown
   namespace failed only as "Unknown type" at each use site. Builds now reject
-  all of these (decision 1 below); `std::` paths are still trusted.
+  all of these (decision 1 below). `std::` paths stayed trusted until core#62
+  made std resolvable.
 
 ## Proposal
 
@@ -105,8 +106,8 @@ On top of that:
   gap noted in language-server#25).
 - **The build agrees.** `comline build` and `check` reject an unresolved import
   too (decided below), so the editor and the build say the same thing: both
-  report it as an error. `std::` is exempt in both until std schemas are
-  resolvable by the build.
+  report it as an error. `std::` was exempt in both until core#62 made std
+  resolvable; it's checked the same way now.
 
 ### 3. Completion for `use` paths
 
@@ -170,15 +171,16 @@ waits for a registry.
 4. ✅ **cli**: `comline add` (cli#40).
 5. **core**: ✅ reject unresolved imports in builds (core#59, in the CLI since
    cli#38). That also rejected relative prefixes in glob and `{ ... }`
-   imports, which never resolved; core#61 fixed them (cli#39). Resolving
-   `std` waits until its schemas ship with the toolchain.
+   imports, which never resolved; core#61 fixed them (cli#39). ✅ std ships
+   with the toolchain, embedded in core, and resolves (core#62, cli#42,
+   language-server#28).
 
 ## Decisions (2026-10-04)
 
 1. **Unresolved imports are rejected.** `comline build` and `check` fail on a
    `use` that matches no schema of the package or its dependencies, including a
-   named item the target schema doesn't declare. `std::` is exempt until std
-   schemas are resolvable by the build.
+   named item the target schema doesn't declare. `std::` was exempt until std
+   became resolvable (core#62); it's checked like any other path now.
 2. **Whole-namespace imports bring names in bare.** After `use pkg::types`, both
    `User` and `pkg::types::User` work, as core and the editor already behave.
    Qualified-only was never the goal: the [`use` guide](../guide/idl/use.md) is
@@ -187,6 +189,14 @@ waits for a registry.
    invisible to the consumer.
 4. **The packages guide documents what shipped in core#50**, updated alongside
    this record.
+5. **std is embedded and implicit.** Its schemas (`core_stdlib/packages/std`)
+   are compiled into `comline-core`, versioned with the toolchain, and
+   available in every package with no `config.idp` entry. A build merges only
+   the std schemas its imports reach. The first std is `std::http` (`HttpMethod`,
+   `Request`, `Response`, ported from the old placeholders as plain types) and
+   `std::validators` (`StringBounds`). Its schemas stay GPL-3.0-only for now
+   (see [Licensing](licensing.md)); the old `core/stdlib` placeholders became
+   test fixtures.
 
 ## Still open
 

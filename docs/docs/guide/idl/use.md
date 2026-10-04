@@ -69,5 +69,32 @@ closest match when there is one:
 | `use types::Usr` (`types` has no `Usr`) | `schema 'types' doesn't declare 'Usr' - did you mean 'User'?` |
 
 The editor reports the same errors as you type, with a quick fix to the closest
-name. Paths under `std::` aren't checked yet: std's schemas don't ship with the
-toolchain.
+name. A `std::` path is checked the same way, against the
+[standard library](#the-standard-library):
+`std has no schema matching 'std::htp::Request' - did you mean 'std::http'?`
+
+## The standard library
+
+`std` is built into the toolchain. Every package can `use std::…` with nothing
+in `config.idp`, and the editor and the playground know it too.
+
+| Schema | Declares |
+|---|---|
+| `std::http` | `HttpMethod` (enum: `GET`, `POST`, `PUT`, `DELETE`), `Request` (`method`, `uri`), `Response` (`status_code`) |
+| `std::validators` | `StringBounds`, a validator with `min_chars` and `max_chars` |
+
+```ids
+use std::http::Request
+use std::validators::StringBounds
+
+struct Call {
+    request: Request
+    @validators = [StringBounds(min_chars = 1, max_chars = 64)]
+    label: str
+}
+```
+
+A build includes only the std schemas a package imports. Like a dependency's,
+they're frozen into its versions and generated with its own code
+(`std/http.rs`). A package that doesn't use std is unaffected. std's version is
+the toolchain's.
