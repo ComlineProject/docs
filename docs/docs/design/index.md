@@ -45,5 +45,5 @@ Each page carries a status and links the issues / PRs that carry it out.
   *In use.*
 - [Dependency packages in the editor](editor-dependency-packages.md) — how the
   language server should resolve `use` across `config.idp` dependencies without
-  fetching anything, the unresolved-import gap, and where a `comline add` fits.
-  *Proposal.*
+  fetching anything, rejecting unresolved imports, and where a `comline add`
+  fits. *Decided, not yet implemented.*

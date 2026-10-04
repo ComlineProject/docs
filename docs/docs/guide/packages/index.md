@@ -31,7 +31,7 @@ code_generation = {
 | `congregation` | the package name — a Comline identifier (letters, digits, `_`) |
 | `specification_version` | which version of the schema language these files are written against |
 | `code_generation.languages` | the **capability list**: `language#lang_version` targets this package *can* be generated as. Bare entries — `= {}` is required and takes no options. |
-| `dependencies` | other packages this one imports (identity + integrity hash) |
+| `dependencies` | other packages this one imports — see [Dependencies](#dependencies) |
 | `publish_registries` | named registries this package publishes to (planned — [see below](#publishing-planned)) |
 
 The manifest is **frozen**: it lowers to IR units and is content-addressed into
@@ -90,10 +90,52 @@ registry. **Status:** a `local://` (directory) registry works — it copies the
 frozen project in. A hosted `https://` registry server exists as a stub only;
 `logout` and the official `MAINSTREAM_REGISTRY` URL are `todo!()`.
 
-## Dependencies (not implemented)
+## Dependencies
 
-A `dependencies` block is parsed, but the referenced packages are not fetched,
-pinned or stored, and their schema shapes do not yet feed this package's version
-or code generation. Tracking: `ComlineProject/core` #6. The reasoning and the
-intended version-bump behaviour are in
-[Consumer generation configuration](../../design/consumer-generation-config.md).
+A package can import schemas from other packages it declares in `config.idp`:
+
+```idp
+dependencies = {
+    shared_types = {
+        path = "../shared-types"
+    }
+
+    net = {
+        version = "1.2.0"
+        uri = "https://github.com/acme/net"
+        commit = "4f2c9e1"
+        hash = "blake3:…"
+    }
+}
+```
+
+The key (`shared_types`, `net`) is a name you choose. What the entry contains
+decides where the package comes from:
+
+| Source | Written as | Resolved |
+|---|---|---|
+| Path | `path` (optional `hash`) | relative to this package's directory |
+| Git | `version`, `uri`, `commit` (optional `hash`) | cloned once per pin into `.comline/deps-cache/`, using the `git` binary |
+| Registry | `version`, `uri` (optional `hash`, `signature`) | **not supported yet** — there's no registry server, so `comline check` / `build` reject it |
+
+`comline check` and `comline build` resolve every dependency, then compile it
+like any other package.
+
+- **Importing.** A dependency's schemas live under the name you gave it:
+  `shared_types`'s `src/foo.ids` is imported as `use shared_types::foo::X`.
+- **Direct dependencies only.** A dependency's own dependencies aren't
+  importable from your package.
+- **Pinning.** `hash` is a blake3 hash over the dependency's compiled schemas.
+  If it doesn't match, the build fails. Without one, the build warns and prints
+  the hash to pin.
+- **Reproducible versions.** Each build vendors the resolved dependencies into
+  the version it commits (a `dep_<name>` subtree in `.comline/`), so a version
+  can be rebuilt from the store alone.
+- **Versioning.** Adding a dependency is a minor bump and removing one is major.
+  A dependency present in both versions is diffed like your own schemas, so a
+  breaking change in it is a major bump for you and an additive one a minor
+  bump.
+
+There is no `comline add` command yet: write the entry by hand. How the editor
+will resolve dependency imports is in
+[Dependency packages in the editor](../../design/editor-dependency-packages.md).

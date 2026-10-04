@@ -1,6 +1,6 @@
 # Dependency packages in the editor
 
-Status: **Proposal** · `ComlineProject/language-server` (+ small `core` and `cli` pieces) · Relates to core#6, core#50, language-server#24, language-server#25
+Status: **Decided** (2026-10-04), not yet implemented · `ComlineProject/language-server` (+ `core` and `cli` pieces) · Relates to core#6, core#50, language-server#24, language-server#25
 
 How `use shared_types::foo::X` should work in the editor when `shared_types` is a
 dependency declared in `config.idp`: hover, go-to-definition into the
@@ -18,7 +18,7 @@ doesn't exist. The language server never fetches anything itself.
 | Editor: `use` of a local schema | ✅ resolved across the whole package, open or not (language-server#22–#25) |
 | Editor: `use` of a dependency | ❌ not resolved; names from it get the benefit of the doubt |
 | `std::` | ❌ not resolved by `comline build` either (see below) |
-| [Packages guide](../guide/packages/index.md) | outdated: still says dependencies aren't implemented |
+| [Packages guide](../guide/packages/index.md) | ✅ updated alongside this record (it still said dependencies weren't implemented) |
 
 ## How the build resolves a dependency `use`
 
@@ -100,11 +100,10 @@ On top of that:
   closest name. This replaces the benefit of the doubt that globs and
   whole-namespace imports still get when their target exists nowhere (the known
   gap noted in language-server#25).
-- **The build should agree.** Since `comline build` trusts unresolved
-  single-symbol imports today, the editor's error would be stricter than the
-  build's. Proposed: core reports an unresolved import in project mode too (`std`
-  excepted until it's resolvable), so the editor and the build say the same
-  thing. Until then, the editor reports it as a **warning**.
+- **The build agrees.** `comline build` and `check` reject an unresolved import
+  too (decided below), so the editor and the build say the same thing: both
+  report it as an error. `std::` is exempt in both until std schemas are
+  resolvable by the build.
 
 ### 3. Completion for `use` paths
 
@@ -155,24 +154,27 @@ waits for a registry.
    definition work into dependencies, plus the "not fetched" diagnostics.
 3. **language-server**: unresolved-import warnings and `use` path completion.
 4. **cli**: `comline add`.
-5. **core**: report unresolved imports in builds (then the editor makes them
-   errors). Resolve `std` once its schemas ship with the toolchain.
+5. **core**: reject unresolved imports in builds (decided — can go first, it
+   doesn't depend on the editor work). Resolve `std` once its schemas ship with
+   the toolchain.
 
-## Open questions
+## Decisions (2026-10-04)
 
-1. **Unresolved single-symbol imports.** Should `comline build` reject them
-   (proposed), or keep trusting them and the editor only warn?
-2. **Whole-namespace imports.** The [`use` guide](../guide/idl/use.md) says
-   `use pkg::types` makes items available *qualified only* (`pkg::types::User`).
-   Core accepts bare `User` too: its whole-namespace expansion registers every
-   name bare as well. The editor follows core since language-server#24. Which is
-   intended? If the guide is right, core's expansion should register only the
-   qualified names.
-3. **Auto-import from dependencies.** Offer a dependency's types in auto-import
-   completion (proposed: yes, after the package's own), or only after the
-   dependency is already `use`d somewhere?
-4. **Transitive dependencies.** The build exposes only direct dependencies.
-   Intended (Cargo-like), or a side effect of globbing only the dependency's own
-   `src/`?
-5. **Docs.** The packages guide's "Dependencies (not implemented)" section has
-   been outdated since core#50. Update it as part of this work, or separately?
+1. **Unresolved imports are rejected.** `comline build` and `check` fail on a
+   `use` that matches no schema of the package or its dependencies, including a
+   named item the target schema doesn't declare. `std::` is exempt until std
+   schemas are resolvable by the build.
+2. **Whole-namespace imports bring names in bare.** After `use pkg::types`, both
+   `User` and `pkg::types::User` work, as core and the editor already behave.
+   Qualified-only was never the goal: the [`use` guide](../guide/idl/use.md) is
+   corrected.
+3. **Direct dependencies only, for now.** A dependency's own dependencies stay
+   invisible to the consumer.
+4. **The packages guide documents what shipped in core#50**, updated alongside
+   this record.
+
+## Still open
+
+- **Auto-import from dependencies.** Offer a dependency's types in auto-import
+  completion (proposed: yes, after the package's own), or only once the
+  dependency is already `use`d somewhere?
