@@ -43,3 +43,7 @@ Each page carries a status and links the issues / PRs that carry it out.
 - [Brand assets](brand-assets.md) — `ComlineProject/brand` as the single source
   of truth for the mark and colours, and how consumers vendor a pinned copy.
   *In use.*
+- [Dependency packages in the editor](editor-dependency-packages.md) — how the
+  language server should resolve `use` across `config.idp` dependencies without
+  fetching anything, the unresolved-import gap, and where a `comline add` fits.
+  *Proposal.*

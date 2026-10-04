@@ -58,6 +58,7 @@ nav:
     - Playground simulation — Phase 1: 'design/playground-simulation.md'
     - Playground simulation — Phase 2: 'design/playground-simulation-phase-2.md'
     - Brand assets: 'design/brand-assets.md'
+    - Dependency packages in the editor: 'design/editor-dependency-packages.md'
     - Licensing: 'design/licensing.md'
   - Proposals:
     - 'proposals/index.md'
