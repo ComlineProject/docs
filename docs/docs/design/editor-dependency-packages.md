@@ -1,6 +1,6 @@
 # Dependency packages in the editor
 
-Status: **Decided** (2026-10-04), not yet implemented · `ComlineProject/language-server` (+ `core` and `cli` pieces) · Relates to core#6, core#50, language-server#24, language-server#25
+Status: **Partly implemented** · `ComlineProject/language-server` (+ `core` and `cli` pieces) · Relates to core#6, core#50, core#59, core#60, cli#38, language-server#24, language-server#25, language-server#26
 
 How `use shared_types::foo::X` should work in the editor when `shared_types` is a
 dependency declared in `config.idp`: hover, go-to-definition into the
@@ -16,7 +16,8 @@ doesn't exist. The language server never fetches anything itself.
 | `Registry` dependencies | parsed, then rejected: there's no registry server yet (`package-registry` is on hold) |
 | `comline add` | doesn't exist |
 | Editor: `use` of a local schema | ✅ resolved across the whole package, open or not (language-server#22–#25) |
-| Editor: `use` of a dependency | ❌ not resolved; names from it get the benefit of the doubt |
+| Editor: `use` of a dependency | ✅ resolved for path dependencies and fetched git pins; hover, go-to-definition, completion work into them (language-server#26) |
+| Unresolved imports | ✅ rejected by `comline check` / `build` (core#59, cli#38) and reported by the editor with a "did you mean" quick fix (language-server#26) |
 | `std::` | ❌ not resolved by `comline build` either (see below) |
 | [Packages guide](../guide/packages/index.md) | ✅ updated alongside this record (it still said dependencies weren't implemented) |
 
@@ -148,15 +149,18 @@ waits for a registry.
 
 ## Phasing
 
-1. **core**: public `git_checkout_path` (tiny).
-2. **language-server**: read `config.idp`, index `Path` and fetched `Git`
+1. ✅ **core**: `DependencyConfig::package_dir`, the one definition of where a
+   dependency lives, git cache key included (core#60).
+2. ✅ **language-server**: read `config.idp`, index `Path` and fetched `Git`
    dependencies under their namespace, so resolution, completion, hover and
-   definition work into dependencies, plus the "not fetched" diagnostics.
-3. **language-server**: unresolved-import warnings and `use` path completion.
-4. **cli**: `comline add`.
-5. **core**: reject unresolved imports in builds (decided — can go first, it
-   doesn't depend on the editor work). Resolve `std` once its schemas ship with
-   the toolchain.
+   definition work into dependencies, plus the "not fetched" diagnostics
+   (language-server#26).
+3. **language-server**: ✅ unresolved-import errors, worded like the build's,
+   with a "did you mean" quick fix (language-server#26). Still to do: `use`
+   path completion.
+4. **cli**: `comline add`. Not started.
+5. **core**: ✅ reject unresolved imports in builds (core#59, in the CLI since
+   cli#38). Resolving `std` waits until its schemas ship with the toolchain.
 
 ## Decisions (2026-10-04)
 
