@@ -56,5 +56,5 @@ use external::uuid::Uuid as UUID
 use parent::common::*
 ```
 
-`self::`, `parent::` and `crate::` prefixes resolve relative to the current
+`self::`, `parent::` and `package::` prefixes resolve relative to the current
 schema. See [Imports](use.md).
