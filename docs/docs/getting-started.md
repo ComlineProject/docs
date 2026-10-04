@@ -2,24 +2,32 @@
 
 ## Install
 
-`comline` is not on crates.io yet — build it from source with a recent Rust
-toolchain:
+At the moment the is no proper `comline` releases in crates.io, so install **From source** below.
 
+After installing from any of the two options, you should now have access to the `comline` binary (which should be at `~/.cargo/bin`). You can check by doing:
+
+```bash
+comline --help
+```
+
+
+### From Source (Github)
 ```bash
 git clone https://github.com/ComlineProject/cli
 cd cli
 cargo install --path .
 ```
 
-That puts the `comline` binary in `~/.cargo/bin`. Check it:
+### From Cargo (crates.io)
 
-```bash
-comline --help
-```
+`comline` is on crates.io but there is no proper releases being done yet, so build from source by doing the following:
+
 
 A `cargo install comline` from crates.io, and OS packages (Fedora, Arch,
 Windows, macOS), are planned — packaging is tracked in
 [`ComlineProject/distributions`](https://github.com/ComlineProject/distributions).
+
+
 
 ## Create a project
 
@@ -88,7 +96,7 @@ out    = "src/generated"
 layout = "{{language}}/{{namespace}}.{{ext}}"
 ```
 
-Today `rust` is the only generator.
+Today `rust` and `typescript` are the generators.
 
 ## Next
 

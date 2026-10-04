@@ -4,18 +4,27 @@ Transport, message parsing, and routing a [protocol](../idl/protocol.md) call to
 its implementation all have to happen at run time. Comline provides a runtime
 that does this, so each project does not reinvent it.
 
-## Core runtime
-
-A **core runtime**, written in Rust, provides the base facilities every feature
-builds on.
-
 ## Per-language runtimes
 
-Languages differ — AOT-compiled, JIT-compiled, interpreted — so each has its own
-thin runtime that speaks to the core runtime. If you use C++, the Comline C++
-runtime talks to the core and the core talks back, so the pieces work together
-for the language you are in. The intent is that integration is seamless from the
-user's side.
+Each language ships its own runtime implementation — not a thin shim
+calling into a shared core, but a from-scratch implementation of the same
+contract (handshake, framing, wire format), wire-compatible with the
+others. The Rust runtime (`comline-runtime`) is the reference; a
+TypeScript peer and a Rust peer generated from the same schema negotiate
+the same handshake and speak the same request/response bytes, because
+each runtime's framing and handshake code is cross-checked against the
+others' reference vectors, not because one calls into the other at run
+time.
+
+What that means in practice: there is no FFI boundary between a
+TypeScript program and a "core" written in Rust. Each runtime is a normal
+dependency in its own language, built and shipped like any other
+library.
+
+See [Language Guides](../../languages/index.md) for the practical,
+per-language next step — spawning a client, serving a protocol, and the
+concrete framing/wire-format API. This page stays the conceptual
+overview.
 
 ## Call system
 

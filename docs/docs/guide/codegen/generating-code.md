@@ -4,8 +4,9 @@
 language. This page is the practical guide: what it produces, how to say where it
 goes, and how to generate more than one version at once.
 
-Status: this reflects the current CLI. `rust` is the only generator and `code`
-the only mode so far; the configuration surface below is stable.
+Status: this reflects the current CLI. `rust` and `typescript` are the
+generators (both `code` mode; `rust` also does `lib`); the configuration
+surface below is stable.
 
 ## The two files
 

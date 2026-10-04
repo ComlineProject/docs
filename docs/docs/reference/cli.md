@@ -42,8 +42,8 @@ parse → resolve imports → validate → (freeze into .comline/) → (generate
 
 `--out` / `--layout` / `--mode` override one target and need `--target` when
 several are configured. `COMLINE_GENERATE_OUT` / `_LAYOUT` / `_MODE` do the same
-from the environment, for every target. Today `rust` is the only generator and
-`code` the only mode.
+from the environment, for every target. Today `rust` and `typescript` are the generators; `rust` also does `lib`
+mode.
 
 ## Global flags
 

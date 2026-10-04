@@ -75,9 +75,11 @@ the object carries.
 
 ## Status
 
-`lib` and `dylib` are planned. The open questions — how the generated library is
-named and versioned, and what identity the runtime checks when it loads a
-`dylib` — are worked through in
+`lib` is built for Rust (see [Language Guides →
+Rust](../../languages/rust/index.md) for using the result). `dylib` is
+still planned for every language, Rust included. The open questions for
+`dylib` — how the generated library is named and versioned, and what
+identity the runtime checks when it loads one — are worked through in
 [Consumer generation configuration](../../design/consumer-generation-config.md).
 The pipeline split (codegen vs libgen vs runtime) and the plan to build these is
 in [Generation](../../design/generation.md).
