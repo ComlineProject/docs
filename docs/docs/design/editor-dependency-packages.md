@@ -37,13 +37,14 @@ From core#50 (`core/src/package/deps.rs`):
     - `Registry`: rejected.
 - **Direct dependencies only.** The consumer sees the dependency's own `src/`
   (`glob_schema_sources`), not the dependency's dependencies.
-- **A `use` that matches no schema is trusted, not reported.** When no schema has
-  the namespace, the `use` lowers to a raw `FrozenUnit::Import` and the
-  validator registers its last segment as a bare name. That covers
-  `std::collections::HashMap` (std schemas aren't merged into builds), but also
-  `use shard_types::foo::X` with a typo: `comline build` accepts it and never says
-  the import is unresolved. A glob or whole-namespace `use` of an unknown
-  namespace does fail, but only as "Unknown type" at each use site.
+- **Until core#59, a `use` that matched no schema was trusted, not reported.**
+  When no schema had the namespace, the `use` lowered to a raw
+  `FrozenUnit::Import` and the validator registered its last segment as a bare
+  name. That covered `std::collections::HashMap` (std schemas aren't merged into
+  builds), but also `use shard_types::foo::X` with a typo: `comline build`
+  accepted it without a word. A glob or whole-namespace `use` of an unknown
+  namespace failed only as "Unknown type" at each use site. Builds now reject
+  all of these (decision 1 below); `std::` paths are still trusted.
 
 ## Proposal
 
@@ -179,6 +180,7 @@ waits for a registry.
 
 ## Still open
 
-- **Auto-import from dependencies.** Offer a dependency's types in auto-import
-  completion (proposed: yes, after the package's own), or only once the
-  dependency is already `use`d somewhere?
+- **Auto-import from dependencies.** language-server#26 went with the proposal:
+  a dependency's types are offered after the package's own, labeled with the
+  dependency they come from. If that proves noisy, the alternative is to offer
+  them only once the dependency is already `use`d somewhere.

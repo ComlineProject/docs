@@ -122,7 +122,9 @@ decides where the package comes from:
 like any other package.
 
 - **Importing.** A dependency's schemas live under the name you gave it:
-  `shared_types`'s `src/foo.ids` is imported as `use shared_types::foo::X`.
+  `shared_types`'s `src/foo.ids` is imported as `use shared_types::foo::X`. An
+  import that matches nothing fails the build
+  ([Imports](../idl/use.md#when-nothing-matches)).
 - **Direct dependencies only.** A dependency's own dependencies aren't
   importable from your package.
 - **Pinning.** `hash` is a blake3 hash over the dependency's compiled schemas.
@@ -135,7 +137,12 @@ like any other package.
   A dependency present in both versions is diffed like your own schemas, so a
   breaking change in it is a major bump for you and an additive one a minor
   bump.
+- **In the editor.** The language server reads the same `dependencies` block,
+  but never fetches anything. A path dependency, or a git pin `comline check`
+  has already fetched, is indexed under its name: hover, go-to-definition and
+  completion reach into it, and an import that matches nothing gets the build's
+  error. A pin that isn't fetched yet gets a warning on its entry in
+  `config.idp`, and imports from it aren't checked until it is. More in
+  [Dependency packages in the editor](../../design/editor-dependency-packages.md).
 
-There is no `comline add` command yet: write the entry by hand. How the editor
-will resolve dependency imports is in
-[Dependency packages in the editor](../../design/editor-dependency-packages.md).
+There is no `comline add` command yet: write the entry by hand.
