@@ -49,7 +49,7 @@ my-api/
 
 `src/main.ids`:
 
-```
+```ids
 /// The language a greeting is written in.
 enum Language {
     English

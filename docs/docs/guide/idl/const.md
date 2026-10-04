@@ -2,12 +2,12 @@
 
 A **constant** is a named, compile-time value.
 
-```
+```ids
 const WORLD_COUNT: u8 = 10
 const DEFAULT_NAME: str = "flower"
 ```
 
-```
+```ids
 const NAME: Type = value
 ```
 
@@ -26,7 +26,7 @@ value yet** — including the `{N}` in an f-string.
 
 A constant can carry a [docstring](docstrings.md):
 
-```
+```ids
 /// Largest number of worlds a provider may report.
 const WORLD_COUNT: u8 = 10
 ```
@@ -35,7 +35,7 @@ const WORLD_COUNT: u8 = 10
 
 A constant is referenced by name as a struct [field default](structure.md#fields):
 
-```
+```ids
 struct Person {
     name: str = DEFAULT_NAME
 }

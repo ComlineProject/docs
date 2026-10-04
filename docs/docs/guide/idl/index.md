@@ -5,7 +5,7 @@ write by hand. A schema file has the extension `.ids` and lives under a project'
 `src/` directory. It defines the data shapes and the protocols that carry them,
 independent of any language.
 
-```
+```ids
 // greeting.ids
 const GREETING_MAX: u16 = 280
 
@@ -49,7 +49,7 @@ next declaration.
 
 ## Imports
 
-```
+```ids
 use std::http::Request
 use mypackage::{User, Post}
 use external::uuid::Uuid as UUID

@@ -10,7 +10,7 @@
 A **validator** is a named, parameterised check you attach to a
 [struct](structure.md) or [error](error.md) field.
 
-``` py linenums="1"
+```ids linenums="1"
 /// Checks a string's length is within bounds.
 /// @min_chars: minimum length
 /// @max_chars: maximum length
@@ -52,7 +52,7 @@ The condition language is deliberately small and
 Attach validators to a field with the `@validators` annotation: a list of calls
 that bind the validator's properties by name.
 
-``` py linenums="1"
+```ids linenums="1"
 struct Message {
     @validators = [StringBounds(min_chars = 3, max_chars = 12)]
     recipient: str

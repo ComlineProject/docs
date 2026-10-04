@@ -7,7 +7,7 @@
 
 A **settings** block holds schema-wide switches.
 
-``` py linenums="1"
+```ids linenums="1"
 /// Project-wide switches.
 settings Project {
     forbid_indexing = True

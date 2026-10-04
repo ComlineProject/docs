@@ -3,7 +3,7 @@
 A **`use`** statement brings declarations from another schema or package into the
 current file.
 
-```
+```ids
 use std::http::Request
 use mypackage::types::User
 use mypackage::{User, Post, Comment}
@@ -41,7 +41,7 @@ always wins over `use other::User`.
 
 `as NewName` binds the import under a new name for this file:
 
-```
+```ids
 use external::uuid::Uuid as UUID
 
 struct Session {

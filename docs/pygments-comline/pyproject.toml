@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "comline-pygments"
+version = "0.1.0"
+description = "Pygments lexers for Comline's .ids and .idp languages"
+authors = ["Comline"]
+packages = [{ include = "comline_pygments" }]
+
+[tool.poetry.dependencies]
+python = "^3.14"
+pygments = ">=2.0"
+
+[tool.poetry.plugins."pygments.lexers"]
+ids = "comline_pygments.ids:IdsLexer"
+idp = "comline_pygments.idp:IdpLexer"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
