@@ -1,10 +1,13 @@
 """Lexer for Comline's `.ids` schema language.
 
-Token set follows `core/src/schema/idl/grammar.rs`: keywords, the twelve
-primitive types, `///` docstrings vs. `//` comments, `@key=value`
-annotations, and the three literal forms (`"..."` strings, `f"..."`
-f-strings, bare integers). `True`/`False` are capitalised here — that's
-the real grammar, not a typo (contrast `.idp`'s lowercase `true`/`false`).
+Token set follows `core/src/schema/idl/grammar.rs` (mirrored by
+`core/src/schema/idl/vocabulary.rs` for Rust-side consumers like the
+language server — this lexer can't depend on that crate directly, so it
+stays a manual mirror): keywords, the twelve primitive types, `///`
+docstrings vs. `//` comments, `@key=value` annotations, and the three
+literal forms (`"..."` strings, `f"..."` f-strings, bare integers).
+`True`/`False` are capitalised here — that's the real grammar, not a typo
+(contrast `.idp`'s lowercase `true`/`false`).
 """
 
 from pygments.lexer import RegexLexer, bygroups, words
@@ -22,7 +25,7 @@ from pygments.token import (
 __all__ = ["IdsLexer"]
 
 _KEYWORDS = (
-    "import", "use", "self", "parent", "crate", "as", "const", "type",
+    "import", "use", "self", "parent", "package", "as", "const", "type",
     "optional", "struct", "error", "enum", "settings", "validator",
     "validate", "assert", "and", "or", "protocol", "function", "union",
 )
