@@ -22,9 +22,12 @@ use parent::common::Error
 | glob | `use pkg::module::*` | everything in that module |
 | relative | `use parent::common::Error`, `use self::nested::Type`, `use package::types::User` | resolved against the current schema: `parent::` is one level up, `self::` the schema itself (`self::nested` is a schema under it), `package::` the package root |
 
-A relative prefix works in every form, but a glob or `{ ... }` needs a segment
-after it: `use parent::common::*` works, while `use parent::*` and
-`use parent::{Error}` don't parse.
+A relative prefix works in every form, including a glob or `{ ... }` straight
+after it: `use parent::*` and `use parent::{Error, Page}` import from the schema
+one level up (`api.ids`, for a file `api/v1.ids`), and `use parent::common::*`
+from the `common` schema beside it. As with any path, one that names no schema,
+or an item the schema doesn't declare, fails the build
+([below](#when-nothing-matches)).
 
 ## Referring to what you imported
 
