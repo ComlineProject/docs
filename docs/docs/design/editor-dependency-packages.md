@@ -1,6 +1,6 @@
 # Dependency packages in the editor
 
-Status: **Implemented** · `ComlineProject/language-server` (+ `core` and `cli` pieces) · Relates to core#6, core#50, core#59, core#60, core#61, cli#38, cli#39, cli#40, cli#42, language-server#24, language-server#25, language-server#26, language-server#27, language-server#28
+Status: **Implemented** · `ComlineProject/language-server` (+ `core` and `cli` pieces) · Relates to core#6, core#50, core#59, core#60, core#61, core#63, cli#38, cli#39, cli#40, cli#42, language-server#24, language-server#25, language-server#26, language-server#27, language-server#28, language-server#29
 
 How `use shared_types::foo::X` should work in the editor when `shared_types` is a
 dependency declared in `config.idp`: hover, go-to-definition into the
@@ -194,7 +194,10 @@ waits for a registry.
    available in every package with no `config.idp` entry. A build merges only
    the std schemas its imports reach. The first std is `std::http` (`HttpMethod`,
    `Request`, `Response`, ported from the old placeholders as plain types) and
-   `std::validators` (`StringBounds`). Its schemas stay GPL-3.0-only for now
+   `std::validators` (`StringBounds`). std and each module document themselves
+   with [module docs](../guide/idl/docstrings.md#module-docs) (`//!`, core#63),
+   which the editor shows on hover and in completion (language-server#29).
+   Its schemas stay GPL-3.0-only for now
    (see [Licensing](licensing.md)); the old `core/stdlib` placeholders became
    test fixtures.
 

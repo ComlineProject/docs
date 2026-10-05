@@ -94,6 +94,9 @@ struct Call {
 }
 ```
 
+`std` and each of its modules carry [module docs](docstrings.md#module-docs):
+hover `std` or `validators` in the editor to read them, with what's in each.
+
 A build includes only the std schemas a package imports. Like a dependency's,
 they're frozen into its versions and generated with its own code
 (`std/http.rs`). A package that doesn't use std is unaffected. std's version is

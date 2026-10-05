@@ -45,7 +45,8 @@ A schema is a flat list of declarations, in any order:
 ## Comments and docs
 
 `//` is a comment. `///` lines are [docstrings](docstrings.md) and attach to the
-next declaration.
+next declaration. `//!` lines at the top of a file are its
+[module docs](docstrings.md#module-docs).
 
 ## Imports
 
