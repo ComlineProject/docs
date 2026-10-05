@@ -171,7 +171,8 @@ waits for a registry.
 4. ✅ **cli**: `comline add` (cli#40).
 5. **core**: ✅ reject unresolved imports in builds (core#59, in the CLI since
    cli#38). That also rejected relative prefixes in glob and `{ ... }`
-   imports, which never resolved; core#61 fixed them (cli#39). ✅ std ships
+   imports, which never resolved; core#61 fixed them (cli#39), and core#65
+   made a prefix straight before `::*` or `::{` (`use parent::*`) parse. ✅ std ships
    with the toolchain, embedded in core, and resolves (core#62, cli#42,
    language-server#28).
 
