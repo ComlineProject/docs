@@ -35,6 +35,7 @@ class IdpLexer(RegexLexer):
         "root": [
             (r"\s+", Whitespace),
             (r"/\*([^*]|\*[^/])*\*/", Comment.Multiline),
+            (r"//!.*", Comment.Special),
             (r"//.*", Comment.Single),
             (
                 r"\b(congregation)(\s+)([a-zA-Z_][a-zA-Z0-9_]*)",

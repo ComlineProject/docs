@@ -51,7 +51,7 @@ class IdsLexer(RegexLexer):
     tokens = {
         "root": [
             (r"\s+", Whitespace),
-            (r"///[^\n]*", Comment.Special),
+            (r"//[/!][^\n]*", Comment.Special),
             (r"//[^\n]*", Comment.Single),
             (r"@[a-zA-Z_][a-zA-Z0-9_]*", Name.Decorator),
             (r"\b(True|False)\b", Keyword.Constant),
