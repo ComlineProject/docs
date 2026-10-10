@@ -150,9 +150,14 @@ is a dedicated one, e.g. `generated/`). It leaves `.comline/` alone —
 | `enum` | `pub enum` |
 | `protocol` | `pub trait` with a method per function |
 
-Current limitation: cross-schema `import`s are not yet emitted as `use`
-statements, so multi-file output can reference types it does not bring into
-scope.
+A cross-schema reference (a type pulled in via `use`) is emitted as a
+`crate`-qualified path (`crate::shared::Shared`), not a bare name — every
+non-local schema (a declared dependency or `std`) is inlined into the same
+generated output, under a module tree that mirrors its namespace. `lib`
+mode wires that module tree up itself (`pub mod shared;` in `src/lib.rs`);
+`code` mode does not write module declarations, so a project using
+cross-schema references in `code` mode needs to declare matching `mod`
+statements itself.
 
 ## Modes (planned)
 
