@@ -32,6 +32,7 @@ code_generation = {
 | `specification_version` | which version of the schema language these files are written against |
 | `code_generation.languages` | the **capability list**: `language#lang_version` targets this package *can* be generated as. Bare entries — `= {}` is required and takes no options. |
 | `dependencies` | other packages this one imports — see [Dependencies](#dependencies) |
+| `settings` | package-wide authoring policy, enforced at build time — see [Settings](../idl/settings.md) |
 | `publish_registries` | named registries this package publishes to (planned — [see below](#publishing-planned)) |
 
 The manifest is **frozen**: it lowers to IR units and is content-addressed into

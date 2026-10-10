@@ -38,7 +38,7 @@ A schema is a flat list of declarations, in any order:
 | [`protocol`](protocol.md) | a set of callable [`function`s](protocol.md) |
 | [`error`](error.md) | a named failure with an interpolated `message` and fields, raised by functions with `!` |
 | [`const`](const.md) | a compile-time constant: `const NAME: type = value` |
-| [`settings`](settings.md) | schema-wide switches (`key = value`) — recorded, not yet enforced |
+| [`settings`](settings.md) | package/schema-wide authoring policy (`key = value`) — enforced at build time |
 | [`validator`](validator.md) | a named, parameterised field check — recorded, not yet enforced |
 | [`use`](use.md) | pull declarations in from another schema or package |
 
