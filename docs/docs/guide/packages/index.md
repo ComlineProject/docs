@@ -32,6 +32,7 @@ code_generation = {
 | `specification_version` | which version of the schema language these files are written against |
 | `code_generation.languages` | the **capability list**: `language#lang_version` targets this package *can* be generated as. Bare entries — `= {}` is required and takes no options. |
 | `dependencies` | other packages this one imports — see [Dependencies](#dependencies) |
+| `settings` | package-wide authoring policy, enforced at build time — see [Settings](../idl/settings.md) |
 | `publish_registries` | named registries this package publishes to (planned — [see below](#publishing-planned)) |
 
 The manifest is **frozen**: it lowers to IR units and is content-addressed into
@@ -119,7 +120,9 @@ decides where the package comes from:
 | Registry | `version`, `uri` (optional `hash`, `signature`) | **not supported yet** — there's no registry server, so `comline check` / `build` reject it |
 
 `comline check` and `comline build` resolve every dependency, then compile it
-like any other package.
+like any other package. A git fetch that fails (no network, a commit that
+doesn't exist) leaves nothing in the cache, so the next run fetches again and
+reports git's own error.
 
 - **Importing.** A dependency's schemas live under the name you gave it:
   `shared_types`'s `src/foo.ids` is imported as `use shared_types::foo::X`. An
