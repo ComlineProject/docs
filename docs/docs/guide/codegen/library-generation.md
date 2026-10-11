@@ -7,7 +7,7 @@ that source into a **package**: a manifest (`Cargo.toml`, `pyproject.toml`, a
 — the FFI surface a [runtime](../runtime/index.md) loads and dispatches through.
 
 `comline generate`'s `mode` chooses how far generation goes. It is set per target
-in [`comline.toml`](../../reference/comline-toml.md) (`[generate] mode` or
+in [`comline.toml`](../../reference/congregation/comline-toml.md) (`[generate] mode` or
 `[[generate.target]] mode`).
 
 | `mode` | Output | Status |
@@ -44,7 +44,7 @@ Implemented for **rust**: `<out>/rust/` gets a `Cargo.toml` (package name from
 the congregation, `serde` dependency), `src/lib.rs`, and `src/<namespace>.rs` per
 schema — `<language>/` keeps this target's crate from colliding with another
 `lib` target sharing the same `out`; a target with `out` to itself can set
-[`flatten = true`](../../reference/comline-toml.md#flatten) to skip that and
+[`flatten = true`](../../reference/congregation/comline-toml.md#flatten) to skip that and
 land the crate straight into `out`. `layout` plays no part in any of this —
 it only applies to `code` mode. Other languages, multi-version `lib` output,
 and a schema whose namespace is nested (`a/b`) are not done yet.

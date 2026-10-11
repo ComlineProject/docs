@@ -10,17 +10,17 @@ A **settings** block holds schema-wide switches.
 ```ids linenums="1"
 /// Project-wide switches.
 settings Project {
-    forbid_indexing = True
+    forbid_indexing = true
     max_depth       = 8
     label           = "core"
 }
 ```
 
-Each entry is `key = value`, where a value is a **boolean** (`True` / `False`),
+Each entry is `key = value`, where a value is a **boolean** (`true` / `false`),
 an **integer**, or a **string**. There is no expression language here.
 
-`True` / `False` are keywords only inside a settings value — they remain valid
-identifiers everywhere else (an `enum` variant named `True` still works).
+`true` / `false` are keywords only inside a settings value — they remain valid
+identifiers everywhere else (an `enum` variant named `true` still works).
 
 ## What it produces
 

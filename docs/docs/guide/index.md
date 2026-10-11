@@ -1,4 +1,4 @@
-# Overview
+# Guide Overview 
 
 Comline takes a schema you write by hand and carries it through a fixed pipeline:
 
@@ -6,10 +6,10 @@ Comline takes a schema you write by hand and carries it through a fixed pipeline
 
 Each stage has its own page in this guide; this is the map.
 
-## 1. Writing a [Schema / IDL](idl/index.md)
+## 1. Writing a Schema
 
 A project is a directory with a package manifest (`config.idp`) and one or more
-`.ids` schema files under `src/`. The schema language defines
+`.ids` [Schema / IDL](idl/index.md) files under `src/`. The schema language defines
 [structures](idl/structure.md), [enums](idl/enum.md), [protocols](idl/protocol.md),
 errors and [settings](idl/settings.md), with [docstrings](idl/docstrings.md)
 attached to any of them.
@@ -18,11 +18,13 @@ attached to any of them.
 comline new my-api      # scaffold config.idp + comline.toml + src/main.ids
 ```
 
-## 2. Compile to the [Intermediate Representation](ir/index.md)
+## 2. Checking and Compiling
 
-`comline check` parses, resolves imports and validates. `comline build` does that
-and then **freezes** the result: the schema becomes a set of immutable IR units
-written into a content-addressable store, [`.comline/`](ir/cas.md), as a new
+`comline check` parses, resolves imports and validates.
+
+`comline build` does that
+and then **freezes** the result: the schema becomes a set of immutable [Intermediate Representation](ir/index.md)
+written into a Content Addressable Store, [`.comline/`](ir/cas.md), as a new
 commit in an append-only chain.
 
 The package version bumps automatically on each build, by the largest change
@@ -33,7 +35,7 @@ since the last one — see [Versioning rules](../reference/versioning.md).
 `comline generate` turns the compiled schema into source for a target language.
 *What* languages a package supports is declared in `config.idp`; *where* the code
 lands and in what layout is the consumer's choice, in
-[`comline.toml`](../reference/comline-toml.md). One schema history can be
+[`comline.toml`](../reference/congregation/comline-toml.md). One schema history can be
 generated across [several languages](../design/codegen-by-language.md) and
 [several past versions](../design/multi-version-generation.md) at once.
 

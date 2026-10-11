@@ -6,7 +6,7 @@ never frozen, and never part of a published package. With no `comline.toml` (or
 an all-commented one) the defaults below apply and targets come from
 `config.idp`'s `code_generation.languages`.
 
-For the task-oriented walkthrough see [Generating code](../guide/codegen/generating-code.md).
+For the task-oriented walkthrough see [Generating code](../../guide/codegen/generating-code.md).
 
 ## `[generate]`
 
@@ -16,9 +16,9 @@ Defaults for every target.
 |---|---|---|---|
 | `out` | string (path) | `"generated"` | Output root, relative to `comline.toml`. |
 | `layout` | string (template) | `"{{language}}/{{namespace}}.{{ext}}"` | Path of each generated file under `out`. Handlebars, strict. |
-| `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. `code` is implemented for every generator; `lib` for `rust`; `dylib` is planned — see [Library generation](../guide/codegen/library-generation.md). |
+| `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. `code` is implemented for every generator; `lib` for `rust`; `dylib` is planned — see [Library generation](../../guide/codegen/library-generation.md). |
 | `package_versions` | `"latest"` \| `"all"` \| list | `"latest"` | Which package versions to emit — see [below](#package_versions). |
-| `default_framing` | string | — | Wire framing for protocols that don't pick one with [`@framing`](../guide/idl/protocol.md#protocol-annotations) — see [below](#default_framing). |
+| `default_framing` | string | — | Wire framing for protocols that don't pick one with [`@framing`](../../guide/idl/protocol.md#protocol-annotations) — see [below](#default_framing). |
 
 ## `[[generate.target]]`
 
@@ -99,13 +99,13 @@ layout           = "{{language}}/{{package_version}}/{{namespace}}.{{ext}}"
 ## `default_framing`
 
 The wire framing the generated `connect` / `serve` helpers use for any
-`protocol` that does not set its own [`@framing`](../guide/idl/protocol.md#protocol-annotations).
+`protocol` that does not set its own [`@framing`](../../guide/idl/protocol.md#protocol-annotations).
 Unset ⇒ the generator's built-in default (a compact datagram framing for Rust).
 
 | Value | Effect |
-|---|---|
-| `"jsonrpc"` (`"json-rpc"`, `"jsonrpc-2.0"`) | JSON-RPC 2.0 framing. |
+|  ---  |  ---   |
 | `"datagram"` (`"comline.datagram"`) | The datagram default, stated explicitly. |
+| `"jsonrpc"` (`"json-rpc"`, `"jsonrpc-2.0"`) | JSON-RPC 2.0 framing. |
 
 A value the target generator doesn't recognise leaves its built-in default in
 place. A single protocol overrides the package setting either way with

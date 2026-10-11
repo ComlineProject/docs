@@ -47,7 +47,7 @@ Use `str` for text. `string` is an accepted synonym the compiler steers you away
 from; `String` is generated-Rust, not IDL — see
 [`str` vs `string` vs `String`](types.md#str-vs-string-vs-string).
 
-## Docstrings and annotations
+## Docstrings
 
 A [docstring](docstrings.md) (`///` lines) and `@key=value` annotations attach to
 a struct or an individual field.
@@ -62,5 +62,18 @@ struct Message {
 }
 ```
 
+
+## Annotations
+
 Annotation values are simple — an integer, string or identifier (`@internal=true`).
 Richer forms such as `@validators=[…]` are still being designed.
+
+```ids
+struct Message {
+    @optional // <- This is an annotation
+    body: string
+}
+```
+
+TODO: annotations might not apply to structures, only fields
+

@@ -35,7 +35,7 @@ protocol Mail {
 Functions take [docstrings](docstrings.md) (including the `/// @name:` form for
 arguments) and `@key=value` annotations.
 
-## Protocol annotations
+## Annotations
 
 A `@key=value` annotation on the `protocol` itself configures the whole service.
 

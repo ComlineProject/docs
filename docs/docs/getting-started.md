@@ -88,7 +88,7 @@ comline generate
 
 Targets come from `code_generation.languages` in `config.idp` (the scaffold
 declares `rust#1.70.0`); output lands under `generated/` by default. Change where
-and how in [`comline.toml`](reference/comline-toml.md):
+and how in [`comline.toml`](reference/congregation/comline-toml.md):
 
 ```toml
 [generate]
@@ -100,7 +100,7 @@ Today `rust` and `typescript` are the generators.
 
 ## Next
 
-- [Overview](guide/overview.md) — the whole pipeline
+- [Overview](guide/index.md) — the whole pipeline
 - [IDL guide](guide/idl/index.md) — the schema language
 - [Generating code](guide/codegen/generating-code.md) — the full `generate` surface
 - [CLI reference](reference/cli.md) — every command and flag
