@@ -18,7 +18,7 @@ Defaults for every target.
 | `layout` | string (template) | `"{{language}}/{{namespace}}.{{ext}}"` | Path of each generated file under `out`. Handlebars, strict. |
 | `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. `code` is implemented for every generator; `lib` for `rust`; `dylib` is planned — see [Library generation](../../guide/codegen/library-generation.md). |
 | `package_versions` | `"latest"` \| `"all"` \| list | `"latest"` | Which package versions to emit — see [below](#package_versions). |
-| `default_framing` | string | — | Wire framing for protocols that don't pick one with [`@framing`](../../guide/idl/protocol.md#protocol-annotations) — see [below](#default_framing). |
+| `default_framing` | string | — | Wire framing for protocols that don't pick one with [`@framing`](../../guide/idl/protocol.md#annotations) — see [below](#default_framing). |
 
 ## `[[generate.target]]`
 
@@ -99,7 +99,7 @@ layout           = "{{language}}/{{package_version}}/{{namespace}}.{{ext}}"
 ## `default_framing`
 
 The wire framing the generated `connect` / `serve` helpers use for any
-`protocol` that does not set its own [`@framing`](../../guide/idl/protocol.md#protocol-annotations).
+`protocol` that does not set its own [`@framing`](../../guide/idl/protocol.md#annotations).
 Unset ⇒ the generator's built-in default (a compact datagram framing for Rust).
 
 | Value | Effect |

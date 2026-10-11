@@ -10,7 +10,7 @@ Which framing the generated client and server use is decided when the
 code is generated, not when it runs. It comes from the protocol's
 `@framing` annotation, or the package's `default_framing` in
 `comline.toml`, resolved in that order by the generator — see
-[Protocols](../../guide/idl/protocol.md#protocol-annotations). The result
+[Protocols](../../guide/idl/protocol.md#annotations). The result
 is baked into the generated `<Proto>Client` / `<Proto>Dispatcher`: there's
 no framing argument on `connect` or `serve` to swap it at the call site.
 
