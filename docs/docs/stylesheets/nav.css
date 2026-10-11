@@ -1,25 +1,61 @@
-/* A nav section that also has an index page (e.g. "IDL / Schema") renders a
-   dead, non-clickable bold label above a child link with the same text.
-   Material only makes that label a link via `navigation.indexes`, which is
-   incompatible with `toc.integrate`. Desktop sidebar fix, in three parts. */
+/* A nav group that also has an index page (e.g. "IDL / Schema", "Compliance
+   features") renders a dead, duplicate label above a child link with the same
+   text. Material only makes that label a link via `navigation.indexes`, which
+   is incompatible with `toc.integrate`. Desktop sidebar fix, in three parts.
+
+   Material only classes a group `--section` (permanently expanded, no
+   checkbox toggle) at levels 1-2 under the active tab. Deeper groups (level
+   3+, e.g. "Compliance features" under Reference > Congregation) stay plain
+   `--nested` collapsibles with a real checkbox-driven toggle instead — which
+   makes the dead label a *functional* click target (collapse/expand), so it
+   can't just be hidden outright without a way to reopen it. Rule 1 below
+   force-expands every such group permanently, the same way Material already
+   treats `--section` groups: nothing in this nav is actually collapsible, so
+   there's no toggle state left to preserve, and the label can be hidden
+   unconditionally like a `--section` one — leaving its group's own (now
+   singly-clickable) index-page link as the only entry for it, fixing what
+   would otherwise be a two-click "expand, then click again to navigate".
+
+   All three rules exclude data-md-level="1": that's always the active tab's
+   own outer <li>, which also carries --section but isn't a genuine
+   index-page group — hiding it is harmless there (every sibling is itself a
+   section), but indenting it wrongly pads a tab with a plain visible sibling
+   page, e.g. Home's "Getting started" sitting next to "Welcome to Comline". */
 @media screen and (min-width: 76.25em) {
-  /* 1. hide the dead label */
-  .md-sidebar--primary .md-nav__item--section > label.md-nav__link {
+  /* 1. force every nested group permanently open, and hide its now-dead
+     label unconditionally — mirrors Material's own `--section` CSS
+     (`.md-nav__item--section>.md-nav{display:block;visibility:visible;
+     opacity:1}`), just generalized to groups Material doesn't section
+     natively. */
+  .md-sidebar--primary .md-nav__item--nested > .md-nav {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .md-sidebar--primary .md-nav__item--nested > label.md-nav__link {
     display: none !important;
   }
 
-  /* 2. the section's nested list sits flush with the outer list, so its index
-     page lines up with plain top-level entries like "Overview" */
-  .md-sidebar--primary .md-nav__item--section > .md-nav > .md-nav__list {
+  /* 2. the level-2 group's nested list sits flush with the outer list. This
+     only applies at level 2 — Material's own default `.md-nav__list`
+     margin-left (.6rem) is deliberately left untouched at level 3+, since
+     rule 3's padding-left:1.4rem *replaces* (doesn't add to) a link's
+     default .8rem padding: a label indented by rule 3 ends up at
+     1.4rem + .2rem default margin = 1.6rem, and a first-child link one level
+     deeper, kept at its un-replaced default .8rem + .2rem = 1rem, needs
+     exactly .6rem more from the list margin to match — which is what
+     Material already applies by default. Overriding it throws that match
+     off, so level 3+ is left alone. */
+  .md-sidebar--primary .md-nav__item--nested > .md-nav[data-md-level="2"] > .md-nav__list {
     margin-left: 0 !important;
   }
 
-  /* 3. the section's own pages step in under its index page (padding on the
+  /* 3. the group's own pages step in under its index page (padding on the
      link itself — flex, honours it reliably; the index page is the first
      child and stays put) */
   .md-sidebar--primary
-    .md-nav__item--section
-    > .md-nav
+    .md-nav__item--nested
+    > .md-nav:not([data-md-level="1"])
     > .md-nav__list
     > .md-nav__item:not(:first-child)
     > .md-nav__link {

@@ -61,7 +61,7 @@ Where generated code lands, in what layout, for which versions — none of which
 belongs to the package author — is set by whoever runs `comline generate`, in a
 separate, non-frozen `comline.toml`. See
 [Generating code](../codegen/generating-code.md) and the
-[`comline.toml` reference](../../reference/comline-toml.md).
+[`comline.toml` reference](../../reference/congregation/comline-toml.md).
 
 ## Publishing (planned)
 

@@ -6,8 +6,9 @@ language server — this lexer can't depend on that crate directly, so it
 stays a manual mirror): keywords, the twelve primitive types, `///`
 docstrings vs. `//` comments, `@key=value` annotations, and the three
 literal forms (`"..."` strings, `f"..."` f-strings, bare integers).
-`True`/`False` are capitalised here — that's the real grammar, not a typo
-(contrast `.idp`'s lowercase `true`/`false`).
+Booleans are lowercase `true`/`false`, same as `.idp` - both grammars
+declare them as literal-text leaves (not a combined regex), which is
+what keeps the keyword unambiguous with a bare identifier.
 """
 
 from pygments.lexer import RegexLexer, bygroups, words
@@ -54,7 +55,7 @@ class IdsLexer(RegexLexer):
             (r"//[/!][^\n]*", Comment.Special),
             (r"//[^\n]*", Comment.Single),
             (r"@[a-zA-Z_][a-zA-Z0-9_]*", Name.Decorator),
-            (r"\b(True|False)\b", Keyword.Constant),
+            (r"\b(true|false)\b", Keyword.Constant),
             (
                 r"\b(%s)(\s+)([a-zA-Z_][a-zA-Z0-9_]*)" % "|".join(_DECL_KEYWORDS),
                 bygroups(Keyword, Whitespace, Name.Class),

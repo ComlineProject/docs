@@ -1,3 +1,7 @@
+---
+render_macros: true
+---
+
 # CLI
 
 `comline` drives the workflow around schemas: scaffold, validate, freeze
@@ -35,7 +39,7 @@ parse → resolve imports → validate → (freeze into .comline/) → (generate
 | `comline add <name> <dir>` / `comline add <name> --git <uri> --commit <sha> --version <v>` | Add a dependency to `config.idp`, imported as `use <name>::…`: resolved first (a git pin is fetched into `.comline/deps-cache/`), then written with its `hash` pinned. `--no-hash` skips the pin. |
 | `comline check` | Parse, resolve and validate. No `.comline/` write (beyond fetching git dependencies), no version bump — safe for editors, hooks, CI. |
 | `comline build [--release] [--watch]` | Compile, validate, freeze a new immutable version into `.comline/`; print the changelog and the bump. `--release` is currently a no-op. |
-| `comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--watch]` | Validate (no freeze), then write generated code. Location/layout from [`comline.toml`](comline-toml.md); targets from there or `config.idp`. |
+| `comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--watch]` | Validate (no freeze), then write generated code. Location/layout from [`comline.toml`](congregation/comline-toml.md); targets from there or `config.idp`. |
 | `comline diff <old> [<new>]` | Show schema changes between two built versions. Each argument is a version (`0.2.0`), a commit hash (4+ chars), or `HEAD` (`<new>` default). |
 | `comline clean [--dry-run]` | Remove generated code (the `generate` output root or files). Never touches `.comline/`. |
 | `comline reset [--force] [--dry-run]` | **Destructive.** Delete `.comline/` — the whole version history, no undo — *and* generated code. Next `build` starts over at `0.0.1`. On a terminal it shows how many versions will be lost and makes you type `reset`; without a terminal it refuses (exit `2`) unless `--force`. |
@@ -50,10 +54,8 @@ mode.
 
 | Flag | Effect |
 |---|---|
-| `-p`, `--path <DIR>` | Run against `<DIR>` instead of the current directory. |
-| `-v` / `-vv` / `-vvv` | Raise log verbosity (info / debug / trace) for `comline-core` diagnostics. |
-| `-q`, `--quiet` | Only errors. Conflicts with `-v`. |
-| `--plain` | No color, symbols, emoji or spinner — for logs and CI. |
+{% for row in global_flags %}| {{ row.flag }} | {{ row.effect }} |
+{% endfor %}
 
 `RUST_LOG` overrides the verbosity flags. `NO_COLOR` strips color. stdout is
 reserved for machine output (only `completions` writes there); everything else

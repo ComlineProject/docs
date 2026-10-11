@@ -4,9 +4,8 @@ Token set follows `core/src/package/config/idl/grammar.rs`: the single
 `congregation NAME` header, flat `key = value` assignments, and the three
 special key forms the grammar itself distinguishes — a namespaced key
 (`a::b::c`), a version-tagged one (`rust#1.70.0`), and a dependency
-address (`name@version::path`). Booleans are lowercase `true`/`false`
-here — contrast `.ids`'s capitalised `True`/`False`, which is the real
-grammar, not a mismatch to fix.
+address (`name@version::path`). Booleans are lowercase `true`/`false`,
+same as `.ids`.
 """
 
 from pygments.lexer import RegexLexer, bygroups
