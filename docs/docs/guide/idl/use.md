@@ -22,9 +22,12 @@ use parent::common::Error
 | glob | `use pkg::module::*` | everything in that module |
 | relative | `use parent::common::Error`, `use self::nested::Type`, `use package::types::User` | resolved against the current schema: `parent::` is one level up, `self::` the schema itself (`self::nested` is a schema under it), `package::` the package root |
 
-A relative prefix works in every form, but a glob or `{ ... }` needs a segment
-after it: `use parent::common::*` works, while `use parent::*` and
-`use parent::{Error}` don't parse.
+A relative prefix works in every form, including a glob or `{ ... }` straight
+after it: `use parent::*` and `use parent::{Error, Page}` import from the schema
+one level up (`api.ids`, for a file `api/v1.ids`), and `use parent::common::*`
+from the `common` schema beside it. As with any path, one that names no schema,
+or an item the schema doesn't declare, fails the build
+([below](#when-nothing-matches)).
 
 ## Referring to what you imported
 
@@ -69,5 +72,35 @@ closest match when there is one:
 | `use types::Usr` (`types` has no `Usr`) | `schema 'types' doesn't declare 'Usr' - did you mean 'User'?` |
 
 The editor reports the same errors as you type, with a quick fix to the closest
-name. Paths under `std::` aren't checked yet: std's schemas don't ship with the
-toolchain.
+name. A `std::` path is checked the same way, against the
+[standard library](#the-standard-library):
+`std has no schema matching 'std::htp::Request' - did you mean 'std::http'?`
+
+## The standard library
+
+`std` is built into the toolchain. Every package can `use std::…` with nothing
+in `config.idp`, and the editor and the playground know it too.
+
+| Schema | Declares |
+|---|---|
+| `std::http` | `HttpMethod` (enum: `GET`, `POST`, `PUT`, `DELETE`), `Request` (`method`, `uri`), `Response` (`status_code`) |
+| `std::validators` | `StringBounds`, a validator with `min_chars` and `max_chars` |
+
+```ids
+use std::http::Request
+use std::validators::StringBounds
+
+struct Call {
+    request: Request
+    @validators = [StringBounds(min_chars = 1, max_chars = 64)]
+    label: str
+}
+```
+
+`std` and each of its modules carry [module docs](docstrings.md#module-docs):
+hover `std` or `validators` in the editor to read them, with what's in each.
+
+A build includes only the std schemas a package imports. Like a dependency's,
+they're frozen into its versions and generated with its own code
+(`std/http.rs`). A package that doesn't use std is unaffected. std's version is
+the toolchain's.

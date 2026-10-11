@@ -86,11 +86,11 @@ can still opt into a future GPL deliberately if one lands that it likes.
 ## Open
 
 - **stdlib schemas.** `comline-core-stdlib` sits in the `core` repo and is
-  GPL-3.0-only by default. The stdlib *schemas* — things a user writes
-  `use std::…` to pull into their own schema — arguably want a permissive /
-  CC0 license, the way C standard-library headers carry an exception, so
-  incorporating them raises no questions. Decide when validators / `lib`-mode
-  stdlib codegen actually lands.
+  GPL-3.0-only. Since core#62 its schemas ship embedded in the toolchain, and
+  a package that imports them gets them frozen and generated with its own code.
+  They stay GPL-3.0-only for now (decided 2026-10-04). They arguably want a
+  permissive / CC0 license, the way C standard-library headers carry an
+  exception, so incorporating them raises no questions; that's still open.
 - **generated-file header.** A one-line note in each generated file stating the
   output is not GPL — a small follow-up (it touches the conformance goldens).
 
