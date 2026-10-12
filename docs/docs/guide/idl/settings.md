@@ -83,9 +83,8 @@ settings {
 
 ## Keys
 
-A settings key always ends in `.allowed` and takes a boolean (`True` /
-`False` — keywords only inside a settings value; an `enum` variant literally
-named `True` still works everywhere else):
+Each key has a declared shape, and a value whose type the key decides. Most
+are permission toggles taking a boolean (`true` / `false`):
 
 ```
 [<decl-path>.]<category>[.<name>].allowed = bool
@@ -96,6 +95,26 @@ named `True` still works everywhere else):
 - `<category>` is `annotations` or `validators`.
 - `<name>` optionally narrows to one member of that category — an
   annotation's name, or a validator's name.
+
+Two keys are not permission toggles, so not every key ends in `.allowed`
+and not every value is a boolean:
+
+| Key | Value |
+|---|---|
+| `diagnostics."<code>".level` | one of `allow`, `hint`, `info`, `warn`, `error` |
+| `mode` | the bare keyword `replace` |
+
+`diagnostics."<code>".level` overrides a diagnostic code's severity
+project-wide — `allow` silences it. The code must be quoted, since it
+contains `::`. `mode` is legal in any dictionary at any depth and controls
+whether that subtree replaces the layer below it instead of merging into
+it.
+
+A value of the wrong type is a build error, whether or not anything reads
+the key. So is a key that is unrecognised *within* a group Comline owns
+(`annotations.`, `validators.`, `diagnostics.`) — `annotations.framing.alowed`
+is reported with a suggestion rather than silently doing nothing. An
+unrecognised key at the top level stays legal, as an extension point.
 
 A more specific key always wins over a less specific one. For an annotation,
 the lookup order is decl-scoped then global:
@@ -113,6 +132,7 @@ Examples:
 | `struct.field.validators.allowed` | validators usable on struct fields specifically |
 | `protocol.annotations.framing.allowed` | `@framing` usable on protocols |
 | `validators.StringBounds.allowed` | kill one validator kind everywhere |
+| `diagnostics."validation::deprecated-type-usage".level` | silence or escalate one diagnostic |
 
 No key at any level means **allowed**, with one named exception — see below.
 
@@ -134,11 +154,19 @@ error: annotation '@framing' is forbidden here by 'annotations.framing.allowed =
 Comline ships exactly one built-in default policy: **`@framing` is forbidden
 until some level explicitly allows it.** Wire framing (`jsonrpc` vs.
 `datagram`) is a wire-compatibility decision an organization should make
-deliberately once, not something any individual protocol can silently flip —
-so a package that writes no `settings` at all still gets
-`annotations.framing.allowed = false`. Every other annotation and validator
-stays allowed by default. Write `settings = { annotations = { framing = {
-allowed = true } } }` (or a decl-path-scoped form) to permit it.
+deliberately once, not something any individual protocol can silently flip.
+
+It is the base layer every package starts from, whether or not the package
+writes a `settings` block of its own: writing an unrelated setting does not
+drop it. (It used to — the default was installed only when a package wrote
+no `settings` key at all, so writing any setting silently removed the
+protection entirely.) A package that genuinely wants no built-in policy can
+drop the layer with `mode = replace` at the root, the same escape hatch any
+other layer has.
+
+Every other annotation and validator stays allowed by default. Write
+`settings = { annotations = { framing = { allowed = true } } }` (or a
+decl-path-scoped form) to permit it.
 
 ## Cross-package sharing
 
