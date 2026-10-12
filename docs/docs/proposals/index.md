@@ -38,5 +38,7 @@ Org-wide decision record:
 
 ### Tooling
 
-- [Automatic documentation](auto-documentation.md) — derive human-readable docs
-  from the schema and project files, as an optional tool. *draft.*
+- [Automatic documentation](auto-documentation.md) — an optional tool that
+  documents a user's own schemas and packages — their structs, enums, protocols,
+  errors — from the IR and its docstrings, with the CAS supplying per-version
+  docs and a generated changelog. *draft.*

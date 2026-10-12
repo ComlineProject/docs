@@ -1,0 +1,60 @@
+name: IDL drift
+
+# core's grammar declares every IDL keyword as a `rust_sitter` leaf, so the
+# real token set is machine-readable. This checks the guide documents all of
+# them — it generates nothing; the pages say far more than a token list could.
+#
+# Separate from the CLI drift workflow because this needs no Rust build, only a
+# source fetch, so it can run per-PR instead of weekly. Separate from the Docs
+# workflow because that one gates the Pages deploy, and a fetch against another
+# repo has no business being able to block a deploy.
+
+on:
+  schedule:
+    # A keyword added in `core` never touches this repo, so a push-triggered
+    # run would not see it. Weekly catches that side.
+    - cron: '30 7 * * 1'
+  pull_request:
+    paths:
+      - 'docs/docs/guide/idl/**'
+      - 'scripts/check-idl-drift.py'
+      - '.github/workflows/idl-drift.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: idl-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      # Reads the grammar straight from `core` (default branch), stdlib only —
+      # no Rust toolchain, no dependencies to install.
+      - name: Check for drift
+        # `shell: bash` for pipefail: the `if !` must see the checker's exit
+        # status, not tee's.
+        shell: bash
+        run: |
+          if ! python3 scripts/check-idl-drift.py | tee drift.txt; then
+            {
+              echo '### IDL drift'
+              echo
+              echo 'These keywords exist in core'"'"'s grammar but are not documented:'
+              echo
+              echo '```'
+              cat drift.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          cat drift.txt >> "$GITHUB_STEP_SUMMARY"

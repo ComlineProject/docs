@@ -1,0 +1,88 @@
+name: CLI drift
+
+# The docs describe every `comline` command and flag by hand, in prose richer
+# than clap's help strings — so nothing here generates the page. This only
+# checks the two surfaces still name the same things: a flag can land in the
+# CLI and never reach the docs, and that goes unnoticed indefinitely.
+#
+# It lives apart from the Docs workflow because it needs the CLI binary, and
+# so a Rust build, which doc builds have no use for.
+
+on:
+  schedule:
+    # Drift arrives when the *CLI* changes, which this repo never sees. Weekly
+    # is the backstop for that; the pull_request trigger below only covers
+    # edits made here.
+    - cron: '0 7 * * 1'
+  pull_request:
+    paths:
+      - 'docs/docs/reference/cli.md'
+      - 'docs/_data/cli-global-flags.yaml'
+      - 'scripts/check-cli-drift.py'
+      - '.github/workflows/cli-drift.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cli-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      # Checking against the tip of the default branch, not a pinned rev: a
+      # CLI that has moved ahead of the docs is what this is here to catch.
+      # The branch is resolved rather than hardcoded — ComlineProject repos are
+      # not consistent about `main` vs `master`.
+      - name: Resolve the CLI's current commit
+        id: cli
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch=$(gh api repos/ComlineProject/cli --jq .default_branch)
+          echo "sha=$(gh api "repos/ComlineProject/cli/commits/$branch" --jq .sha)" >> "$GITHUB_OUTPUT"
+
+      # Keyed on that exact commit, so an unchanged CLI costs nothing and a
+      # changed one rebuilds. Without this every run pays a full cargo build.
+      - name: Cache the comline binary
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/comline
+          key: comline-${{ runner.os }}-${{ steps.cli.outputs.sha }}
+
+      # cargo comes preinstalled on the runner image; comline-core and the
+      # generator crates resolve from the pinned git revs in Cargo.lock.
+      - name: Install the CLI
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          cargo install --locked --git https://github.com/ComlineProject/cli \
+            --rev ${{ steps.cli.outputs.sha }}
+
+      - name: Check for drift
+        # `shell: bash` for pipefail: without it the `if !` below reads tee's
+        # exit status, never the checker's, and drift would pass silently.
+        shell: bash
+        run: |
+          if ! python3 scripts/check-cli-drift.py | tee drift.txt; then
+            {
+              echo '### CLI drift'
+              echo
+              echo 'The docs and `comline` no longer describe the same surface.'
+              echo
+              echo '```'
+              cat drift.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          cat drift.txt >> "$GITHUB_STEP_SUMMARY"
