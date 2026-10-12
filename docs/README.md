@@ -20,3 +20,24 @@ Zensical's alpha; `poetry run mkdocs serve` still works against the same
 Inspiration for CAS(Content Addressable Storage) 
 for Schemas and Project Units; https://git-scm.com/book/en/v2/Git-Internals-Git-Objects
 
+
+## Drift checks
+
+The CLI reference and the IDL guide are written by hand, in prose deliberately
+richer than `--help` text or a token list. Two scripts keep them honest without
+generating anything — each only checks that the docs and the source still name
+the same things:
+
+```sh
+python3 ../scripts/check-cli-drift.py   # needs `comline` on PATH
+python3 ../scripts/check-idl-drift.py   # fetches core's grammar; --checkout ../../core to skip
+```
+
+`check-cli-drift.py` compares every command and long flag against the installed
+binary, both directions. `check-idl-drift.py` compares core's `rust_sitter`
+grammar leaves against the IDL guide, counting a keyword as documented when it
+appears in a code fence or inline code span.
+
+Both run in CI — IDL drift per relevant PR, CLI drift weekly (it needs a Rust
+build, so it is kept off the per-PR path) — and both can be triggered manually
+from the Actions tab.
