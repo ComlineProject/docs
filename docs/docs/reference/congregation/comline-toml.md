@@ -16,20 +16,29 @@ Defaults for every target.
 |---|---|---|---|
 | `out` | string (path) | `"generated"` | Output root, relative to `comline.toml`. |
 | `layout` | string (template) | `"{{language}}/{{namespace}}.{{ext}}"` | Path of each generated file under `out`. Handlebars, strict. |
-| `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. `code` is implemented for every generator; `lib` for `rust`; `dylib` is planned — see [Library generation](../../guide/codegen/library-generation.md). |
+| `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. `code` and `lib` are implemented for `rust` and `typescript`; `dylib` is planned — see [Library generation](../../guide/codegen/library-generation.md). |
 | `package_versions` | `"latest"` \| `"all"` \| list | `"latest"` | Which package versions to emit — see [below](#package_versions). |
 | `default_framing` | string | — | Wire framing for protocols that don't pick one with [`@framing`](../../guide/idl/protocol.md#annotations) — see [below](#default_framing). |
+| `external_std` | bool | on in `lib`, off in `code` | Reference `std` as its own package instead of inlining it — see [below](#external_std). |
+| `only` | list of strings | — | Generate just these languages, out of the ones `config.idp` declares — see [below](#only). |
 
 ## `[[generate.target]]`
 
-One block per target you want to pin or override. Any key from `[generate]` may
-be repeated here to override it for this target only.
+One block per declared language you want to configure. Any key from
+`[generate]` may be repeated here to override it for that language only.
+
+A block **configures** a language; it does not choose which languages are
+generated. That comes from `config.idp` alone — a declared language with no
+block takes the `[generate]` defaults, several blocks for one language give
+several outputs, and a block naming a language the congregation doesn't
+declare is an error. To generate *fewer* than the package declares, use
+[`only`](#only).
 
 | Key | Type | Meaning |
 |---|---|---|
 | `language` | string | **Required.** Must be one the manifest declares under `code_generation.languages`. |
 | `lang_version` | string | Optional; selects a version-specific generator. Defaults to what `config.idp` declared. |
-| `out`, `layout`, `mode`, `package_versions`, `default_framing` | — | Per-target override of the `[generate]` value. |
+| `out`, `layout`, `mode`, `package_versions`, `default_framing`, `external_std` | — | Per-target override of the `[generate]` value. |
 | `flatten` | bool | `lib`/`dylib` only, target-only (no `[generate]` default): write the crate straight into `out` instead of `out/<language>/`. See [below](#flatten). |
 
 ```toml
@@ -65,6 +74,48 @@ flatten  = true   # crate lands at out/, not out/rust/
 Only set this when the target's `out` is exclusively its own — flattening a
 shared `out` across more than one `lib` target reintroduces the collision
 the default layout avoids.
+
+### `external_std`
+
+Comline's standard library is implicitly available to every package, so
+`std/http` and `std/validators` are part of every generation request. This
+decides whether their code is **copied into** your generated output or
+**referenced** from std's own pre-generated package:
+
+| Language | Package |
+|---|---|
+| `rust` | `comline_std` (a crate, pinned by git rev) |
+| `typescript` | `@comline/std` (an npm package, by semver range) |
+
+It defaults to on in `lib` mode — a buildable package should depend on std
+rather than vendor it — and off in `code` mode, which has no manifest to
+declare a dependency in. In `code` mode with it on, the generated file names
+what to install in a comment at the top.
+
+`--external-std` and `--no-external-std` override it for one run.
+
+Neither package is published yet, so a `lib` target that references one needs
+it linked locally (`npm link`, a path override) until that changes — which is
+already true of `@comline/runtime` for any package with a protocol.
+
+### `only`
+
+Generate a subset of the languages `config.idp` declares, for a checkout that
+doesn't need all of them:
+
+```toml
+[generate]
+only = ["rust"]
+```
+
+A name the congregation doesn't declare is an error, so a typo fails loudly
+instead of quietly generating nothing. `--target` narrows a single run the
+same way.
+
+This is also the escape hatch when a declared language has no generator in
+your `comline` build: declaring a language means you mean it, so a missing
+generator is an error rather than a silent skip, and `only` is how you say
+you want fewer.
 
 ## Layout variables
 
