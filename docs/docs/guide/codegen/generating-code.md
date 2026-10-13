@@ -137,7 +137,7 @@ idiomatic output for a past schema shape.
 ## Running it
 
 ```
-comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--watch]
+comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--dry-run] [--list] [--watch]
 ```
 
 `generate` validates the project and writes the code. Unlike `comline build` it
@@ -148,8 +148,28 @@ repeatedly and from CI.
 comline generate                              # every configured target, per comline.toml
 comline generate --target rust                # just rust
 comline generate --target rust --out ./bind   # override this target's output root
+comline generate --dry-run                    # report without writing anything
 comline generate --watch                      # regenerate on schema / config change
 ```
+
+Each target's files are reported as a tree:
+
+```
+  ⚙️  language: typescript, version: 5.0, mode: lib
+       generated/typescript/
+       ├─ package.json
+       ├─ src/
+       │  ├─ index.ts
+       │  ├─ std/
+       │  │  └─ http.ts
+       │  └─ types.ts
+       └─ tsconfig.json
+```
+
+`--list` prints one line per file instead, naming the schema each came from
+(`api.ids → generated/rust/api.rs`) — and the package version, when several are
+generated at once. `--dry-run` and `--list` are independent: the first decides
+whether anything is written, the second how it is reported.
 
 `comline clean` removes the generated output (the whole `out` directory when it
 is a dedicated one, e.g. `generated/`). It leaves `.comline/` alone —
