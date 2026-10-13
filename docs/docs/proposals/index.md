@@ -36,6 +36,27 @@ repositories. Two competing proposals, read to the same shape:
 Org-wide decision record:
 [Design → Runtime & generation repository structure](../design/runtime-repo-structure.md).
 
+### [How generators are built](codegen-architecture/index.md)
+
+Whether generation stays hand-written Rust that pushes strings, and what the
+alternatives are worth. Five proposals, read to the same shape:
+
+- [Proposal A — a shared resolution kernel](codegen-architecture/resolution-kernel.md)
+  — a symbol/module layer in `comline-codegen`; generators map a resolved
+  model to syntax. *under discussion — the recommendation of the group.*
+- [Proposal B — templates](codegen-architecture/template-rendering.md) —
+  per-language template files replace `push_str`. *under discussion —
+  complementary to A, not a substitute.*
+- [Proposal C — syntax trees](codegen-architecture/syntax-tree-emission.md) —
+  build an AST per target and pretty-print it. *under discussion — one cheap
+  component recommended, the whole not.*
+- [Proposal D — target-language plugins](codegen-architecture/target-language-plugins.md)
+  — `protoc`-style: each generator is a program in its own language. *under
+  discussion — blocked by the wasm playground, not rejected.*
+- [Proposal E — adopt an existing model](codegen-architecture/adopt-existing-model.md)
+  — translate Comline IR to Smithy and inherit its generators. *under
+  discussion — assessed, not recommended as a basis.*
+
 ### Tooling
 
 - [Automatic documentation](auto-documentation.md) — an optional tool that
