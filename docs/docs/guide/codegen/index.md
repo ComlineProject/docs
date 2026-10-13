@@ -23,6 +23,6 @@ detail that the generated code is pleasant to use directly rather than only as a
 full guide, and [`comline.toml`](../../reference/congregation/comline-toml.md) is where a
 consumer sets the output location, layout and mode.
 
-Today there are `rust` and `typescript` generators (both `code` mode); `rust`
-also does `lib` mode. [Library generation](library-generation.md) covers the
-modes and `dylib`, which is still planned.
+Today there are `rust` and `typescript` generators, and both do `code` and
+`lib` mode. [Library generation](library-generation.md) covers the modes and
+`dylib`, which is still planned.
