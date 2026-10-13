@@ -248,8 +248,9 @@ so the generators do not consolidate in `generation` — each lands in its
 `comline-<lang>` repo, next to that language's runtime.
 
 - **`comline-codegen`** (what `generation` becomes) — the shared, neutral
-  support crate: the contract, the `FrozenUnit` helpers, the `Registry` type.
-  One dep (`comline-core`), no language-specific code.
+  support crate: the contract, the `FrozenUnit` helpers, the `Registry` type,
+  and the **resolution kernel** below. One dep (`comline-core`), no
+  language-specific code.
 - **`comline-<lang>/codegen`** — that language's `code` generator: pure string
   work over `FrozenUnit`, depends on `comline-codegen` + `comline-core`, nothing
   heavy. (A Python `code` generator emits `.py` text and never touches `pyo3`.)
@@ -278,6 +279,50 @@ generators in separate repos the CLI is the composition root:
 
 `comline-codegen` owns the `Registry` type and the contract; it depends on no
 generator.
+
+### The resolution kernel
+
+`comline-codegen` is not only the contract. It also holds the **model** every
+target needs before it can spell anything — adopted from
+[Proposal A](../proposals/codegen-architecture/resolution-kernel.md), which
+is accepted and shipped.
+
+| Module | Holds |
+|---|---|
+| `symbols` | `Origin`, `SymbolTable`, `UseTracker`, `error_names` — what a bare name refers to, and what a rendering reached for |
+| `modules` | the `TreeLayout` trait and `NamespaceTree` — the `lib`-mode module tree, parameterised by target |
+| `stdlib` | `is_std_namespace` and `split` — std's implicit presence and when to declare the dependency |
+| `naming` | `pascal`, `camel`, `screaming_snake` |
+
+Why this and not templates or syntax trees: every generation defect to date
+was a *missing-model* bug — a cross-schema reference emitted as a bare name,
+an alias pointing at a name the other schema never exported, std inlined when
+it should have been referenced. Templates and ASTs prevent malformed output;
+all of those were well-formed and semantically wrong. The proposal has the
+full evidence table.
+
+**The kernel resolves; each generator renders.** Rust writes
+`crate::<ns>::Name` inline with no import block; TypeScript writes the bare
+name plus an `import type` header. Same table, two renderings — that split is
+deliberate and is the line to keep when adding a target.
+
+Two rules are easy to get wrong and are written down in the code rather than
+here:
+
+- **`external_std` narrows emission, never resolution.** A schema that is not
+  emitted is still a schema whose types can be named — that is the entire
+  point of referencing std rather than inlining it. Resolving against the
+  narrowed list is how bare, uncompilable names come back.
+- **A namespace in a request always has core-expanded glob leaves.** Core's
+  `resolve_use_declaration` emits the `::*` marker *plus* one leaf per
+  declared name, and a request's schema list is built from the same
+  collection core resolves against. A generator that expands globs itself is
+  writing dead code.
+
+A new target implements `TreeLayout` (four decisions) and its own rendering,
+and gets symbol resolution, the std split and the naming conversions for
+free. That is the "marginal cost of a language" problem the de-rot plan above
+keeps running into.
 
 ## Language version & dialect
 
