@@ -184,13 +184,19 @@ is a dedicated one, e.g. `generated/`). It leaves `.comline/` alone —
 | `protocol` | `pub trait` with a method per function |
 
 A cross-schema reference (a type pulled in via `use`) is emitted as a
-`crate`-qualified path (`crate::shared::Shared`), not a bare name — every
-non-local schema (a declared dependency or `std`) is inlined into the same
-generated output, under a module tree that mirrors its namespace. `lib`
-mode wires that module tree up itself (`pub mod shared;` in `src/lib.rs`);
-`code` mode does not write module declarations, so a project using
-cross-schema references in `code` mode needs to declare matching `mod`
+`crate`-qualified path (`crate::shared::Shared`), not a bare name — a
+non-local schema (a declared dependency, or `std` when it is inlined) is
+copied into the same generated output, under a module tree that mirrors its
+namespace. `lib` mode wires that module tree up itself (`pub mod shared;` in
+`src/lib.rs`); `code` mode does not write module declarations, so a project
+using cross-schema references in `code` mode needs to declare matching `mod`
 statements itself.
+
+`std` is the exception, because
+[`external_std`](../../reference/congregation/comline-toml.md#external_std)
+is on by default in `lib` mode: a std type then resolves to
+`comline_std::http::Request` and the crate depends on `comline_std` rather
+than carrying a copy of it.
 
 ## What TypeScript output looks like
 
@@ -211,6 +217,15 @@ import type { Greeting } from "./types.js";
 An alias imports the name the other module actually exports
 (`use types::Greeting as G` → `import type { Greeting as G }`), and a `use`
 nothing refers to produces no import at all.
+
+`std` again resolves to its own package when
+[`external_std`](../../reference/congregation/comline-toml.md#external_std)
+is on, by subpath import — the leading `std` segment drops, since
+`@comline/std` is its own package root:
+
+```ts
+import type { Request } from "@comline/std/http";
+```
 
 The specifier is relative, so `code` mode assumes your `layout` keeps each
 schema's namespace in the **file-name** position — every layout above does,

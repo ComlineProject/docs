@@ -44,11 +44,12 @@ parse → resolve imports → validate → (freeze into .comline/) → (generate
 
 `--out` / `--layout` / `--mode` override one target and need `--target` when
 several are configured. `COMLINE_GENERATE_OUT` / `_LAYOUT` / `_MODE` do the same
-from the environment, for every target. `--external-std` makes generated Rust
-reference `comline_std` as its own crate instead of inlining it, and
-`--no-external-std` inlines it; either overrides
-[`comline.toml`](congregation/comline-toml.md)'s `[generate] external_std`,
-which itself defaults to on in `lib` mode and off in `code` mode.
+from the environment, for every target. `--external-std` makes generated code
+reference std's own package — `comline_std` for rust, `@comline/std` for
+typescript — instead of inlining it, and `--no-external-std` inlines it;
+either overrides [`comline.toml`](congregation/comline-toml.md)'s
+`[generate] external_std`, which itself defaults to on in `lib` mode and off
+in `code` mode.
 Each target's files are drawn as a tree. `--list` prints them one per line
 instead, with the schema each came from — and, when several package versions
 are generated at once, the version each line belongs to. `--dry-run` writes

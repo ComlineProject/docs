@@ -42,8 +42,8 @@ something you `cargo add` / `pip install` / `luarocks install`, or publish.
 
 **rust**: `<out>/rust/` gets a `Cargo.toml` (package name from the
 congregation, `serde` dependency), `src/lib.rs`, and `src/<namespace>.rs` per
-schema. A nested namespace (`std/http`) becomes a nested module —
-`src/std.rs` declaring `pub mod http;` beside `src/std/http.rs`.
+schema. A nested namespace (`a/b`) becomes a nested module — `src/a.rs`
+declaring `pub mod b;` beside `src/a/b.rs`.
 
 **typescript**: `<out>/typescript/` gets a `package.json` (declaring
 `@comline/runtime` when any schema has a protocol), a `tsconfig.json`, and
@@ -52,19 +52,34 @@ naming its children, so the package's shape mirrors your namespaces:
 
 ```
 src/index.ts      export * as types from "./types.js";
-                  export * as std from "./std/index.js";
-src/std/index.ts  export * as http from "./http.js";
+                  export * as chat from "./chat/index.js";
+src/chat/index.ts export * as admin from "./admin.js";
 ```
 
-That is why names don't collide: `std` is implicit in every package, and a
-flat barrel re-exporting everything into the package root would make your own
-`Request` ambiguous with `std/http`'s — which TypeScript refuses outright
+Mirroring rather than flattening is what keeps names from colliding: a flat
+barrel re-exporting everything into the package root would make two schemas
+that both declare a `Request` ambiguous, which TypeScript refuses outright
 (TS2308). Both entry styles work:
 
 ```ts
 import { types } from "my-api";        // types.Greeting
 import { Greeting } from "my-api/types";
 ```
+
+### std is a dependency, not a copy
+
+Comline's standard library is implicitly part of every package, so without
+help a `lib` build would vendor `std/http` and `std/validators` into every
+generated package. It doesn't:
+[`external_std`](../../reference/congregation/comline-toml.md#external_std)
+defaults to **on** in `lib` mode, so std's schemas are left out and the
+manifest depends on std's own pre-generated package instead —
+`comline_std` for rust, `@comline/std` for typescript. Your own nested
+namespaces are unaffected; only std is treated this way.
+
+`--no-external-std` (or `external_std = false`) inlines it, which is what
+`code` mode does by default since it has no manifest to declare a dependency
+in.
 
 One restriction, shared by both generators: a namespace can be a schema or a
 parent of deeper schemas, not both. `std.ids` alongside `std/http.ids` leaves
