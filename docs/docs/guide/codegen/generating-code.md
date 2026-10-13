@@ -5,8 +5,8 @@ language. This page is the practical guide: what it produces, how to say where i
 goes, and how to generate more than one version at once.
 
 Status: this reflects the current CLI. `rust` and `typescript` are the
-generators (both `code` mode; `rust` also does `lib`); the configuration
-surface below is stable.
+generators, and both do `code` and `lib`; the configuration surface below is
+stable.
 
 ## The two files
 
@@ -38,9 +38,10 @@ Each entry is a bare `language#lang_version`. `lang_version` selects a
 version-specific generator (e.g. Rust 1.70's output vs a later edition's). The
 `= {}` is required and takes no options.
 
-A declared language is a *capability*: "bindings for this language make sense for
-this package." It does not force anyone to generate it, and it carries no output
-path.
+Declaring a language is what makes it generated: `comline generate` emits every
+language listed here. The entry carries no output path — where the code lands is
+the consumer's business, below — and a consumer who wants fewer says so with
+`only`.
 
 ## Configuring output — `comline.toml`
 
@@ -48,18 +49,30 @@ path.
 [generate]
 out              = "generated"                              # output root, relative to comline.toml
 layout           = "{{language}}/{{namespace}}.{{ext}}"     # path of each file under the root
-mode             = "code"                                   # code | lib | dylib   (only `code` today)
+mode             = "code"                                   # code | lib   (dylib is not built yet)
 package_versions = "latest"                                 # latest | all | ["0.3.0", "0.4.0"]
+only             = ["rust"]                                 # generate just these, out of the declared languages
 
-# Optional: one block per target you want to pin or override.
+# Optional: one block per declared language you want to configure.
 [[generate.target]]
 language     = "rust"
 lang_version = "1.70.0"        # defaults to what config.idp declared
-out          = "src/generated" # this target only
+out          = "src/generated" # this language only
 ```
 
-With no `comline.toml` (or an all-commented one) the defaults above apply and the
-targets come from `config.idp`'s `code_generation.languages`.
+With no `comline.toml` (or an all-commented one) the defaults above apply to
+every language `config.idp` declares.
+
+**A block configures a language; it doesn't choose which languages are
+generated.** That comes from `config.idp` alone. A declared language with no
+block takes the `[generate]` defaults, several blocks for one language give
+several outputs, and a block naming a language the congregation doesn't declare
+is an error rather than a silent no-op.
+
+To generate fewer languages than the package declares — because this checkout
+only needs some of them — list the ones you want in `[generate] only`, or pass
+`--target` for a single run. A name `config.idp` doesn't declare is an error
+there too, so a typo can't quietly stop generating something.
 
 **Precedence**, lowest to highest:
 
@@ -159,11 +172,45 @@ mode wires that module tree up itself (`pub mod shared;` in `src/lib.rs`);
 cross-schema references in `code` mode needs to declare matching `mod`
 statements itself.
 
-## Modes (planned)
+## What TypeScript output looks like
 
-`mode` selects the emit form. Only `code` — plain source text you drop into your
-project — exists today. `lib` (a buildable crate skeleton) and `dylib` (that,
-compiled, for a language runtime to load) are planned.
+| Schema | TypeScript |
+|---|---|
+| `struct` | `export interface` |
+| `error` | `export interface` (the payload) + `export class <Name>Error` |
+| `enum` | `export enum` with string values |
+| `protocol` | a client, a dispatcher, and a `serve<Proto>` helper against `@comline/runtime` |
+
+A cross-schema reference is emitted as an `import type` from the schema that
+declares it, by relative specifier:
+
+```ts
+import type { Greeting } from "./types.js";
+```
+
+An alias imports the name the other module actually exports
+(`use types::Greeting as G` → `import type { Greeting as G }`), and a `use`
+nothing refers to produces no import at all.
+
+The specifier is relative, so `code` mode assumes your `layout` keeps each
+schema's namespace in the **file-name** position — every layout above does,
+including the default. A layout that puts the namespace in a directory
+position instead (`"{{namespace}}/index.{{ext}}"`) moves the files relative to
+each other and the imports won't resolve.
+
+In `lib` mode the namespace tree becomes the package's shape, so both of these
+work:
+
+```ts
+import { types } from "my-api";        // types.Greeting
+import { Greeting } from "my-api/types";
+```
+
+## Modes
+
+`mode` selects the emit form. `code` (plain source text you drop into your
+project) and `lib` (a buildable package) both work, for both generators;
+`dylib` — that, compiled, for a language runtime to load — is planned.
 [Library generation](library-generation.md) explains each mode and when to reach
 for it.
 

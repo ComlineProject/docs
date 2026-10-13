@@ -35,7 +35,7 @@ parse → resolve imports → validate → (freeze into .comline/) → (generate
 | `comline add <name> <dir>` / `comline add <name> --git <uri> --commit <sha> --version <v>` | Add a dependency to `config.idp`, imported as `use <name>::…`: resolved first (a git pin is fetched into `.comline/deps-cache/`), then written with its `hash` pinned. `--no-hash` skips the pin. |
 | `comline check` | Parse, resolve and validate. No `.comline/` write (beyond fetching git dependencies), no version bump — safe for editors, hooks, CI. |
 | `comline build [--release] [--watch]` | Compile, validate, freeze a new immutable version into `.comline/`; print the changelog and the bump. `--release` is currently a no-op. |
-| `comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--external-std] [--watch]` | Validate (no freeze), then write generated code. Location/layout from [`comline.toml`](congregation/comline-toml.md); targets from there or `config.idp`. |
+| `comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--external-std] [--no-external-std] [--dry-run] [--watch]` | Validate (no freeze), then write generated code. Location/layout from [`comline.toml`](congregation/comline-toml.md); targets from there or `config.idp`. |
 | `comline diff <old> [<new>]` | Show schema changes between two built versions. Each argument is a version (`0.2.0`), a commit hash (4+ chars), or `HEAD` (`<new>` default). |
 | `comline clean [--dry-run]` | Remove generated code (the `generate` output root or files). Never touches `.comline/`. |
 | `comline reset [--force] [--dry-run]` | **Destructive.** Delete `.comline/` — the whole version history, no undo — *and* generated code. Next `build` starts over at `0.0.1`. On a terminal it shows how many versions will be lost and makes you type `reset`; without a terminal it refuses (exit `2`) unless `--force`. |
@@ -45,9 +45,13 @@ parse → resolve imports → validate → (freeze into .comline/) → (generate
 `--out` / `--layout` / `--mode` override one target and need `--target` when
 several are configured. `COMLINE_GENERATE_OUT` / `_LAYOUT` / `_MODE` do the same
 from the environment, for every target. `--external-std` makes generated Rust
-reference `comline_std` as its own crate instead of inlining it, overriding
-[`comline.toml`](congregation/comline-toml.md)'s `[generate] external_std`.
-Today `rust` and `typescript` are the generators; `rust` also does `lib` mode.
+reference `comline_std` as its own crate instead of inlining it, and
+`--no-external-std` inlines it; either overrides
+[`comline.toml`](congregation/comline-toml.md)'s `[generate] external_std`,
+which itself defaults to on in `lib` mode and off in `code` mode.
+`--dry-run` lists the files each target would write, as a tree, and writes
+nothing. Today `rust` and `typescript` are the generators, and both do `code`
+and `lib` mode.
 
 ## Global flags
 

@@ -13,7 +13,7 @@ in [`comline.toml`](../../reference/congregation/comline-toml.md) (`[generate] m
 | `mode` | Output | Status |
 |---|---|---|
 | `code` | bare source files you place in a project yourself | built |
-| `lib` | a buildable package (manifest + module tree) | **rust only** |
+| `lib` | a buildable package (manifest + module tree) | rust, typescript |
 | `dylib` | a package built with a **stable ABI** and compiled to a dynamic library any language's runtime can load | planned |
 
 ## `code` — source you wire in yourself
@@ -40,14 +40,43 @@ A whole buildable package: the manifest with the right dependencies, a `src/`
 module tree, and a top-level module listing every schema. The result is
 something you `cargo add` / `pip install` / `luarocks install`, or publish.
 
-Implemented for **rust**: `<out>/rust/` gets a `Cargo.toml` (package name from
-the congregation, `serde` dependency), `src/lib.rs`, and `src/<namespace>.rs` per
-schema — `<language>/` keeps this target's crate from colliding with another
-`lib` target sharing the same `out`; a target with `out` to itself can set
+**rust**: `<out>/rust/` gets a `Cargo.toml` (package name from the
+congregation, `serde` dependency), `src/lib.rs`, and `src/<namespace>.rs` per
+schema. A nested namespace (`std/http`) becomes a nested module —
+`src/std.rs` declaring `pub mod http;` beside `src/std/http.rs`.
+
+**typescript**: `<out>/typescript/` gets a `package.json` (declaring
+`@comline/runtime` when any schema has a protocol), a `tsconfig.json`, and
+`src/<namespace>.ts` per schema. Each namespace level also gets an `index.ts`
+naming its children, so the package's shape mirrors your namespaces:
+
+```
+src/index.ts      export * as types from "./types.js";
+                  export * as std from "./std/index.js";
+src/std/index.ts  export * as http from "./http.js";
+```
+
+That is why names don't collide: `std` is implicit in every package, and a
+flat barrel re-exporting everything into the package root would make your own
+`Request` ambiguous with `std/http`'s — which TypeScript refuses outright
+(TS2308). Both entry styles work:
+
+```ts
+import { types } from "my-api";        // types.Greeting
+import { Greeting } from "my-api/types";
+```
+
+One restriction, shared by both generators: a namespace can be a schema or a
+parent of deeper schemas, not both. `std.ids` alongside `std/http.ids` leaves
+`src/std.rs` (or `export * as std`) with two things to be, so it's refused
+with a message naming the pair.
+
+In either language, `<language>/` keeps this target's package from colliding
+with another `lib` target sharing the same `out`; a target with `out` to
+itself can set
 [`flatten = true`](../../reference/congregation/comline-toml.md#flatten) to skip that and
-land the crate straight into `out`. `layout` plays no part in any of this —
-it only applies to `code` mode. Other languages, multi-version `lib` output,
-and a schema whose namespace is nested (`a/b`) are not done yet.
+land the package straight into `out`. `layout` plays no part in any of this —
+it only applies to `code` mode. Multi-version `lib` output is not done yet.
 
 **Use it when** the schema is shared:
 
