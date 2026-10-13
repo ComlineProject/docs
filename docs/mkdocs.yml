@@ -89,6 +89,13 @@ nav:
       - 'proposals/repo-organization/index.md'
       - 'Proposal A': 'proposals/repo-organization/split-by-concern.md'
       - 'Proposal B': 'proposals/repo-organization/split-by-language.md'
+    - 'How generators are built':
+      - 'proposals/codegen-architecture/index.md'
+      - 'Proposal A': 'proposals/codegen-architecture/resolution-kernel.md'
+      - 'Proposal B': 'proposals/codegen-architecture/template-rendering.md'
+      - 'Proposal C': 'proposals/codegen-architecture/syntax-tree-emission.md'
+      - 'Proposal D': 'proposals/codegen-architecture/target-language-plugins.md'
+      - 'Proposal E': 'proposals/codegen-architecture/adopt-existing-model.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
   
   - Resources:
