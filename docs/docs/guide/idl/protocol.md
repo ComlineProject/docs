@@ -14,13 +14,17 @@ protocol Mail {
 ## Functions
 
 ```
-function NAME( [args] ) [-> ReturnType] [! ErrorName] ;
+function NAME( [args] ) [-> ReturnType] [! ErrorName, ...] ;
 ```
 
 - **Arguments** are `Type` or `name: Type`, comma-separated:
   `function send(Message)` or `function send(msg: Message)`.
 - **Return** is `-> Type`; omit it for a one-way call.
-- **`! ErrorName`** declares that the function can raise a given `error`.
+- **`! ErrorName`** declares that the function can raise a given
+  [`error`](error.md). List several, comma-separated, for a function that
+  can fail in more than one way: `! NotFound, Denied`. The name must be an
+  `error` — a `struct` or `enum` after `!` is a build error, because only
+  an `error` has a wire ordinal to travel as.
 - Every function ends with `;`.
 
 ```ids linenums="1"

@@ -46,7 +46,8 @@ export const IR_HASH = 0x…n;  // schema fingerprint, used in the handshake
 ```
 
 - `Chat` is the interface your implementation fills in — every method
-  `async`/`Promise`-returning, a thrown `*Error` class per declared `!`.
+  `async`/`Promise`-returning, a thrown `*Error` class per declared `!`
+  (several, comma-separated, if the function lists several).
 - `ChatDispatcher` wraps an implementation and implements the runtime's
   `Dispatch` interface.
 - `ChatClient` wraps a `Client` and gives you one method per function.
@@ -99,6 +100,33 @@ try {
     }
 }
 ```
+
+### When the provider fails outside its schema
+
+A handler can throw something the schema never declared — a dead database,
+a bug. That reaches the caller as `RuntimeError` with kind `"provider"`,
+and nothing else: no message, no stack, no class. There is no wire
+representation for arbitrary provider detail, and inventing one would
+publish your internals to everyone who calls you.
+
+```typescript
+try {
+    await client.history({ limit: 10 });
+} catch (e) {
+    if (e instanceof RuntimeError && e.is("provider")) {
+        // the call reached the provider and it broke; retrying may help
+    }
+}
+```
+
+This is why a function that declares no `!` is still worth calling
+defensively — and why it needs no `!` to be able to fail. Declare a `!`
+for the failures a caller should *handle*; leave the rest to this channel.
+
+It also means one bad call no longer costs the connection. Before, a
+handler that threw something undeclared unwound the server loop: the
+connection died and the caller, who was never sent a frame, waited out its
+timeout instead. Now that call is answered and the next one still works.
 
 ## Serving
 

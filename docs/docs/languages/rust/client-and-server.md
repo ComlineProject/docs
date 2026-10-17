@@ -19,8 +19,8 @@ contains, so the rest of this page can refer to them by name:
 
 ```rust
 pub trait Mail {
-    fn send_message(&self, message: Message) -> Result<String, MailSendMessageError>;
-    fn fetch_inbox(&self) -> Result<Vec<Message>, MailFetchInboxError>;
+    fn send_message(&self, message: Message) -> Result<String, Fault<MailSendMessageError>>;
+    fn fetch_inbox(&self) -> Result<Vec<Message>, Fault<MailFetchInboxError>>;
 }
 
 pub struct MailDispatcher<S>(pub S);       // implements `comline_runtime::contract::Dispatch`
@@ -30,8 +30,11 @@ pub const IR_HASH: u64 = 0x…;              // schema fingerprint, used in the 
 ```
 
 - `Mail` is the trait your implementation fills in — plain `&self`, a
-  `Result`, and one error enum per function (only for functions that
-  declare `!`).
+  `Result`, and one error type per request/response function. Every such
+  function gets one, whether or not it declares a `!`: a function with no
+  `!` gets a type alias to `core::convert::Infallible`, which says the same
+  thing the schema does — it cannot raise. See
+  [Error handling](#error-handling-two-layers) for the `Fault` wrapper.
 - `MailDispatcher<S>` wraps any `S: Mail` and implements the runtime's
   `Dispatch` trait — the thing a `Server` actually drives.
 - `MailClient<T, W>` wraps a `comline_runtime::client::Client<T, W>` and
@@ -127,21 +130,72 @@ transports) instead.
 
 ## Error handling, two layers
 
-Provider-side, your trait methods return `Result<R, E>` — only the errors
-the schema declares with `!`. Client-side, every generated method returns
-`Result<R, CallError<E>>`:
+The two ends see different shapes, because they can fail in different
+ways. Provider-side, your trait methods return `Result<R, Fault<E>>`;
+client-side, every generated method returns `Result<R, CallError<E>>`:
 
 ```rust
-pub enum CallError<E> {
+pub enum Fault<E> {          // provider side
+    App(E),                  // a schema error, declared with `!`
+    Internal,                // a failure the schema does not describe
+}
+
+pub enum CallError<E> {      // client side
     App(E),                  // the provider raised a schema error
-    Runtime(RuntimeError),   // transport, framing, decode, timeout, …
+    Runtime(RuntimeError),   // transport, framing, decode, timeout, fault, …
 }
 ```
 
-`App` is "the call reached the provider and it said no, here's why,
-typed." `Runtime` is everything that isn't the schema's business — a
+`App` is the same thing on both sides: "the call reached the provider and
+it said no, here's why, typed." It is the half the schema defines, and `E`
+is the generated error type for that function.
+
+`Fault::Internal` is the other half of the provider's story. An
+implementation can fail in ways its schema never described — a dead
+database, a poisoned lock — and `Internal` is how it says so instead of
+panicking inside the dispatcher. Nothing about it crosses the wire: the
+caller learns only `RuntimeError::Provider`, because there is no wire
+representation for arbitrary provider detail and inventing one would leak
+your internals to everyone who calls you. Log the real reason your own
+side; return `Fault::Internal`.
+
+That is also why `E` being uninhabited costs you nothing.
+`Fault<Infallible>` is still inhabited, so a function declaring no `!` can
+still fail — it just cannot fail in a way the *schema* named.
+
+`CallError::Runtime` is everything that isn't the schema's business — a
 dropped connection, a decode failure, a `Handshake` mismatch, a
-`call_with_timeout` that never got a reply. Match on `CallError::App` the
-same way you'd match the error enum directly; treat `Runtime` as the
-category of failure your retry/reconnect logic cares about, not something
-to pattern-match variant by variant.
+`call_with_timeout` that never got a reply, or the peer's
+`Fault::Internal` arriving as `RuntimeError::Provider`. Match on
+`CallError::App` the same way you'd match the error enum directly; treat
+`Runtime` as the category of failure your retry/reconnect logic cares
+about, not something to pattern-match variant by variant.
+
+`?` works on the provider side: `Fault<E>` has `From<E>`, so a helper
+returning the schema's own error type threads through without ceremony.
+
+## What a raised error prints
+
+Each generated error struct, and each error enum with variants, gets a
+`Display` built from the `message` its `error` declaration requires — so
+the sentence you wrote in the schema is what `{}` and `.to_string()`
+produce, with `{self.field}` placeholders filled in:
+
+```ids
+error NotFound {
+    message = "no entry for {self.key}"
+    key: str
+}
+```
+
+```rust
+NotFound { key: "k".into() }.to_string()   // "no entry for k"
+```
+
+An error enum delegates to whichever error it holds, so printing
+`MailSendMessageError` prints the raised error's own message.
+
+There is no `core::error::Error` impl yet. That trait is only stable from
+Rust 1.81, while this generator's target declares `rust#1.70.0` and writes
+it into every generated `Cargo.toml` as `rust-version`; the impl lands with
+a `rust#1.81.0` target.

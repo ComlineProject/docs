@@ -193,7 +193,9 @@ built and tested (no more `todo!()` on this path):
 - **`Kind`** carries either an `Id(u16)` (index into the protocol's call list) or
   a `Named(&'static str)`; `Kind::resolve(&[&str])` maps either to an ordinal.
 
-**Framing is a pluggable axis** (built — [runtime#10](https://github.com/ComlineProject/runtime/pull/10) + [comline-rust#8](https://github.com/ComlineProject/comline-rust/pull/8)). `contract::Framing` is orthogonal to `WireFormat` — `Client<T, W, F>` / `Server<D, W, F>` are generic over one, default `DatagramFraming`. `framing::JsonRpcFraming` (std) is the name-oriented alternative: `{"jsonrpc":"2.0","method":…,"params":…,"id":N}`, a raised schema error → a JSON-RPC `error` object keyed by ordinal, pairs with `format::Json`. `Dispatch` writes into a `Reply` (framing-agnostic ok/err/none) instead of an `Envelope` buffer, and exposes `calls()` so a method name resolves to an ordinal; the generated stub passes `Call::new(id, name)` (both addresses, the framing picks).
+**Framing is a pluggable axis** (built — [runtime#10](https://github.com/ComlineProject/runtime/pull/10) + [comline-rust#8](https://github.com/ComlineProject/comline-rust/pull/8)). `contract::Framing` is orthogonal to `WireFormat` — `Client<T, W, F>` / `Server<D, W, F>` are generic over one, default `DatagramFraming`. `framing::JsonRpcFraming` (std) is the name-oriented alternative: `{"jsonrpc":"2.0","method":…,"params":…,"id":N}`, a raised schema error → a JSON-RPC `error` object keyed by ordinal, pairs with `format::Json`. `Dispatch` writes into a `Reply` (framing-agnostic ok/err/fault/none) instead of an `Envelope` buffer, and exposes `calls()` so a method name resolves to an ordinal; the generated stub passes `Call::new(id, name)` (both addresses, the framing picks).
+
+**A provider fault is a third response case, and every framing renders it itself.** `Envelope::Fault` sits beside `Ok` and `Err`, and `Framing::encode_response_fault` is a **required** trait method with no default. A default would have to pick some wire shape — a reserved ordinal, say — and every framing written afterwards would inherit it silently, including ones whose wire already has a native way to say "internal error". So each chooses: the datagram framing spends a tag byte (`[2]`), `JsonRpcFraming` uses JSON-RPC's own reserved `-32603 Internal error`. An ordinal is a `u16`, so the schema's error codes are all non-negative and can never collide with it. A reserved magic ordinal was rejected for exactly this reason: it would bake one framing's representation into the shared error space and leak it into all the others.
 
 **A schema selects its framing** ([comline-rust#9](https://github.com/ComlineProject/comline-rust/pull/9)). `@framing = "jsonrpc"` on a `protocol` (frozen into `Protocol.parameters` as a `Property`, same path as `@timeout_ms` / `@provider` — no core change) makes the generator emit the JSON-RPC stack instead of the datagram one: `<Proto>Client` wraps `Client<T, W, JsonRpcFraming>`, `connect` / `serve` call `Client::connect_with_framing` / `Server::with_framing`, and the `Handshake` carries `framing.name()` rather than `FRAMING_DATAGRAM`. Absent / unrecognised keeps the datagram default byte-for-byte. Recognised: `jsonrpc`, `json-rpc`, `jsonrpc-2.0`, plus `datagram` to opt a single protocol back out.
 
@@ -219,17 +221,18 @@ For `protocol Chat { function send(msg: Msg) -> Ack ! Rejected; function history
 #[derive(Serialize, Deserialize)] struct ChatSendParams   { msg: Msg }
 #[derive(Serialize, Deserialize)] struct ChatHistoryParams { limit: u32 }
 
-// 2. one *schema-only* error enum per function — its `! Errors`, no runtime types (§4.4)
+// 2. one *schema-only* error type per function — its `! Errors`, no runtime types (§4.4)
 enum ChatSendError    { Rejected(Rejected) }
-enum ChatHistoryError { /* no `!` → empty */ }
+type ChatHistoryError = ::core::convert::Infallible;  // no `!` → the never type
 // + a per-protocol union, additive, for one broad handler:
 enum ChatError { Rejected(Rejected) /* ∪ every `!` in Chat */ }
 impl From<ChatSendError> for ChatError { /* … */ }
 
-// 3. provider trait — the user implements this; schema errors only (sync core; async is additive, §4.6)
+// 3. provider trait — the user implements this; `Fault<E>` = its `!` errors,
+//    plus `Internal` for a failure the schema never described (sync core; async is additive, §4.6)
 trait Chat {
-    fn send(&self, msg: Msg<'_>) -> Result<Ack, ChatSendError>;
-    fn history(&self, limit: u32) -> Result<Vec<Msg<'static>>, ChatHistoryError>;
+    fn send(&self, msg: Msg<'_>) -> Result<Ack, Fault<ChatSendError>>;
+    fn history(&self, limit: u32) -> Result<Vec<Msg<'static>>, Fault<ChatHistoryError>>;
 }
 
 // 4. consumer stub — wraps a CallSystemConsumer; CallError<E> adds infra failure
@@ -277,7 +280,7 @@ statically typed and the generator emits a named struct per function instead:
 |---|---|
 | params | `struct <Proto><Fn>Params<'de> { … }` — one field per argument, in declaration order |
 | result | the return type directly (`Ack`, a primitive, …) |
-| error | `enum <Proto><Fn>Error { <Named>(<Named>), … }` — schema `!` errors only; plus a per-protocol union `<Proto>Error`. The client wraps in `CallError<E>` for infra failure (§4.4) |
+| error | `enum <Proto><Fn>Error { <Named>(<Named>), … }` — schema `!` errors only, or a `type` alias to `Infallible` when there are none; plus a per-protocol union `<Proto>Error`. The provider wraps in `Fault<E>` for a failure outside the schema, the client in `CallError<E>` for infra failure (§4.4) |
 | envelope | a small runtime type: `{ ok: R }` \| `{ err: { id: u16, body: &'de [u8] } }` (§4.4) |
 
 The params struct **is** the message. It is a stack struct literal at the call
@@ -315,6 +318,7 @@ side and a `Tcp` transport (7e). Rows below reflect what was built; only the
 | `trait Dispatch` | `fn dispatch<W: WireFormat>(&self, Kind, params: &[u8], &W, out: &mut dyn BufMut) -> Result<(), RuntimeError>` — sync; **generic over the format** (a `&dyn WireFormat` isn't object-safe — generic methods), the provider is generic over `D` anyway (no vtable) | provider call system holds `&D` and routes inbound frames to it |
 | `Client::call<P>` | `fn call<P: Serialize + ?Sized>(&mut self, call_id: u16, &P) -> Result<(Envelope<'_>, &W), RuntimeError>` — frames + sends, blocks for the reply, hands back the envelope (borrowing the recv buffer) **and** the format, both out of one `&mut self`. The generated stub decodes `Ok` → `R` or maps an `Err` ordinal → `CallError<E>`. Replaces `send_async_call<M>` (the one-type-param bug). *Built (7e); one call outstanding, pipelining additive.* |
 | `enum CallError<E>` | `{ App(E), Runtime(RuntimeError) }` + `From<RuntimeError>` | the one runtime type that adds infra failure to a schema-only error enum (§4.4) |
+| `enum Fault<E>` | `{ App(E), Internal }` + `From<E>` | its provider-side mirror: `Internal` is a failure the schema does not describe, which the caller sees as `RuntimeError::Provider` (§4.4) |
 | `trait WireFormat` | `encode<T: Serialize + ?Sized>(&self, &T, &mut dyn BufMut) -> Result<(), RuntimeError>` / `decode<'de, T: Deserialize<'de>>(&self, &'de [u8]) -> Result<T, RuntimeError>` — no `Vec` return, borrow on decode. `format::MsgPack` implements it over `rmp-serde` (7b, `std`-gated). | the serialization axis; the call system is generic over one |
 | `wire` framing | free fns — `encode_request` / `encode_request_header` (client frames the header then serializes params in after it) / `decode_request(&[u8]) -> Option<(u16, u64, &[u8])>` and the response pair (`request_id` + envelope). `no_std`, alloc-free, borrow on decode | one frame per message; datagram-oriented |
 | `trait Transport` + `Server` / `Client` | `Transport::{send(&[u8]), recv(&mut Vec<u8>)}` — sync, frame-oriented; `InMemory` (mpsc, `duplex()`) and `Tcp` (`u32`-length-prefixed stream, `MAX_FRAME`-bounded) impls under `std`. `Server<D, W>` holds `D` + `W` + 3 reused buffers; `Client<T, W>` owns the transport + format + request-id counter + 2 reused buffers | the provider loop and the consumer call side; `alloc`-gated (`Vec` buffers) |
@@ -344,21 +348,51 @@ the wire for debuggability and for framings that are name-oriented (JSON-RPC);
 
 - **Per-function schema-error enum** — `<Proto><Fn>Error`, one variant per `! E`
   in that function, `Variant(E)` where `E` is the generated struct from the
-  `error` decl. Pure schema: no runtime types, `no_std`, reusable. A function
-  with no `!` gets an empty enum (or `Infallible`).
+  `error` decl. Pure schema: no runtime types, `no_std`, reusable.
 - **Per-protocol union** — `<Proto>Error` over every `!` in the protocol, with
   `From<<Proto><Fn>Error>` for each function. Additive, for a caller that wants
   one `match` for the whole service.
-- **`enum CallError<E> { App(E), Runtime(RuntimeError) }`** — the *one* runtime
-  type that adds infra failure. Not generated; lives in `comline-runtime`.
+- **A type alias to `Infallible` where either would be empty** — the open
+  question in this bullet is now settled, against the empty enum. `pub type
+  ChatPingError = ::core::convert::Infallible;` names the same thing a
+  `pub enum ChatPingError {}` did, and names it the way every Rust reader
+  already knows; it brings `Display`, `Copy`, `Eq` and `Hash`, where an empty
+  enum brought nothing. The name still exists, so code and docs that spell it
+  keep working, and the dispatcher's `match never {}` arm stays valid because
+  `Infallible` is uninhabited too. It applies to the union as well, for a
+  protocol where nothing throws.
+- **`enum Fault<E> { App(E), Internal }`** — the provider-side error type.
+  `Internal` is how an implementation reports a failure its schema does not
+  describe; before it, the only recourse was a panic inside the dispatcher. It
+  is also why an uninhabited `E` costs nothing: `Fault<Infallible>` is
+  inhabited. Not generated; lives in `comline-runtime`.
+- **`enum CallError<E> { App(E), Runtime(RuntimeError) }`** — the client-side
+  mirror, and the *one* runtime type that adds infra failure. A peer's
+  `Fault::Internal` arrives here as `RuntimeError::Provider`. Not generated.
 
 **Where each lands.**
 
 | side | signature | why |
 |---|---|---|
-| provider trait | `fn send(&self, …) -> Result<Ack, ChatSendError>` | schema errors only — the impl can't fabricate a `RuntimeError` |
-| client stub | `fn send(&mut self, …) -> Result<Ack, CallError<ChatSendError>>` | the caller *can* hit transport / timeout / a garbage frame |
+| provider trait | `fn send(&self, …) -> Result<Ack, Fault<ChatSendError>>` | schema errors, plus `Internal` for a failure the schema does not describe — it still can't fabricate a transport-level `RuntimeError` |
+| client stub | `fn send(&mut self, …) -> Result<Ack, CallError<ChatSendError>>` | the caller *can* hit transport / timeout / a garbage frame / a provider fault |
 | broad client handler | `CallError<ChatError>` via `?` and the `From` impls | one `match` for the service |
+
+**What `!` may name — decided: an `error`, nothing else.** Only an `error`
+declaration gets a slot in the error space, so only an `error` has an ordinal
+to travel as, and only an `error` carries the required `message`. A `!` naming
+a `struct` or `enum` used to compile and emit a variant referencing a type that
+was never declared; it is now `validation::throw-not-an-error`. A `!` that
+resolves to nothing is `validation::unresolved-throw` (which suggests the
+closest declared error), and a repeated one is `validation::duplicate-throw`.
+
+**Rendering — the `message` is what `Display` prints.** Every `error` requires
+a `message` and the IDL specifies its `{dotted.path}` substitution, but no
+generator rendered it, so a raised error printed as its `Debug` shape. Error
+structs and non-empty error enums now carry a `Display` built from the
+template, the enum delegating to the error it holds. `core::error::Error` waits
+on a `rust#1.81.0` target — the trait is stable only from 1.81, while the Rust
+generator declares `rust#1.70.0` and writes it into every generated manifest.
 
 **On the wire — schema-global error ordinal.** *(Built — core#47.)* The
 envelope's `err` carries `{ id: u16, body: &'de [u8] }`. `id` is
@@ -696,9 +730,13 @@ what remains is below the decision line:
   (runtime#10 + comline-rust#8), the per-`protocol` `@framing` selector on the
   generated `connect` / `serve` helpers (comline-rust#9), and its `comline.toml`
   package-wide `default_framing` (generation#17 + comline-rust#10 + cli#27) are
-  built. Still open at the wire level: a `WarnOnly` handshake mode,
-  multi-`throws` (`! A, B`) grammar, version-diff enforcement of the ordinal
-  append-only rule, and the transport-requirements config unit.
+  built. Multi-`throws` (`! A, B`) is
+  built: the grammar carries `first` + `rest` (the shape `ArgumentList` and
+  `DottedPath` already used for a non-empty comma list), so a bare `!` and a
+  trailing comma stay parse errors, while `Function.throws` was already a
+  `Vec<u16>` and needed nothing. Still open at the wire level: a `WarnOnly`
+  handshake mode, version-diff enforcement of the ordinal append-only rule, and
+  the transport-requirements config unit.
 - **§4.6** — decided; the buffer-reuse budget is met by 7d–7e (`Client` /
   `Server`), the dispatcher's reply-body scratch and the arena `Alloc` mode are
   the follow-ons.
