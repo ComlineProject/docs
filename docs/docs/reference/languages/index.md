@@ -102,7 +102,7 @@ commit. A runtime's suite runs every example against it:
 | envelope <br><sub>`envelope`</sub> | ✅ supported | ✅ supported |
 | datagram framing <br><sub>`framing-datagram`</sub> | ✅ supported | ✅ supported |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | ✅ supported | ✅ supported |
-| JSON wire format <br><sub>`format-json`</sub> | ✅ supported | 🟡 partial: 64-bit integers are `number`, exact only below 2^53 ([comline-typescript#49](https://github.com/ComlineProject/comline-typescript/issues/49)) |
+| JSON wire format <br><sub>`format-json`</sub> | ✅ supported | ✅ supported |
 | MessagePack wire format <br><sub>`format-msgpack`</sub> | ✅ supported | ❌ unsupported: only JSON ships |
 
 <!-- runtime-matrix:end -->

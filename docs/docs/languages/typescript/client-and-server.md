@@ -24,7 +24,8 @@ protocol Chat {
 ## What codegen emits
 
 ```typescript
-export interface Message { body: string; seq: number; }
+export interface Message { body: string; seq: bigint; }
+export const Message: Shape = { fields: { seq: "bigint" } };
 export class RejectedError extends Error {
     static readonly ordinal = 0;
     constructor(readonly data: Rejected) { … }
@@ -45,6 +46,12 @@ export function serveChat(impl: Chat, transport: Transport, codec: Codec, framin
 export const IR_HASH = 0x…n;  // schema fingerprint, used in the handshake
 ```
 
+- `seq` is a `u64`, so it's a `bigint`. `number` holds integers exactly only
+  up to 2^53, so every 64- and 128-bit integer is a `bigint`, and a constant
+  of one is written `7n`. A type that holds one, anywhere inside, also gets a
+  `Shape` of the same name. The generated client and dispatcher pass it to
+  the codec, which reads those integers exactly. Types without one are just
+  interfaces.
 - `Chat` is the interface your implementation fills in — every method
   `async`/`Promise`-returning, a thrown `*Error` class per declared `!`
   (several, comma-separated, if the function lists several).
