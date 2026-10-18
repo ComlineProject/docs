@@ -1,14 +1,17 @@
 # Validators
 
-Status: **compile-time checks done** (core#32–40, target types core#105) ·
-**not run** — codegen / runtime enforcement is phase 4 (design below)
+Status: **compile-time checks done** (core#32–40, target types core#105,
+aliases core#109) · **run in Rust** (phase 4b–4c, comline-rust#52) ·
+TypeScript not yet (4d)
 
 A **validator** is a named, parameterised check attached to a
-[struct](../guide/idl/structure.md) or [error](../guide/idl/error.md) field. The
-declaration, its `validate` block, and the `@validators` field annotation parse,
-freeze into structured IR, and are checked at `comline build` time — unknown
-validator, bad keyword arg, undeclared `params.*` reference all fail the build.
-Nothing *runs* them against data yet.
+[struct](../guide/idl/structure.md) or [error](../guide/idl/error.md) field, or
+to a `type` alias. The declaration, its `validate` block, and the `@validators`
+annotation parse, freeze into structured IR, and are checked at `comline build`
+time — unknown validator, bad keyword arg, undeclared `params.*` reference all
+fail the build. Generated Rust runs them; the user guide's
+[validators page](../guide/idl/validator.md#in-generated-code) describes what
+it emits.
 
 ## Shape
 
@@ -95,7 +98,8 @@ struct Message {
 | 3c — structured `validate` block, check `params.*` refs | ✅ core#39 |
 | 3d — check keyword-arg literal **types** against the property types | ✅ core#40 |
 | 3e — `for` target types; check fields and `value.*` against them, imported validators included | ✅ core#105 |
-| 4 — runtime enforcement: generators emit the checks | drafted ([below](#phase-4-runtime-enforcement-design)); 4a ✅ core#108, 4b–4d not started |
+| 3f — `@validators` (and `@deprecated`) on a `type` alias | ✅ core#109 |
+| 4 — runtime enforcement: generators emit the checks | 4a ✅ core#108; 4b–4c ✅ for Rust (comline-rust#52, runtime#12, generation#57, cli#71); 4d (TypeScript) not started |
 
 ## Constraint: stays non-Turing-complete
 
@@ -106,14 +110,29 @@ bounds the answers to the questions below.
 
 ## Phase 4 — runtime enforcement (design)
 
-### Where codegen is today
+### What shipped (4b–4c, Rust)
 
-`comline generate` (the `rust` target,
-`core/core/src/codelib_gen/rust.rs`) emits plain data: `#[derive(Serialize,
-Deserialize)] pub struct`s, `pub trait`s for protocols, C-like `enum`s. No
-`validate`, no decode hook, no runtime crate — the `runtime` repo is dormant.
-`@validators` is frozen onto the field IR and then ignored by every generator.
-Phase 4 is greenfield: nothing to retrofit, only something to add.
+The design below held, with these differences:
+
+- **Where `ValidationError` lives.** In comline-runtime's `validation` module
+  (`alloc` layer), not a separate `comline_rt` crate. A package with
+  validators but no protocol now depends on the runtime too.
+- **`field` is a path, not a name.** `ValidationError.field` is a `String`:
+  `handle`, `friends[1]`, `author.handle`. `{value.name}` renders the same
+  path, so a message says which element or nested value failed.
+- **A trait, not inherent methods.** Generated types implement
+  `Validate`, whose `validate()` returns `ValidationErrors` and
+  `validate_first()` a `ValidationError`. The trait lets one type's check
+  recurse into another's, across crates.
+- **Recursion.** `validate()` checks nested structs and array elements, not
+  just the type's own fields.
+- **Resolution lives in the codegen kernel.** `comline_codegen::validation`
+  works out each value's checks (the alias chain's, innermost first, then the
+  field's own) and binds every property, with constants and `u32::MAX`-style
+  bounds resolved. A generator only lowers the result.
+- **Params.** A params struct borrows (`&'a str`), which `#[serde(try_from)]`
+  handles badly, so the dispatcher runs the check after decoding instead and
+  refuses the call the way it refuses undecodable params.
 
 ### What "run" means
 
@@ -228,8 +247,8 @@ left to right, parenthesising each comparison.
 | Sub-phase | Work |
 |---|---|
 | 4a | **Done (core#108).** Freeze the `validate` condition as a structured expression tree (keep the text + `references` the checks use). |
-| 4b | `rust` generator emits `validate()` (collect-all) and `validate_first()` (fail-fast); stand up the `comline_rt` support crate with `ValidationError` / `ValidationErrors`; implement the `value.*` accessor set. |
-| 4c | `comline.toml` `validate_on_decode` knob (`off` / `collect` / `first`) — `#[serde(try_from)]` shim in the `rust` target; default `off`. [Sketch below](#auto-validation-on-decode-4c). |
+| 4b | **Done for Rust.** `rust` generator emits `validate()` (collect-all) and `validate_first()` (fail-fast); stand up the `comline_rt` support crate with `ValidationError` / `ValidationErrors`; implement the `value.*` accessor set. |
+| 4c | **Done for Rust.** `comline.toml` `validate_on_decode` knob (`off` / `collect` / `first`) — `#[serde(try_from)]` shim in the `rust` target; default `off`. [Sketch below](#auto-validation-on-decode-4c). |
 | 4d | The other generators (python / typescript / luau) once they exist; imported / cross-schema validators (needs the imported schema's IR at generate time, like multi-version `generate`). |
 
 ### Auto-validation on decode (4c)

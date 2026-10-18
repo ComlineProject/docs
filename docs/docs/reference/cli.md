@@ -35,7 +35,7 @@ parse → resolve imports → validate → (freeze into .comline/) → (generate
 | `comline add <name> <dir>` / `comline add <name> --git <uri> --commit <sha> --version <v>` | Add a dependency to `config.idp`, imported as `use <name>::…`: resolved first (a git pin is fetched into `.comline/deps-cache/`), then written with its `hash` pinned. `--no-hash` skips the pin. |
 | `comline check` | Parse, resolve and validate. No `.comline/` write (beyond fetching git dependencies), no version bump — safe for editors, hooks, CI. |
 | `comline build [--release] [--watch]` | Compile, validate, freeze a new immutable version into `.comline/`; print the changelog and the bump. `--release` is currently a no-op. |
-| `comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--external-std] [--no-external-std] [--dry-run] [--list] [--watch]` | Validate (no freeze), then write generated code. Location/layout from [`comline.toml`](congregation/comline-toml.md); targets from there or `config.idp`. |
+| `comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--external-std] [--no-external-std] [--validate-on-decode <when>] [--dry-run] [--list] [--watch]` | Validate (no freeze), then write generated code. Location/layout from [`comline.toml`](congregation/comline-toml.md); targets from there or `config.idp`. |
 | `comline diff <old> [<new>]` | Show schema changes between two built versions. Each argument is a version (`0.2.0`), a commit hash (4+ chars), or `HEAD` (`<new>` default). |
 | `comline clean [--dry-run]` | Remove generated code (the `generate` output root or files). Never touches `.comline/`. |
 | `comline reset [--force] [--dry-run]` | **Destructive.** Delete `.comline/` — the whole version history, no undo — *and* generated code. Next `build` starts over at `0.0.1`. On a terminal it shows how many versions will be lost and makes you type `reset`; without a terminal it refuses (exit `2`) unless `--force`. |
@@ -49,7 +49,10 @@ reference std's own package — `comline_std` for rust, `@comline/std` for
 typescript — instead of inlining it, and `--no-external-std` inlines it;
 either overrides [`comline.toml`](congregation/comline-toml.md)'s
 `[generate] external_std`, which itself defaults to on in `lib` mode and off
-in `code` mode.
+in `code` mode. `--validate-on-decode off|collect|first` overrides
+[`[generate] validate_on_decode`](congregation/comline-toml.md#validate_on_decode),
+whether decoding runs the schema's `@validators` (also
+`COMLINE_GENERATE_VALIDATE_ON_DECODE`).
 Each target's files are drawn as a tree. `--list` prints them one per line
 instead, with the schema each came from — and, when several package versions
 are generated at once, the version each line belongs to. `--dry-run` writes
