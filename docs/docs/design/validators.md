@@ -27,9 +27,9 @@ validator StringBounds for string {
 
     validate {
         assert(value.length >= params.min_chars,
-               "{value.name} must be at least {params.min_chars} characters")
+               f"{value.name} must be at least {params.min_chars} characters")
         assert(value.length <= params.max_chars,
-               "{value.name} must be at most {params.max_chars} characters")
+               f"{value.name} must be at most {params.max_chars} characters")
     }
 }
 ```
@@ -47,8 +47,9 @@ validator StringBounds for string {
     being checked) and `params.*` (this validator's properties), comparisons
     (`== != >= <= > <`), and `and` / `or` chains. **No precedence** — it is
     [not evaluated](#constraint-stays-non-turing-complete), only checked.
-  - `message` — the [interpolated string](../guide/idl/error.md#message) rule,
-    reused; `{value.…}` / `{params.…}` placeholders work.
+  - `message` — the [f-string](../guide/idl/error.md#message) rule, reused:
+    `f"..."` substitutes `{value.…}` / `{params.…}` placeholders, and a plain
+    `"..."` prints as written.
   - **`assert(c, m)` holds when `c` is true**; a false `c` fails validation with
     `m`.
 - Frozen as `FrozenUnit::Validator { targets, properties, expression_block }`, where the

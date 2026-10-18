@@ -6,16 +6,23 @@ has a required `message` and, optionally, fields.
 ```ids linenums="1"
 /// Raised when a message is sent to an unknown recipient.
 error RecipientNotFound {
-    message = "no recipient named {self.name}"
+    message = f"no recipient named {self.name}"
     name: string
 }
 ```
 
 ## `message`
 
-A string with `{dotted.path}` **placeholders** that are substituted when the
-error is rendered — `{self.name}` reads the error's own `name` field. Write a
-literal brace by doubling it: `{{` and `}}`.
+An **f-string**, `f"..."`, with `{dotted.path}` **placeholders** that are
+substituted when the error is rendered: `{self.name}` reads the error's own
+`name` field. Write a literal brace in it by doubling it: `{{` and `}}`.
+
+A plain `"..."` string is printed exactly as written, braces included. Only an
+f-string interpolates, here as everywhere else in the language (a
+[constant](const.md)'s value, a [validator](validator.md#validate)'s
+messages). A plain message that looks like it has a placeholder, such as
+`"no recipient named {self.name}"`, gets a `validation::message-not-interpolated`
+warning, and the editor offers to add the `f`.
 
 `message` is expected on every error.
 

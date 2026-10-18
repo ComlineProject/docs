@@ -23,9 +23,9 @@ validator StringBounds for string {
 
     validate {
         assert(value.length >= params.min_chars,
-               "{value.name} must be at least {params.min_chars} characters")
+               f"{value.name} must be at least {params.min_chars} characters")
         assert(value.length <= params.max_chars,
-               "{value.name} must be at most {params.max_chars} characters")
+               f"{value.name} must be at most {params.max_chars} characters")
     }
 }
 ```
@@ -73,8 +73,17 @@ A `validate` block holds one or more `assert(condition, message)` calls.
     `author.handle`.
 
   Anything else is a build error at the validator.
-- **`message`** — an [interpolated string](error.md#message); `{value.…}` and
-  `{params.…}` placeholders are substituted.
+- **`message`** — a string, or an [f-string](error.md#message) whose
+  `{value.…}` and `{params.…}` placeholders are substituted. A plain `"..."`
+  is printed as written.
+
+Three mistakes build, but warn:
+
+| Warning | When |
+|---|---|
+| `validation::validator-checks-nothing` | the validator has no `validate` block, or an empty one; shown at the block when there is one |
+| `validation::validator-property-unused` | a property no `assert` or message reads |
+| `validation::message-not-interpolated` | a plain `"..."` message with a `{...}` in it, which would print as written; the editor's quick fix makes it an f-string |
 
 The condition language is deliberately small and
 [non-computational](../../design/validators.md#constraint-stays-non-turing-complete)
