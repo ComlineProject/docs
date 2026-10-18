@@ -99,10 +99,96 @@ package must say which ones it speaks.
   ([generation#67](https://github.com/ComlineProject/generation/issues/67)).
   In Rust, this could be a sealed trait implemented only for them.
 
+## Encoding profiles
+
+A format doesn't declare which bumps its changes take. It declares **facts about
+its encoding**, and the comparison turns those facts into bumps with one set of
+rules.
+
+The facts are what can be tested. "`json@1` ignores an unknown field" is true or
+false, and a conformance vector shows which; "adding an optional field is minor
+under `json@1`" has no such test. If every format carried its own table of
+bumps, each could quietly decide policy differently, and the rules would be
+copied once per format.
+
+### What a profile states
+
+A format and a framing are chosen separately, so each has its own profile:
+
+```jsonc
+// msgpack@1 (format)
+{
+  "struct_fields": "by_position",   // or "by_name"
+  "unknown_field": "rejected",      // or "ignored"
+  "missing_optional": "rejected",   // or "absent"
+  "enum_variants": "by_name",       // or "by_index"
+  "unknown_variant": "rejected",    // or "tolerated"
+  "integer_width": "by_value"       // a wider integer decodes if its value fits
+}
+
+// datagram@1 (framing)
+{
+  "calls": "by_index",              // jsonrpc@1: "by_name"
+  "errors": "by_ordinal",
+  "one_way": "no_reply_frame"
+}
+```
+
+The property set is small and fixed, so the comparison knows every value it can
+meet. A new property is a change to the comparison too, not something a format
+can add on its own.
+
+### How a rule reads them
+
+Each rule that depends on the encoding is written once, against properties:
+
+- **Add an optional field:** major if `struct_fields` is `by_position`,
+  `unknown_field` is `rejected` or `missing_optional` is `rejected`; minor
+  otherwise.
+- **Insert a function before others:** major if `calls` is `by_index`; none
+  otherwise.
+- **Reorder enum variants:** major if `enum_variants` is `by_index`; none
+  otherwise.
+
+Over the formats and framings a package declares, the strictest result wins. The
+reported reason names the property that decided it: "major under `msgpack@1`:
+fields are positional". That reason tells the author what to change, or which
+encoding to drop.
+
+Some outcomes depend on values, not shape. A wider integer only fails on a value
+the old reader can't hold. These stay major, with the reason saying so, rather
+than introducing a "maybe" level.
+
+### Where profiles live
+
+1. **The runtime's conformance corpus is the source.** It holds one profile per
+   versioned name beside `features.json`, for example
+   `runtime/conformance/profiles/msgpack@1.json`. Every property is backed by a
+   vector:
+   - "`msgpack@1` rejects an unknown field" is a vector with `"expect": "reject"`;
+   - "`json@1` ignores one" is a vector that decodes.
+
+   A profile then can't claim something the runtime doesn't do, the same
+   guarantee the support tables already have.
+2. **Core keeps a pinned copy for the encodings it knows,** because core can't
+   depend on the runtime. It's drift-checked against the corpus, the way
+   comline-typescript vendors the vectors.
+3. **A profile is fixed for its version.** If a property changes, that is a new
+   version: `msgpack@2` is `msgpack@1` with `struct_fields: by_name` and
+   `missing_optional: absent`. That defines what the `@N` in a name means.
+4. **An encoding core doesn't know** is compared under the strictest profile,
+   with a warning saying so.
+
+The `config.idp` declaration stays names only; the profiles come from the
+corpus.
+
 ## The rules
 
 Types are compared **after resolving aliases**, each version through its own.
 The bump a build takes is still the largest of its changes.
+
+Where a row below names a format or framing, that's the rule applied to today's
+profiles; the rule itself is written against the property, as above.
 
 ### Fields (structs, and error bodies)
 
@@ -189,6 +275,10 @@ doesn't pair the wrong ones.
 
 ## Open questions
 
+- **Third-party profiles.** An encoding core doesn't know gets the strictest
+  profile. Should the package that defines it be able to ship its profile, and
+  how would a consumer trust it without the conformance proof?
+
 - **A constant's value.** Constants never travel, but they often encode limits
   that both peers rely on, such as a maximum length. Should a value change be
   major?
@@ -210,12 +300,14 @@ doesn't pair the wrong ones.
 ## What it touches
 
 - **core:**
-  - the comparison;
+  - the comparison, with rules written against profile properties;
+  - a pinned, drift-checked copy of the known profiles;
   - the `config.idp` declaration;
   - versioned `@framing` values and their error;
   - pairing schemas by namespace.
-- **runtime:** versioned names in the handshake, and the re-blessed conformance
-  vectors. comline-typescript's vendored copy follows.
+- **runtime:** versioned names in the handshake, a profile per versioned name in
+  the conformance corpus with a vector behind every property, and the
+  re-blessed vectors. comline-typescript's vendored copy follows.
 - **generation**, **comline-rust** and **comline-typescript:** the declared
   formats reach generated code.
 - **cli:** reporting the full set of changes and the bump in `build` and `diff`
