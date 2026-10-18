@@ -92,8 +92,9 @@ profile, with a warning.
 
 A generator doesn't need to understand a framing to wire it. It needs to know
 which type implements that name in its language. That's consumer-side
-configuration, like `default_framing` today, so it lives in `comline.toml`, per
-target:
+configuration, so it lives in `comline.toml`, per target. Which encoding a
+protocol uses is the producer's choice, made in the schema and its
+`config.idp`; only *how* it's implemented in each language is the consumer's:
 
 ```toml
 [[generate.target]]
@@ -139,8 +140,9 @@ two:
   handshake that checks compatibility instead of exact identity
   ([runtime#15](https://github.com/ComlineProject/runtime/issues/15)) becomes
   `comline@2`, a new version, not a change forced on everyone.
-- **Chosen in the schema,** per protocol (`@handshake`, like `@framing`), with a
-  package default. Talking to a legacy system is a property of the protocol,
+- **Chosen by the producer,** with the same layering as framings: the
+  protocol's `@handshake`, then the package default in `config.idp`, then
+  core's default `comline@1`. Talking to a legacy system is a property of the protocol,
   not of one call site. A skip decided at a call site can leave one peer
   handshaking and the other not, with nothing in the schema showing it.
 - **Its profile states what it establishes,** not how it's encoded: schema

@@ -93,6 +93,29 @@ package must say which ones it speaks.
   (`MailClient::connect(transport, MsgPack)`), and a protocol's framing falls
   back to the consumer's `default_framing` in `comline.toml`. Neither is part of
   the frozen package, so the comparison can't see them.
+- **Defaults belong to the producer.** A protocol's framing is resolved, most
+  specific first, from:
+  1. its own `@framing`;
+  2. the package default in `config.idp`;
+  3. core's built-in default, `datagram@1`.
+
+  The framing is part of the contract, so the consumer has no say:
+  `default_framing` leaves `comline.toml`, and using it there becomes an error
+  pointing to `config.idp`. Today two consumers of one package can generate
+  clients that can't talk to each other, with nothing in the package showing
+  it. Two safeguards keep this sound:
+  - **The resolved framing is frozen per protocol** into the compiled schema,
+    so the comparison and the generators read one value. A change at any of
+    the three levels shows as a change to that protocol.
+  - **Core's default only changes in a new edition** (`specification_version`,
+    [core#102](https://github.com/ComlineProject/core/issues/102)), never
+    between releases, because every package relying on it has it in its
+    contract.
+
+  The package default must be one of the declared framings; with only one
+  declared, that one is the default. Handshakes resolve the same way: core's
+  default is `comline@1`. Formats don't need a default, since the call site
+  picks among the declared ones.
 - **The comparison applies the strictest rules among the declared
   encodings.** With none declared, the package is taken to speak every known
   one.
@@ -225,8 +248,8 @@ profiles; the rule itself is written against the property, as above.
 | switch between one-way and request/response | major | one side waits for a reply the other never sends, or gets one it doesn't expect |
 | add an error to `!` | minor | an old client receives it as `Remote` |
 | remove an error from `!` | major | a generated error variant disappears |
-| `@framing` changes | major | compared in canonical, versioned form |
-| `@handshake` changes | major | the first frame on the wire changes ([handshakes](extensibility.md#handshakes)) |
+| a protocol's resolved framing changes, at any level (`@framing`, the package default, or core's default in a new edition) | major | compared in canonical, versioned form |
+| a protocol's resolved handshake changes, at any level | major | the first frame on the wire changes ([handshakes](extensibility.md#handshakes)) |
 | a guarantee given up ([marker](extensibility.md#giving-up-a-guarantee), name open) | major | peers lose a guarantee they relied on |
 | a given-up guarantee restored | minor | |
 | the reason for giving one up changed | patch | |
@@ -370,9 +393,15 @@ Points to weigh:
 - **Unknown enum variants.** If readers tolerated them
   ([runtime#17](https://github.com/ComlineProject/runtime/issues/17)), adding a
   variant would be safely minor instead of minor with a caveat.
-- **Framing without `@framing`.** Should such a protocol take the package's
-  single declared framing, or the consumer's `default_framing` among the
-  declared ones?
+- **Gating the package default.** `@framing` is off by default today
+  (`annotations.framing.allowed`). Should a package default in `config.idp`
+  be gated too? The lean is no: writing it in the package's own config is
+  deliberate enough. The gate would stay on per-protocol overrides, since
+  mixing framings within one package is the less common case.
+- **Several framings for one protocol.** Could one protocol be served under
+  more than one declared framing, with the handshake telling them apart? A
+  consumer that reaches a service through a JSON-RPC gateway would then need
+  no separate contract. It's one framing per protocol for now.
 - **An escape hatch.** Accepting a breaking change without a major bump is
   proposed as [giving up a guarantee](extensibility.md#giving-up-a-guarantee),
   version honesty: allowed only when the package turns it on, with a reason.
