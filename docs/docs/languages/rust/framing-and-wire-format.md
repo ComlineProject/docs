@@ -72,6 +72,9 @@ the same format.
 
 ## Shipped combinations
 
+What the runtime is proven to speak, feature by feature, is on the
+[Rust reference page](../../reference/languages/rust.md#runtime).
+
 | Framing | Wire format | Ships |
 |---|---|---|
 | `datagram` | `json` | ✅ |

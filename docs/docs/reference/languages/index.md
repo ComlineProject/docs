@@ -1,9 +1,8 @@
 # Languages
 
 What Comline supports in each target language. Every language has its own
-page, with what its **code generator** emits and, once runtime conformance
-covers it, what its **runtime** speaks on the wire. The matrix below compares
-the code generators side by side.
+page, with what its **code generator** emits and what its **runtime** speaks
+on the wire. The matrices below compare the languages side by side.
 
 Nothing here is written by hand. Each entry comes from a conformance suite,
 which checks the claim against what the generator actually does, so a
@@ -17,6 +16,14 @@ language page can't claim something that isn't true.
 | 🟡 **partial** | Works, with the limit the note states. |
 | ⚪ **ignored** | Succeeds, but the output is what it would be without the feature: the types are right, the feature has no effect. `comline generate` warns, and so does the editor. |
 | ❌ **unsupported** | Is refused, with an error naming every use. The editor warns at each use. |
+
+A runtime's claims use the same words, about the wire:
+
+| State | The runtime, for that wire feature |
+|---|---|
+| ✅ **supported** | Reproduces every example in the wire corpus, and decodes each back. |
+| 🟡 **partial** | Does the same, except for the examples the note lists, which it's known to get wrong. |
+| ❌ **unsupported** | Doesn't implement it. A peer must agree on something else at the handshake. |
 
 ## How a claim is proven
 
@@ -38,6 +45,21 @@ what the generator actually does:
 A claim that no schema in the corpus can back fails the suite. So a new
 feature, or a generator that gains one, comes with a schema that proves it.
 The proving schemas are named in each cell below.
+
+Runtimes are proven against a shared wire corpus in
+[`ComlineProject/runtime`](https://github.com/ComlineProject/runtime/tree/main/runtime/conformance):
+for each wire feature, examples of exact bytes and the input that produces
+them, plus bytes that must be refused. The Rust runtime is the reference that
+the examples are taken from; every other runtime vendors them at a pinned
+commit. A runtime's suite runs every example against it:
+
+- **supported**: every example encodes to its bytes and decodes back, and
+  every malformed one is refused. JSON compares as JSON, with numbers exact,
+  so `1` and `1.0` are equal but a rounded large integer isn't.
+- **partial**: as for supported, except for the listed examples, which must
+  still fail. When one starts passing, the suite fails until the claim is
+  upgraded.
+- **unsupported**: the runtime reports every example as not implemented.
 
 ## Code generation, side by side
 
@@ -67,6 +89,23 @@ The proving schemas are named in each cell below.
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | ✅ supported | ✅ supported |
 
 <!-- matrix:end -->
+
+## Runtimes, side by side
+
+<!-- runtime-matrix:start -->
+<!-- Rendered from ComlineProject/runtime's conformance corpus and each runtime's report by scripts/sync-language-support.py - don't edit by hand. -->
+
+| Feature | [rust](rust.md#runtime) | [typescript](typescript.md#runtime) |
+|---|---|---|
+| name hash <br><sub>`name-hash`</sub> | ✅ supported | ✅ supported |
+| handshake <br><sub>`handshake`</sub> | ✅ supported | ✅ supported |
+| envelope <br><sub>`envelope`</sub> | ✅ supported | ✅ supported |
+| datagram framing <br><sub>`framing-datagram`</sub> | ✅ supported | ✅ supported |
+| JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | ✅ supported | ✅ supported |
+| JSON wire format <br><sub>`format-json`</sub> | ✅ supported | 🟡 partial: 64-bit integers are `number`, exact only below 2^53 ([comline-typescript#49](https://github.com/ComlineProject/comline-typescript/issues/49)) |
+| MessagePack wire format <br><sub>`format-msgpack`</sub> | ✅ supported | ❌ unsupported: only JSON ships |
+
+<!-- runtime-matrix:end -->
 
 ## Elsewhere
 

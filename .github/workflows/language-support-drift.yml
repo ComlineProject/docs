@@ -1,14 +1,14 @@
 name: Language support drift
 
-# The Reference -> Languages pages are rendered from generation's
-# `features.json`: what its conformance suite proves. This checks they're
-# current. Like the IDL drift check it needs no Rust build, only a fetch,
+# The Reference -> Languages pages are rendered from what the conformance
+# suites prove: generation's `features.json`, and the runtime wire corpus
+# with each runtime's report. This checks they're current. Like the IDL drift check it needs no Rust build, only a fetch,
 # so it runs per pull request. It's kept separate from the Docs workflow,
 # because a fetch from another repo shouldn't be able to block a deploy.
 
 on:
   schedule:
-    # A generator gaining a feature never touches this repo, so a
+    # A generator or runtime gaining a feature never touches this repo, so a
     # push-triggered run would not see it. Weekly catches that side.
     - cron: '45 7 * * 1'
   pull_request:

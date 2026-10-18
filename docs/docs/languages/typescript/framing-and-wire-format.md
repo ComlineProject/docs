@@ -35,6 +35,9 @@ const client = await ChatClient.connect(transport, new JsonCodec());
 
 ## Shipped combinations
 
+What the runtime is proven to speak, feature by feature, is on the
+[TypeScript reference page](../../reference/languages/typescript.md#runtime).
+
 Narrower than Rust's, for the same reason — no MessagePack codec yet:
 
 | Framing | Wire format | Ships |
