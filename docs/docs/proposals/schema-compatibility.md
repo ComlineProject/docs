@@ -225,6 +225,10 @@ profiles; the rule itself is written against the property, as above.
 | add an error to `!` | minor | an old client receives it as `Remote` |
 | remove an error from `!` | major | a generated error variant disappears |
 | `@framing` changes | major | compared in canonical, versioned form |
+| `@handshake` changes | major | the first frame on the wire changes ([handshakes](extensibility.md#handshakes)) |
+| `@unchecked` added | major | peers lose a guarantee they relied on ([unchecked](extensibility.md#unchecked)) |
+| `@unchecked` removed | minor | a guarantee is restored |
+| `@unchecked` reason changed | patch | |
 
 ### Errors
 
@@ -291,9 +295,11 @@ doesn't pair the wrong ones.
 - **Framing without `@framing`.** Should such a protocol take the package's
   single declared framing, or the consumer's `default_framing` among the
   declared ones?
-- **An escape hatch.** Should an author be able to accept a breaking change
-  without a major bump, and should the build be able to fail on one?
-  ([cli#80](https://github.com/ComlineProject/cli/issues/80))
+- **An escape hatch.** Accepting a breaking change without a major bump is
+  proposed as an [unchecked](extensibility.md#unchecked) action: allowed only
+  when the package turns it on, with a reason. Where it's written down is open.
+  Should the build also be able to fail on a break
+  ([cli#80](https://github.com/ComlineProject/cli/issues/80))?
 - **The handshake.** Until it checks compatibility instead of identity
   ([runtime#15](https://github.com/ComlineProject/runtime/issues/15)), the bump
   is advisory. Should that come first?
