@@ -57,6 +57,13 @@ alternatives are worth. Five proposals, read to the same shape:
   — translate Comline IR to Smithy and inherit its generators. *under
   discussion — assessed, not recommended as a basis.*
 
+### Versioning
+
+- [Schema compatibility](schema-compatibility.md): which schema changes are
+  breaking, measured by the wire and by the names consumers use, with formats
+  and framings versioned and declared by the package so the rules can depend
+  on them. *under discussion.*
+
 ### Tooling
 
 - [Automatic documentation](auto-documentation.md) — an optional tool that

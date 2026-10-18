@@ -79,6 +79,11 @@ The variants a generator will actually match on:
 
 ### Types — `KindValue`
 
+> **Superseded.** Since core#108 the frozen IR uses `TypeRef` and `Literal`
+> (`schema/ir/frozen/types.rs`): a `Field` has `ty` and `default`, a `Constant`
+> has `ty` and `value`, and `_return` is `Option<TypeRef>`. The section below
+> records the model this contract was written against.
+
 Every typed slot (`Field.kind_value`, `FrozenArgument.kind`, `Function._return`,
 `Constant.kind_value`) is a `KindValue`:
 
@@ -403,20 +408,18 @@ in `incremental.rs`): local `error` decls take `0..N` in declaration order, and
 each foreign error a `throws` names is appended a re-export slot. `Function.throws`
 is `Vec<u16>` of those ordinals. Append-only discipline (retire in place, never
 reorder or reuse) is the author's to keep; version-diff *enforcement* of it is a
-follow-up. `body` is the error struct's `fields`, borrowed from the receive
+follow-up ([core#119](https://github.com/ComlineProject/core/issues/119)). `body` is the error struct's `fields`, borrowed from the receive
 buffer.
 
-- **Name-oriented framings** (JSON-RPC) put the error *name* on the wire instead;
-  the generator has the ordinal↔name↔struct mapping both directions. Mirrors
-  `Kind::{ Id, Named }`.
+- **JSON-RPC carries the ordinal too**, as the error object's `code`, with the
+  body as `data`; a `code` outside the `u16` range is read as a fault.
 - **A `use`d cross-schema error** gets a re-export slot in the importing schema's
   ordinal space (`FrozenUnit::Error` with `imported_from: Some(ns)`, fields +
   message carried over from the source schema), so the wire `id` stays a single
   `u16`. An unresolvable `! Name` still gets a stable slot, marked
   `<unresolved: Name>`.
 - **Unknown ordinal** (newer peer raised an `! E` past what the client
-  generated) → `CallError::Runtime(RuntimeError::Remote { name, raw })`, borrowed
-  per §4.6. Adding `! E` is a compatible change (old peers land here); removing a
+  generated) → `RuntimeError::Remote { id }`. Adding `! E` is a compatible change (old peers land here); removing a
   `!` reference is compatible (dead variant).
 
 **`message` renders client-side.** `error Foo { message = f"…{self.name}…" }` →
@@ -498,7 +501,7 @@ does not).
 
 - `wire_format` / `framing` are carried as an **FNV-1a `name_hash` of a name**, not a numeric id — `WireFormat::name()` (`"msgpack"`), a user add-on picks a namespaced name; no central id registry. `Handshake` stays fixed-size (31 bytes) and `Copy`.
 - **Two modes.** `Client::connect` / `Server::serve_handshaked` (checked) vs `Client::new` / `Server::serve` (**skip it — "misaligned mode"**, documented, for a legacy peer / no back-channel / an embedded target that can't spend the round trip). The generator emits `<Proto>Client::connect` and `<Proto>Dispatcher::serve` for the checked path, filling the `Handshake` from a generated `IR_HASH` const.
-- **`ir_hash` is canonical** ([core#49](https://github.com/ComlineProject/core/pull/49) + generation#18 + comline-rust#11) — `comline_core::schema::ir::frozen::schema_ir_hash`: BLAKE3 over the schema's `bincode` encoding (the CAS's own blob serialization), folded to `u64`. Every generator embeds the same value, so two ends generated from one schema agree regardless of target language. Replaced each generator's FNV-over-`Debug` fingerprint.
+- **`ir_hash` is canonical** ([core#49](https://github.com/ComlineProject/core/pull/49) + generation#18 + comline-rust#11) — `comline_core::schema::ir::frozen::schema_ir_hash`: BLAKE3 over the schema's CBOR encoding (the CAS's own blob serialization), folded to `u64`. Every generator embeds the same value, so two ends generated from one schema agree regardless of target language. Replaced each generator's FNV-over-`Debug` fingerprint.
 - Still open: a `WarnOnly` middle mode (exchange, log, proceed) for migrations.
 
 The schema's transport requirements still constrain *your* stack selection at setup; nothing cross-checks that the peer honours them.

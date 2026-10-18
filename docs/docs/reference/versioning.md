@@ -7,7 +7,8 @@ version field in the manifest; it comes from the
 [content-addressable store](../guide/ir/cas.md).
 
 Versions follow [SemVer](https://semver.org/). The first build is `0.0.1`. A
-build with no schema changes keeps the version and adds no commit.
+build that changes nothing keeps the version and adds no commit. A change that
+takes no bump, such as to `code_generation`, adds a commit at the same version.
 `comline diff <old> <new>` runs the same comparison between any two stored
 versions on demand.
 
@@ -15,11 +16,17 @@ versions on demand.
 
 | Bump | When | Examples |
 |---|---|---|
-| **major** | a breaking change | removed struct / enum / field / variant / function; changed a field's type; added a required field |
-| **minor** | a new feature | added struct / enum / protocol / error; added a variant; added an optional field; a new schema file |
-| **patch** | a modification | a field made optional; a docstring-only change |
+| **major** | a breaking change | removed struct / enum / protocol / error; removed required field; removed variant; removed function; changed a field's type (compared as written); changed a function's argument or return types; added a required field; a removed schema file |
+| **minor** | a new feature | added struct / enum / protocol / error; added a variant; added a function; added an optional field; a new schema file |
+| **patch** | a modification | a declaration's docstring changed |
 
 The bump applied is the **maximum** over all changes in the build.
+
+Not compared yet ([core#118](https://github.com/ComlineProject/core/issues/118)):
+annotations, type aliases, validators, constants beyond their docstring, an
+error's fields and ordinal, argument names, a field's `optional` flag, and the
+removal of an optional field. Which of these *should* be breaking is under
+discussion in [Schema compatibility](../proposals/schema-compatibility.md).
 
 ## Manifest (`config.idp`) changes
 
@@ -30,14 +37,14 @@ version — but only the parts that describe the schema API:
 |---|---|---|
 | `Dependency` | removed, or version changed | **major** (conservative — a dependency's shapes are part of this package's surface) |
 | `Dependency` | added | **minor** |
-| `Dependency` | `uri` / `hash` only, same version | **patch** (provenance, not API) |
 | `SpecificationVersion` | changed | **major** |
 | `CodeGeneration` | added / removed / `lang_version` changed | **none** — recorded, never diffed. It is a tooling-capability list, orthogonal to the wire format. |
 | `PublishRegistry` | any | **none** — publish metadata |
 | `Namespace` | changed | **not a bump** — renaming the package is a new package |
 
-The `Dependency` arms are implemented but dormant until dependency resolution
-lands (`ComlineProject/core` #6).
+A dependency present in both versions is also compared like your own schemas,
+and its changes move the bump. They aren't listed in the build's output yet
+([cli#80](https://github.com/ComlineProject/cli/issues/80)).
 
 ## History model
 

@@ -102,6 +102,7 @@ nav:
       - 'Proposal D': 'proposals/codegen-architecture/target-language-plugins.md'
       - 'Proposal E': 'proposals/codegen-architecture/adopt-existing-model.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
+    - Schema compatibility: 'proposals/schema-compatibility.md'
   
   - Resources:
     - 'resources.md'
