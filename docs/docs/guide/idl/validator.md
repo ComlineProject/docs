@@ -7,7 +7,7 @@
     without a default, or an undeclared `params.*` reference all fail the build. Generated **Rust** code then
     [runs them](#in-generated-code). Generated TypeScript doesn't yet: it
     generates the types without the checks, and `comline generate` warns. See
-    [Generator support](../../reference/generator-support.md).
+    [TypeScript's language reference](../../reference/languages/typescript.md#code-generation).
 
 A **validator** is a named, parameterised check you attach to a
 [struct](structure.md) or [error](error.md) field, or to a

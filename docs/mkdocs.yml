@@ -52,6 +52,11 @@ nav:
       - Framing & wire format: 'languages/typescript/framing-and-wire-format.md'
   
   - Reference:
+    - Languages:
+      - Overview: 'reference/languages/index.md'
+      - Rust: 'reference/languages/rust.md'
+      - TypeScript: 'reference/languages/typescript.md'
+
     - Congregation:
       - Congregation: 'reference/congregation/index.md'
       - comline.toml: 'reference/congregation/comline-toml.md'
@@ -64,7 +69,6 @@ nav:
     - Tools:
       - Tools: 'reference/tools/index.md'
       - CLI: 'reference/cli.md'
-      - Generator support: 'reference/generator-support.md'
     
   
   - Design:
