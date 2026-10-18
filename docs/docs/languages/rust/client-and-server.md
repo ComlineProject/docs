@@ -183,7 +183,7 @@ produce, with `{self.field}` placeholders filled in:
 
 ```ids
 error NotFound {
-    message = "no entry for {self.key}"
+    message = f"no entry for {self.key}"
     key: string
 }
 ```

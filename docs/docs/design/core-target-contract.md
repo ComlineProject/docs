@@ -419,9 +419,14 @@ buffer.
   per §4.6. Adding `! E` is a compatible change (old peers land here); removing a
   `!` reference is compatible (dead variant).
 
-**`message` renders client-side.** `error Foo { message = "…{self.name}…" }` →
+**`message` renders client-side.** `error Foo { message = f"…{self.name}…" }` →
 a generated `Display` / `core::error::Error` impl that does the `{self.field}`
 substitution locally. Only `fields` travel; the template is baked into codegen.
+
+The IR's `message` is a template either way. Only an f-string interpolates
+(core#116), so a plain `"…"` message reaches the IR with its braces escaped
+as `{{` / `}}`. A generator renders every message, error or `assert`, by one
+rule: `{path}` is a placeholder, `{{` / `}}` a literal brace.
 
 **Raise-site field values** — the schema can't yet write
 `! Foo(name = x)` ([guide](../guide/idl/error.md)); the generated Rust *impl*
