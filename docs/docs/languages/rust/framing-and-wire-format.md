@@ -17,7 +17,7 @@ no framing argument on `connect` or `serve` to swap it at the call site.
 ```ids
 @framing = "jsonrpc"
 protocol Mail {
-    function send_message(message: Message) -> str ! RecipientNotFound;
+    function send_message(message: Message) -> string ! RecipientNotFound;
 }
 ```
 

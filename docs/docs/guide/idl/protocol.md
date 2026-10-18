@@ -32,7 +32,7 @@ function NAME( [args] ) [-> ReturnType] [! ErrorName, ...] ;
 protocol Mail {
 
     @timeout_ms=1000
-    function send_message(message: Message) -> str ! RecipientNotFound;
+    function send_message(message: Message) -> string ! RecipientNotFound;
 }
 ```
 
@@ -46,7 +46,7 @@ A `@key=value` annotation on the `protocol` itself configures the whole service.
 ```ids linenums="1"
 @framing = "jsonrpc"
 protocol Mail {
-    function send_message(message: Message) -> str ! RecipientNotFound;
+    function send_message(message: Message) -> string ! RecipientNotFound;
 }
 ```
 

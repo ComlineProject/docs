@@ -36,9 +36,9 @@ From this schema:
 
     ```python
     class Message(Protocol):
-        receiver: str
-        subject: str
-        message: str
+        receiver: string
+        subject: string
+        message: string
     ```
 
 === "TypeScript"

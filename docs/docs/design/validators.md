@@ -1,7 +1,7 @@
 # Validators
 
-Status: **compile-time checks done** (core#32–40) · **not run** — codegen /
-runtime enforcement is phase 4 (design below)
+Status: **compile-time checks done** (core#32–40, target types core#105) ·
+**not run** — codegen / runtime enforcement is phase 4 (design below)
 
 A **validator** is a named, parameterised check attached to a
 [struct](../guide/idl/structure.md) or [error](../guide/idl/error.md) field. The
@@ -18,7 +18,7 @@ Nothing *runs* them against data yet.
 /// Checks a string's length is within bounds.
 /// @min_chars: minimum length
 /// @max_chars: maximum length
-validator StringBounds {
+validator StringBounds for string {
     min_chars: u32 = 0
     max_chars: u32 = 1024
 
@@ -31,6 +31,11 @@ validator StringBounds {
 }
 ```
 
+- **Targets** — `for TYPE[, TYPE]*`, required (core#105). Primitives, arrays
+  of them, or aliases (resolved). A field takes the validator only if its type,
+  alias-resolved with `optional` set aside, is exactly one of the targets. A
+  validator on `string[]` checks the array, not its elements. No generics: a
+  validator for several types lists them.
 - **Properties** — `name: Type [= default]`, the same shape as a struct field
   (no `;`, no `optional`, no annotations). The validator's configuration, filled
   in at the use site.
@@ -43,7 +48,7 @@ validator StringBounds {
     reused; `{value.…}` / `{params.…}` placeholders work.
   - **`assert(c, m)` holds when `c` is true**; a false `c` fails validation with
     `m`.
-- Frozen as `FrozenUnit::Validator { properties, expression_block }`, where the
+- Frozen as `FrozenUnit::Validator { targets, properties, expression_block }`, where the
   block is `ExpressionBlock { asserts: [Assert { condition, message, references }] }`.
   Each `params.*` / `value.*` in a `condition` is checked against the validator's
   properties; unknown roots and unknown `params.*` fail the build.
@@ -53,7 +58,7 @@ validator StringBounds {
 ```ids
 struct Message {
     @validators = [StringBounds(min_chars = 3, max_chars = 12)]
-    recipient: str
+    recipient: string
 }
 ```
 
@@ -89,6 +94,7 @@ struct Message {
 | 3b — check `@validators` keyword-arg names | ✅ core#38 |
 | 3c — structured `validate` block, check `params.*` refs | ✅ core#39 |
 | 3d — check keyword-arg literal **types** against the property types | ✅ core#40 |
+| 3e — `for` target types; check fields and `value.*` against them, imported validators included | ✅ core#105 |
 | 4 — runtime enforcement: generators emit the checks | drafted ([below](#phase-4-runtime-enforcement-design)) — not started |
 
 ## Constraint: stays non-Turing-complete
@@ -164,24 +170,27 @@ Decisions baked into that shape:
 - **`params.*` are inlined at codegen.** `min_chars = 3` bakes the literal `3`
   into the check; an unbound property emits its declared default. No runtime
   parameter passing, no per-instance validator object.
-- **`value.*` accessor vocabulary** — small, fixed, and **type-checked at the
-  use site**:
+- **`value.*` accessor vocabulary** — small, fixed, and **type-checked
+  against the validator's targets** (core#105):
 
   | path | defined for | lowers to (rust) |
   |---|---|---|
   | `value` | any field | `&self.<field>` |
-  | `value.length` | `str`, arrays (`T[]`) | `.chars().count()` / `.len()` |
+  | `value.length` | `string`, arrays (`T[]`) | `.chars().count()` / `.len()` |
   | `value.name` | any field (compile-time string) | `"<field>"` |
 
-  `value` is whatever field the validator is attached to — its type is known
-  only where `@validators` names the validator, not in the `validator`
-  declaration. So each `value.<accessor>` is checked **per application**: when
-  `StringBounds(…)` is put on `recipient: str`, `value.length` resolves;
-  putting the same validator on an `s32` field is a `comline build` error at
-  that field. An unsupported or unknown accessor never reaches codegen — the
-  generator only ever sees accessor/type pairs that already type-checked. The
-  set grows deliberately and stays
-  [non-computational](#constraint-stays-non-turing-complete).
+  `value` is whatever field the validator is attached to, and the field's type
+  is one of the validator's `for` targets. So each `value.<accessor>` is
+  checked **once, at the declaration**, against every target: `value.length`
+  in a `for u32` validator is a build error there. Putting `StringBounds` on an
+  `s32` field is a separate build error at that field. An unsupported or
+  unknown accessor never reaches codegen — the generator only ever sees
+  accessor/type pairs that already type-checked. The set grows deliberately
+  and stays [non-computational](#constraint-stays-non-turing-complete).
+- **Numbers compare by value.** A `u8` value against a `u32` (or `s64`)
+  parameter compares mathematically; codegen widens or checks the conversion,
+  never narrows. This is what lets one validator list several numeric
+  targets without generics.
 - **Operators** map straight through: `== != >= <= > <` → the rust operators,
   `and` / `or` → `&& ||`, each comparison parenthesised (the grammar has no
   precedence, so codegen supplies the grouping).
@@ -266,11 +275,12 @@ validate_on_decode = "collect"
   dependencies, so there isn't one. Either way codegen must emit **panic-safe**
   checks — an assert that indexes past what an earlier assert guards has to
   evaluate to *failure*, not crash.
-- **Unsupported `value` accessor.** A `comline build` error at the field that
-  applies the validator (see the [accessor table](#proposed-generated-shape-rust)).
-  `length` is an attribute of the types that have one; on a type that doesn't,
-  the schema never compiles — it never reaches codegen, let alone runtime.
-  There is no "emit vs. don't emit" fork.
+- **Unsupported `value` accessor.** A `comline build` error at the validator,
+  checked against its `for` targets (see the
+  [accessor table](#proposed-generated-shape-rust)). `length` is an attribute
+  of the types that have one; on a type that doesn't, the schema never
+  compiles — it never reaches codegen, let alone runtime. There is no "emit vs.
+  don't emit" fork.
 
 ### Open questions
 

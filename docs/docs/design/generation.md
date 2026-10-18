@@ -191,7 +191,7 @@ JSDoc, a `<PROTO>_CALLS` table, a `<Proto>Dispatcher` (`implements Dispatch`), a
 `<Proto>Client` (+ static `connect`, running the handshake), and a
 `serve<Proto>` helper. Framing follows `@framing` / the package
 `default_framing` (`DatagramFraming` default, `JsonRpcFraming` for `jsonrpc`).
-Type map: `string`/`str` → `string`, `bool` → `boolean`, `u128`/`i128`/`s128`
+Type map: `string` → `string`, `bool` → `boolean`, `u128`/`i128`/`s128`
 → `bigint`, every other int/float width → `number`, `T[]` → `T[]`, `optional`
 → `name?: type`, `()` → `void`.
 `lib` mode (comline-typescript#9) wraps the per-schema `.ts` output in an npm
