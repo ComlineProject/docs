@@ -98,9 +98,8 @@ Errors' fields take `@validators` too.
 
 A validator from another schema needs a `use`, like a type does (such as
 `use std::validators::StringBounds`). Without one it's unknown, and the editor
-offers to add the `use`. An imported validator's `for` targets are checked at
-build time, but its arguments aren't yet. A missing argument to one fails when
-code is generated, and an argument that isn't one of its properties is ignored.
+offers to add the `use`. An imported validator is checked the same way as a
+local one: its `for` targets and its arguments, against its declaration.
 
 `@validators` goes on a field or a `type` alias. On a struct, error, protocol or
 function there's no single value for it to check, so it's a build error.
