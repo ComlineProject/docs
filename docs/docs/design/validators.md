@@ -95,7 +95,7 @@ struct Message {
 | 3c — structured `validate` block, check `params.*` refs | ✅ core#39 |
 | 3d — check keyword-arg literal **types** against the property types | ✅ core#40 |
 | 3e — `for` target types; check fields and `value.*` against them, imported validators included | ✅ core#105 |
-| 4 — runtime enforcement: generators emit the checks | drafted ([below](#phase-4-runtime-enforcement-design)) — not started |
+| 4 — runtime enforcement: generators emit the checks | drafted ([below](#phase-4-runtime-enforcement-design)); 4a ✅ core#108, 4b–4d not started |
 
 ## Constraint: stays non-Turing-complete
 
@@ -197,36 +197,37 @@ Decisions baked into that shape:
 - **Message interpolation** — the `{value.name}` / `{params.x}` placeholders
   become `format!` arguments with the inlined values.
 
-### Prerequisite: a real condition AST in the IR (4a)
+### Prerequisite: a real condition AST in the IR (4a) — done
 
-The frozen `Assert` keeps `condition` as **canonical text** plus a flat
-`references: Vec<String>`. That was enough for the compile-time checks (does
-every `params.x` name a property?), but a code generator needs the operator
-tree. Phase 4 starts by freezing the condition structurally, e.g.:
+Shipped in core#108, in the same IR revision as structured types (core#95).
+Before it, the frozen `Assert` kept `condition` only as **canonical text** plus
+a flat `references: Vec<String>`. That was enough for the compile-time checks
+(does every `params.x` name a property?), but a code generator needs the
+operator tree. `Assert` now carries both:
 
 ```rust
 Assert {
-    condition: Box<FrozenUnit>,   // was: String
+    condition: String,        // canonical text, kept for messages
     message: String,
-    references: Vec<String>,       // kept — the checks still use it
+    references: Vec<String>,  // kept: the checks still use it
+    expr: Condition,          // the tree a generator emits from
 }
 
-// new operand / expression units
-BoolExpr   { op: String /* "and" | "or" */, terms: Vec<FrozenUnit> },
-Comparison { op: String /* "==" .. "<" */, left: Box<FrozenUnit>, right: Box<FrozenUnit> },
-Operand    { ... }   // path "value.length" | integer | string
+struct Condition  { first: Comparison, rest: Vec<(LogicalOp, Comparison)> }
+struct Comparison { left: Operand, op: CompareOp, right: Operand }
+enum LogicalOp    { And, Or }
+enum CompareOp    { Eq, Ne, Ge, Le, Gt, Lt }
+enum Operand      { Path(Vec<String>) /* value.length */, Integer(i64), String(String) }
 ```
 
-`grammar.rs` already parses this shape (`Condition` / `ConditionTail` /
-`Comparison` / `Operand`); 4a is a freezing change in `incremental.rs` plus the
-`generation.rs` tests — no grammar work. Keep the `condition` text available
-(derive it from the tree) so the `validator.rs` messages don't regress.
+The chain is flat because the grammar has no precedence: a generator groups it
+left to right, parenthesising each comparison.
 
 ### Phasing
 
 | Sub-phase | Work |
 |---|---|
-| 4a | Freeze the `validate` condition as a structured expression tree (keep the text + `references` the checks use). |
+| 4a | **Done (core#108).** Freeze the `validate` condition as a structured expression tree (keep the text + `references` the checks use). |
 | 4b | `rust` generator emits `validate()` (collect-all) and `validate_first()` (fail-fast); stand up the `comline_rt` support crate with `ValidationError` / `ValidationErrors`; implement the `value.*` accessor set. |
 | 4c | `comline.toml` `validate_on_decode` knob (`off` / `collect` / `first`) — `#[serde(try_from)]` shim in the `rust` target; default `off`. [Sketch below](#auto-validation-on-decode-4c). |
 | 4d | The other generators (python / typescript / luau) once they exist; imported / cross-schema validators (needs the imported schema's IR at generate time, like multi-version `generate`). |
@@ -301,4 +302,4 @@ validate_on_decode = "collect"
 - **Scoped-const property defaults** — `= u32::MIN` / `= SOME_CONST` now parse
   (`Expression::Path` / `Expression::FString`, core#36).
 - **`validate` as text vs. AST** (for the checks) — resolved by the structured
-  `Assert` in core#39. A full operator AST is [phase 4a](#prerequisite-a-real-condition-ast-in-the-ir-4a).
+  `Assert` in core#39. A full operator AST is [phase 4a](#prerequisite-a-real-condition-ast-in-the-ir-4a-done).
