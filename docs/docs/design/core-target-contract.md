@@ -201,6 +201,8 @@ built and tested (no more `todo!()` on this path):
 
 **A package-wide default** ([generation#17](https://github.com/ComlineProject/generation/pull/17) + [comline-rust#10](https://github.com/ComlineProject/comline-rust/pull/10) + [cli#27](https://github.com/ComlineProject/cli/pull/27)). `comline.toml`'s `[generate] default_framing` (per-`[[generate.target]]` overridable) rides `GenRequest.default_framing` to the generator and applies to every protocol with no `@framing` of its own. Resolution is `@framing` → package default → datagram. The contract crate treats the value as an opaque name; the target generator validates it.
 
+**The wire is pinned by examples, not only by this prose.** The [wire corpus](https://github.com/ComlineProject/runtime/tree/main/runtime/conformance) in the `runtime` repository holds byte-exact vectors for the name hash, the handshake, the envelope, both framings and both wire formats, including bytes that must be refused. They're the normative examples: where this page and a vector disagree, the vector is what peers speak. They're computed from `comline-runtime`, so a change to them is a wire change and shows in review. Every runtime proves its support against them; what each one passes is on its [language reference page](../reference/languages/index.md#runtimes-side-by-side).
+
 Still open, to fix as part of this design:
 
 - The `Alloc` seam for owned bits (`.to_owned()`, decoded collection spines).
