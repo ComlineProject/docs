@@ -22,6 +22,27 @@ or fixed `Type[10]`), and unions (`union(TypeA TypeB)`).
   `string` generates into, so you see it in generated Rust, never in a `.ids`
   file. Writing it gets the same hint.
 
+## Type aliases
+
+`type NAME = TYPE` gives a type a second name:
+
+```ids
+type UserId = u64
+type Handle = string
+
+struct User {
+    id: UserId
+    handle: Handle
+}
+```
+
+An alias is transparent: `UserId` is a `u64` everywhere, in the wire format and
+in generated code (`pub type UserId = u64;`, `export type UserId = number;`).
+An alias can name another alias.
+
+An alias can carry [`@validators`](validator.md#on-a-type-alias), which then
+check every value of it, and `@deprecated`, which warns wherever it's used.
+
 ## In generated code
 
 | Comline | Rust | TypeScript |

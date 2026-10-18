@@ -1,15 +1,15 @@
 # Validators
 
-!!! note "Checked, not run"
-    `comline build` verifies validators — an unknown validator name, a validator
-    put on a field of a type it doesn't apply to, a keyword argument that isn't a
-    property or whose literal type is wrong, or an undeclared `params.*`
-    reference all fail the build. Running them against data
-    (in generated code) is not done yet — see the
-    [design note](../../design/validators.md).
+!!! note "Run in Rust; TypeScript not yet"
+    `comline build` verifies validators: an unknown validator name, a validator
+    put on a value of a type it doesn't apply to, a keyword argument that isn't
+    a property or whose literal type is wrong, or an undeclared `params.*`
+    reference all fail the build. Generated **Rust** code then
+    [runs them](#in-generated-code). Generated TypeScript doesn't yet.
 
 A **validator** is a named, parameterised check you attach to a
-[struct](structure.md) or [error](error.md) field.
+[struct](structure.md) or [error](error.md) field, or to a
+[`type` alias](#on-a-type-alias).
 
 ```ids linenums="1"
 /// Checks a string's length is within bounds.
@@ -62,9 +62,15 @@ A `validate` block holds one or more `assert(condition, message)` calls.
   `params.*` (this validator's properties), compared with `== != >= <= > <` and
   joined by `and` / `or`. `assert(c, m)` passes when `c` is true. Numbers
   compare by value, so a `u8` value against a `u32` property is fine.
-- **`value` accessors** — `value` itself, `value.length` (only when every
-  target is `string` or an array), and `value.name` (the field's name, for
-  messages). Anything else is a build error at the validator.
+- **`value` accessors**:
+  - `value` itself;
+  - `value.length`, only when every target is `string` or an array. A string's
+    length counts characters (Unicode scalar values), not bytes, in every
+    language; an array's counts elements.
+  - `value.name`, where the value sits, for messages: `handle`, `friends[1]`,
+    `author.handle`.
+
+  Anything else is a build error at the validator.
 - **`message`** — an [interpolated string](error.md#message); `{value.…}` and
   `{params.…}` placeholders are substituted.
 
@@ -87,3 +93,68 @@ struct Message {
 Unbound properties fall back to their declared default. Errors' fields take
 `@validators` too. Validators imported with `use` (such as
 `std::validators::StringBounds`) are checked the same way as local ones.
+
+`@validators` goes on a field or a `type` alias. On a struct, error, protocol or
+function there's no single value for it to check, so it's a build error.
+
+## On a type alias
+
+Put `@validators` on a `type` alias to check every value of that alias,
+wherever it's used:
+
+```ids linenums="1"
+use std::validators::StringBounds
+
+@validators = [StringBounds(min_chars = 2, max_chars = 8)]
+type Handle = string
+
+struct Account {
+    handle: Handle
+    friends: Handle[]
+}
+
+protocol Accounts {
+    function rename(to: Handle) -> Account;
+}
+```
+
+- The alias stays the type it stands for: `Handle` is still a `String` in
+  generated Rust. Adding a validator never changes a type's API or its wire
+  format.
+- The validator's `for` target is checked once, against what the alias
+  resolves to.
+- A field of the alias runs the alias's checks first, then its own.
+- An alias of an alias collects the checks along the chain.
+- An array of the alias (`Handle[]`) checks each element.
+- An alias is the only way to check a **function argument**: arguments take no
+  annotations of their own, but `to: Handle` runs `Handle`'s checks.
+
+`@deprecated` works on an alias too, and warns wherever the alias is used.
+
+## In generated code
+
+In Rust, every struct, error and function-params struct with something to
+check implements `comline_runtime::validation::Validate`. That includes checks
+on its own fields, through an alias, or further down in a nested struct or an
+array element.
+
+```rust
+use comline_runtime::validation::Validate;
+
+account.validate()?;        // Err(ValidationErrors): every failed check
+account.validate_first()?;  // Err(ValidationError): the first one
+```
+
+Each `ValidationError` carries `field`, the path to the failing value
+(`friends[1]`), and `message`, the validator's message with its placeholders
+filled in (`friends[1] must be at least 2 characters`). An absent `optional`
+field skips its checks.
+
+Nothing calls `validate()` for you unless you ask:
+[`validate_on_decode`](../../reference/congregation/comline-toml.md#validate_on_decode)
+in `comline.toml` makes decoding run the checks, and makes a provider refuse a
+call whose arguments fail them.
+
+Properties are filled in when the code is generated: the argument you wrote,
+else the property's default, with constants resolved. Nothing about the
+validator exists at run time beyond the checks themselves.

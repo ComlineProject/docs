@@ -20,6 +20,7 @@ Defaults for every target.
 | `package_versions` | `"latest"` \| `"all"` \| list | `"latest"` | Which package versions to emit — see [below](#package_versions). |
 | `default_framing` | string | — | Wire framing for protocols that don't pick one with [`@framing`](../../guide/idl/protocol.md#annotations) — see [below](#default_framing). |
 | `external_std` | bool | on in `lib`, off in `code` | Reference `std` as its own package instead of inlining it — see [below](#external_std). |
+| `validate_on_decode` | `"off"` \| `"collect"` \| `"first"` | `"off"` | Whether decoding a value runs its [`@validators`](../../guide/idl/validator.md) — see [below](#validate_on_decode). |
 | `only` | list of strings | — | Generate just these languages, out of the ones `config.idp` declares — see [below](#only). |
 
 ## `[[generate.target]]`
@@ -38,7 +39,7 @@ declare is an error. To generate *fewer* than the package declares, use
 |---|---|---|
 | `language` | string | **Required.** Must be one the manifest declares under `code_generation.languages`. |
 | `lang_version` | string | Optional; selects a version-specific generator. Defaults to what `config.idp` declared. |
-| `out`, `layout`, `mode`, `package_versions`, `default_framing`, `external_std` | — | Per-target override of the `[generate]` value. |
+| `out`, `layout`, `mode`, `package_versions`, `default_framing`, `external_std`, `validate_on_decode` | — | Per-target override of the `[generate]` value. |
 | `flatten` | bool | `lib`/`dylib` only, target-only (no `[generate]` default): write the crate straight into `out` instead of `out/<language>/`. See [below](#flatten). |
 
 ```toml
@@ -97,6 +98,27 @@ what to install in a comment at the top.
 Neither package is published yet, so a `lib` target that references one needs
 it linked locally (`npm link`, a path override) until that changes — which is
 already true of `@comline/runtime` for any package with a protocol.
+
+### `validate_on_decode`
+
+Generated code always carries a schema's [`@validators`](../../guide/idl/validator.md)
+checks as `validate()` / `validate_first()`, for you to call. This decides
+whether **decoding** calls them too:
+
+| Value | Decoding a value that fails its checks |
+|---|---|
+| `"off"` | succeeds; nothing runs until you call `validate()` |
+| `"collect"` | fails, with every failed check |
+| `"first"` | fails, with the first failed check |
+
+It's yours to choose rather than the schema's: it changes what decoding costs,
+and a form that wants every problem at once and a hot path that wants to stop
+early want different things from the same type. With it on, a provider also
+refuses a call whose arguments fail their checks, the same way it refuses
+arguments that don't decode.
+
+Today only the `rust` generator runs validators; `typescript` ignores this.
+`--validate-on-decode` and `COMLINE_GENERATE_VALIDATE_ON_DECODE` override it.
 
 ### `only`
 
