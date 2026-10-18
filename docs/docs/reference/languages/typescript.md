@@ -16,7 +16,7 @@ Generator `typescript#5.0`.
 
 | Feature | What it covers | State | Proven by |
 |---|---|---|---|
-| structs <br><sub>`structs`</sub> | `struct` declarations | ✅ supported | `primitives`, `optional_and_arrays`, `type_refs`, `shapes`, `cross_schema`, `import_alias`, `import_glob`, `nested_namespace`, `external_std`, `validators`, `validators_on_decode`, `unions`, `large_fixed_arrays_nested` |
+| structs <br><sub>`structs`</sub> | `struct` declarations | ✅ supported | `primitives`, `optional_and_arrays`, `type_refs`, `protocol`, `shapes`, `cross_schema`, `import_alias`, `import_glob`, `nested_namespace`, `external_std`, `validators`, `validators_on_decode`, `unions`, `large_fixed_arrays_nested` |
 | enums <br><sub>`enums`</sub> | `enum` declarations | ✅ supported | `enum_basic` |
 | optional fields <br><sub>`optional-fields`</sub> | fields marked `optional` | ✅ supported | `optional_and_arrays`, `type_refs`, `shapes`, `cross_schema`, `validators`, `validators_on_decode`, `large_fixed_arrays_nested` |
 | arrays <br><sub>`arrays`</sub> | variable-length arrays, `T[]` | ✅ supported | `optional_and_arrays`, `type_refs`, `shapes`, `cross_schema`, `validators`, `validators_on_decode`, `large_fixed_arrays_nested` |
