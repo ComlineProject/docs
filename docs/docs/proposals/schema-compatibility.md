@@ -226,9 +226,9 @@ profiles; the rule itself is written against the property, as above.
 | remove an error from `!` | major | a generated error variant disappears |
 | `@framing` changes | major | compared in canonical, versioned form |
 | `@handshake` changes | major | the first frame on the wire changes ([handshakes](extensibility.md#handshakes)) |
-| `@unchecked` added | major | peers lose a guarantee they relied on ([unchecked](extensibility.md#unchecked)) |
-| `@unchecked` removed | minor | a guarantee is restored |
-| `@unchecked` reason changed | patch | |
+| a guarantee given up ([marker](extensibility.md#giving-up-a-guarantee), name open) | major | peers lose a guarantee they relied on |
+| a given-up guarantee restored | minor | |
+| the reason for giving one up changed | patch | |
 
 ### Errors
 
@@ -296,8 +296,8 @@ doesn't pair the wrong ones.
   single declared framing, or the consumer's `default_framing` among the
   declared ones?
 - **An escape hatch.** Accepting a breaking change without a major bump is
-  proposed as an [unchecked](extensibility.md#unchecked) action: allowed only
-  when the package turns it on, with a reason. Where it's written down is open.
+  proposed as [giving up a guarantee](extensibility.md#giving-up-a-guarantee),
+  version honesty: allowed only when the package turns it on, with a reason. Where it's written down is open.
   Should the build also be able to fail on a break
   ([cli#80](https://github.com/ComlineProject/cli/issues/80))?
 - **The handshake.** Until it checks compatibility instead of identity

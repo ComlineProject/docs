@@ -44,10 +44,10 @@ handshakes change what's on the wire, so they're named, versioned, profiled and
 declared. Transports and dispatchers don't, so they stay plain runtime code.
 
 **Guarantees can be given up, but never quietly.** Comline talking to Comline
-keeps every check by default. Giving one up, to talk to a legacy system say, is
-allowed. It takes an explicit, reasoned marker, it's off unless a package turns
-it on, and every consumer sees it and accepts it in writing. That's the role
-`unsafe` plays in Rust; here it's called [**unchecked**](#unchecked).
+keeps every guarantee by default. Giving one up, to talk to a legacy system say,
+is allowed. It takes an explicit, reasoned marker, it's off unless a package
+turns it on, and every consumer sees it and accepts it in writing. That's the
+role `unsafe` plays in Rust; see [Giving up a guarantee](#giving-up-a-guarantee).
 
 ## Encodings: formats and framings
 
@@ -143,10 +143,12 @@ two:
   package default. Talking to a legacy system is a property of the protocol,
   not of one call site. A skip decided at a call site can leave one peer
   handshaking and the other not, with nothing in the schema showing it.
-- **Its profile states its guarantees,** not its encoding: which of schema
-  identity or compatibility, format and framing it verifies. A handshake that
-  verifies less than the official one makes the protocol
-  [unchecked](#unchecked).
+- **Its profile states what it establishes,** not how it's encoded: schema
+  agreement, encoding agreement, both or neither. A custom handshake isn't
+  weaker or stronger than Comline's; it may well do more, authentication for
+  instance. What matters is whether it establishes the guarantees Comline
+  relies on. If it doesn't, the protocol
+  [gives those guarantees up](#giving-up-a-guarantee).
 - **Implemented like any encoding.** In the runtimes, `Handshake` becomes a trait
   that receives the transport plus what generated code knows (IR hash, package
   version, format and framing names) and decides what to send and check. A
@@ -157,60 +159,59 @@ Comline can then also describe a protocol it doesn't own, with a custom framing,
 handshake and perhaps format. The guarantees Comline can't give are the
 implementer's, and say so.
 
-## Unchecked
+## Giving up a guarantee
 
-Some extensions turn off a check Comline would otherwise make between peers. The
-author vouches for what replaced it. Those are **unchecked**
-([core#121](https://github.com/ComlineProject/core/issues/121)):
+Between peers, Comline gives four guarantees, each established by something
+specific:
 
-1. **A weaker handshake:** one that verifies less than the official one,
-   including `none`.
-2. **An unproven encoding:** a format or framing whose profile is declared
-   without vectors, or that has no profile at all.
-3. **A version-rule override:** accepting a breaking change without a major bump
-   ([schema compatibility](schema-compatibility.md)'s open escape hatch).
-4. **Skipping checks at runtime:** the hand-wired paths without a handshake are
-   renamed `*_unchecked` (`Client::new_unchecked`, say), so skipping at the call
-   site is as explicit as in a schema.
+| Guarantee | Established by |
+|---|---|
+| **Schema agreement:** both ends were built from compatible schemas | the `comline@N` handshake |
+| **Encoding agreement:** both ends use the same format and framing | the handshake |
+| **Encoding conformance:** an implementation encodes what its name promises | conformance vectors behind its profile |
+| **Version honesty:** a version bump says what the change breaks | the [version comparison](schema-compatibility.md) |
 
-### Marking it
+An extension can leave one of them unestablished. The author then vouches for
+whatever replaces it ([core#121](https://github.com/ComlineProject/core/issues/121)):
 
-```ids
-@handshake = "com.acme.legacy-hello@1"
-@unchecked = "speaks the 2009 billing gateway's own hello; no schema check"
-protocol Billing {
-    function charge(order: Order) -> Receipt;
-}
-```
+1. **A handshake that doesn't establish schema or encoding agreement:** `none`,
+   or a custom handshake that doesn't do Comline's checks.
+2. **An encoding with no proof:** a format or framing whose profile is declared
+   without vectors, or that has no profile at all. Encoding conformance is
+   given up.
+3. **Accepting a breaking change without a major bump:** version honesty is
+   given up ([schema compatibility](schema-compatibility.md)'s open escape
+   hatch).
+4. **Skipping the handshake at a call site:** the hand-wired paths without one
+   are renamed after the marker, so skipping there is as explicit as in a
+   schema.
 
-- `@unchecked` takes a **mandatory reason**. It's frozen into the compiled
-  schema and shown to every consumer.
-- It's **off by default**: `annotations.unchecked.allowed` is `false` until a
-  package's `settings` turn it on, the same way `@framing` is gated today.
-  Cross-package settings let an organisation forbid it everywhere.
-- It's **required where it applies**: a weaker handshake or an unproven encoding
-  without `@unchecked` is a build error. `@unchecked` on something fully checked
-  is a warning, like an unused `unsafe`.
-- Where the marker goes for the package-level cases (an unproven format declared
-  in `config.idp`, a version-rule override) is open. It should read the same
-  way.
+**The marker's name and shape are undecided.** "Unchecked", the first
+candidate, doesn't say who doesn't check what. [Marking a given-up
+guarantee](guarantee-marker/index.md) weighs four options. The rules below hold
+whichever is chosen.
 
-### Consumers accept it, per protocol
+### The rules
 
-A package that depends on, or imports, an unchecked protocol from another package
-names that protocol in its own `config.idp`, under the dependency. Until it does,
-the build fails. A dependency update that makes another protocol unchecked stops
-the build again until that one is accepted too. Using one is always a choice
-written down by the consumer, never inherited.
-
-### Visible everywhere
-
-- **The compiled schema** records the marker and its reason.
-- **Build output, editor hover and generated docs** show it.
-- **Generated code** documents it on the client and the dispatcher.
-- **In the [version comparison](schema-compatibility.md)**, making a protocol
-  unchecked is **major**, since peers lose a guarantee they relied on. Making it
-  checked again is minor.
+- **A reason is mandatory.** It's frozen into the compiled schema and shown to
+  every consumer.
+- **Off by default.** The marker is gated like `@framing` is today, through
+  `settings`. Cross-package settings let an organisation forbid it everywhere.
+- **Required where it applies.** Giving up a guarantee without the marker is a
+  build error. A marker where nothing is given up is a warning, like an unused
+  `unsafe`.
+- **Consumers accept it, per protocol.** A package that depends on, or imports,
+  such a protocol from another package names it in its own `config.idp`, under
+  the dependency. Until it does, the build fails. A dependency update that
+  gives up another guarantee stops the build again until that one is accepted
+  too. Using one is always a choice written down by the consumer, never
+  inherited.
+- **Visible everywhere.**
+  - **The compiled schema** records the marker and its reason.
+  - **Build output, editor hover and generated docs** show it.
+  - **Generated code** documents it on the client and the dispatcher.
+- **Major in the [version comparison](schema-compatibility.md):** giving up a
+  guarantee is major, since peers relied on it. Restoring one is minor.
 
 ## Transports and dispatchers
 
@@ -247,17 +248,19 @@ mapping already covers that.
   package, so `lib`-mode output depends on it automatically?
 - **Transports in the handshake.** Should a transport ever be named, as a
   capability for instance, or stay invisible?
-- **The package-level `unchecked` marker** and the consumer's acceptance: how
-  exactly do they read in `config.idp`?
-- **Diagnostics.** Should `unchecked` be its own diagnostics code family, so an
-  organisation can raise or lower its warnings?
+- **The marker** (its name, and whether it names the guarantee) is weighed in
+  [Marking a given-up guarantee](guarantee-marker/index.md).
+- **Package-level cases:** how the marker for an unproven format or a
+  version-rule override, and the consumer's acceptance, read in `config.idp`.
+- **Diagnostics.** Should given-up guarantees be their own diagnostics code
+  family, so an organisation can raise or lower its warnings?
 
 ## What it touches
 
 - **runtime:**
   - the public corpus and profile spec;
   - `Handshake` as a trait, `comline@1` and `none` as official handshakes, and
-    the `*_unchecked` renames;
+    the call-site skip renamed after the marker;
   - the conformance runner as a library;
   - a transport guide;
   - the dispatcher-wrapping pattern.
@@ -267,11 +270,11 @@ mapping already covers that.
   - names declared by dependencies accepted in `@framing` and in declared
     formats;
   - `@handshake`;
-  - `@unchecked`: its gate, its required-where-it-applies rule, and the
-    consumer's acceptance.
+  - the marker for a given-up guarantee: its gate, its required-where-it-applies
+    rule, and the consumer's acceptance.
 - **cli:** the per-target mapping in `comline.toml`.
 - **generation**, **comline-rust** and **comline-typescript:** mapped types wired
   into generated code; an unmapped encoding is an error.
-- **language server:** `unchecked` shown on hover, and the acceptance an
-  importing package lacks offered as a fix.
+- **language server:** a given-up guarantee shown on hover, and the acceptance
+  an importing package lacks offered as a fix.
 - **docs:** a guide to writing each extension.

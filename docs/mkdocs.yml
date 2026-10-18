@@ -104,6 +104,12 @@ nav:
     - Automatic documentation: 'proposals/auto-documentation.md'
     - Schema compatibility: 'proposals/schema-compatibility.md'
     - Extending the call system: 'proposals/extensibility.md'
+    - 'Marking a given-up guarantee':
+      - 'proposals/guarantee-marker/index.md'
+      - 'Proposal A': 'proposals/guarantee-marker/waives.md'
+      - 'Proposal B': 'proposals/guarantee-marker/assumes.md'
+      - 'Proposal C': 'proposals/guarantee-marker/unverified.md'
+      - 'Proposal D': 'proposals/guarantee-marker/unchecked.md'
   
   - Resources:
     - 'resources.md'
