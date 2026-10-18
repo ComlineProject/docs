@@ -64,6 +64,28 @@ alternatives are worth. Five proposals, read to the same shape:
   and framings versioned and declared by the package so the rules can depend
   on them. *under discussion.*
 
+### Extensibility
+
+- [Extending the call system](extensibility.md): how developers bring their own
+  wire formats, framings, transports and dispatchers, with official encodings
+  defined through the same public mechanism as third-party ones. *under
+  discussion.*
+
+#### [Marking a given-up guarantee](guarantee-marker/index.md)
+
+How a schema marks an extension that gives up one of Comline's guarantees
+between peers, the role `unsafe` plays in Rust. Four competing proposals, read
+to the same shape:
+
+- [Proposal A — `@waives`, per guarantee](guarantee-marker/waives.md): names
+  each guarantee given up. *under discussion.*
+- [Proposal B — `@assumes`, per guarantee](guarantee-marker/assumes.md): names
+  what the author assumes holds instead. *under discussion.*
+- [Proposal C — `@unverified`, one marker](guarantee-marker/unverified.md):
+  core infers which guarantees are affected. *under discussion.*
+- [Proposal D — keep `@unchecked`](guarantee-marker/unchecked.md): the original
+  name. *under discussion.*
+
 ### Tooling
 
 - [Automatic documentation](auto-documentation.md) — an optional tool that

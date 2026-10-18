@@ -225,6 +225,10 @@ profiles; the rule itself is written against the property, as above.
 | add an error to `!` | minor | an old client receives it as `Remote` |
 | remove an error from `!` | major | a generated error variant disappears |
 | `@framing` changes | major | compared in canonical, versioned form |
+| `@handshake` changes | major | the first frame on the wire changes ([handshakes](extensibility.md#handshakes)) |
+| a guarantee given up ([marker](extensibility.md#giving-up-a-guarantee), name open) | major | peers lose a guarantee they relied on |
+| a given-up guarantee restored | minor | |
+| the reason for giving one up changed | patch | |
 
 ### Errors
 
@@ -276,8 +280,9 @@ doesn't pair the wrong ones.
 ## Open questions
 
 - **Third-party profiles.** An encoding core doesn't know gets the strictest
-  profile. Should the package that defines it be able to ship its profile, and
-  how would a consumer trust it without the conformance proof?
+  profile. [Extending the call system](extensibility.md#how-core-learns-about-one)
+  proposes that the package defining it declares its profile, trusted like its
+  schemas. Is that trust enough?
 
 - **A constant's value.** Constants never travel, but they often encode limits
   that both peers rely on, such as a maximum length. Should a value change be
@@ -290,9 +295,11 @@ doesn't pair the wrong ones.
 - **Framing without `@framing`.** Should such a protocol take the package's
   single declared framing, or the consumer's `default_framing` among the
   declared ones?
-- **An escape hatch.** Should an author be able to accept a breaking change
-  without a major bump, and should the build be able to fail on one?
-  ([cli#80](https://github.com/ComlineProject/cli/issues/80))
+- **An escape hatch.** Accepting a breaking change without a major bump is
+  proposed as [giving up a guarantee](extensibility.md#giving-up-a-guarantee),
+  version honesty: allowed only when the package turns it on, with a reason. Where it's written down is open.
+  Should the build also be able to fail on a break
+  ([cli#80](https://github.com/ComlineProject/cli/issues/80))?
 - **The handshake.** Until it checks compatibility instead of identity
   ([runtime#15](https://github.com/ComlineProject/runtime/issues/15)), the bump
   is advisory. Should that come first?
