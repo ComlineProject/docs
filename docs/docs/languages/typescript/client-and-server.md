@@ -14,10 +14,10 @@ error Rejected {
 }
 
 protocol Chat {
-    function send(text: str) -> Message ! Rejected;
+    function send(text: string) -> Message ! Rejected;
     function history(limit: u32) -> Message[];
     function wipe();
-    function note(text: str);
+    function note(text: string);
 }
 ```
 

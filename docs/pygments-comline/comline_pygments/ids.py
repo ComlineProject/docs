@@ -29,11 +29,12 @@ _KEYWORDS = (
     "import", "use", "self", "parent", "package", "as", "const", "type",
     "optional", "struct", "error", "enum", "settings", "validator",
     "validate", "assert", "and", "or", "protocol", "function", "union",
+    "for",
 )
 
 _PRIMITIVES = (
     "s8", "s16", "s32", "s64", "u8", "u16", "u32", "u64", "f32", "f64",
-    "bool", "str", "string",
+    "bool", "string",
 )
 
 # Keywords that are immediately followed by the name they declare — matched

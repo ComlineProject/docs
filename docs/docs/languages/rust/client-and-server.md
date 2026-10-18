@@ -6,7 +6,7 @@ This page assumes a schema like [Protocols](../../guide/idl/protocol.md)'s
 ```ids
 protocol Mail {
     @timeout_ms = 1000
-    function send_message(message: Message) -> str ! RecipientNotFound;
+    function send_message(message: Message) -> string ! RecipientNotFound;
     function fetch_inbox() -> Message[];
 }
 ```
@@ -184,7 +184,7 @@ produce, with `{self.field}` placeholders filled in:
 ```ids
 error NotFound {
     message = "no entry for {self.key}"
-    key: str
+    key: string
 }
 ```
 

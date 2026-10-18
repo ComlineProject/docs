@@ -93,7 +93,7 @@ use std::validators::StringBounds
 struct Call {
     request: Request
     @validators = [StringBounds(min_chars = 1, max_chars = 64)]
-    label: str
+    label: string
 }
 ```
 

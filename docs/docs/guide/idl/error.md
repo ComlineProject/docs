@@ -7,7 +7,7 @@ has a required `message` and, optionally, fields.
 /// Raised when a message is sent to an unknown recipient.
 error RecipientNotFound {
     message = "no recipient named {self.name}"
-    name: str
+    name: string
 }
 ```
 

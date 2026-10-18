@@ -5,8 +5,8 @@ carries typed **fields**.
 
 ```ids linenums="1"
 struct Message {
-    sender: str
-    recipient: str
+    sender: string
+    recipient: string
     body: string
     priority: u8
 }
@@ -20,7 +20,7 @@ marked `optional` and may carry a default.
 ```ids linenums="1"
 struct Message {
     body: string
-    optional subject: str
+    optional subject: string
     priority: u8 = 1
     language: Language = default
 }
@@ -38,14 +38,13 @@ struct Message {
 |---|---|
 | integers | `s8 s16 s32 s64`, `u8 u16 u32 u64` |
 | floats | `f32`, `f64` |
-| other | `bool`, `str` |
+| other | `bool`, `string` |
 | named | another `struct` / `enum`, scoped as `pkg::module::Type` |
 | array | `Message[]` (any length), `u8[16]` (fixed) |
-| union | `union(str u32)` |
+| union | `union(string u32)` |
 
-Use `str` for text. `string` is an accepted synonym the compiler steers you away
-from; `String` is generated-Rust, not IDL — see
-[`str` vs `string` vs `String`](types.md#str-vs-string-vs-string).
+Use `string` for text; `str` and `String` are not Comline types — see
+[Text](types.md#text-string).
 
 ## Docstrings
 
@@ -58,7 +57,7 @@ struct Message {
     body: string
 
     /// Shown in the client's list view.
-    optional subject: str
+    optional subject: string
 }
 ```
 
