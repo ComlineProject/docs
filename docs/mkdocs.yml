@@ -103,6 +103,7 @@ nav:
       - 'Proposal E': 'proposals/codegen-architecture/adopt-existing-model.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
     - Schema compatibility: 'proposals/schema-compatibility.md'
+    - Extending the call system: 'proposals/extensibility.md'
   
   - Resources:
     - 'resources.md'

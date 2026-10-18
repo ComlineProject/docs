@@ -64,6 +64,13 @@ alternatives are worth. Five proposals, read to the same shape:
   and framings versioned and declared by the package so the rules can depend
   on them. *under discussion.*
 
+### Extensibility
+
+- [Extending the call system](extensibility.md): how developers bring their own
+  wire formats, framings, transports and dispatchers, with official encodings
+  defined through the same public mechanism as third-party ones. *under
+  discussion.*
+
 ### Tooling
 
 - [Automatic documentation](auto-documentation.md) — an optional tool that

@@ -276,8 +276,9 @@ doesn't pair the wrong ones.
 ## Open questions
 
 - **Third-party profiles.** An encoding core doesn't know gets the strictest
-  profile. Should the package that defines it be able to ship its profile, and
-  how would a consumer trust it without the conformance proof?
+  profile. [Extending the call system](extensibility.md#how-core-learns-about-one)
+  proposes that the package defining it declares its profile, trusted like its
+  schemas. Is that trust enough?
 
 - **A constant's value.** Constants never travel, but they often encode limits
   that both peers rely on, such as a maximum length. Should a value change be
