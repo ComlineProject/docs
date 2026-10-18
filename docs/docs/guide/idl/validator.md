@@ -3,8 +3,8 @@
 !!! note "Run in Rust; TypeScript not yet"
     `comline build` verifies validators: an unknown validator name, a validator
     put on a value of a type it doesn't apply to, a keyword argument that isn't
-    a property or whose literal type is wrong, or an undeclared `params.*`
-    reference all fail the build. Generated **Rust** code then
+    a property or whose literal type is wrong, a missing argument for a property
+    without a default, or an undeclared `params.*` reference all fail the build. Generated **Rust** code then
     [runs them](#in-generated-code). Generated TypeScript doesn't yet.
 
 A **validator** is a named, parameterised check you attach to a
@@ -90,9 +90,17 @@ struct Message {
 }
 ```
 
-Unbound properties fall back to their declared default. Errors' fields take
-`@validators` too. Validators imported with `use` (such as
-`std::validators::StringBounds`) are checked the same way as local ones.
+Unbound properties fall back to their declared default; leaving out one without
+a default is a build error. A validator with nothing to bind can be written
+bare: `@validators = [NonEmpty]` is the same as `[NonEmpty()]`.
+
+Errors' fields take `@validators` too.
+
+A validator from another schema needs a `use`, like a type does (such as
+`use std::validators::StringBounds`). Without one it's unknown, and the editor
+offers to add the `use`. An imported validator's `for` targets are checked at
+build time, but its arguments aren't yet. A missing argument to one fails when
+code is generated, and an argument that isn't one of its properties is ignored.
 
 `@validators` goes on a field or a `type` alias. On a struct, error, protocol or
 function there's no single value for it to check, so it's a build error.
