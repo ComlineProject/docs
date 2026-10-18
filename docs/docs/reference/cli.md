@@ -40,7 +40,7 @@ parse → resolve imports → validate → (freeze into .comline/) → (generate
 | `comline clean [--dry-run]` | Remove generated code (the `generate` output root or files). Never touches `.comline/`. |
 | `comline reset [--force] [--dry-run]` | **Destructive.** Delete `.comline/` — the whole version history, no undo — *and* generated code. Next `build` starts over at `0.0.1`. On a terminal it shows how many versions will be lost and makes you type `reset`; without a terminal it refuses (exit `2`) unless `--force`. |
 | `comline completions <shell>` | Print a completion script to stdout. `bash` `zsh` `fish` `powershell` `elvish`. |
-| `comline targets [--features [--json]]` | Print one `language#version` per line to stdout — the token syntax `config.idp`'s `code_generation.languages` expects — for every generator this binary was compiled with. Ignores `--path`: it reflects the build, not a project. `--features` also lists what each generator supports, feature by feature ([Generator support](generator-support.md)); `--json` prints that as JSON. |
+| `comline targets [--features [--json]]` | Print one `language#version` per line to stdout — the token syntax `config.idp`'s `code_generation.languages` expects — for every generator this binary was compiled with. Ignores `--path`: it reflects the build, not a project. `--features` also lists what each generator supports, feature by feature ([Languages](languages/index.md)); `--json` prints that as JSON. |
 
 `--out` / `--layout` / `--mode` override one target and need `--target` when
 several are configured. `COMLINE_GENERATE_OUT` / `_LAYOUT` / `_MODE` do the same

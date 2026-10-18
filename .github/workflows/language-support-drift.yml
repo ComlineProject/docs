@@ -1,8 +1,8 @@
-name: Generator support drift
+name: Language support drift
 
-# `reference/generator-support.md` carries a copy of generation's
-# `FEATURES.md`: the matrix its conformance suite proves. This checks the copy
-# is current. Like the IDL drift check it needs no Rust build, only a fetch,
+# The Reference -> Languages pages are rendered from generation's
+# `features.json`: what its conformance suite proves. This checks they're
+# current. Like the IDL drift check it needs no Rust build, only a fetch,
 # so it runs per pull request. It's kept separate from the Docs workflow,
 # because a fetch from another repo shouldn't be able to block a deploy.
 
@@ -13,16 +13,16 @@ on:
     - cron: '45 7 * * 1'
   pull_request:
     paths:
-      - 'docs/docs/reference/generator-support.md'
-      - 'scripts/sync-generator-support.py'
-      - '.github/workflows/generator-support-drift.yml'
+      - 'docs/docs/reference/languages/**'
+      - 'scripts/sync-language-support.py'
+      - '.github/workflows/language-support-drift.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: generator-support-drift-${{ github.ref }}
+  group: language-support-drift-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -38,9 +38,9 @@ jobs:
       - name: Check for drift
         shell: bash
         run: |
-          if ! python3 scripts/sync-generator-support.py --check | tee drift.txt; then
+          if ! python3 scripts/sync-language-support.py --check | tee drift.txt; then
             {
-              echo '### Generator support drift'
+              echo '### Language support drift'
               echo
               echo '```'
               cat drift.txt
