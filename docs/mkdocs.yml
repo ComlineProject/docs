@@ -64,6 +64,7 @@ nav:
     - Tools:
       - Tools: 'reference/tools/index.md'
       - CLI: 'reference/cli.md'
+      - Generator support: 'reference/generator-support.md'
     
   
   - Design:
