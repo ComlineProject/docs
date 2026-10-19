@@ -6,8 +6,7 @@ decided, nothing implemented
 
 **The question:** what a connection carries beyond one client calling one
 server, and how the runtime models it. This page covers calls in both
-directions and per-connection state. Several protocols on one connection is
-next, and will extend it.
+directions, per-connection state, and several protocols on one connection.
 
 ## Where things stand
 
@@ -97,11 +96,65 @@ state has a home. It splits by how much Comline has to know:
   exists, and a peer shouldn't learn why it was refused, just as a provider
   fault carries no message.
 
+## Several protocols on one connection
+
+Today a `Server` serves one `Dispatch`. A request names only its function, by
+position (datagram) or bare name (JSON-RPC), and the handshake covers one
+schema. Error ids are positions across a whole schema, so two schemas sharing a
+connection could give two different errors the same number.
+[Packet dispatch](packet-dispatch.md) already assumes several protocols per
+connection: its families are protocols with an id, and its phases are per
+connection.
+
+How other systems name a call's target:
+
+| How a call names its target | Used by |
+|---|---|
+| **A path string** | gRPC (`/pkg.Service/Method` over HTTP/2), Thrift's multiplexed protocol (`"Service:method"`), LSP's `textDocument/hover` convention, WAMP URIs |
+| **A numeric id per interface, plus the method number** | Cap'n Proto (a 64-bit interface id and a method number), MMO opcode families |
+| **Stable names agreed at setup, short numbers in each frame** | MQTT 5 topic aliases, HTTP/2 header compression (HPACK), SSH channel numbers |
+| **Object path + interface + member** | D-Bus |
+| **Interfaces handed out at runtime as references** | Cap'n Proto capabilities |
+
+Decided with the user (2026-10-20):
+
+1. **How a frame names its protocol depends on the framing:**
+   - **Comline's own framings: a number the connection hands out.** The
+     client's [offer](extensibility.md#comline2-and-its-parameters) lists the
+     protocols it wants by stable identity: the package id plus the protocol's
+     id or name. The server's answer gives each accepted protocol a
+     connection-local number, and frames carry that number, one byte in most
+     cases. Protocols from different packages, a dependency's health check
+     say, then share a connection with no registry of ids across packages.
+   - **Packet framings: the fixed family id** from the schema (`@id` on the
+     protocol). The legacy protocol fixes it, and there's no negotiation.
+   - **JSON-RPC: a qualified method name** (see 4), because readable names
+     are the point of JSON-RPC.
+2. **Which protocols a connection carries is negotiated at the handshake:**
+   whatever the client offers and the server accepts. A package can
+   optionally declare the set allowed together, as a constraint. Interfaces
+   handed out by calls at runtime (Cap'n Proto's capabilities) are a larger,
+   separate design.
+3. **Errors are scoped by their protocol.** A reply identifies its protocol
+   (from 1) and the error's position within that protocol, instead of a
+   position across the whole schema.
+4. **The existing framings:**
+   - **`datagram@2`** gains the protocol number. It's a new version anyway,
+     for the [request/reply kind marker](#calls-in-both-directions), so both
+     changes ship together.
+   - **JSON-RPC** gains a framing parameter, `method_names = "bare" |
+     "qualified"`. Bare names stay valid for a single protocol; several
+     protocols need qualified ones (`"chat.Chat/send"`). It stays `jsonrpc@1`.
+5. **The runtime:** the `Connection` holds a table of dispatchers keyed by
+   protocol and one sender per protocol (`conn.sender::<Chat>()`). Phases
+   decide which entries are active at a given moment.
+6. **One protocol shouldn't silently stall the others, but order comes first.**
+   The core dispatches **one call at a time** per connection by default, since
+   packet protocols rely on order. The async wrapper can offer concurrency,
+   per protocol or fully.
+
 ## Open questions
 
-- **Several protocols on one connection** (next): how protocols are addressed
-  on a shared connection, and how this page's `Connection` holds several
-  dispatchers and senders.
 - **Streams:** their IR representation, flow control, cancellation.
 - **Declared policies** ([core#128](https://github.com/ComlineProject/core/issues/128)).
 - **Which interceptors ship with Comline,** if any, and in which crate or
@@ -111,10 +164,13 @@ state has a home. It splits by how much Comline has to know:
 
 - **Runtime** (Rust and TypeScript): the sans-IO core, `Connection`, its
   blocking and async wrappers, extensions and interceptor hooks, `datagram@2`
-  and its conformance vectors, the `duplex` requirement in the handshake.
+  (kind marker and protocol number) and its conformance vectors, the `duplex`
+  requirement in the handshake, protocol numbers handed out by `comline@2`,
+  the dispatcher table, JSON-RPC's `method_names`.
 - **Generators:** provider registration on a connection, per-connection
-  senders, the connection handle in handlers, `@provider = Client`.
+  senders, the connection handle in handlers, `@provider = Client`, error ids
+  scoped by protocol.
 - **Core:** `@provider` as a known annotation (from
-  [packet dispatch](packet-dispatch.md)), and the build error for reverse calls
-  under `datagram@1`.
+  [packet dispatch](packet-dispatch.md)), the build error for reverse calls
+  under `datagram@1`, and the optional declared set of protocols.
 - **Docs:** the runtime guide.
