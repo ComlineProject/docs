@@ -99,8 +99,11 @@ protocol LoginClientbound {
 - Ids are unique within a family and direction.
 - In the version comparison, changing an id is major, and adding a function
   with a new id is minor.
-- **The syntax is open:** [Function ids](function-ids/index.md) weighs an
-  `@id` annotation against the original `1# function` prefix.
+- **The syntax is decided:** `@id = 0x2A`
+  ([Function ids](function-ids/index.md),
+  [core#127](https://github.com/ComlineProject/core/issues/127)). Ids can be
+  assigned on build and written into the source, and reusing a retired id is
+  an error.
 
 ### Families are protocols
 

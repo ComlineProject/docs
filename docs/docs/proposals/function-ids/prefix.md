@@ -1,7 +1,8 @@
 # Proposal B — a prefix on the declaration
 
-Status: **under discussion** · See the [section overview](index.md) for the
-question both answer
+Status: **rejected**: new grammar for a form found nowhere else in the
+language, and settings can't govern it; [Proposal A](annotation.md) reads like
+the rest · See the [section overview](index.md) for the question both answer
 
 **The idea:** the id leads the declaration, as in the 2024 proposal
 (`proposals/idl/protocol_provider_and_provenance.ids`, `1# function

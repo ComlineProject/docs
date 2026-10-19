@@ -1,5 +1,11 @@
 # Function ids
 
+> **Decided: [Proposal A](annotation.md), `@id = 0x2A`,** tracked in
+> [core#127](https://github.com/ComlineProject/core/issues/127). The radix is
+> left to the formatter and a lint; ids can be assigned on build and written
+> into the source; reusing a retired id is an error. See
+> [its page](annotation.md#as-accepted).
+
 **The question.** [Packet dispatch](../packet-dispatch.md#explicit-ids-available-everywhere)
 lets any function state an explicit, fixed id, and requires one under a packet
 framing. **How is the id written?**

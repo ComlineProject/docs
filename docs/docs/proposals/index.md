@@ -99,10 +99,10 @@ to the same shape:
 
 How an explicit function id is written. Two competing proposals:
 
-- [Proposal A — an `@id` annotation](function-ids/annotation.md). *under
-  discussion.*
+- [Proposal A — an `@id` annotation](function-ids/annotation.md).
+  ***accepted***, with assignment on build and a reuse guard.
 - [Proposal B — a prefix on the declaration](function-ids/prefix.md), from the
-  2024 proposal. *under discussion.*
+  2024 proposal. *rejected.*
 
 #### [Phase syntax](phase-syntax/index.md)
 
