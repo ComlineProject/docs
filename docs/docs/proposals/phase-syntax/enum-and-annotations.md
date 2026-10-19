@@ -45,8 +45,16 @@ protocol LoginServerbound {
     function start(name: string);
 
     @id = 0x03
-    @transition = Play              // the client's acknowledgement
+    @acknowledges = LoginClientbound.success
     function acknowledged();
+}
+
+@provider = Client
+@phase = Login
+protocol LoginClientbound {
+    @id = 0x02
+    @transition = Play              // the server moves the connection on
+    function success(session: u64);
 }
 
 @provider = Client
