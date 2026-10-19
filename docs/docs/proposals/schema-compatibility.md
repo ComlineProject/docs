@@ -113,7 +113,15 @@ package must say which ones it speaks.
     contract.
 
   The package default must be one of the declared framings; with only one
-  declared, that one is the default. Handshakes resolve the same way: core's
+  declared, that one is the default.
+  - **The package default isn't gated.** Writing it in the package's own
+    `config.idp` is deliberate enough. The `annotations.framing.allowed` gate
+    stays on per-protocol `@framing` overrides, since mixing framings within
+    one package is the less common case.
+  - **One framing per protocol.** A protocol isn't served under several
+    framings. A consumer behind a gateway (JSON-RPC, say) talks to the
+    gateway's contract, and the gateway translates. A producer that wants two
+    framings declares two protocols, which states it more plainly. Handshakes resolve the same way: core's
   default is `comline@1`. Formats don't need a default, since the call site
   picks among the declared ones.
 - **The comparison applies the strictest rules among the declared
@@ -393,15 +401,6 @@ Points to weigh:
 - **Unknown enum variants.** If readers tolerated them
   ([runtime#17](https://github.com/ComlineProject/runtime/issues/17)), adding a
   variant would be safely minor instead of minor with a caveat.
-- **Gating the package default.** `@framing` is off by default today
-  (`annotations.framing.allowed`). Should a package default in `config.idp`
-  be gated too? The lean is no: writing it in the package's own config is
-  deliberate enough. The gate would stay on per-protocol overrides, since
-  mixing framings within one package is the less common case.
-- **Several framings for one protocol.** Could one protocol be served under
-  more than one declared framing, with the handshake telling them apart? A
-  consumer that reaches a service through a JSON-RPC gateway would then need
-  no separate contract. It's one framing per protocol for now.
 - **An escape hatch.** Accepting a breaking change without a major bump is
   proposed as [giving up a guarantee](extensibility.md#giving-up-a-guarantee),
   version honesty: allowed only when the package turns it on, with a reason.
