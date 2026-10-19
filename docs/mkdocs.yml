@@ -104,6 +104,7 @@ nav:
     - Automatic documentation: 'proposals/auto-documentation.md'
     - Schema compatibility: 'proposals/schema-compatibility.md'
     - Extending the call system: 'proposals/extensibility.md'
+    - Connections: 'proposals/connections.md'
     - Packet dispatch: 'proposals/packet-dispatch.md'
     - 'Function ids':
       - 'proposals/function-ids/index.md'

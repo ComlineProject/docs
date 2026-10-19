@@ -88,6 +88,12 @@ to the same shape:
 - [Proposal D — keep `@unchecked`](guarantee-marker/unchecked.md): the original
   name. *rejected: says neither who nor what.*
 
+### Connections
+
+- [Connections](connections.md): what a connection carries beyond one client
+  calling one server: calls in both directions on a transport-independent core,
+  per-connection state and interceptors. *under discussion, partly decided.*
+
 ### Packet protocols
 
 - [Packet dispatch](packet-dispatch.md): message-oriented packet protocols
