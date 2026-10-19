@@ -437,7 +437,7 @@ definition.
 ## Prerequisites
 
 - **Server-to-client sending:** what `@provider = Client` needs, and nothing
-  generates today.
+  generates today. Designed in [Connections](connections.md#calls-in-both-directions).
 - **Several protocols on one connection,** listed as open in the target
   contract.
 - **The handshake as a declared axis**
