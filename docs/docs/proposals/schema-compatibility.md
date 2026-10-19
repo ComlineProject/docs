@@ -53,6 +53,8 @@ first:** a handshake that checks compatibility instead of exact identity
 (`comline@2`, [runtime#15](https://github.com/ComlineProject/runtime/issues/15))
 lands before the rules below are implemented, so that they mean something at
 runtime from the start.
+Its design is in
+[Checking compatibility](extensibility.md#checking-compatibility-strategies-and-comline2).
 
 ## What "breaking" protects
 
@@ -328,9 +330,10 @@ The wire doesn't carry either name today:
 
 The namespace only reaches the wire indirectly, through `comline@1`'s
 whole-schema hash. The compatibility-checking `comline@2`
-([runtime#15](https://github.com/ComlineProject/runtime/issues/15)) should
-leave the namespace out, so a rename stays a code change and peers still
-connect.
+([runtime#15](https://github.com/ComlineProject/runtime/issues/15)) leaves
+the namespace out of its
+[wire-shape hash](extensibility.md#core-provides-the-facts-the-handshake-picks-the-strategy),
+so a rename stays a code change and peers still connect.
 
 The comparison **detects a rename** and reports it as one, not as a removal
 plus an addition. A namespace with the same content under a new name is
