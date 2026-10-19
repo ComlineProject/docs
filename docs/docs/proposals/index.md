@@ -104,6 +104,16 @@ How an explicit function id is written. Two competing proposals:
 - [Proposal B — a prefix on the declaration](function-ids/prefix.md), from the
   2024 proposal. *under discussion.*
 
+#### [Phase syntax](phase-syntax/index.md)
+
+How phases are written. Two competing proposals:
+
+- [Proposal A — an enum plus annotations](phase-syntax/enum-and-annotations.md):
+  phases are an ordinary enum; `@phase` and `@transition` on the declarations.
+  *under discussion.*
+- [Proposal B — a `phase` block](phase-syntax/phase-block.md): a new
+  declaration lists each phase in one place. *under discussion.*
+
 ### Tooling
 
 - [Automatic documentation](auto-documentation.md) — an optional tool that
