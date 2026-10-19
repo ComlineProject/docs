@@ -1,7 +1,8 @@
 # Proposal A — an `@id` annotation
 
-Status: **under discussion** · See the [section overview](index.md) for the
-question both answer
+Status: **accepted** · with the points settled [below](#as-accepted) ·
+tracked in [core#127](https://github.com/ComlineProject/core/issues/127) · See
+the [section overview](index.md) for the question both answer
 
 **The idea:** the id is an annotation on the function, an integer like
 `@timeout_ms`'s value. The same annotation on a protocol gives its family id.
@@ -19,6 +20,39 @@ protocol LoginServerbound {
     function acknowledged();
 }
 ```
+
+## As accepted
+
+- **The radix isn't a setting.** `0x2A` and `42` are the same id, so a setting
+  would make a style choice part of the language. The formatter normalises
+  ids to one radix, and a style lint (say `style::id-radix`) can be raised to
+  an error through the existing `diagnostics.<code>.level`.
+- **Ids can be assigned on build.** A settings key in the existing path shape,
+  e.g. `protocol.function.ids.assign`:
+
+  | Value | Effect |
+  |---|---|
+  | `write` | `comline build` gives every function without `@id` the next free id, **writes `@id` into the source**, and prints what it wrote |
+  | `require` | a function without `@id` is a build error; packet framings imply this |
+  | `off` (default for now) | ids are optional; datagram falls back to position, as today |
+
+  - **The source stays the single truth.** A hidden ledger of assigned ids in
+    the store was rejected: a fresh checkout, or a peer with a different
+    history, could assign different ids from the same schema.
+  - **CI never edits sources.** A locked or CI build doesn't write; it fails,
+    listing the functions missing an id. The language server offers the same
+    assignment as a quick fix.
+- **Reuse is guarded.** The store keeps previous versions, so core knows which
+  function each id belonged to before.
+  - Reusing an id that used to mean a different function is an error: the
+    same bytes would silently mean a different call.
+  - Removed ids stay retired.
+  - A rename keeps its id, so it isn't treated as a removal plus an addition.
+- **Field ids are a later follow-up.** Struct fields can use the same mechanism.
+  A `msgpack@2` keyed by field id
+  ([runtime#16](https://github.com/ComlineProject/runtime/issues/16)) would
+  then tolerate added and removed fields like JSON while staying nearly as
+  compact as today's positional encoding.
 
 ## The case for it
 
