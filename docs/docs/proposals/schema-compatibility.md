@@ -48,8 +48,11 @@ change breaks depends on how it travels:
 
 Finally, the handshake compares a hash of the **whole** frozen schema, spans and
 docstrings included. Any edit, even a reformat, makes old and new peers refuse
-each other, so no bump can be relied on at runtime yet
-([runtime#15](https://github.com/ComlineProject/runtime/issues/15)).
+each other, so no bump can be relied on at runtime yet. **That is fixed
+first:** a handshake that checks compatibility instead of exact identity
+(`comline@2`, [runtime#15](https://github.com/ComlineProject/runtime/issues/15))
+lands before the rules below are implemented, so that they mean something at
+runtime from the start.
 
 ## What "breaking" protects
 
@@ -408,9 +411,6 @@ Points to weigh:
   [Bumps set by the author](#bumps-set-by-the-author).
   Should the build also be able to fail on a break
   ([cli#80](https://github.com/ComlineProject/cli/issues/80))?
-- **The handshake.** Until it checks compatibility instead of identity
-  ([runtime#15](https://github.com/ComlineProject/runtime/issues/15)), the bump
-  is advisory. Should that come first?
 
 ## What it touches
 
