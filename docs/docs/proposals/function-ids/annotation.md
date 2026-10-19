@@ -34,7 +34,34 @@ protocol LoginServerbound {
   |---|---|
   | `write` | `comline build` gives every function without `@id` the next free id, **writes `@id` into the source**, and prints what it wrote |
   | `require` | a function without `@id` is a build error; packet framings imply this |
-  | `off` (default for now) | ids are optional; datagram falls back to position, as today |
+  | `off` | ids are optional; datagram falls back to position, as today |
+
+  **The default is derived from the package's framings**, since ids matter only
+  when the wire addresses calls by number:
+
+  | A package's framings address calls | Default | Why |
+  |---|---|---|
+  | by id (`comline.packet@1`) | `require`, and it can't be lowered | the id *is* the packet |
+  | by name only (`jsonrpc@1`) | `off` | ids would be unused |
+  | by position (`datagram@1`, core's default) | `off` during `0.x`, then `write` from 1.0 | see below |
+
+  - **For datagram, ids are tied to stabilisation.** During `0.x`, reordering is
+    breaking but only a minor bump, and nothing edits sources unasked. When
+    `comline release 1.0`
+    ([cli#82](https://github.com/ComlineProject/cli/issues/82)) stabilises the
+    package, it assigns ids to every function, writes them into the source,
+    and switches the setting to `write`. From then on new functions get ids on
+    build, and reordering can never re-address calls, which is exactly when
+    that starts to matter.
+  - **An explicit setting always overrides** the derived default, except that
+    an id-addressed framing can't go below `require`.
+  - The framing's [profile](../schema-compatibility.md#encoding-profiles) says
+    how it addresses calls: its `calls` fact gains a third value, `by_id`,
+    beside `by_index` and `by_name`.
+- **Ids are all or none, per protocol.** If any function in a protocol has
+  `@id`, all must. A partial set is an error, which `write` fills in. Explicit
+  and positional ids then never collide, and no function's id depends on its
+  neighbours.
 
   - **The source stays the single truth.** A hidden ledger of assigned ids in
     the store was rejected: a fresh checkout, or a peer with a different

@@ -163,7 +163,7 @@ A format and a framing are chosen separately, so each has its own profile:
 
 // datagram@1 (framing)
 {
-  "calls": "by_index",              // jsonrpc@1: "by_name"
+  "calls": "by_index",              // jsonrpc@1: "by_name"; comline.packet@1: "by_id"
   "errors": "by_ordinal",
   "one_way": "no_reply_frame"
 }
@@ -181,7 +181,7 @@ Each rule that depends on the encoding is written once, against properties:
   `unknown_field` is `rejected` or `missing_optional` is `rejected`; minor
   otherwise.
 - **Insert a function before others:** major if `calls` is `by_index`; none
-  otherwise.
+  otherwise (`by_name`, or `by_id`, where each function states its id).
 - **Reorder enum variants:** major if `enum_variants` is `by_index`; none
   otherwise.
 
