@@ -110,9 +110,10 @@ How phases are written. Two competing proposals:
 
 - [Proposal A — an enum plus annotations](phase-syntax/enum-and-annotations.md):
   phases are an ordinary enum; `@phase` and `@transition` on the declarations.
-  *under discussion.*
+  ***accepted.***
 - [Proposal B — a `phase` block](phase-syntax/phase-block.md): a new
-  declaration lists each phase in one place. *under discussion.*
+  declaration lists each phase in one place. *rejected: a new construct and a
+  second table.*
 
 ### Tooling
 

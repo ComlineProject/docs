@@ -1,6 +1,8 @@
 # Proposal B — a `phase` block
 
-Status: **under discussion** · See the [section overview](index.md) for the
+Status: **rejected**: a new construct and a second table where
+[Proposal A](enum-and-annotations.md) needs neither, and a client-chosen
+target needs its own form · See the [section overview](index.md) for the
 question both answer
 
 **The idea:** a new declaration states each phase's active protocols per

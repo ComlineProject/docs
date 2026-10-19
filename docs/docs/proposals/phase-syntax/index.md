@@ -1,5 +1,11 @@
 # Phase syntax
 
+> **Decided: [Proposal A](enum-and-annotations.md),** an enum plus annotations:
+> `@phases` marks the phase enum, `@initial` its first phase, and `@phase` /
+> `@transition` sit on the declarations. Settings defaults use the existing
+> key shape (`protocol.provider`). Six follow-up points are settled on
+> [its page](enum-and-annotations.md#as-accepted).
+
 **The question.** [Packet dispatch](../packet-dispatch.md#phases-live-in-the-schema)
 puts phases in the schema: which protocols are active in each phase, and which
 packets move a connection between phases. **How are phases written?**
