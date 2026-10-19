@@ -70,9 +70,9 @@ and already used in `runtime-std-extra`'s `reverse_proxy.ids`:
   the editor over the same JSON-RPC connection; Bitcoin's peer-to-peer
   protocol, where both peers send `ping`, `inv` and `version`; and SSH global
   requests. Each side then generates both the dispatcher and the sender for
-  that protocol. Where calls have replies, request ids from the two directions
-  must not collide: either each direction has its own id space, or the header
-  carries a direction bit.
+  that protocol. Where calls have replies, a request/reply kind marker keeps
+  the two directions' request ids apart (see
+  [Request ids in both directions](#request-ids-in-both-directions)).
 - Core doesn't recognise `@provider` today: it parses and is ignored. It
   becomes a known annotation.
 
@@ -158,40 +158,70 @@ Decided:
   some setup work is done. The client doesn't stop and wait: it carries on,
   and simply has nothing to do until the server moves it on.
 
-Suggested, open for discussion:
+Also decided (2026-10-20):
 
 - **A transition is tied to a packet in the schema, and sending that packet
-  is the transition.** Both ends then know the switch point. In Rust the
-  connection can be typed by its phase: sending `success` consumes a
-  `Conn<Login>` and returns a `Conn<Play>`, so sending a play packet during
-  login doesn't compile. TypeScript checks at runtime.
-- **Each direction switches at its own point,** so the client never has to
-  halt:
-  - **Server to client:** the server switches when it *sends* the transition
-    packet, and the client when it *receives* it. Everything before that
-    packet in the stream belongs to the old phase.
-  - **Client to server:** the client may already have packets in flight under
-    the old phase. On receiving the transition it sends an **acknowledgement**
-    as its first packet in the new phase, and the server keeps reading client
-    packets under the old phase until that acknowledgement arrives. Generated
-    code does this; no user code is involved. Minecraft works this way ("login
-    acknowledged", "acknowledge finish configuration").
-  - **A legacy protocol with no acknowledgement packet** can declare a
-    transition without one. That accepts the race, an in-flight packet read
-    under the wrong table, so it gives up an agreement guarantee and needs
-    [`@unverified`](extensibility.md#giving-up-a-guarantee).
-- **Who sends the transition packet triggers it.** In most protocols that's
-  the server. Some let the client choose: Minecraft's handshake is the client
-  saying whether it wants status or login. So a transition's target may depend
-  on an enum field of its packet:
+  is the transition.** It's the function marked `@transition`
+  ([phase syntax](phase-syntax/enum-and-annotations.md)). Both ends then know
+  the switch point. In Rust the connection can be typed by its phase: sending
+  `success` consumes a `Conn<Login>` and returns a `Conn<Play>`, so
+  sending a later-phase packet too early doesn't compile. TypeScript checks
+  at runtime.
+- **Who triggers it follows from the schema:** the transition packet's
+  protocol has a `@provider`, which says which way it travels. A transition in
+  a serverbound protocol is triggered by the client (Minecraft's handshake);
+  one in a clientbound protocol, by the server. Nothing else is declared.
+- **Each direction switches at its own point,** so neither side has to halt:
+  - **The sender** switches its outgoing table right after sending the
+    transition packet. Everything before it in the stream belongs to the old
+    phase.
+  - **The receiver** switches its incoming table on receiving it.
+  - **The way back.** The receiver may already have packets in flight under
+    the old phase. Its first packet in the new phase is an
+    **acknowledgement**, and the sender keeps reading under the old phase
+    until that arrives.
+- **Whether an acknowledgement is needed is derived,** not declared: only if
+  the old phase has protocols travelling back towards the sender. Minecraft's
+  handshake has no clientbound packets, so the client's `hello` needs none.
+- **Where the acknowledgement comes from:**
+  - **Under `comline.packet@1`** the framing generates it, as a control frame
+    outside the schema's id tables. Nothing is declared.
+  - **Under a legacy framing** the schema names the packet that acknowledges,
+    with `@acknowledges` on it. Minecraft's "login acknowledged" answers
+    "login success":
 
-  ```ids
-  phase Handshake {
-      serverbound: [HandshakeServerbound]
-      HandshakeServerbound.hello.next -> { Status, Login }
-  }
-  ```
+    ```ids
+    @provider = Client
+    @phase = Login
+    protocol LoginClientbound {
+        @id = 0x02
+        @transition = Play
+        function success(session: u64);
+    }
 
+    @provider = Server
+    @phase = Login
+    protocol LoginServerbound {
+        @id = 0x03
+        @acknowledges = LoginClientbound.success
+        function acknowledged();
+    }
+    ```
+
+    The acknowledging packet belongs to the old phase's table, since it's
+    read under it.
+  - **A legacy transition that needs one and has none** is a build error,
+    unless the protocol gives up an agreement guarantee with
+    [`@unverified`](extensibility.md#giving-up-a-guarantee): that accepts the
+    race, an in-flight packet read under the wrong table.
+- **Replies still pending at a transition go first.** A transition waits until
+  the replies owed to old-phase requests are sent, so they're ahead of it in
+  the stream. Generated code does the waiting, not user code. A reply is
+  decoded by the requester's record of its pending call, never by the phase
+  table, so a reply arriving after the switch still decodes correctly.
+- **A client-chosen target** is an enum field of the transition packet
+  (`@transition = next`), limited by a validator
+  ([phase syntax](phase-syntax/enum-and-annotations.md#as-accepted)).
 - **An out-of-phase packet** is a decode error that ends the connection,
   reported as a framing fault.
 
@@ -214,20 +244,74 @@ Real protocols match a reply to its request in about five ways:
 | **Implicit, by counting or order** | X11 (both sides count requests, and replies carry the sequence number), Redis (replies in request order), SSH global requests (in order) |
 | **The reply's type pairs with the request's** | UDS diagnostics (response id = request id + `0x40`), Modbus (the function code echoed, `+0x80` on an error), MQTT `SUBSCRIBE` → `SUBACK` |
 
-Decided: **both are supported.** Suggested, open for discussion:
+Decided: **both are supported.** How, split by whose protocol it is
+(2026-10-20):
 
-- **A function without `->` is a one-way packet,** always allowed.
-- **A function with `->` needs the encoding to correlate.** How it does is a
-  fact in the encoding's [profile](schema-compatibility.md#encoding-profiles):
-  `correlation` is `none`, `header_id`, `sequence` or `in_order`. A `->` under a
-  framing whose correlation is `none` is a build error.
-- **`comline.packet@1` makes correlation configurable:** none, a header id of
-  a given width, implicit sequence counting, or in-order replies.
-- **The payload-echo style** (Minecraft, Bitcoin) can declare a function's
-  reply as a packet in the other direction, matched on a field. For example,
+#### Comline's own packet framing
+
+Decided for `comline.packet@1`, so `->` and `!` mean the same as under
+datagram and JSON-RPC:
+
+- **A function without `->` is a one-way packet,** always allowed. One-way and
+  `->` functions mix freely in one family, as MQTT and Kafka mix them per
+  packet: the function's signature decides.
+- **How a reply is matched is a fact in the encoding's
+  [profile](schema-compatibility.md#encoding-profiles):** `correlation`.
+  `comline.packet@1` offers `none` or `header_id` (an id of a configurable
+  width in the header), set as a
+  [framing parameter](#where-the-framings-parameters-are-written).
+- **Under `correlation = none`,** `->` and `!` are build errors.
+- **When correlation is on, the header carries a kind marker,** request or
+  reply. A reply travels in the other direction, so without it a reply's id
+  could be read as a packet from that direction's table. The marker also
+  settles request ids in both directions (see
+  [below](#request-ids-in-both-directions)).
+- **A reply's header carries a status:** ok, an error's ordinal, or a provider
+  fault. That's what Comline's three outcomes need, and the closest match to
+  datagram.
+- **Timeouts stay client-side** (`@timeout_ms`). A reply arriving after its
+  call timed out is dropped by its id.
+
+#### Describing legacy protocols
+
+Open, deferred until a real legacy schema needs them (the Minecraft example is
+the first candidate). Each exists only to describe a protocol Comline didn't
+design:
+
+- **Payload echo** (Minecraft, Bitcoin): a function's reply declared as a
+  packet in the other direction, matched on a field. For example,
   `@reply = PlayClientbound.pong` with `@match = nonce` on `ping`. The
-  generated API is then request and response, while the wire stays exactly
-  the legacy one.
+  generated API is request and response, while the wire stays the legacy one.
+- **`in_order` correlation** (Redis, SSH global requests): replies in request
+  order. Simple, but one slow reply holds up the rest, and a late reply can't
+  be dropped safely, so it ends the connection.
+- **`sequence` correlation** (X11): both sides count requests.
+- **Errors as declared packets** in the other direction (Modbus's `+0x80`),
+  for headers with no room for a status.
+
+#### Request ids in both directions
+
+With `@provider = Multiple` both sides send requests, so two requests can
+carry the same id. Existing systems handle it in one of three ways, and which
+one fits depends on **what the id names and who creates it**:
+
+| The id names… | Pattern | Used by |
+|---|---|---|
+| **A pending call,** living until its reply and created only by the requester | A request/reply kind marker; each side numbers its own requests | JSON-RPC 2.0 both ways (LSP), D-Bus, Cap'n Proto |
+| **A stream** either side can open, with state on both | The id space split by initiator | HTTP/2 (odd/even), QUIC (low bits) |
+| **A long-lived resource** referred to by the peer's handle | Per-side handles | SSH channels |
+
+Decided: **a Comline call id names a pending call, so the kind marker is
+enough.** Only the requester looks an id up, in its own table of pending
+calls, so the two sides' numbers may overlap freely. No direction bit and no
+id split are needed.
+
+- `jsonrpc@1` already works this way (a message with `method` is a request).
+- `comline.packet@1` gets it from the kind marker above.
+- `datagram@1` implies the kind from the direction today. Allowing `Multiple`
+  under it needs a kind marker in its frame, which is a new framing version.
+- If Comline ever gets streams, those would need the split, as a fact of the
+  framing's profile, not a per-schema choice.
 
 ### Sub-packets are tagged unions
 
@@ -252,7 +336,8 @@ more than packets.
   - an id width;
   - a family width, or none;
   - endianness;
-  - an optional sequence number.
+  - correlation: none, or a header id of a given width, which adds the
+    request/reply kind marker and the reply status.
 
   Its [profile](schema-compatibility.md#encoding-profiles) states that calls go
   by explicit id, so reordering never matters under it.
@@ -332,15 +417,10 @@ definition.
 
 ## Open questions
 
-- **The suggested transition semantics** (the syntax is
-  [decided](phase-syntax/index.md)) in
-  [How a connection moves between phases](#how-a-connection-moves-between-phases):
-  a transition tied to a packet; per-direction switch points with an automatic
-  acknowledgement; client-chosen targets through an enum field.
-- **Replies:** the suggested `correlation` profile fact, the
-  configurable correlation in `comline.packet@1`, and `@reply` / `@match` for
-  replies that echo a payload field (see
-  [Replies](#replies-both-one-way-and-correlated)).
+- **Replies in legacy protocols:** payload echo (`@reply` / `@match`),
+  `in_order` and `sequence` correlation, and errors as declared packets (see
+  [Describing legacy protocols](#describing-legacy-protocols)), deferred until
+  a real legacy schema needs them.
 - **The framing's parameters:** leaning towards named framing instances in
   `config.idp` (see
   [Where the framing's parameters are written](#where-the-framings-parameters-are-written));
