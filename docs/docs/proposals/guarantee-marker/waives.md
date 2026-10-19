@@ -1,6 +1,8 @@
 # Proposal A — `@waives`, per guarantee
 
-Status: **under discussion** · See the [section overview](index.md) for the
+Status: **rejected**: core can always work out which guarantees are given up,
+so naming them repeats what it computes, at the cost of new syntax. The
+per-guarantee acceptance it offered is kept in [C](unverified.md#as-accepted) · See the [section overview](index.md) for the
 question all four answer
 
 **The idea:** the marker names each guarantee the author gives up, with a reason

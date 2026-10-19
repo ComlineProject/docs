@@ -185,13 +185,33 @@ whatever replaces it ([core#121](https://github.com/ComlineProject/core/issues/1
    given up ([schema compatibility](schema-compatibility.md)'s open escape
    hatch).
 4. **Skipping the handshake at a call site:** the hand-wired paths without one
-   are renamed after the marker, so skipping there is as explicit as in a
-   schema.
+   are renamed `Client::new_unverified` / `Server::serve_unverified`, so
+   skipping there is as explicit as in a schema.
 
-**The marker's name and shape are undecided.** "Unchecked", the first
-candidate, doesn't say who doesn't check what. [Marking a given-up
-guarantee](guarantee-marker/index.md) weighs four options. The rules below hold
-whichever is chosen.
+### The marker: `@unverified`
+
+Decided in [Marking a given-up guarantee](guarantee-marker/index.md)
+(Proposal C):
+
+```ids
+@handshake = "com.acme.legacy-hello@1"
+@unverified = "the 2009 gateway has no schema; its version is pinned by contract"
+protocol Billing {
+    function charge(order: Order) -> Receipt;
+}
+```
+
+- **One marker, with a reason.** The author doesn't name the guarantees.
+- **Core works out the set** from what it already knows:
+  - the handshake's profile, for schema and encoding agreement;
+  - whether each encoding has vectors, for conformance;
+  - the version comparison itself, for version honesty.
+
+  Naming the guarantees would only repeat what core computes.
+- **The set is frozen** into the compiled schema with the reason. Diagnostics,
+  hover and generated docs name it, using the four guarantee names as fixed
+  vocabulary: *"`Billing` is unverified: schema agreement isn't established
+  (handshake `com.acme.legacy-hello@1`)"*.
 
 ### The rules
 
@@ -202,18 +222,20 @@ whichever is chosen.
 - **Required where it applies.** Giving up a guarantee without the marker is a
   build error. A marker where nothing is given up is a warning, like an unused
   `unsafe`.
-- **Consumers accept it, per protocol.** A package that depends on, or imports,
-  such a protocol from another package names it in its own `config.idp`, under
-  the dependency. Until it does, the build fails. A dependency update that
-  gives up another guarantee stops the build again until that one is accepted
-  too. Using one is always a choice written down by the consumer, never
-  inherited.
+- **Consumers accept it, per protocol, and the acceptance records the set.**
+  A package that depends on, or imports, such a protocol from another package
+  names it in its own `config.idp`, under the dependency. Until it does, the
+  build fails. The acceptance records the set of guarantees it was given for,
+  so a dependency update that gives up another one stops the build again until
+  it's accepted too. Using one is always a choice written down by the
+  consumer, never inherited.
 - **Visible everywhere.**
   - **The compiled schema** records the marker and its reason.
   - **Build output, editor hover and generated docs** show it.
   - **Generated code** documents it on the client and the dispatcher.
 - **Major in the [version comparison](schema-compatibility.md):** giving up a
-  guarantee is major, since peers relied on it. Restoring one is minor.
+  guarantee is major, since peers relied on it, and so is the set growing
+  ("`Billing` now also gives up schema agreement"). Restoring one is minor.
 
 ## Transports and dispatchers
 
@@ -262,7 +284,7 @@ mapping already covers that.
 - **runtime:**
   - the public corpus and profile spec;
   - `Handshake` as a trait, `comline@1` and `none` as official handshakes, and
-    the call-site skip renamed after the marker;
+    the call-site skip renamed `*_unverified`;
   - the conformance runner as a library;
   - a transport guide;
   - the dispatcher-wrapping pattern.
