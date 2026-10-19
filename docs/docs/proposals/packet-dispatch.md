@@ -438,8 +438,8 @@ definition.
 
 - **Server-to-client sending:** what `@provider = Client` needs, and nothing
   generates today. Designed in [Connections](connections.md#calls-in-both-directions).
-- **Several protocols on one connection,** listed as open in the target
-  contract.
+- **Several protocols on one connection.** Designed in
+  [Connections](connections.md#several-protocols-on-one-connection).
 - **The handshake as a declared axis**
   ([runtime#18](https://github.com/ComlineProject/runtime/issues/18)),
   **`@unverified`** ([core#121](https://github.com/ComlineProject/core/issues/121)),
