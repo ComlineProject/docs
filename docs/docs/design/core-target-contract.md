@@ -212,6 +212,12 @@ Still open, to fix as part of this design:
 
 - The `Alloc` seam for owned bits (`.to_owned()`, decoded collection spines).
 - The async (`std`) layer — `AsyncDispatch` + an executor, emitted additively.
+- **Several protocols on one connection.** Today a connection serves one
+  protocol: call ids count from 0 per protocol, and JSON-RPC method names are
+  unqualified. Sharing a connection needs a protocol identity on the wire, and
+  that choice fixes whether renaming a protocol or namespace breaks live peers.
+  A qualified name does; an identifier the schema states explicitly doesn't.
+  See [Schema compatibility](../proposals/schema-compatibility.md#renames).
 
 ### 4.2 — The generated protocol
 
