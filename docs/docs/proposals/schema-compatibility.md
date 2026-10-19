@@ -1,8 +1,9 @@
 # Schema compatibility
 
 Status: **under discussion** · tracked in
-[core#119](https://github.com/ComlineProject/core/issues/119) · nothing here is
-implemented
+[core#119](https://github.com/ComlineProject/core/issues/119) (with
+[core#122](https://github.com/ComlineProject/core/issues/122) for versions
+before 1.0 and author-set bumps) · nothing here is implemented
 
 **The question:** which schema changes are breaking, and so which version bump
 a build takes. A bump is only worth something if it tells a reader whether an
@@ -92,6 +93,37 @@ package must say which ones it speaks.
   (`MailClient::connect(transport, MsgPack)`), and a protocol's framing falls
   back to the consumer's `default_framing` in `comline.toml`. Neither is part of
   the frozen package, so the comparison can't see them.
+- **Defaults belong to the producer.** A protocol's framing is resolved, most
+  specific first, from:
+  1. its own `@framing`;
+  2. the package default in `config.idp`;
+  3. core's built-in default, `datagram@1`.
+
+  The framing is part of the contract, so the consumer has no say:
+  `default_framing` leaves `comline.toml`, and using it there becomes an error
+  pointing to `config.idp`. Today two consumers of one package can generate
+  clients that can't talk to each other, with nothing in the package showing
+  it. Two safeguards keep this sound:
+  - **The resolved framing is frozen per protocol** into the compiled schema,
+    so the comparison and the generators read one value. A change at any of
+    the three levels shows as a change to that protocol.
+  - **Core's default only changes in a new edition** (`specification_version`,
+    [core#102](https://github.com/ComlineProject/core/issues/102)), never
+    between releases, because every package relying on it has it in its
+    contract.
+
+  The package default must be one of the declared framings; with only one
+  declared, that one is the default.
+  - **The package default isn't gated.** Writing it in the package's own
+    `config.idp` is deliberate enough. The `annotations.framing.allowed` gate
+    stays on per-protocol `@framing` overrides, since mixing framings within
+    one package is the less common case.
+  - **One framing per protocol.** A protocol isn't served under several
+    framings. A consumer behind a gateway (JSON-RPC, say) talks to the
+    gateway's contract, and the gateway translates. A producer that wants two
+    framings declares two protocols, which states it more plainly. Handshakes resolve the same way: core's
+  default is `comline@1`. Formats don't need a default, since the call site
+  picks among the declared ones.
 - **The comparison applies the strictest rules among the declared
   encodings.** With none declared, the package is taken to speak every known
   one.
@@ -224,8 +256,8 @@ profiles; the rule itself is written against the property, as above.
 | switch between one-way and request/response | major | one side waits for a reply the other never sends, or gets one it doesn't expect |
 | add an error to `!` | minor | an old client receives it as `Remote` |
 | remove an error from `!` | major | a generated error variant disappears |
-| `@framing` changes | major | compared in canonical, versioned form |
-| `@handshake` changes | major | the first frame on the wire changes ([handshakes](extensibility.md#handshakes)) |
+| a protocol's resolved framing changes, at any level (`@framing`, the package default, or core's default in a new edition) | major | compared in canonical, versioned form |
+| a protocol's resolved handshake changes, at any level | major | the first frame on the wire changes ([handshakes](extensibility.md#handshakes)) |
 | a guarantee given up ([marker](extensibility.md#giving-up-a-guarantee), name open) | major | peers lose a guarantee they relied on |
 | a given-up guarantee restored | minor | |
 | the reason for giving one up changed | patch | |
@@ -277,13 +309,90 @@ So any change other than pure removal counts as narrowing.
 Schema files are matched by namespace, so adding, renaming or reordering files
 doesn't pair the wrong ones.
 
+## Versions before 1.0
+
+While the version is `0.x`, the minor plays the role of the major, following
+Cargo's convention:
+
+| Change | `0.x` | `1.0` and later |
+|---|---|---|
+| breaking | `0.3.2` → `0.4.0` | major |
+| new feature | `0.3.2` → `0.3.3` | minor |
+| patch-level change | `0.3.2` → `0.3.3` | patch |
+
+- **The first build is `0.1.0`,** not `0.0.1` as today. Cargo treats every
+  `0.0.z` release as incompatible with the one before, so `0.0.1` would make
+  every later change breaking for Rust consumers.
+- **Reaching 1.0 is the author's decision,** never a side effect of a build. A
+  dedicated command ([cli#82](https://github.com/ComlineProject/cli/issues/82),
+  say `comline release 1.0`) explains what it commits to before doing it:
+  - from then on a breaking change is a major bump, and peers and consumers
+    rely on that;
+  - what the package exposes, in summary: its protocols, the formats and
+    framings it speaks, and any guarantees it gives up;
+  - anything worth settling first, such as deprecated declarations or
+    guarantees given up. These are listed for information only, not as
+    requirements.
+
+  It asks for confirmation, and needs an explicit flag in CI. The store
+  records the decision, so history shows when and why the package became
+  stable.
+
+## Bumps set by the author
+
+Some changes don't show in the schema: a function that now behaves
+differently, say. So an author must be able to set a bump. But a mistaken bump
+must not break consumers. The two directions carry different risks, so they're
+handled differently:
+
+- **The computed bump is a floor.**
+- **Raising it is always allowed, with a mandatory reason,** recorded in the
+  store and shown in `comline diff` and history. At worst it costs churn: a
+  consumer's version range may stop picking the release up. It never breaks
+  anyone unexpectedly. Raising to major asks for confirmation interactively,
+  and needs an explicit flag in CI.
+- **Lowering it** breaks consumers silently, so it isn't a bump setting at all.
+  It's [giving up version honesty](extensibility.md#giving-up-a-guarantee):
+  off by default, with a reason, and accepted by consumers. A naive author
+  can't do it by accident.
+- **The build always shows why** the computed bump is what it is: the rule,
+  and the encoding property behind it where one decided. An author sees the
+  reason before relying on the number.
+
+The one mistake left unguarded is bumping higher than necessary. It's the
+harmless kind, so it gets no more friction than the reason it already needs.
+
+## Dependencies (tentative)
+
+*Still being thought through; recorded here so it isn't lost.*
+
+Today any breaking change in a dependency makes this package major, even in a
+part it never uses. The proposed rule is that a dependency's change counts only
+as far as this package **reaches into it**:
+
+- A dependency's type counts if this package's own declarations use it: fields,
+  arguments, returns, errors, aliases, validators, or re-exports. Those parts
+  are compared with the same rules, and their result counts as this package's
+  own change.
+- Whatever lies outside that reach doesn't move the version.
+
+Points to weigh:
+
+- **Generated `lib` output** depends on the dependency's published bindings. A
+  major release of the dependency, even in an unused part, still gives this
+  package's consumers a new major transitively. That argues for recording it
+  at least as a patch.
+- **Adding or removing a dependency nothing uses:** probably patch, rather than
+  today's minor and major.
+- **Cost:** the comparison has to know what's reachable. The code-generation
+  resolution layer and the alias-resolution helpers already walk most of it.
+
 ## Open questions
 
 - **Third-party profiles.** An encoding core doesn't know gets the strictest
   profile. [Extending the call system](extensibility.md#how-core-learns-about-one)
   proposes that the package defining it declares its profile, trusted like its
   schemas. Is that trust enough?
-
 - **A constant's value.** Constants never travel, but they often encode limits
   that both peers rely on, such as a maximum length. Should a value change be
   major?
@@ -292,12 +401,11 @@ doesn't pair the wrong ones.
 - **Unknown enum variants.** If readers tolerated them
   ([runtime#17](https://github.com/ComlineProject/runtime/issues/17)), adding a
   variant would be safely minor instead of minor with a caveat.
-- **Framing without `@framing`.** Should such a protocol take the package's
-  single declared framing, or the consumer's `default_framing` among the
-  declared ones?
 - **An escape hatch.** Accepting a breaking change without a major bump is
   proposed as [giving up a guarantee](extensibility.md#giving-up-a-guarantee),
-  version honesty: allowed only when the package turns it on, with a reason. Where it's written down is open.
+  version honesty: allowed only when the package turns it on, with a reason.
+  Where it's written down is open. Raising a bump is simpler; see
+  [Bumps set by the author](#bumps-set-by-the-author).
   Should the build also be able to fail on a break
   ([cli#80](https://github.com/ComlineProject/cli/issues/80))?
 - **The handshake.** Until it checks compatibility instead of identity
@@ -311,12 +419,16 @@ doesn't pair the wrong ones.
   - a pinned, drift-checked copy of the known profiles;
   - the `config.idp` declaration;
   - versioned `@framing` values and their error;
-  - pairing schemas by namespace.
+  - pairing schemas by namespace;
+  - the `0.x` convention, a first build at `0.1.0`, the computed bump as a
+    floor, and raised bumps recorded with their reason.
 - **runtime:** versioned names in the handshake, a profile per versioned name in
   the conformance corpus with a vector behind every property, and the
   re-blessed vectors. comline-typescript's vendored copy follows.
 - **generation**, **comline-rust** and **comline-typescript:** the declared
   formats reach generated code.
+- **cli:** `comline release 1.0` and raising a bump with a reason
+  ([cli#82](https://github.com/ComlineProject/cli/issues/82)).
 - **cli:** reporting the full set of changes and the bump in `build` and `diff`
   ([cli#80](https://github.com/ComlineProject/cli/issues/80)).
 - **language server:** the quick fix for a bare format or framing name.
