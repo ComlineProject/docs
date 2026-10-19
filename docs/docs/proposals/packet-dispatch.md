@@ -115,25 +115,29 @@ syntax as function ids follows from that decision.
 A phase states which protocols are active in each direction, and which packet
 moves the connection to the next phase. Both ends generate the same state
 machine. The version comparison sees phases. An out-of-phase packet is a
-decode error, never a misread under another phase's table. One possible
-shape follows; [Phase syntax](phase-syntax/index.md) weighs it against an
-enum plus annotations:
+decode error, never a misread under another phase's table. The syntax is
+decided in [Phase syntax](phase-syntax/index.md): phases are an ordinary enum
+marked `@phases`, and protocols and packets state their own phase and
+transitions:
 
 ```ids
-phase Login {
-    serverbound: [LoginServerbound]
-    clientbound: [LoginClientbound]
-    LoginClientbound.success -> Play
+@phases
+enum Phase {
+    @initial
+    Login
+    Play
 }
 
-phase Play {
-    serverbound: [Movement, Chat]
-    clientbound: [World, Chat]
+@provider = Server
+@phase = Login
+protocol LoginServerbound {
+    @id = 0x03
+    @transition = Play
+    function acknowledged();
 }
 ```
 
-- The first phase declared (or one marked initial) is where a connection
-  starts. A protocol with no phases has one implicit phase.
+- The variant marked `@initial` is where a connection starts. A protocol with no phases has one implicit phase.
 - Ids are scoped by phase, so the same id may mean different packets in
   different phases, as Minecraft's do.
 - **For the version comparison,** changing a phase's tables or transitions is
@@ -258,8 +262,8 @@ more than packets.
 
 ## Open questions
 
-- **[Phase syntax](phase-syntax/index.md)** (an enum plus annotations, or a
-  `phase` block), and the suggested transition semantics in
+- **The suggested transition semantics** (the syntax is
+  [decided](phase-syntax/index.md)) in
   [How a connection moves between phases](#how-a-connection-moves-between-phases):
   a transition tied to a packet; per-direction switch points with an automatic
   acknowledgement; client-chosen targets through an enum field.
