@@ -64,6 +64,15 @@ and already used in `runtime-std-extra`'s `reverse_proxy.ids`:
 - **Server-to-client packets** are a protocol with `@provider = Client`. The
   client gets the dispatcher and the provider trait for it, and the server
   gets the sender.
+- **`@provider = Multiple`** means both sides implement the protocol, so the
+  same call can be made in either direction rather than only the server
+  serving it. Examples: LSP, where the language server also sends requests to
+  the editor over the same JSON-RPC connection; Bitcoin's peer-to-peer
+  protocol, where both peers send `ping`, `inv` and `version`; and SSH global
+  requests. Each side then generates both the dispatcher and the sender for
+  that protocol. Where calls have replies, request ids from the two directions
+  must not collide: either each direction has its own id space, or the header
+  carries a direction bit.
 - Core doesn't recognise `@provider` today: it parses and is ignored. It
   becomes a known annotation.
 
@@ -178,6 +187,40 @@ Suggested, open for discussion:
 - **An out-of-phase packet** is a decode error that ends the connection,
   reported as a framing fault.
 
+### Replies: both one-way and correlated
+
+Packet protocols do both, often within one protocol and chosen per packet:
+- MQTT: QoS 0 is one-way; QoS 1 gets a `PUBACK` carrying the same id.
+- Kafka: a produce with `acks=0` gets no response.
+- SSH: a request carries a `want_reply` flag.
+- memcached: "quiet" opcodes answer only on error.
+- X11: some requests have replies and some don't, and events arrive unprompted.
+
+Real protocols match a reply to its request in about five ways:
+
+| How a reply is matched | Examples |
+|---|---|
+| **Not at all:** the "reply" is just a packet in the other direction | Minecraft's play packets, most game opcode tables (`CMSG_…` → `SMSG_…`), Bitcoin's `getdata` → `block` |
+| **An id in the payload, echoed back** | Minecraft keep-alive and command suggestions (a transaction id), Bitcoin `ping`/`pong` (a nonce) |
+| **An id in the header, echoed back** | DNS (16-bit id), Modbus TCP (transaction id), Kafka (`correlation_id`), MQTT (packet identifier), memcached binary (`opaque`) |
+| **Implicit, by counting or order** | X11 (both sides count requests, and replies carry the sequence number), Redis (replies in request order), SSH global requests (in order) |
+| **The reply's type pairs with the request's** | UDS diagnostics (response id = request id + `0x40`), Modbus (the function code echoed, `+0x80` on an error), MQTT `SUBSCRIBE` → `SUBACK` |
+
+Decided: **both are supported.** Suggested, open for discussion:
+
+- **A function without `->` is a one-way packet,** always allowed.
+- **A function with `->` needs the encoding to correlate.** How it does is a
+  fact in the encoding's [profile](schema-compatibility.md#encoding-profiles):
+  `correlation` is `none`, `header_id`, `sequence` or `in_order`. A `->` under a
+  framing whose correlation is `none` is a build error.
+- **`comline.packet@1` makes correlation configurable:** none, a header id of
+  a given width, implicit sequence counting, or in-order replies.
+- **The payload-echo style** (Minecraft, Bitcoin) can declare a function's
+  reply as a packet in the other direction, matched on a field. For example,
+  `@reply = PlayClientbound.pong` with `@match = nonce` on `ping`. The
+  generated API is then request and response, while the wire stays exactly
+  the legacy one.
+
 ### The mechanism, plus an official framing
 
 - **For anyone:** addressing in the schema and generated dispatch tables. A
@@ -207,16 +250,19 @@ Suggested, open for discussion:
   [How a connection moves between phases](#how-a-connection-moves-between-phases):
   a transition tied to a packet; per-direction switch points with an automatic
   acknowledgement; client-chosen targets through an enum field.
-- **Replies in packet mode.** A function with `->` needs to match a reply to its
-  request: a request id or a sequence in the header. Or packet protocols could
-  be one-way only, with replies modelled as packets in the other direction,
-  which is how most packet systems actually work.
+- **Replies:** the suggested `correlation` profile fact, the
+  configurable correlation in `comline.packet@1`, and `@reply` / `@match` for
+  replies that echo a payload field (see
+  [Replies](#replies-both-one-way-and-correlated)).
 - **The official framing's parameters.** Where are they stated: on the framing
   name, in `config.idp`, or in `@framing`'s value?
 - **`@consumer`.** What does it add beyond being the provider's complement? The
-  original note says the parameters "need more situational introspection". And
-  what does `Multiple` mean on a single connection: both peers implementing the
-  same protocol, peer-to-peer?
+  original note says the parameters "need more situational introspection".
+  One possible meaning: in the 2024 file, `Multiple` may originally have meant
+  *how many* (several instances providing or consuming a protocol, like a
+  fleet of servers behind the reverse proxy in `reverse_proxy.ids`), not
+  which direction. That reading would give `@consumer` a job of its own: who
+  may call a protocol, and how many of them. Not decided.
 - **The family id's syntax,** which follows the function-id decision.
 
 ## Prerequisites
