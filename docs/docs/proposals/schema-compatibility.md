@@ -261,7 +261,7 @@ profiles; the rule itself is written against the property, as above.
 | remove an error from `!` | major | a generated error variant disappears |
 | a protocol's resolved framing changes, at any level (`@framing`, the package default, or core's default in a new edition) | major | compared in canonical, versioned form |
 | a protocol's resolved handshake changes, at any level | major | the first frame on the wire changes ([handshakes](extensibility.md#handshakes)) |
-| a guarantee given up ([marker](extensibility.md#giving-up-a-guarantee), name open) | major | peers lose a guarantee they relied on |
+| a guarantee given up (`@unverified`, [giving up a guarantee](extensibility.md#giving-up-a-guarantee)), or one more added to the set | major | peers lose a guarantee they relied on |
 | a given-up guarantee restored | minor | |
 | the reason for giving one up changed | patch | |
 

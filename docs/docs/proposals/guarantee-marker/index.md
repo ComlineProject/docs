@@ -1,5 +1,14 @@
 # Marking a given-up guarantee
 
+> **Decided: [Proposal C](unverified.md), `@unverified = "reason"`,** with one
+> refinement: a consumer's acceptance records the set of guarantees core
+> worked out, so giving up another one asks for a new acceptance. Core can
+> always compute the set (from the handshake's profile, an encoding's vectors
+> and the version comparison), so naming it in the schema would only repeat
+> it. *Unverified* says what's missing, verification by Comline, without
+> colliding with validators "checking". A, B and D are rejected; each page
+> says why.
+
 **The question.** An extension can leave one of Comline's guarantees between
 peers unestablished, and the author then vouches for what replaces it. The
 guarantees are schema agreement, encoding agreement, encoding conformance and
@@ -21,12 +30,12 @@ The first candidate, `@unchecked`, raised the objection that it doesn't say
 so they can be read side by side. Tracked in
 [core#121](https://github.com/ComlineProject/core/issues/121).
 
-| | Marker | In one line |
-|---|---|---|
-| [Proposal A](waives.md) | `@waives(schema_agreement = "…")` | names each guarantee the author knowingly gives up |
-| [Proposal B](assumes.md) | `@assumes(schema_agreement = "…")` | names what the author assumes holds in place of Comline's check |
-| [Proposal C](unverified.md) | `@unverified = "…"` | one marker; core works out which guarantees are affected |
-| [Proposal D](unchecked.md) | `@unchecked = "…"` | the original name, kept |
+| | Marker | In one line | Assessment |
+|---|---|---|---|
+| [Proposal A](waives.md) | `@waives(schema_agreement = "…")` | names each guarantee the author knowingly gives up | rejected: repeats what core computes |
+| [Proposal B](assumes.md) | `@assumes(schema_agreement = "…")` | names what the author assumes holds in place of Comline's check | rejected: same, and its direction can be misread |
+| [Proposal C](unverified.md) | `@unverified = "…"` | one marker; core works out which guarantees are affected | **accepted**, with the acceptance recording the set |
+| [Proposal D](unchecked.md) | `@unchecked = "…"` | the original name, kept | rejected: says neither who nor what, and collides with validation |
 
 ## Two choices, not one
 

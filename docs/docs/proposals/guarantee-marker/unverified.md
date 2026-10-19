@@ -1,7 +1,7 @@
 # Proposal C — `@unverified`, one marker
 
-Status: **under discussion** · See the [section overview](index.md) for the
-question all four answer
+Status: **accepted** · with one refinement, below · See the [section
+overview](index.md) for the question all four answer
 
 **The idea:** a single marker with a reason. Core works out which guarantees
 are affected, from the handshake and encodings in use, and reports them. The
@@ -25,6 +25,15 @@ dependencies = {
     acme::billing@2.1 = { accept_unverified = ["Billing"] }
 }
 ```
+
+## As accepted
+
+The coarse acceptance described below is fixed. A consumer still accepts a
+protocol by name, but the acceptance records the set of guarantees core
+worked out at the time. If a dependency update makes the protocol give up one
+more, the sets differ and the build stops until the consumer accepts again.
+The set is also frozen into the compiled schema, so the author's own version
+comparison reports it growing as a major change.
 
 ## The case for it
 

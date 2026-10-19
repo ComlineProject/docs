@@ -1,6 +1,7 @@
 # Proposal B — `@assumes`, per guarantee
 
-Status: **under discussion** · See the [section overview](index.md) for the
+Status: **rejected**: the same redundancy as [A](waives.md), and "assumes"
+can read as a demand on the consumer · See the [section overview](index.md) for the
 question all four answer
 
 **The idea:** the marker states what the author **assumes** holds in place of

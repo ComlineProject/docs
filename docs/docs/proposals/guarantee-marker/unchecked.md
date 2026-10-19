@@ -1,6 +1,8 @@
 # Proposal D — keep `@unchecked`
 
-Status: **under discussion** · See the [section overview](index.md) for the
+Status: **rejected**: "unchecked" says neither who doesn't check nor what,
+and collides with validators "checking". [C](unverified.md) keeps its shape
+under a clearer word · See the [section overview](index.md) for the
 question all four answer
 
 **The idea:** the first candidate, kept. A single marker with a reason, like
