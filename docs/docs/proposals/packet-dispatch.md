@@ -116,7 +116,8 @@ A phase states which protocols are active in each direction, and which packet
 moves the connection to the next phase. Both ends generate the same state
 machine. The version comparison sees phases. An out-of-phase packet is a
 decode error, never a misread under another phase's table. One possible
-shape, with the syntax open:
+shape follows; [Phase syntax](phase-syntax/index.md) weighs it against an
+enum plus annotations:
 
 ```ids
 phase Login {
@@ -221,6 +222,17 @@ Decided: **both are supported.** Suggested, open for discussion:
   generated API is then request and response, while the wire stays exactly
   the legacy one.
 
+### Sub-packets are tagged unions
+
+Decided: packets whose payload is one of several shapes, picked by a sub-type
+byte (an entity action that is attack, interact or interact-at; an MMO opcode
+with sub-opcodes), are **one packet whose payload is a tagged union** of
+structs. The second level of dispatch, hand-written in most implementations,
+is generated. Unions travel untagged today, so this needs tagged unions with
+explicit tag values
+([core#126](https://github.com/ComlineProject/core/issues/126)), which serve
+more than packets.
+
 ### The mechanism, plus an official framing
 
 - **For anyone:** addressing in the schema and generated dispatch tables. A
@@ -246,7 +258,8 @@ Decided: **both are supported.** Suggested, open for discussion:
 
 ## Open questions
 
-- **Phase syntax**, and the suggested transition semantics in
+- **[Phase syntax](phase-syntax/index.md)** (an enum plus annotations, or a
+  `phase` block), and the suggested transition semantics in
   [How a connection moves between phases](#how-a-connection-moves-between-phases):
   a transition tied to a packet; per-direction switch points with an automatic
   acknowledgement; client-chosen targets through an enum field.
@@ -276,6 +289,16 @@ Decided: **both are supported.** Suggested, open for discussion:
   **`@unverified`** ([core#121](https://github.com/ComlineProject/core/issues/121)),
   and **encodings and their mapping**
   ([core#120](https://github.com/ComlineProject/core/issues/120)).
+- **Typed annotation values**
+  ([core#124](https://github.com/ComlineProject/core/issues/124)): lists and
+  references for `@phase`, `@transition`, `@reply` and `@match`. Lists are
+  parsed as validator calls today.
+- **Settings defaults for annotations**
+  ([core#125](https://github.com/ComlineProject/core/issues/125)), so a
+  schema file per side or per phase states `@provider` and `@phase` once.
+- **Tagged unions with explicit tags**
+  ([core#126](https://github.com/ComlineProject/core/issues/126)), for
+  sub-packets.
 
 ## What it touches
 

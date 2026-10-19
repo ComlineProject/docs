@@ -109,6 +109,10 @@ nav:
       - 'proposals/function-ids/index.md'
       - 'Proposal A': 'proposals/function-ids/annotation.md'
       - 'Proposal B': 'proposals/function-ids/prefix.md'
+    - 'Phase syntax':
+      - 'proposals/phase-syntax/index.md'
+      - 'Proposal A': 'proposals/phase-syntax/enum-and-annotations.md'
+      - 'Proposal B': 'proposals/phase-syntax/phase-block.md'
     - 'Marking a given-up guarantee':
       - 'proposals/guarantee-marker/index.md'
       - 'Proposal A': 'proposals/guarantee-marker/waives.md'
