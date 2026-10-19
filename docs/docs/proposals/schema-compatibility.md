@@ -305,9 +305,44 @@ So any change other than pure removal counts as narrowing.
 |---|---|
 | a declared format or framing removed | major |
 | a declared format or framing added | minor |
+| a namespace (schema file) renamed | major, reported as a rename |
+| a protocol renamed | major, reported as a rename |
 
 Schema files are matched by namespace, so adding, renaming or reordering files
 doesn't pair the wrong ones.
+
+### Renames
+
+A rename is major because of **names**, not the wire. Every generated path goes
+through the namespace and the protocol name: `crate::chat::Message`, a
+TypeScript import path, and a dependent's `use pkg::chat::Message`. All of them
+stop resolving.
+
+The wire doesn't carry either name today:
+- a call is addressed by its function's index within the protocol (datagram)
+  or by its bare function name (JSON-RPC);
+- one connection serves exactly one protocol.
+
+The namespace only reaches the wire indirectly, through `comline@1`'s
+whole-schema hash. The compatibility-checking `comline@2`
+([runtime#15](https://github.com/ComlineProject/runtime/issues/15)) should
+leave the namespace out, so a rename stays a code change and peers still
+connect.
+
+The comparison **detects a rename** and reports it as one, not as a removal
+plus an addition. A namespace with the same content under a new name is
+reported as "namespace `chat` renamed to `messaging`"; the same goes for a
+protocol whose functions are unchanged.
+
+**A constraint for later.** If several protocols ever share one connection,
+each protocol's identity has to travel on the wire. How it's identified then
+fixes the rename policy:
+- a qualified name (`chat.Mail.send`) would make every rename break live
+  peers;
+- an identifier the schema states explicitly (an ordinal, or a declared stable
+  id) keeps renames a names-only change.
+
+Whoever designs sharing a connection should choose deliberately.
 
 ## Versions before 1.0
 
