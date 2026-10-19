@@ -104,6 +104,11 @@ nav:
     - Automatic documentation: 'proposals/auto-documentation.md'
     - Schema compatibility: 'proposals/schema-compatibility.md'
     - Extending the call system: 'proposals/extensibility.md'
+    - Packet dispatch: 'proposals/packet-dispatch.md'
+    - 'Function ids':
+      - 'proposals/function-ids/index.md'
+      - 'Proposal A': 'proposals/function-ids/annotation.md'
+      - 'Proposal B': 'proposals/function-ids/prefix.md'
     - 'Marking a given-up guarantee':
       - 'proposals/guarantee-marker/index.md'
       - 'Proposal A': 'proposals/guarantee-marker/waives.md'

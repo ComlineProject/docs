@@ -88,6 +88,22 @@ to the same shape:
 - [Proposal D — keep `@unchecked`](guarantee-marker/unchecked.md): the original
   name. *rejected: says neither who nor what.*
 
+### Packet protocols
+
+- [Packet dispatch](packet-dispatch.md): message-oriented packet protocols
+  (families, explicit ids, phases, `@provider` for direction), with addressing
+  in the schema, generated dispatch tables, and an official configurable
+  framing. *under discussion, partly decided.*
+
+#### [Function ids](function-ids/index.md)
+
+How an explicit function id is written. Two competing proposals:
+
+- [Proposal A — an `@id` annotation](function-ids/annotation.md). *under
+  discussion.*
+- [Proposal B — a prefix on the declaration](function-ids/prefix.md), from the
+  2024 proposal. *under discussion.*
+
 ### Tooling
 
 - [Automatic documentation](auto-documentation.md) — an optional tool that
