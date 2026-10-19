@@ -249,6 +249,73 @@ more than packets.
 
   Its [profile](schema-compatibility.md#encoding-profiles) states that calls go
   by explicit id, so reordering never matters under it.
+
+#### Where the framing's parameters are written
+
+Leaning (recorded for discussion, not final): **named framing instances in
+`config.idp`.** These extend the declared framings list
+([core#117](https://github.com/ComlineProject/core/issues/117)) from plain
+names to named, configured entries:
+
+```
+framings = {
+    "game" = {
+        encoding = "comline.packet@1"
+        length = "varint"
+        id = "u8"
+        family = "none"
+        endianness = "big"
+        correlation = "none"
+    }
+    "rpc" = { encoding = "jsonrpc@1" }
+}
+```
+
+A schema writes `@framing = "game"`, and the package's framing default can name
+an instance.
+
+Why there, and not elsewhere:
+
+- **The parameters change the bytes,** so they belong to the producer's
+  contract. They're frozen and seen by the version comparison: changing any
+  of them is major. That rules out the consumer's `comline.toml`.
+- **Protocols sharing a connection must agree exactly,** so the parameters are
+  stated once and referenced. Writing them in each protocol's `@framing`
+  value would repeat them and let copies drift.
+- **One block per encoding would allow only one configuration.** A gateway
+  speaking to two legacy systems needs two.
+- **A `settings` default is scoped to a file or preset,** but a connection's
+  framing is a package-wide contract.
+
+How many framings a package has shapes the syntax:
+
+| Kind of package | Framings |
+|---|---|
+| most | **1**: one framing throughout |
+| some | **2**: say a packet framing plus a JSON-RPC admin API |
+| gateways and bridges | 2 or more |
+
+So one framing must be effortless. With one declared it's the package default
+automatically, and no schema writes `@framing`. Encodings without parameters
+keep the plain-list form (`framings = ["datagram@1"]`), so most packages never
+write a block. There are just two forms, the list and the named map, with no
+third shorthand.
+
+Also part of it:
+
+- **The encoding defines its parameters.** Its profile lists what each one
+  accepts and which profile fact it sets: `family = "none"` means ids are
+  unique across families, and `correlation = "none"` makes `->` an error.
+  Third-party encodings get configurable parameters the same way.
+- **The handshake covers them.** Two peers agreeing on `comline.packet@1` but
+  differing in id width would misread each other, so `comline@N` hashes the
+  parameters along with the name. A legacy handshake can't check them; an
+  `@unverified` protocol vouches for them too.
+
+Open: whether an instance name may shadow an encoding name
+(`"jsonrpc@1" = {…}`), and whether instances can be shared across packages
+through a dependency, so two packages speaking one legacy system reuse one
+definition.
 - **Handshake:** packet systems usually bring their own
   ([runtime#18](https://github.com/ComlineProject/runtime/issues/18)), often as
   a phase of its own. One that doesn't establish schema agreement makes the
@@ -267,8 +334,10 @@ more than packets.
   configurable correlation in `comline.packet@1`, and `@reply` / `@match` for
   replies that echo a payload field (see
   [Replies](#replies-both-one-way-and-correlated)).
-- **The official framing's parameters.** Where are they stated: on the framing
-  name, in `config.idp`, or in `@framing`'s value?
+- **The framing's parameters:** leaning towards named framing instances in
+  `config.idp` (see
+  [Where the framing's parameters are written](#where-the-framings-parameters-are-written));
+  shadowing and cross-package sharing are open.
 - **`@consumer`.** What does it add beyond being the provider's complement? The
   original note says the parameters "need more situational introspection".
   One possible meaning: in the 2024 file, `Multiple` may originally have meant
