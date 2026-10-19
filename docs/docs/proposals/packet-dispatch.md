@@ -97,7 +97,7 @@ protocol LoginClientbound {
 
 A family is a protocol with an explicit **family id**, so several protocols
 share one connection. That's the identifier the schema states, the choice the
-[rename rules](schema-compatibility.md) asked for: renaming a protocol
+[rename rules](schema-compatibility.md#renames) asked for: renaming a protocol
 or namespace changes code, not the wire. Whether the family id uses the same
 syntax as function ids follows from that decision.
 
@@ -129,6 +129,55 @@ phase Play {
 - **For the version comparison,** changing a phase's tables or transitions is
   major. Adding a packet to an active protocol is minor.
 
+#### How a connection moves between phases
+
+Decided:
+
+- **Phases belong to the connection.** The connection *is* the state, so
+  families don't move through phases independently. A phase lists the
+  families active in it, and a family can be active in several phases (a
+  keepalive in every phase, say) without being duplicated.
+- **The server decides when to transition,** in its own code, typically once
+  some setup work is done. The client doesn't stop and wait: it carries on,
+  and simply has nothing to do until the server moves it on.
+
+Suggested, open for discussion:
+
+- **A transition is tied to a packet in the schema, and sending that packet
+  is the transition.** Both ends then know the switch point. In Rust the
+  connection can be typed by its phase: sending `success` consumes a
+  `Conn<Login>` and returns a `Conn<Play>`, so sending a play packet during
+  login doesn't compile. TypeScript checks at runtime.
+- **Each direction switches at its own point,** so the client never has to
+  halt:
+  - **Server to client:** the server switches when it *sends* the transition
+    packet, and the client when it *receives* it. Everything before that
+    packet in the stream belongs to the old phase.
+  - **Client to server:** the client may already have packets in flight under
+    the old phase. On receiving the transition it sends an **acknowledgement**
+    as its first packet in the new phase, and the server keeps reading client
+    packets under the old phase until that acknowledgement arrives. Generated
+    code does this; no user code is involved. Minecraft works this way ("login
+    acknowledged", "acknowledge finish configuration").
+  - **A legacy protocol with no acknowledgement packet** can declare a
+    transition without one. That accepts the race, an in-flight packet read
+    under the wrong table, so it gives up an agreement guarantee and needs
+    [`@unverified`](extensibility.md#giving-up-a-guarantee).
+- **Who sends the transition packet triggers it.** In most protocols that's
+  the server. Some let the client choose: Minecraft's handshake is the client
+  saying whether it wants status or login. So a transition's target may depend
+  on an enum field of its packet:
+
+  ```ids
+  phase Handshake {
+      serverbound: [HandshakeServerbound]
+      HandshakeServerbound.hello.next -> { Status, Login }
+  }
+  ```
+
+- **An out-of-phase packet** is a decode error that ends the connection,
+  reported as a framing fault.
+
 ### The mechanism, plus an official framing
 
 - **For anyone:** addressing in the schema and generated dispatch tables. A
@@ -154,10 +203,10 @@ phase Play {
 
 ## Open questions
 
-- **Phase syntax and transition semantics.** Exactly when does each side
-  switch: after sending, after receiving, or after an acknowledgement? Can a
-  transition be triggered from either direction? Are phases per connection, or
-  can families move through phases independently?
+- **Phase syntax**, and the suggested transition semantics in
+  [How a connection moves between phases](#how-a-connection-moves-between-phases):
+  a transition tied to a packet; per-direction switch points with an automatic
+  acknowledgement; client-chosen targets through an enum field.
 - **Replies in packet mode.** A function with `->` needs to match a reply to its
   request: a request id or a sequence in the header. Or packet protocols could
   be one-way only, with replies modelled as packets in the other direction,
