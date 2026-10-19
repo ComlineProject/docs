@@ -161,6 +161,107 @@ Comline can then also describe a protocol it doesn't own, with a custom framing,
 handshake and perhaps format. The guarantees Comline can't give are the
 implementer's, and say so.
 
+### Checking compatibility: strategies and `comline@2`
+
+Decided with the user (2026-10-20), for
+[runtime#15](https://github.com/ComlineProject/runtime/issues/15).
+`comline@1` compares a hash of the whole frozen schema, so any edit, even a
+docstring, makes peers refuse each other, and the refusal carries no reason.
+
+How systems answer "can these two talk?" differs, and **each of these should be
+achievable as a handshake,** even where it isn't what `comline@2` does:
+
+| Approach | Used by |
+|---|---|
+| **One exact version number** | Minecraft (protocol version) |
+| **Exchange versions, then use the lower one** | Bitcoin (`version` message); SSH and TLS pick from lists |
+| **A version range per API** | Kafka `ApiVersions`: min and max per request type, the highest common one wins |
+| **Send the schema and resolve the differences** | Avro (writer and reader schema, or a registry fingerprint) |
+| **No handshake; tolerance rules only** | Protobuf, Thrift, Cap'n Proto |
+
+#### Core provides the facts; the handshake picks the strategy
+
+Core computes compatibility facts from the package's history, and generated
+code embeds them. Every strategy works from the same set:
+
+| Fact | Exact (Minecraft) | Lower version (Bitcoin) | Per-API ranges (Kafka) | Schema exchange (Avro) | `comline@2` |
+|---|---|---|---|---|---|
+| package identity (a stored id, see below) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| package version | ✓ | ✓ | | | ✓ |
+| per-protocol **line**: the version it last broke at | | | ✓ | | ✓ |
+| per-protocol wire-shape hash | ✓ (in place of the version) | | | ✓ (as a fingerprint) | ✓ |
+| per-function "since" version | | | ✓ | | ✓ |
+| encoding name and parameter hash | ✓ | ✓ | ✓ | ✓ | ✓ |
+| the wire shape itself, as a compact description | | | | ✓ | |
+
+- **A handshake's profile lists the facts it needs,** and generated code
+  embeds only those. The wire shape itself is emitted only for a handshake
+  that asks for it.
+- **A custom handshake** (`com.acme.…@1`) reads them through the same
+  `Handshake` trait as `comline@2`.
+- **The wire-shape hash** covers only what reaches the wire, with aliases
+  resolved. It leaves out docstrings, spans, validators, constants, advisory
+  annotations and the namespace, and it includes the encoding's parameters.
+- **Package identity** is an id stored once in `config.idp`, not the package
+  name, so renaming a package doesn't break its peers, as function ids survive
+  function renames.
+
+#### `comline@2` and its parameters
+
+What decides a connection under `comline@2`:
+
+- **The line decides, and the shape hash is sent as well.** For 1.0 and up
+  the line follows the major version; before 1.0 it follows the minor, as
+  Cargo's `0.x` convention does.
+- **The rest is situational, so it's a parameter of the handshake,**
+  declared in `config.idp` like [framing instances](packet-dispatch.md#where-the-framings-parameters-are-written).
+  The defaults are shown:
+
+  ```
+  handshakes = {
+      "default" = {
+          handshake = "comline@2"
+          scope = "protocol"               # or "package"
+          newer_consumer = "degrade"       # or "refuse"
+          same_version_differs = "refuse"  # or "warn"
+          exchange = "offer"               # or "symmetric"
+      }
+  }
+  ```
+
+  A package with one handshake never writes this; plain `"comline@2"` means the
+  defaults.
+
+| Parameter | Values | Meaning |
+|---|---|---|
+| `scope` | `protocol` (default), `package` | Compare each protocol's line, so a break in one protocol doesn't stop peers using only another; or compare the package's |
+| `newer_consumer` | `degrade` (default), `refuse` | A consumer newer than its provider either connects, knowing the peer's version, so a call to a function the peer lacks fails locally with a clear "peer is on 1.2" error and is never sent; or is refused |
+| `same_version_differs` | `refuse` (default), `warn` | Two builds claiming one version with different shapes, typically two branches that each added a function, are refused with a reason naming both; or only warned about |
+| `exchange` | `offer` (default), `symmetric` | The client offers per protocol (its id, line, version and shape hash) and the server answers each with accepted plus its own version, or refused plus a reason; or both sides send the same frame and check independently |
+
+- **Wire parameters and policy parameters.**
+  - `exchange` changes the bytes exchanged, so both sides must match, and it's
+    hashed into the frame like an encoding's parameters.
+  - `scope`, `newer_consumer` and `same_version_differs` decide what each side
+    accepts, and each side applies its own. A refusal's reason code says which
+    side refused and why: a different line, the same version with a different
+    shape, an unknown protocol, or a different encoding.
+- **One handshake per connection.** A protocol can't override the handshake
+  or its parameters for itself. Protocols sharing a connection must declare
+  the same one, as they must for framings.
+- **`degrade` covers functions first.** Refusing locally to send an enum
+  variant a peer can't read (the enum caveat in the
+  [compatibility rules](schema-compatibility.md)) follows later, with the
+  explicit variant values of
+  [core#126](https://github.com/ComlineProject/core/issues/126).
+- **A weaker policy gives up a guarantee,** through the
+  [existing mechanism](#giving-up-a-guarantee): core infers it from the
+  parameters. `same_version_differs = "warn"` gives up **version honesty**, and
+  `none`, or a custom handshake that checks nothing, gives up **schema
+  agreement**. The default settings need nothing extra.
+- **Changing a parameter:** a stricter policy is a patch. A weaker one gives
+  something up, and adding `@unverified` is already major.
+
 ## Giving up a guarantee
 
 Between peers, Comline gives four guarantees, each established by something
