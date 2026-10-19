@@ -3,7 +3,10 @@
 > **Decided: [Proposal A](annotation.md), `@id = 0x2A`,** tracked in
 > [core#127](https://github.com/ComlineProject/core/issues/127). The radix is
 > left to the formatter and a lint; ids can be assigned on build and written
-> into the source; reusing a retired id is an error. See
+> into the source; reusing a retired id is an error. The default for
+> assignment is derived from the framings (packet: `require`; JSON-RPC: `off`;
+> datagram: `off` in `0.x`, then `write` from 1.0), and ids are all or none per
+> protocol. See
 > [its page](annotation.md#as-accepted).
 
 **The question.** [Packet dispatch](../packet-dispatch.md#explicit-ids-available-everywhere)
