@@ -2,7 +2,7 @@
 
 Status: **under discussion** · tracked in
 [generation#76](https://github.com/ComlineProject/generation/issues/76) ·
-nothing here is implemented
+partly decided (see [Decided](#decided)), nothing implemented
 
 **The question:** what the version in `rust#1.70.0` means, how it picks a
 generator, and how a generator's output and feature support depend on it.
@@ -42,6 +42,21 @@ which needs Rust 1.75, and no target can say "1.75" today.
   configuration. It reserved `= {}` in `config.idp` for those options. This
   proposal builds on it.
 
+## Decided
+
+With the user, 2026-10-20:
+
+1. **`config.idp` sets the version,** and the build proves it
+   ([The declaration is a promise](#the-declaration-is-a-promise)).
+2. **`comline.toml` may only raise it, never lower it,** and only because a
+   version never changes the wire
+   ([Raising the version](#raising-the-version)).
+3. **Generators have upper bounds,** for the sake of the guarantee: a verified
+   range, with going past it marked the way `@unverified` marks other gaps
+   ([Upper bounds](#upper-bounds-a-verified-range)).
+4. **Dialects belong in `config.idp`,** but need their own pass, language by
+   language ([Dialects](#dialects)).
+
 ## What a version means
 
 | | Meaning | Like |
@@ -72,6 +87,41 @@ declared version in its request:
 
 With one generator per language, as the earlier note proposed, this behaves
 the same today. Floors keep the "too old" error expressible.
+
+## The declaration is a promise
+
+Today a declared target promises nothing. Only `comline generate` checks
+features, and only for the target it's generating. `comline build` never
+looks at `code_generation.languages`, so a package can declare `rust#1.70.0`
+and use a feature the Rust generator only supports from 1.75.
+
+**`comline build` checks every declared target.** Each feature the schema
+uses must be supported at the declared version, or the build fails, naming
+the feature and the version that would support it. Then `rust#1.70.0` means
+"this package is proven to generate for Rust 1.70 and later", and consumers
+can rely on it.
+
+**Dependencies:** a dependency declaring `rust#1.75.0` can't be generated
+into a package built for 1.70. A target's version is at least the highest
+among the package's own declaration and its dependencies' declarations for
+that language, or the build refuses and names the dependency.
+
+## Raising the version
+
+A consumer's `comline.toml` can set `lang_version` for one target:
+
+- **Higher than declared:** allowed. Anything that builds on 1.70 builds on
+  1.75, so the promise holds, and it unlocks options the author didn't need.
+  For example, `async = true` needs 1.75 without the author having to change
+  `config.idp`.
+- **Lower than declared:** an error naming the declared minimum. It would go
+  below what the author proved.
+
+**This rests on one rule: a version changes the generated code, never the
+wire.** Code generated at 1.70 and at 1.75 must encode and decode
+identically, or two peers on different toolchains could disagree while their
+handshake (which hashes the IR, not the code) still matches. Conformance
+proves it: at every boundary, the generated types encode alike.
 
 ## Support by version
 
@@ -127,37 +177,74 @@ output changes. For Rust that would be `["1.70.0", "1.75.0", "1.81.0"]`.
 - **TypeScript** has no gates yet, but the same mechanism fits it (`satisfies`
   from 4.9, `const` type parameters from 5.0).
 
+## Upper bounds: a verified range
+
+Whether a newer toolchain still builds the output depends on the language:
+
+- **Rust** promises that newer compilers build older code, editions aside.
+- **TypeScript doesn't:** releases change type-checking, so code proven against
+  5.x may not type-check on 6.0.
+
+So **a generator declares the range it has verified:** its floor, and a
+ceiling at the newest toolchain its output has been compiled against.
+Conformance then has to **compile** the generated code with the toolchain at
+each boundary and at the ceiling, not only compare it with goldens.
+
+**Past the ceiling, the target is unverified, not refused.** It works the way
+[`@unverified`](../guide/idl/protocol.md#giving-up-a-guarantee) does: allowed,
+with the gap stated in build output and reported, never silently assumed. A
+hard error would break every package the day a compiler releases. For a
+language that promises forward compatibility, the generator can say so, and
+the ceiling only bounds the dialects (Rust's editions).
+
 ## Dialects
 
 Rust's edition and TypeScript's `target` and `module` aren't versions: no
-order says which is "newer" in the sense a minimum needs. They stay generator
-options, as the earlier note proposed. **Where they're set is open** (see
-below). This proposal only settles versions.
+order says which is "newer" in the sense a minimum needs.
+
+**Decided: they belong in `config.idp`,** in the entry for the language, where
+`= {}` was reserved for options:
+
+```
+code_generation = {
+    languages = {
+        rust#1.75.0 = { edition = "2021" }
+    }
+}
+```
+
+**They need their own pass, language by language,** before anything is
+written down. The question is the same as for versions: does a dialect change
+only the code, or something a consumer relies on? Some do. TypeScript's
+`module` (CommonJS or ESM) decides whether the package can be imported at
+all, so a consumer couldn't safely change it. Others may be safe to raise, as
+a version is.
 
 ## Open questions
 
-- **Who sets the version?** `config.idp` declares it and `comline.toml`'s
-  `lang_version` overrides it. If the declaration means "this package can be
-  generated for Rust from 1.70", should a consumer be able to go lower? Or only
-  higher? Or should the declaration lose its version and keep just the
-  language?
-- **Where do dialect options live?** In the `config.idp` entry
-  (`rust#1.75.0 = { edition = "2021" }`), where `= {}` was reserved for them,
-  or in `comline.toml`, since they don't change the contract?
-- **Upper bounds:** a version newer than every boundary is treated as the
-  newest one. Is there a case for a maximum, such as a construct a later
-  release removed?
-- **`comline new`:** scaffold the floor (`rust#1.70.0`, as today) or the newest
-  boundary?
+- **Dialects, language by language:** which options there are, which change
+  only the code, and whether a consumer may change any of them.
+- **`comline new`:** recommended to scaffold the floor (`rust#1.70.0`, as
+  today). That declares the widest promise, and since consumers can raise but
+  never lower, a higher scaffold would shut out older toolchains for good.
+  When the floor is too low for something the schema uses, the build's error
+  names the version to declare. Not yet decided.
+- **How the gap past the ceiling is reported,** and whether a consumer has to
+  accept it (as with `accept_unverified`) or only sees it.
 
 ## What it touches
 
 - **generation:** `Registry::find` and `Registry::support` by floor, version
-  gates on `Support`, boundaries, the matrix and `features.json`, and
-  conformance at every boundary with goldens that carry over.
+  gates on `Support`, boundaries and the verified ceiling, the matrix and
+  `features.json`, and conformance at every boundary: goldens that carry
+  over, generated code compiled with each boundary's toolchain, and encoding
+  compared across boundaries.
 - **comline-rust and comline-typescript:** declare boundaries, gate features,
   and compare versions against boundaries in their output.
-- **cli:** lookup by floor, the new messages, and `comline targets`.
+- **core and cli:** `comline build` checks every declared target and the
+  dependencies' declarations, and `comline.toml` may only raise
+  `lang_version`. Plus lookup by floor, the new messages, and `comline
+  targets`.
 - **language-server:** lookup by floor, and the gate messages.
 - **docs:** the codegen guide's `lang_version`, the language reference pages,
   and the earlier note in Design → Generation, which points here once this is

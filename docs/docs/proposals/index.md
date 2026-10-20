@@ -66,7 +66,7 @@ alternatives are worth. Five proposals, read to the same shape:
 - [Language target versions](target-versions.md): what the version in
   `rust#1.70.0` means, how it picks a generator, and how feature support and
   output depend on it, proven by conformance at each version where they
-  change. *under discussion.*
+  change. *under discussion, partly decided.*
 
 ### Extensibility
 
