@@ -84,9 +84,23 @@ encodings = {
 `@framing`.
 
 Core can't run another language's code, so it trusts the profile the way it
-trusts that dependency's schemas: as declared, and proven in the author's CI.
+trusts that dependency's schemas: as declared. Whether the profile is proven
+depends on the vectors behind it (see [Test vectors and trust](#test-vectors-and-trust)).
 An encoding named with no profile anywhere is compared under the strictest
 profile, with a warning.
+
+### Test vectors and trust
+
+Decided 2026-10-20 ([core#120](https://github.com/ComlineProject/core/issues/120)):
+
+| Kind | Requirement | Result |
+|---|---|---|
+| **Official** | Vectors for every fact in its profile, implementations for every official target, conformance passing in CI, and a spec page: everything Comline requires | Fully trusted |
+| **Third-party, with vectors** | Vectors shipped by its package, and a check (say `comline conformance`) that runs an implementation against them | Conformance proven; nothing given up |
+| **Third-party, without vectors** | None | Encoding conformance is [given up](#giving-up-a-guarantee): `@unverified` with a reason, and the consumer's acceptance |
+
+Nothing forces a third-party author to write vectors, but skipping them is
+visible to every consumer.
 
 ### How generated code reaches one
 
@@ -102,9 +116,14 @@ language = "rust"
 encodings = { "com.acme.frame@1" = "acme_frame::AcmeFraming" }
 ```
 
+- **The encoding's package can suggest a default mapping** per language (in
+  Rust `acme_frame::AcmeFraming`, in TypeScript `@acme/frame`), so a consumer
+  writes nothing unless it wants something else (decided 2026-10-20).
+  Shipping the implementation itself, so generated `lib` output depends on it
+  automatically, waits for the third-party half of dependency publishing.
 - The generator emits the mapped type where it would emit `JsonRpcFraming`.
-- An encoding that's declared but not mapped for a target is a **generation
-  error**, never a fallback.
+- An encoding that's declared but neither mapped nor suggested for a target is
+  a **generation error**, never a fallback.
 - The per-package format trait
   ([generation#67](https://github.com/ComlineProject/generation/issues/67)) is
   implemented for each mapped name, so it can't be sealed. A sealed trait would
@@ -338,6 +357,52 @@ protocol Billing {
   guarantee is major, since peers relied on it, and so is the set growing
   ("`Billing` now also gives up schema agreement"). Restoring one is minor.
 
+### At the package level
+
+Decided 2026-10-20 ([core#121](https://github.com/ComlineProject/core/issues/121)).
+Some cases aren't on a protocol:
+
+- **An encoding without vectors:** the reason goes where the encoding is
+  declared in `config.idp`:
+
+  ```
+  framings = {
+      "legacy" = {
+          encoding = "com.acme.legacy@1"
+          unverified = "no vectors yet; tested by hand against the 2009 gateway"
+      }
+  }
+  ```
+
+- **Lowering a bump:** a decision about one release, made with
+  `comline release --lower … --reason "…"` and stored on the release record
+  ([Builds and releases](schema-compatibility.md#builds-and-releases)), not in
+  `config.idp`.
+- **A consumer's acceptance,** under the dependency in its own `config.idp`:
+
+  ```
+  dependencies = {
+      billing = {
+          path = "../billing"
+          accept_unverified = {
+              Billing = ["schema_agreement"]
+          }
+      }
+  }
+  ```
+
+  - The list is the set accepted, a snapshot, so the build stops again if
+    the set grows. It's the one place guarantee names are written; on the
+    producer's side core works them out.
+  - **Nobody types it by hand:** the build error offers a quick fix, and
+    `comline accept billing::Billing` writes the entry, as ids are written
+    into the source on build.
+- **Diagnostics:** given-up guarantees get their own code family
+  (`unverified::schema-agreement`, …) under `diagnostics.<code>.level`, so an
+  organisation can raise the informational warnings to errors or quiet them.
+  The "not accepted" error can't be lowered: if it could, accepting would
+  mean nothing.
+
 ## Transports and dispatchers
 
 Neither changes what's on the wire, so neither needs a name, a profile or a
@@ -363,22 +428,11 @@ mapping already covers that.
 
 ## Open questions
 
-- **Trust.** Is "declared by a dependency" enough, or should the dependency
-  have to ship vectors as well? Could a tool then check a third-party
-  implementation against them?
-- **The mapping's default.** Should an encoding's package be able to suggest the
-  type that implements it in each language, so the consumer's `comline.toml`
-  only overrides it?
 - **Shipping implementations.** Could an encoding package carry its crate or npm
-  package, so `lib`-mode output depends on it automatically?
+  package, so `lib`-mode output depends on it automatically? Waits for the
+  third-party half of dependency publishing.
 - **Transports in the handshake.** Should a transport ever be named, as a
   capability for instance, or stay invisible?
-- **The marker** (its name, and whether it names the guarantee) is weighed in
-  [Marking a given-up guarantee](guarantee-marker/index.md).
-- **Package-level cases:** how the marker for an unproven format or a
-  version-rule override, and the consumer's acceptance, read in `config.idp`.
-- **Diagnostics.** Should given-up guarantees be their own diagnostics code
-  family, so an organisation can raise or lower its warnings?
 
 ## What it touches
 

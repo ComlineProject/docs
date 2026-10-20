@@ -211,8 +211,11 @@ than introducing a "maybe" level.
    depend on the runtime. It's drift-checked against the corpus, the way
    comline-typescript vendors the vectors.
 3. **A profile is fixed for its version.** If a property changes, that is a new
-   version: `msgpack@2` is `msgpack@1` with `struct_fields: by_name` and
-   `missing_optional: absent`. That defines what the `@N` in a name means.
+   version, and that defines what the `@N` in a name means. An encoding's
+   **parameters** can set profile facts too: `msgpack@2` keys struct fields
+   by name or by field id, chosen with `keys = "name" | "id"`, and each value
+   sets the facts for that choice
+   ([runtime#16](https://github.com/ComlineProject/runtime/issues/16)).
 4. **An encoding core doesn't know** is compared under the strictest profile,
    with a warning saying so.
 
@@ -245,9 +248,21 @@ profiles; the rule itself is written against the property, as above.
 
 | Change | Bump | Why |
 |---|---|---|
-| add a variant | minor | conventional, with a caveat: an old reader can't decode the new variant, so a peer must not send it to one that predates it ([runtime#17](https://github.com/ComlineProject/runtime/issues/17) asks whether readers should tolerate unknown variants) |
+| add a variant | minor | with a caveat for a closed enum: an old reader can't decode the new variant, so a peer must not send it to one that predates it. `comline@2`'s `degrade` will enforce that. Under an `@open` enum there's no caveat |
+| mark an enum `@open`, or remove the mark | major | generated code gains or loses the `Unknown` case |
 | remove or rename a variant | major | |
 | reorder variants | none | variants travel by name |
+
+**Unknown variants** (decided 2026-10-20,
+[runtime#17](https://github.com/ComlineProject/runtime/issues/17)):
+
+- **Strict by default:** an unknown variant fails to decode. That gives up
+  nothing, since `comline@2` stops a newer peer from sending it.
+- **`@open` enums, opt-in:** generated code gets an extra `Unknown(raw value)`
+  case that code must handle, as Protobuf's open enums and Rust's
+  `#[non_exhaustive]` do. The schema declares it, so nothing is given up.
+- **No silent fallback** to a default: that would misread data unnoticed,
+  giving up encoding conformance. It isn't offered.
 
 ### Protocols and functions
 
@@ -283,7 +298,7 @@ profiles; the rule itself is written against the property, as above.
 | add a constant, alias or validator | minor | |
 | remove one | major | a name disappears |
 | change a constant's type | major | |
-| change a constant's value | minor | open: see below |
+| change a constant's value | by what it reaches | see below |
 | change an alias's target | major, at every use | |
 | a field's **effective validators** change, other than by removal | major | what's accepted narrows; with `validate_on_decode`, old data is rejected |
 | validators only removed from a field | minor | what's accepted widens |
@@ -293,6 +308,17 @@ then its own, with every argument resolved against its default. If a validator
 in that set changes its body or its targets, the set has changed too. Telling a
 genuine tightening from a loosening in general would mean comparing conditions.
 So any change other than pure removal counts as narrowing.
+
+- **Reported as its own category** (decided 2026-10-20): a narrowed validator
+  set appears as **"validation tightened"**, not as a generic major change, so
+  a reader can tell it from a change of shape.
+- **A constant's value counts by what it reaches** (decided 2026-10-20).
+  Constants never travel, but they often encode limits both peers rely on,
+  such as a maximum length:
+  - where it feeds a validator's argument or a bound, the validator rules
+    apply;
+  - where it's a field's default, it's a patch, as default changes are;
+  - where it reaches nothing on the wire, it's minor.
 
 ### Annotations and documentation
 
@@ -379,6 +405,28 @@ Cargo's convention:
   records the decision, so history shows when and why the package became
   stable.
 
+## Builds and releases
+
+Decided 2026-10-20. Today every build that changes something creates a commit
+with a new version, so five edit-and-build cycles make five patch versions, and
+a commit records neither the computed bump nor a reason. Instead, **builds and
+releases are separate**, as with Cargo (the version changes when you publish)
+or changesets in JS projects:
+
+- **A build** still records history, under a pre-release version such as
+  `1.3.0-dev.4`, derived from the bump computed since the last release.
+- **`comline release`** creates the version. It takes the **highest bump
+  computed since the last release**, plus any raise or lower with its reason.
+  The release record stores the computed bump, the applied one, the reason,
+  and the changes behind it.
+- **`comline release 1.0`** ([cli#82](https://github.com/ComlineProject/cli/issues/82))
+  is one use of the same command.
+- **Consumers and the handshake only see releases.** A pre-release tag never
+  equals a release, so two developers' local builds can't be mistaken for one.
+- The first release is `0.1.0`, and `0.x` follows Cargo's convention
+  ([above](#versions-before-10)); today's `0.0.1` start and its major bump
+  straight to `1.0.0` change with it.
+
 ## Bumps set by the author
 
 Some changes don't show in the schema: a function that now behaves
@@ -386,7 +434,8 @@ differently, say. So an author must be able to set a bump. But a mistaken bump
 must not break consumers. The two directions carry different risks, so they're
 handled differently:
 
-- **The computed bump is a floor.**
+- **The computed bump is a floor.** Raising and lowering happen at
+  [release](#builds-and-releases).
 - **Raising it is always allowed, with a mandatory reason,** recorded in the
   store and shown in `comline diff` and history. At worst it costs churn: a
   consumer's version range may stop picking the release up. It never breaks
@@ -395,13 +444,32 @@ handled differently:
 - **Lowering it** breaks consumers silently, so it isn't a bump setting at all.
   It's [giving up version honesty](extensibility.md#giving-up-a-guarantee):
   off by default, with a reason, and accepted by consumers. A naive author
-  can't do it by accident.
+  can't do it by accident. It's a decision about one release, so it's made
+  there (`comline release --lower minor --reason "…"`) and stored on the
+  release record, not in `config.idp`.
+- **A raise the computed bump already reaches** is recorded as covered, and
+  its reason is kept as a note.
 - **The build always shows why** the computed bump is what it is: the rule,
   and the encoding property behind it where one decided. An author sees the
   reason before relying on the number.
 
 The one mistake left unguarded is bumping higher than necessary. It's the
 harmless kind, so it gets no more friction than the reason it already needs.
+
+### Forbidding a break
+
+Decided 2026-10-20. Allowing a break needs nothing new: going below the
+computed bump is already `@unverified`. The missing direction is forbidding
+one, for a stable branch or a 1.x line in CI, as `cargo semver-checks` fails a
+build:
+
+```
+versioning.allow = "major" | "minor" | "patch"   # default "major"
+```
+
+A build whose computed bump goes above it fails and lists the changes
+responsible. `comline build --deny major` overrides it for one run
+([cli#80](https://github.com/ComlineProject/cli/issues/80)).
 
 ## Dependencies (tentative)
 
@@ -430,25 +498,10 @@ Points to weigh:
 
 ## Open questions
 
-- **Third-party profiles.** An encoding core doesn't know gets the strictest
-  profile. [Extending the call system](extensibility.md#how-core-learns-about-one)
-  proposes that the package defining it declares its profile, trusted like its
-  schemas. Is that trust enough?
-- **A constant's value.** Constants never travel, but they often encode limits
-  that both peers rely on, such as a maximum length. Should a value change be
-  major?
-- **Narrowed validation as its own category.** It's major above. Should it be
-  reported separately, so a reader can tell it from a shape change?
-- **Unknown enum variants.** If readers tolerated them
-  ([runtime#17](https://github.com/ComlineProject/runtime/issues/17)), adding a
-  variant would be safely minor instead of minor with a caveat.
-- **An escape hatch.** Accepting a breaking change without a major bump is
-  proposed as [giving up a guarantee](extensibility.md#giving-up-a-guarantee),
-  version honesty: allowed only when the package turns it on, with a reason.
-  Where it's written down is open. Raising a bump is simpler; see
-  [Bumps set by the author](#bumps-set-by-the-author).
-  Should the build also be able to fail on a break
-  ([cli#80](https://github.com/ComlineProject/cli/issues/80))?
+- **Third-party profiles** are settled in
+  [Extending the call system](extensibility.md#test-vectors-and-trust): with
+  vectors, conformance is proven; without, it's given up.
+- **Dependencies** (tentative, [above](#dependencies-tentative)).
 
 ## What it touches
 
@@ -458,15 +511,21 @@ Points to weigh:
   - the `config.idp` declaration;
   - versioned `@framing` values and their error;
   - pairing schemas by namespace;
-  - the `0.x` convention, a first build at `0.1.0`, the computed bump as a
-    floor, and raised bumps recorded with their reason.
+  - the `0.x` convention, a first release at `0.1.0`, the computed bump as a
+    floor;
+  - builds separate from releases: pre-release versions for builds, and a
+    release record holding the computed and applied bump and its reason;
+  - `versioning.allow`;
+  - the "validation tightened" category, constants judged by reach, and
+    `@open` enums.
 - **runtime:** versioned names in the handshake, a profile per versioned name in
   the conformance corpus with a vector behind every property, and the
   re-blessed vectors. comline-typescript's vendored copy follows.
 - **generation**, **comline-rust** and **comline-typescript:** the declared
   formats reach generated code.
-- **cli:** `comline release 1.0` and raising a bump with a reason
-  ([cli#82](https://github.com/ComlineProject/cli/issues/82)).
+- **cli:** `comline release`, including `1.0` and raising or lowering a bump
+  with a reason ([cli#82](https://github.com/ComlineProject/cli/issues/82)),
+  and `build --deny`.
 - **cli:** reporting the full set of changes and the bump in `build` and `diff`
   ([cli#80](https://github.com/ComlineProject/cli/issues/80)).
 - **language server:** the quick fix for a bare format or framing name.

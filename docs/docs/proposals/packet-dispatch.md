@@ -60,7 +60,12 @@ and already used in `runtime-std-extra`'s `reverse_proxy.ids`:
 - **`@provider`** (`Server`, `Client` or `Multiple`) names the side that
   **implements** a protocol. That's the runtime's existing sense of
   "provider": the provider trait, provider faults.
-- **`@consumer`** names the side that calls it.
+- **`@consumer`** names the side that calls it, and nothing more: it's the
+  counterpart of `@provider` (decided 2026-10-20). When `@provider` is set,
+  `@consumer` follows from it. Writing both is allowed, but a mismatch is an
+  error. The other reading of the 2024 file, *how many* peers provide or
+  consume (a fleet behind a reverse proxy), is dropped; if that need returns,
+  it belongs with [connections](connections.md).
 - **Server-to-client packets** are a protocol with `@provider = Client`. The
   client gets the dispatcher and the provider trait for it, and the server
   gets the sender.
@@ -321,7 +326,8 @@ with sub-opcodes), are **one packet whose payload is a tagged union** of
 structs. The second level of dispatch, hand-written in most implementations,
 is generated. Unions travel untagged today, so this needs tagged unions with
 explicit tag values
-([core#126](https://github.com/ComlineProject/core/issues/126)), which serve
+([core#126](https://github.com/ComlineProject/core/issues/126); how they're
+written is weighed in [Tagged unions](tagged-unions/index.md)), which serve
 more than packets.
 
 ### The mechanism, plus an official framing
@@ -404,10 +410,17 @@ Also part of it:
   parameters along with the name. A legacy handshake can't check them; an
   `@unverified` protocol vouches for them too.
 
-Open: whether an instance name may shadow an encoding name
-(`"jsonrpc@1" = {…}`), and whether instances can be shared across packages
-through a dependency, so two packages speaking one legacy system reuse one
-definition.
+Decided 2026-10-20 ([core#117](https://github.com/ComlineProject/core/issues/117)):
+
+- **Instance names can't contain `@`.** Encoding names always carry
+  `@version`, so the two can never collide, and `"game"` versus `"jsonrpc@1"`
+  shows at a glance which kind of name it is. An instance can't shadow an
+  encoding.
+- **A dependency's instances are used by qualified name,** for example
+  `@framing = "minecraft.game"`, so two packages speaking one legacy system
+  share one definition instead of copies that drift. A change to the
+  dependency's instance counts towards this package's bump by reach, as any
+  dependency change does.
 - **Handshake:** packet systems usually bring their own
   ([runtime#18](https://github.com/ComlineProject/runtime/issues/18)), often as
   a phase of its own. One that doesn't establish schema agreement makes the
@@ -423,16 +436,8 @@ definition.
   a real legacy schema needs them.
 - **The framing's parameters:** leaning towards named framing instances in
   `config.idp` (see
-  [Where the framing's parameters are written](#where-the-framings-parameters-are-written));
-  shadowing and cross-package sharing are open.
-- **`@consumer`.** What does it add beyond being the provider's complement? The
-  original note says the parameters "need more situational introspection".
-  One possible meaning: in the 2024 file, `Multiple` may originally have meant
-  *how many* (several instances providing or consuming a protocol, like a
-  fleet of servers behind the reverse proxy in `reverse_proxy.ids`), not
-  which direction. That reading would give `@consumer` a job of its own: who
-  may call a protocol, and how many of them. Not decided.
-- **The family id's syntax,** which follows the function-id decision.
+  [Where the framing's parameters are written](#where-the-framings-parameters-are-written)).
+  Instance names and sharing across packages are decided.
 
 ## Prerequisites
 
