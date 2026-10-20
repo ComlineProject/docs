@@ -165,8 +165,8 @@ Mapping rules:
   order).
 - **framing** — from a `Property { name: "framing" }` in the protocol's
   `parameters`; else the package `default_framing`; else `"datagram"`.
-  `"jsonrpc"` → `JsonRpcFraming` (`name "jsonrpc-2.0"`), anything else →
-  `DatagramFraming` (`name "comline.datagram"`).
+  `"jsonrpc"` → `JsonRpcFraming` (`name "jsonrpc@1"`), anything else →
+  `DatagramFraming` (`name "datagram@1"`).
 - **oneway** — `_return.is_none()`. Distinct from `Some(Unit)`, which still sends
   an empty `ok` reply.
 - **throws** — each `u16` ordinal joined to the matching `FrozenUnit::Error` by
