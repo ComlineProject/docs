@@ -44,12 +44,14 @@ nav:
       - 'languages/rust/index.md'
       - Client & server: 'languages/rust/client-and-server.md'
       - Framing & wire format: 'languages/rust/framing-and-wire-format.md'
+      - Connections: 'languages/rust/connections.md'
       - Sync, async & concurrency: 'languages/rust/concurrency.md'
     
     - TypeScript:
       - 'languages/typescript/index.md'
       - Client & server: 'languages/typescript/client-and-server.md'
       - Framing & wire format: 'languages/typescript/framing-and-wire-format.md'
+      - Connections: 'languages/typescript/connections.md'
   
   - Reference:
     - Languages:

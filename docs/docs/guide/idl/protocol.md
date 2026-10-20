@@ -53,8 +53,14 @@ protocol Mail {
 - **`@framing`** picks the wire framing the generated client and server use.
   `"jsonrpc"` (`json-rpc`, `jsonrpc-2.0`) emits a
   [JSON-RPC 2.0](https://www.jsonrpc.org/specification) stack; omit it for the
-  default compact datagram framing. Both ends of a connection must agree — the
-  [handshake](../runtime/call-system.md) refuses a mismatch.
+  default compact datagram framing. `"datagram@2"` puts the protocol on a
+  [connection](#calls-in-both-directions). Both ends of a connection must
+  agree — the [handshake](../runtime/call-system.md) refuses a mismatch.
+- **`@provider`** says which side implements the protocol: `Server` (the
+  default), `Client` or `Multiple`. See
+  [Calls in both directions](#calls-in-both-directions).
+- **`@consumer`** is the other side, which follows from `@provider`. You don't
+  need to write it, but if you do, it has to agree.
 - **`@handshake`** picks what runs on a connection before the first call:
   `"comline@1"` (the default) checks that both ends share the schema, format
   and framing; `"none"` sends and checks nothing. Without it, the protocol takes
@@ -62,6 +68,55 @@ protocol Mail {
 - **`@unverified`** says why a protocol gives up a guarantee Comline would
   otherwise give its peers. It's required where one is given up, as with
   `@handshake = "none"`; see [Giving up a guarantee](#giving-up-a-guarantee).
+
+## Calls in both directions
+
+By default the side that dialled calls and the side that accepted answers. A
+protocol the client implements turns that round: the server calls it, to push
+a message or to ask the client something mid-request.
+
+```ids linenums="1"
+@framing = "datagram@2"
+protocol Chat {
+    function send(text: string) -> u64;
+}
+
+@provider = Client
+@framing = "datagram@2"
+protocol Events {
+    function message(text: string) -> bool;
+    function ping();
+}
+```
+
+- **`@provider = Client`**: the client implements it and the server calls it.
+  **`@provider = Multiple`**: both sides implement it and either can call.
+- **The framing has to tell requests from replies,** since both ends now send
+  both. `datagram@1`, the default, can't, so a `Client` or `Multiple`
+  protocol without `@framing` is a build error
+  (`validation::reverse-calls-need-framing`). Use `@framing = "datagram@2"`.
+  Allowing `@framing` is a package setting
+  (`annotations.framing.allowed = true`).
+- **`@consumer` that disagrees with `@provider`** is a build error
+  (`validation::provider-consumer-mismatch`).
+
+Protocols on `datagram@2` run on a **connection** instead of a client and a
+server:
+
+- **One connection carries all of them.** Each side provides the protocols it
+  implements and calls the others.
+- **Calls can nest.** A handler receives the peer that called it, so it can
+  call back before it answers. While a side waits for a reply, it keeps
+  serving the peer's requests.
+- **Each protocol has a number on the wire:** its position among the
+  package's protocols, in schema order.
+- **A connection keeps typed data of its own** (a session, a user id) that
+  every handler on it can reach.
+
+How this looks in code: [Rust](../../languages/rust/connections.md),
+[TypeScript](../../languages/typescript/connections.md). Status: generated
+for `datagram@2`; JSON-RPC on a connection isn't supported yet
+([runtime#19](https://github.com/ComlineProject/runtime/issues/19)).
 
 ## Giving up a guarantee
 

@@ -88,6 +88,7 @@ commit. A runtime's suite runs every example against it:
 | `validate_on_decode` <br><sub>`validate-on-decode`</sub> | ✅ supported | ⚪ ignored: no checks are generated to run on decode yet ([core#96](https://github.com/ComlineProject/core/issues/96)) |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | ✅ supported | ✅ supported |
 | no handshake <br><sub>`handshake-none`</sub> | ✅ supported | ✅ supported |
+| connections <br><sub>`connections`</sub> | 🟡 partial: over `datagram@2`; JSON-RPC on a connection isn't supported yet ([runtime#19](https://github.com/ComlineProject/runtime/issues/19)) | 🟡 partial: over `datagram@2`; JSON-RPC on a connection isn't supported yet ([runtime#19](https://github.com/ComlineProject/runtime/issues/19)) |
 
 <!-- matrix:end -->
 
@@ -102,6 +103,7 @@ commit. A runtime's suite runs every example against it:
 | handshake <br><sub>`handshake`</sub> | ✅ supported | ✅ supported |
 | envelope <br><sub>`envelope`</sub> | ✅ supported | ✅ supported |
 | datagram framing <br><sub>`framing-datagram`</sub> | ✅ supported | ✅ supported |
+| datagram@2 framing <br><sub>`framing-datagram2`</sub> | ✅ supported | ✅ supported |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | ✅ supported | ✅ supported |
 | JSON wire format <br><sub>`format-json`</sub> | ✅ supported | 🟡 partial: decoding doesn't check enum variants or integer ranges ([comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57)) |
 | MessagePack wire format <br><sub>`format-msgpack`</sub> | ✅ supported | ❌ unsupported: only JSON ships |

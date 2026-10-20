@@ -1,8 +1,9 @@
 # Connections
 
-Status: **under discussion** · tracked in
-[runtime#19](https://github.com/ComlineProject/runtime/issues/19) · partly
-decided, nothing implemented
+Status: **accepted** · tracked in
+[runtime#19](https://github.com/ComlineProject/runtime/issues/19) · calls in
+both directions and several protocols per connection are built (see
+[What's built](#whats-built)); the rest is open
 
 **The question:** what a connection carries beyond one client calling one
 server, and how the runtime models it. This page covers calls in both
@@ -152,6 +153,46 @@ Decided with the user (2026-10-20):
    The core dispatches **one call at a time** per connection by default, since
    packet protocols rely on order. The async wrapper can offer concurrency,
    per protocol or fully.
+
+## What's built
+
+Built 2026-10-20, as the
+[Rust](../languages/rust/connections.md) and
+[TypeScript](../languages/typescript/connections.md) guides describe:
+
+- **Core** ([core#136](https://github.com/ComlineProject/core/pull/136)):
+  `@provider` and `@consumer` take `Server`, `Client` or `Multiple`. A
+  `Client` or `Multiple` protocol under `datagram@1` is a build error, and so
+  is an `@consumer` that disagrees with `@provider`. `@framing` accepts
+  `datagram@2`.
+- **Runtime** ([runtime#23](https://github.com/ComlineProject/runtime/pull/23),
+  [comline-typescript#64](https://github.com/ComlineProject/comline-typescript/pull/64)):
+  `datagram@2` with its conformance vectors, the I/O-free core, `Connection`,
+  `Peer`, and `Extensions`. Rust's `Connection` is blocking; TypeScript's
+  runs a read loop.
+- **Generators** ([generation#75](https://github.com/ComlineProject/generation/pull/75),
+  [comline-rust#68](https://github.com/ComlineProject/comline-rust/pull/68)):
+  handlers that take the peer, `provide_on`, a sender per protocol, and
+  `CONNECTION_IR_HASH`. Both claim the `connections` feature as partial.
+
+It differs from the decisions above where they need `comline@2`, which
+isn't written yet:
+
+- **Protocol numbers are fixed, not negotiated:** a protocol's position among
+  the package's protocols, in schema order. The handshake's IR hash covers
+  every schema, so both ends agree on them.
+- **`datagram@2` is opt-in.** `datagram@1` stays the default.
+- **Error ids are still positions across a schema,** not scoped by protocol.
+
+Not built yet:
+
+- JSON-RPC on a connection (`method_names`). The generators refuse it with a
+  message.
+- Interceptors.
+- The `duplex` capability check.
+- Rust's async driver, so another thread can call while one serves.
+- The [simulator](../design/playground-simulation.md) doesn't know
+  `datagram@2`.
 
 ## Open questions
 
