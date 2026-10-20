@@ -1,16 +1,46 @@
 # Versioning rules
 
-Comline versions a package **automatically**. Every `comline build` compares the
-new schemas against the previous frozen version and bumps the package version by
-the largest change it finds. You never write a version by hand — there is no
-version field in the manifest; it comes from the
-[content-addressable store](../guide/ir/cas.md).
+Comline versions a package **automatically**: the version comes from what
+changed, not from a field you write. There is no version in the manifest; it
+lives in the [content-addressable store](../guide/ir/cas.md).
 
-Versions follow [SemVer](https://semver.org/). The first build is `0.0.1`. A
-build that changes nothing keeps the version and adds no commit. A change that
-takes no bump, such as to `code_generation`, adds a commit at the same version.
+## Builds and releases
+
+**Builds** record history; **releases** are the versions consumers see.
+
+- **`comline build`** compares the schemas against the last *release* and
+  records a build under a pre-release version: the release it leads to, plus
+  a count of builds since the last release. After `0.1.0`, a build adding a
+  feature is `0.1.1-dev.1`; a breaking change in the next build makes it
+  `0.2.0-dev.2`. The build reports the next release and what calls for it.
+  Changes that cancel out between releases cancel out in the bump too. A build
+  that changes nothing adds no commit.
+- **`comline release`** builds, then creates the version from the **highest
+  bump since the last release**. It records the computed bump, the applied
+  one and any reason with the release. The first release is `0.1.0`.
+- **`--raise <level> --reason "…"`** releases a higher bump than the schema
+  shows, for a behaviour change it can't express. A raise the changes already
+  reach is recorded as covered, its reason kept as a note. The bump is never
+  lowered.
+- **`comline release 1.0`** makes a `0.x` package stable, after saying what
+  that commits to.
+
 `comline diff <old> <new>` runs the same comparison between any two stored
-versions on demand.
+versions, builds or releases, on demand.
+
+## Before 1.0
+
+Versions follow [SemVer](https://semver.org/), with Cargo's convention before
+1.0: while the version is `0.x`, the minor plays the part of the major.
+
+| Change | `0.x` | `1.0` and later |
+|---|---|---|
+| breaking | `0.3.2` → `0.4.0` | `1.3.2` → `2.0.0` |
+| new feature | `0.3.2` → `0.3.3` | `1.3.2` → `1.4.0` |
+| modification | `0.3.2` → `0.3.3` | `1.3.2` → `1.3.3` |
+
+Histories from before builds and releases were separate keep their versions,
+which all count as releases; from a `0.0.z` release the next one is `0.1.0`.
 
 ## Schema changes
 
@@ -59,7 +89,7 @@ git-inspired, no branches, never rewritten — so any past version stays
 reproducible.
 
 Nothing else holds this history — there is no `publish` yet — so losing
-`.comline/` means the next build starts over at `0.0.1`, with no undo.
+`.comline/` means the next build starts over at `0.1.0-dev.1`, with no undo.
 `comline clean` leaves it alone; only **`comline reset`** deletes it, behind a
 typed confirmation (or `--force`). See
 [the `clean` / `reset` split](../design/ir-generation.md#the-clean-reset-split).
