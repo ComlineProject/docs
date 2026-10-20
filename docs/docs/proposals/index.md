@@ -122,6 +122,17 @@ How phases are written. Two competing proposals:
   declaration lists each phase in one place. *rejected: a new construct and a
   second table.*
 
+#### [Tagged unions](tagged-unions/index.md)
+
+Whether "one of several shapes, with a tag" is a feature of `enum` or of
+`union`. Three competing proposals, *under discussion*:
+
+- [Proposal A — a `union` declaration](tagged-unions/union-declaration.md):
+  members written like struct fields, tagged with `@id`. *leaning.*
+- [Proposal B — enum variants that carry data](tagged-unions/enum-variants.md),
+  as in Rust and Swift.
+- [Proposal C — both](tagged-unions/both.md).
+
 ### Tooling
 
 - [Automatic documentation](auto-documentation.md) — an optional tool that
