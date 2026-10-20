@@ -105,8 +105,10 @@ that out; the schema only says *that* something is unverified and *why*:
 
   Nobody writes this by hand: `comline add` shows what a new dependency gives
   up and asks before writing it, and `comline accept billing` (or
-  `billing::Billing`) does the same for one already declared. Until it's
-  accepted, the build fails, printing the entry. The list is a snapshot: if a
+  `billing::Billing`) does the same for one already declared. In the editor,
+  the dependency's entry in `config.idp` shows the error, with a quick fix
+  that writes the line. Until it's accepted, the build fails, printing the
+  entry. The list is a snapshot: if a
   later version of the dependency gives up more, the build stops again until
   `comline accept` is run again.
 

@@ -287,8 +287,11 @@ What decides a connection under `comline@2`:
 > `@unverified`, the frozen set, its diagnostics, the version comparison and
 > `accept_unverified`, and `comline accept` / `comline add` asking before they
 > write it ([cli#89](https://github.com/ComlineProject/cli/pull/89)).
+> The editor reports an unaccepted dependency on its `config.idp` entry, with
+> a quick fix
+> ([language-server#78](https://github.com/ComlineProject/language-server/pull/78)).
 > Encodings without vectors and lowered bumps join when third-party encodings
-> and releases exist; the editor's quick fix follows.
+> exist, and when releases can lower a bump.
 
 Between peers, Comline gives four guarantees, each established by something
 specific:
