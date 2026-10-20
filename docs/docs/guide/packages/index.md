@@ -120,7 +120,10 @@ decides where the package comes from:
 | Registry | `version`, `uri` (optional `hash`, `signature`) | **not supported yet** — there's no registry server, so `comline check` / `build` reject it |
 
 `comline check` and `comline build` resolve every dependency, then compile it
-like any other package. A git fetch that fails (no network, a commit that
+like any other package. Your package uses that compile as it is: a
+dependency's schemas aren't compiled again under your settings, its own
+package defaults (such as its `handshake`) stay with them, and its warnings
+are its authors' and aren't repeated in your build. A git fetch that fails (no network, a commit that
 doesn't exist) leaves nothing in the cache, so the next run fetches again and
 reports git's own error.
 
