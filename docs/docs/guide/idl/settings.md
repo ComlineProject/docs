@@ -151,10 +151,12 @@ error: annotation '@framing' is forbidden here by 'annotations.framing.allowed =
 
 ## The built-in default
 
-Comline ships exactly one built-in default policy: **`@framing` is forbidden
-until some level explicitly allows it.** Wire framing (`jsonrpc` vs.
-`datagram`) is a wire-compatibility decision an organization should make
-deliberately once, not something any individual protocol can silently flip.
+Comline ships one built-in default policy: **`@framing` and `@unverified`
+are forbidden until some level explicitly allows them.** Wire framing
+(`jsonrpc` vs. `datagram`) is a wire-compatibility decision an organization
+should make deliberately once, not something any individual protocol can
+silently flip; [giving up a guarantee](protocol.md#giving-up-a-guarantee)
+peers rely on is the same kind of decision.
 
 It is the base layer every package starts from, whether or not the package
 writes a `settings` block of its own: writing an unrelated setting does not
@@ -167,6 +169,11 @@ other layer has.
 Every other annotation and validator stays allowed by default. Write
 `settings = { annotations = { framing = { allowed = true } } }` (or a
 decl-path-scoped form) to permit it.
+
+A dependency's schemas are judged by the dependency's own settings, not the
+consumer's: a package that allows `@unverified` for itself doesn't make its
+consumers allow it too. They [accept](protocol.md#giving-up-a-guarantee) what
+it gives up instead.
 
 ## Cross-package sharing
 

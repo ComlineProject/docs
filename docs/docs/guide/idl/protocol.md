@@ -55,6 +55,57 @@ protocol Mail {
   [JSON-RPC 2.0](https://www.jsonrpc.org/specification) stack; omit it for the
   default compact datagram framing. Both ends of a connection must agree — the
   [handshake](../runtime/call-system.md) refuses a mismatch.
+- **`@handshake`** picks what runs on a connection before the first call:
+  `"comline@1"` (the default) checks that both ends share the schema, format
+  and framing; `"none"` sends and checks nothing. Without it, the protocol takes
+  the package's `handshake = "..."` from `config.idp`, else `comline@1`.
+- **`@unverified`** says why a protocol gives up a guarantee Comline would
+  otherwise give its peers. It's required where one is given up, as with
+  `@handshake = "none"`; see [Giving up a guarantee](#giving-up-a-guarantee).
+
+## Giving up a guarantee
+
+A protocol fronting a peer that can't take part in Comline's handshake (a
+legacy service with no schema, say) can run none:
+
+```ids linenums="1"
+@handshake = "none"
+@unverified = "the 2009 billing gateway has no schema; its version is pinned by contract"
+protocol Billing {
+    function charge(cents: u64) -> bool;
+}
+```
+
+Nothing then checks that both ends agree on the schema or the encoding, so the
+protocol gives up **schema agreement** and **encoding agreement**. Core works
+that out; the schema only says *that* something is unverified and *why*:
+
+- **The marker is required.** Giving a guarantee up without `@unverified` is a
+  build error, and the reason can't be empty. A marker on a protocol that gives
+  nothing up is a warning.
+- **It's off by default,** like `@framing`: a package allows it with
+  `settings = { annotations = { unverified = { allowed = true } } }`.
+- **Core freezes the set** with the reason. Build output and generated code
+  name it ("`Billing` is unverified: schema agreement isn't established
+  (handshake `none`)"), each guarantee under its own diagnostic code
+  (`unverified::schema-agreement`, …) so an organisation can raise or quiet
+  them.
+- **Giving one up is a major change;** restoring one is minor.
+- **Every consumer accepts it,** under the dependency in its own `config.idp`,
+  for exactly the set given up:
+
+  ```
+  dependencies = {
+      billing = {
+          path = "../billing"
+          accept_unverified = { Billing = ["schema_agreement", "encoding_agreement"] }
+      }
+  }
+  ```
+
+  Until it does, the build fails, printing that entry. The list is a snapshot:
+  if a later version of the dependency gives up more, the build stops again
+  until it's accepted again.
 
 How a call travels between caller and implementation is the
 [runtime](../runtime/index.md)'s job, over a pluggable

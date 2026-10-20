@@ -87,6 +87,7 @@ commit. A runtime's suite runs every example against it:
 | `external_std` <br><sub>`external-std`</sub> | ✅ supported | ✅ supported |
 | `validate_on_decode` <br><sub>`validate-on-decode`</sub> | ✅ supported | ⚪ ignored: no checks are generated to run on decode yet ([core#96](https://github.com/ComlineProject/core/issues/96)) |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | ✅ supported | ✅ supported |
+| no handshake <br><sub>`handshake-none`</sub> | ✅ supported | ✅ supported |
 
 <!-- matrix:end -->
 
