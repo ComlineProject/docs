@@ -69,9 +69,11 @@ struct Greeting {
 comline build
 ```
 
-This compiles and validates the schemas, then freezes the result as version
-`0.0.1` in a content-addressable store under `.comline/`. Later builds
-[bump the version automatically](reference/versioning.md) by the largest change
+This compiles and validates the schemas, then freezes the result as a build,
+`0.1.0-dev.1`, in a content-addressable store under `.comline/`. Builds lead up
+to a release; when you want a version consumers see, run `comline release`
+(the first is `0.1.0`), and later releases
+[take the bump automatically](reference/versioning.md) from the largest change
 since the last one.
 
 Validate without freezing — safe for editors and pre-commit hooks:

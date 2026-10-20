@@ -155,8 +155,8 @@ you want fewer.
 | Value | Effect |
 |---|---|
 | `"latest"` (default) | The working tree only. No `.comline/` read. `{{package_version}}` is the last committed version (empty if never built). |
-| `"all"` | Every committed version in the project's history. |
-| `["0.3.0", "0.4.0"]` | Exactly those versions (version strings or commit hashes). |
+| `"all"` | Every release in the project's history (not the builds between them). |
+| `["0.3.0", "0.4.0"]` | Exactly those versions: releases, builds (`0.3.0-dev.2`) or commit hashes. |
 
 Anything but `"latest"` reads the content-addressable store, so the project must
 have been built at least once. Selecting more than one version **requires**

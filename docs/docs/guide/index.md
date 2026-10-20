@@ -27,8 +27,9 @@ and then **freezes** the result: the schema becomes a set of immutable [Intermed
 written into a Content Addressable Store, [`.comline/`](ir/cas.md), as a new
 commit in an append-only chain.
 
-The package version bumps automatically on each build, by the largest change
-since the last one — see [Versioning rules](../reference/versioning.md).
+Each build is recorded under a pre-release version leading to the next release;
+`comline release` creates that version, bumped by the largest change since the
+last one — see [Versioning rules](../reference/versioning.md).
 
 ## 3. [Generate code](codegen/generating-code.md)
 

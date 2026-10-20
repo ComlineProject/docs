@@ -407,6 +407,12 @@ Cargo's convention:
 
 ## Builds and releases
 
+> **Built** ([core#133](https://github.com/ComlineProject/core/pull/133),
+> [cli#90](https://github.com/ComlineProject/cli/pull/90)): builds carry
+> `X.Y.Z-dev.N`, the release they lead to; `comline release` with `--raise`
+> and `1.0`. Not yet: `--lower` (how consumers accept a package-wide loss of
+> version honesty is open) and assigning `@id`s at 1.0 (core#127).
+
 Decided 2026-10-20. Today every build that changes something creates a commit
 with a new version, so five edit-and-build cycles make five patch versions, and
 a commit records neither the computed bump nor a reason. Instead, **builds and
