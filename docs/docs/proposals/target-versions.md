@@ -54,8 +54,15 @@ With the user, 2026-10-20:
 3. **Generators have upper bounds,** for the sake of the guarantee: a verified
    range, with going past it marked the way `@unverified` marks other gaps
    ([Upper bounds](#upper-bounds-a-verified-range)).
-4. **Dialects belong in `config.idp`,** but need their own pass, language by
-   language ([Dialects](#dialects)).
+4. **Dialects belong in `config.idp`,** but a generator removes a dialect
+   before making it an option: it emits code valid under every setting it
+   supports, and offers an option only where no single output fits. For Rust
+   and TypeScript that leaves none ([Dialects](#dialects)).
+5. **`comline new` scaffolds the floor** (`rust#1.70.0`, as today). That
+   declares the widest promise; since consumers can raise but never lower, a
+   higher scaffold would shut out older toolchains for good. When the floor is
+   too low for something the schema uses, the build's error names the version
+   to declare.
 
 ## What a version means
 
@@ -202,33 +209,42 @@ the ceiling only bounds the dialects (Rust's editions).
 Rust's edition and TypeScript's `target` and `module` aren't versions: no
 order says which is "newer" in the sense a minimum needs.
 
-**Decided: they belong in `config.idp`,** in the entry for the language, where
-`= {}` was reserved for options:
+No dialect touches the wire. What one can affect is whether the generated
+code builds where it lands:
 
-```
-code_generation = {
-    languages = {
-        rust#1.75.0 = { edition = "2021" }
-    }
-}
-```
+- **Code mode:** the generated source compiles inside the consumer's own
+  project, under its edition, `tsconfig` and flags.
+- **Lib mode:** the generator emits a package others depend on, whose shape
+  (module format, Cargo features) dependents rely on, as they do on its
+  version.
 
-**They need their own pass, language by language,** before anything is
-written down. The question is the same as for versions: does a dialect change
-only the code, or something a consumer relies on? Some do. TypeScript's
-`module` (CommonJS or ESM) decides whether the package can be imported at
-all, so a consumer couldn't safely change it. Others may be safe to raise, as
-a version is.
+**Decided: remove a dialect before configuring it.** A generator emits code
+valid under every setting it supports, and offers an option only where no
+single output fits. Such options go in the `config.idp` entry for the
+language, where `= {}` was reserved for them: C's
+`std = "c11"`, say, since `-std=c89` and `c11` change what can be written at
+all. For Rust and TypeScript the pass below finds
+none.
+
+### Rust
+
+| Axis | Today | Decided |
+|---|---|---|
+| **Edition** | Lib mode writes `edition = "2021"`; code-mode source compiles under the consumer's edition | Crates of different editions work together, so dependents never see a package's. In code mode only keywords differ (`async`, `dyn`, `try` from 2018; `gen` from 2024), and the generator doesn't escape any, so a field named `gen` breaks inside a 2024 crate. **Escape every edition's keywords with `r#`.** Lib mode's edition follows from the version: 2024 from 1.85, otherwise 2021. |
+| **`std` / `alloc` / `no_std`** | The runtime supports all three | The consumer's environment decides, not the author. **Lib mode exposes them as Cargo features,** chosen when building. |
+| **`async`** | A per-target `comline.toml` option ([runtime#19](https://github.com/ComlineProject/runtime/issues/19)) | **Stays a `comline.toml` option, in both modes.** It only matters for a generated package published for others to depend on, whose publisher would choose for every dependent; a Cargo feature would let each choose. The only such package today, `comline_std`, has no connection protocols, so this is revisited if one appears. |
+
+### TypeScript
+
+| Axis | Today | Decided |
+|---|---|---|
+| **`target`** (ES level) | Lib mode fixes ES2022; the output uses `bigint`, which needs ES2020 | **No option.** The generator states ES2020 as a requirement, shown by `comline targets`. |
+| **`module`** | Lib mode emits ESM (`"type": "module"`, NodeNext), with `.js` extensions in imports | That works under NodeNext and bundler resolution, and Node 22 can `require()` ESM. **ESM only,** unless a CommonJS-only consumer appears. |
+| **Erasable syntax** | `export enum`, and constructor parameter properties (`constructor(private readonly impl …)`) | Neither works under TypeScript 5.8's `erasableSyntaxOnly` or Node's built-in type stripping. **Emit a `const` object and a union type instead of an enum, and plain fields.** `Color.Red` still works; the enum's type changes shape. |
+| **Strict flags** | `import type` already used | **Conformance type-checks the output under the strictest set** (`exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`), so it builds under any. |
 
 ## Open questions
 
-- **Dialects, language by language:** which options there are, which change
-  only the code, and whether a consumer may change any of them.
-- **`comline new`:** recommended to scaffold the floor (`rust#1.70.0`, as
-  today). That declares the widest promise, and since consumers can raise but
-  never lower, a higher scaffold would shut out older toolchains for good.
-  When the floor is too low for something the schema uses, the build's error
-  names the version to declare. Not yet decided.
 - **How the gap past the ceiling is reported,** and whether a consumer has to
   accept it (as with `accept_unverified`) or only sees it.
 
@@ -240,7 +256,11 @@ a version is.
   over, generated code compiled with each boundary's toolchain, and encoding
   compared across boundaries.
 - **comline-rust and comline-typescript:** declare boundaries, gate features,
-  and compare versions against boundaries in their output.
+  and compare versions against boundaries in their output. Rust escapes every
+  edition's keywords, derives lib mode's edition, and exposes `std` / `alloc`
+  as Cargo features. TypeScript emits enums as `const` objects with union
+  types, drops parameter properties, and is type-checked under the strictest
+  flags.
 - **core and cli:** `comline build` checks every declared target and the
   dependencies' declarations, and `comline.toml` may only raise
   `lang_version`. Plus lookup by floor, the new messages, and `comline
