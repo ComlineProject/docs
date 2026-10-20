@@ -16,17 +16,22 @@ versions on demand.
 
 | Bump | When | Examples |
 |---|---|---|
-| **major** | a breaking change | removed struct / enum / protocol / error; removed required field; removed variant; removed function; changed a field's type (compared as written); changed a function's argument or return types; added a required field; a removed schema file |
-| **minor** | a new feature | added struct / enum / protocol / error; added a variant; added a function; added an optional field; a new schema file |
-| **patch** | a modification | a declaration's docstring changed |
+| **major** | a breaking change | removed struct, enum, protocol, error, constant, type alias or validator; removed field, optional or not; a field's `optional` flipped either way; added a required field (structs and errors); removed or renamed variant (a rename is reported as one); removed function; changed a field's type (compared as written); changed a function's argument names or types, or its return; a function no longer declares an error it did (`!`); an error's ordinal changed; a constant's type changed; a type alias's target changed; a validator's declaration changed; the validators applied to a declaration changed other than by removal (*validation tightened*); `@framing` changed |
+| **minor** | a new feature | added struct, enum, protocol, error, constant, type alias or validator; added a variant; added a function; added an optional field; a function declares a new error; a constant's value changed; validators only removed from a declaration; `@deprecated` added |
+| **patch** | a modification | a declaration's docstring changed; a field's default changed; an error's message changed; another annotation changed (`@timeout_ms`, `@idempotent`, `@deprecated` removed or reworded, or one core doesn't know) |
+| **none** | | a `settings` change |
 
-The bump applied is the **maximum** over all changes in the build.
+The bump applied is the **maximum** over all changes in the build. Schema files
+are paired by **namespace**, so adding, renaming or reordering files doesn't
+compare the wrong schemas: a file that only exists on one side counts as its
+declarations being added or removed.
 
-Not compared yet ([core#118](https://github.com/ComlineProject/core/issues/118)):
-annotations, type aliases, validators, constants beyond their docstring, an
-error's fields and ordinal, argument names, a field's `optional` flag, and the
-removal of an optional field. Which of these *should* be breaking is under
-discussion in [Schema compatibility](../proposals/schema-compatibility.md).
+Not compared yet: a type swapped for an alias of the same type is still
+reported as a type change
+([core#110](https://github.com/ComlineProject/core/issues/110)), a constant's
+value counts as minor wherever it's used, and validators reached through a
+type alias are compared on the alias, not on each use. The rules being worked
+out are in [Schema compatibility](../proposals/schema-compatibility.md).
 
 ## Manifest (`config.idp`) changes
 
@@ -42,8 +47,9 @@ version — but only the parts that describe the schema API:
 | `PublishRegistry` | any | **none** — publish metadata |
 | `Namespace` | changed | **not a bump** — renaming the package is a new package |
 
-A dependency present in both versions is also compared like your own schemas,
-and its changes move the bump. They aren't listed in the build's output yet
+A dependency present in both versions is also compared like your own schemas.
+Its changes move the bump, and the build reports them per dependency. The CLI
+shows them once it picks this up
 ([cli#80](https://github.com/ComlineProject/cli/issues/80)).
 
 ## History model
