@@ -1,8 +1,8 @@
 # Language target versions
 
-Status: **under discussion** · tracked in
+Status: **accepted** · tracked in
 [generation#76](https://github.com/ComlineProject/generation/issues/76) ·
-partly decided (see [Decided](#decided)), nothing implemented
+see [Decided](#decided); nothing implemented yet
 
 **The question:** what the version in `rust#1.70.0` means, how it picks a
 generator, and how a generator's output and feature support depend on it.
@@ -58,7 +58,13 @@ With the user, 2026-10-20:
    before making it an option: it emits code valid under every setting it
    supports, and offers an option only where no single output fits. For Rust
    and TypeScript that leaves none ([Dialects](#dialects)).
-5. **`comline new` scaffolds the floor** (`rust#1.70.0`, as today). That
+5. **Versions are minimums, registered versions are floors, and support is
+   gated by version,** proven by conformance at each boundary
+   ([What a version means](#what-a-version-means) through
+   [Boundaries and conformance](#boundaries-and-conformance)).
+6. **A gap past the ceiling is a warning, not an acceptance step**
+   ([Reporting the gap](#reporting-the-gap)).
+7. **`comline new` scaffolds the floor** (`rust#1.70.0`, as today). That
    declares the widest promise; since consumers can raise but never lower, a
    higher scaffold would shut out older toolchains for good. When the floor is
    too low for something the schema uses, the build's error names the version
@@ -68,7 +74,7 @@ With the user, 2026-10-20:
 
 | | Meaning | Like |
 |---|---|---|
-| **A. A minimum** (recommended) | The oldest toolchain the generated code must build on. Newer toolchains build it too. | Cargo's `rust-version`, npm's `engines` |
+| **A. A minimum** (decided) | The oldest toolchain the generated code must build on. Newer toolchains build it too. | Cargo's `rust-version`, npm's `engines` |
 | B. An exact toolchain | Output for exactly that release | — |
 | C. The generator's version | Which generator release made it | — |
 
@@ -81,7 +87,7 @@ zero, so `1.70` is `1.70.0` and `5.0` is `5.0.0`.
 
 ## Choosing a generator
 
-**Recommended: a registered version is a floor.** A declared version gets the
+**Decided: a registered version is a floor.** A declared version gets the
 generator with the newest floor at or below it, which then receives the
 declared version in its request:
 
@@ -132,11 +138,11 @@ proves it: at every boundary, the generated types encode alike.
 
 ## Support by version
 
-A feature can be supported from some version on. Options:
+A feature can be supported from some version on. Decided: A.
 
 | | How | Trade-off |
 |---|---|---|
-| **A. Version gates on table entries** (recommended) | `(Feature::Async, Support::supported().from("1.75.0", "async fn in traits"))`. Below the gate the feature is unsupported, and the note names the version to declare. | Declarative, so every tool can render and explain it. One column per language stays. |
+| **A. Version gates on table entries** (decided) | `(Feature::Async, Support::supported().from("1.75.0", "async fn in traits"))`. Below the gate the feature is unsupported, and the note names the version to declare. | Declarative, so every tool can render and explain it. One column per language stays. |
 | B. A table per registered version | Register `1.75.0` beside `1.70.0` with its own table | A second column everywhere that differs in a row or two |
 | C. A function of the version | `support(version) -> SupportTable` | Can't be rendered without picking versions to call it at |
 
@@ -206,7 +212,7 @@ the ceiling only bounds the dialects (Rust's editions).
 
 ### Reporting the gap
 
-*Proposed, not yet decided.* Two cases, because comline knows the declared
+Two cases, because comline knows the declared
 version but never the compiler a consumer actually runs:
 
 **1. A declared or raised version above the ceiling** (`rust#1.95.0` when the
@@ -277,9 +283,10 @@ none.
 
 ## Open questions
 
-- **[Reporting the gap](#reporting-the-gap)** past the ceiling, as proposed
-  there: a warning code that settings can raise, no acceptance step, and the
-  verified range stated in generated headers and package metadata.
+None left. Implementation follows
+[generation#76](https://github.com/ComlineProject/generation/issues/76); the
+first user is `async` for connection protocols
+([runtime#19](https://github.com/ComlineProject/runtime/issues/19)).
 
 ## What it touches
 
