@@ -285,9 +285,10 @@ What decides a connection under `comline@2`:
 
 > **Built for handshakes** ([core#132](https://github.com/ComlineProject/core/pull/132)):
 > `@unverified`, the frozen set, its diagnostics, the version comparison and
-> `accept_unverified`. Encodings without vectors and lowered bumps join when
-> third-party encodings and releases exist; `comline accept` and the editor's
-> quick fix follow.
+> `accept_unverified`, and `comline accept` / `comline add` asking before they
+> write it ([cli#89](https://github.com/ComlineProject/cli/pull/89)).
+> Encodings without vectors and lowered bumps join when third-party encodings
+> and releases exist; the editor's quick fix follows.
 
 Between peers, Comline gives four guarantees, each established by something
 specific:
