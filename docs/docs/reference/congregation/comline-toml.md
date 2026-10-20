@@ -180,8 +180,9 @@ Unset ⇒ the generator's built-in default (a compact datagram framing for Rust)
 | `"datagram"` (`"comline.datagram"`) | The datagram default, stated explicitly. |
 | `"jsonrpc"` (`"json-rpc"`, `"jsonrpc-2.0"`) | JSON-RPC 2.0 framing. |
 
-A value the target generator doesn't recognise leaves its built-in default in
-place. A single protocol overrides the package setting either way with
+Any other value is an error naming the accepted ones, with a "did you mean"
+for a near miss. (It used to fall back silently to datagram, so a typo only
+showed up as a refused handshake.) A single protocol overrides the package setting either way with
 `@framing` — including `@framing = "datagram"` to opt back out of a `jsonrpc`
 default.
 
