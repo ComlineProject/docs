@@ -63,6 +63,10 @@ alternatives are worth. Five proposals, read to the same shape:
   breaking, measured by the wire and by the names consumers use, with formats
   and framings versioned and declared by the package so the rules can depend
   on them. *under discussion.*
+- [Language target versions](target-versions.md): what the version in
+  `rust#1.70.0` means, how it picks a generator, and how feature support and
+  output depend on it, proven by conformance at each version where they
+  change. ***accepted***.
 
 ### Extensibility
 

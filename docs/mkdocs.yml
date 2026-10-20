@@ -105,6 +105,7 @@ nav:
       - 'Proposal E': 'proposals/codegen-architecture/adopt-existing-model.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
     - Schema compatibility: 'proposals/schema-compatibility.md'
+    - Language target versions: 'proposals/target-versions.md'
     - Extending the call system: 'proposals/extensibility.md'
     - Connections: 'proposals/connections.md'
     - Packet dispatch: 'proposals/packet-dispatch.md'
