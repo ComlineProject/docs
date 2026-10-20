@@ -103,9 +103,12 @@ that out; the schema only says *that* something is unverified and *why*:
   }
   ```
 
-  Until it does, the build fails, printing that entry. The list is a snapshot:
-  if a later version of the dependency gives up more, the build stops again
-  until it's accepted again.
+  Nobody writes this by hand: `comline add` shows what a new dependency gives
+  up and asks before writing it, and `comline accept billing` (or
+  `billing::Billing`) does the same for one already declared. Until it's
+  accepted, the build fails, printing the entry. The list is a snapshot: if a
+  later version of the dependency gives up more, the build stops again until
+  `comline accept` is run again.
 
 How a call travels between caller and implementation is the
 [runtime](../runtime/index.md)'s job, over a pluggable

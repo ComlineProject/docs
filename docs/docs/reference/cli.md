@@ -32,7 +32,8 @@ parse → resolve imports → validate → (freeze into .comline/) → (generate
 | Command | What it does |
 |---|---|
 | `comline new <name> [--git]` | Scaffold `<name>/` with `config.idp`, `comline.toml`, `src/main.ids`, `.gitignore`. `--git` also runs `git init`. |
-| `comline add <name> <dir>` / `comline add <name> --git <uri> --commit <sha> --version <v>` | Add a dependency to `config.idp`, imported as `use <name>::…`: resolved first (a git pin is fetched into `.comline/deps-cache/`), then written with its `hash` pinned. `--no-hash` skips the pin. |
+| `comline add <name> <dir>` / `comline add <name> --git <uri> --commit <sha> --version <v>` | Add a dependency to `config.idp`, imported as `use <name>::…`: resolved first (a git pin is fetched into `.comline/deps-cache/`), then written with its `hash` pinned. `--no-hash` skips the pin. If it has [`@unverified`](../guide/idl/protocol.md#giving-up-a-guarantee) protocols, what each gives up is shown and, on a terminal, you're asked to accept it (default no); without a terminal it refuses (exit `2`) unless `--accept-unverified`. |
+| `comline accept <name>[::<protocol>] [--yes]` | Accept what a dependency's [`@unverified`](../guide/idl/protocol.md#giving-up-a-guarantee) protocols give up: shows each one's given-up guarantees and reason, then writes `accept_unverified` into its `config.idp` entry, leaving the rest as written. Only protocols not already accepted for exactly their current set are asked about. On a terminal you're asked (default no); without one it refuses (exit `2`) unless `--yes` (`-y`). |
 | `comline check` | Parse, resolve and validate. No `.comline/` write (beyond fetching git dependencies), no version bump — safe for editors, hooks, CI. |
 | `comline build [--release] [--watch]` | Compile, validate, freeze a new immutable version into `.comline/`; print the changelog and the bump. `--release` is currently a no-op. |
 | `comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--external-std] [--no-external-std] [--validate-on-decode <when>] [--dry-run] [--list] [--watch]` | Validate (no freeze), then write generated code. Location/layout from [`comline.toml`](congregation/comline-toml.md); targets from there or `config.idp`. |
@@ -76,7 +77,7 @@ everything else goes to stderr.
 |---|---|
 | `0` | success |
 | `1` | ran but failed — invalid schema, unresolved `diff` argument, generator or filesystem error |
-| `2` | precondition not met — not a Comline project, nothing built yet, or `reset` not confirmed (also `clap` usage errors) |
+| `2` | precondition not met — not a Comline project, nothing built yet, `reset` not confirmed, or unverified protocols not accepted (also `clap` usage errors) |
 
 ## Versioning
 
