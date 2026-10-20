@@ -326,6 +326,9 @@ keeps running into.
 
 ## Language version & dialect
 
+*Superseded in part by the [Language target versions](../proposals/target-versions.md)
+proposal, which builds on this note and is under discussion.*
+
 `generation`'s `find_generator` selects by an exact `(language, version)` string
 key — `rust::GENERATORS` has one entry, `"1.70.0"` — so `rust#1.75.0` or
 `rust#1.70` gives "no generator". `core`'s old one ignored the version arg
