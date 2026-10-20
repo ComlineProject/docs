@@ -93,7 +93,7 @@ to the same shape:
 - [Connections](connections.md): what a connection carries beyond one client
   calling one server: calls in both directions on a transport-independent core,
   per-connection state and interceptors, several protocols per connection.
-  *under discussion, partly decided.*
+  *accepted; calls both ways and several protocols built.*
 
 ### Packet protocols
 

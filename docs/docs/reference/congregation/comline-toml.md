@@ -179,6 +179,7 @@ Unset ⇒ the generator's built-in default (a compact datagram framing for Rust)
 |  ---  |  ---   |
 | `"datagram"` (`"comline.datagram"`) | The datagram default, stated explicitly. |
 | `"jsonrpc"` (`"json-rpc"`, `"jsonrpc-2.0"`) | JSON-RPC 2.0 framing. |
+| `"datagram@2"` | The datagram framing with a request/reply marker and a protocol number: every protocol runs on a [connection](../../guide/idl/protocol.md#calls-in-both-directions). |
 
 Any other value is an error naming the accepted ones, with a "did you mean"
 for a near miss. (It used to fall back silently to datagram, so a typo only

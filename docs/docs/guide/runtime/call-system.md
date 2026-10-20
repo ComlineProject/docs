@@ -6,8 +6,9 @@ on a transport and back again.
 
 It is pluggable along two axes:
 
-- **Call format (framing)** — how a request/response is framed. Two ship
-  today: a compact binary **datagram** framing (the default), and
+- **Call format (framing)** — how a request/response is framed. Three ship
+  today: a compact binary **datagram** framing (the default), its second
+  version **`datagram@2`** for [connections](#connections), and
   [JSON-RPC 2.0](https://www.jsonrpc.org/specification). Framing is chosen
   when code is generated (a protocol's `@framing` annotation, or the
   package's default), not swapped at the call site.
@@ -41,6 +42,28 @@ passed to `Client::connect_with` / `Server::serve_with` by hand. Hand-wired
 code can also skip it at the call site with `Client::new_unverified` /
 `Server::serve_unverified` (`Client.unverified` / `serveUnverified` in
 TypeScript) — named so that skipping is as visible there as in a schema.
+
+## Connections
+
+A client and a server work in lockstep: the client sends a request and reads
+the next frame as its reply. A **connection** lifts that limit:
+
+- **Either side can call,** since `datagram@2` marks each frame as a request
+  or a reply.
+- **Several calls can be in flight.** A reply is matched to its call by
+  request id.
+- **Several protocols share it.** Each frame carries its protocol's number.
+- **A side waiting for a reply keeps serving the peer's requests,** so a
+  handler can call back the peer that called it.
+
+The runtime keeps the protocol logic in a core that does no I/O: bytes go in,
+events come out ("serve this request", "this reply ends call 7"). The
+`Connection` around it owns the transport. The handshake is the same as a
+client's and a server's; a connection checks one hash over every schema in
+the package, which also fixes the protocols' numbers.
+
+Which protocols run on a connection is the schema's choice: see
+[Calls in both directions](../idl/protocol.md#calls-in-both-directions).
 
 ## Concrete API
 
