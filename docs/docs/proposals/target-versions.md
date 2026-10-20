@@ -204,6 +204,38 @@ hard error would break every package the day a compiler releases. For a
 language that promises forward compatibility, the generator can say so, and
 the ceiling only bounds the dialects (Rust's editions).
 
+### Reporting the gap
+
+*Proposed, not yet decided.* Two cases, because comline knows the declared
+version but never the compiler a consumer actually runs:
+
+**1. A declared or raised version above the ceiling** (`rust#1.95.0` when the
+generator has verified up to 1.90):
+
+- **It generates as the newest boundary,** and the build and `comline
+  generate` warn under their own diagnostic code,
+  `generation::unverified-version`. Like the `unverified::*` codes, a package's
+  settings can raise it to an error, so CI can insist on verified targets.
+- **The editor warns on the declaration** in `config.idp`. `comline targets`
+  shows each generator's ceiling.
+- **No acceptance step.** `accept_unverified` exists because a dependency's
+  gap reaches its consumers' peers over the wire. This gap doesn't touch the
+  wire; it only concerns whoever compiles the code, and that's who sees the
+  warning. A dependency's declaration past the ceiling raises a consumer's
+  version (see [The declaration is a promise](#the-declaration-is-a-promise)),
+  and the consumer's build warns the same way.
+
+**2. A newer compiler than the ceiling:** comline can't see it, so it states
+the range where a consumer will look:
+
+- **Every generated file's header names the verified range:** "generated for
+  Rust 1.70.0 or later, verified up to 1.90.0".
+- **Lib mode records it in the package's own metadata,** where that ecosystem
+  checks it. Cargo's `rust-version` already carries the floor, and Rust needs
+  no ceiling. A TypeScript package lists `typescript` as a peer dependency at
+  `>=` the floor only: a ceiling there would make npm refuse to install the
+  package on a newer compiler, which is the hard failure this proposal avoids.
+
 ## Dialects
 
 Rust's edition and TypeScript's `target` and `module` aren't versions: no
@@ -245,8 +277,9 @@ none.
 
 ## Open questions
 
-- **How the gap past the ceiling is reported,** and whether a consumer has to
-  accept it (as with `accept_unverified`) or only sees it.
+- **[Reporting the gap](#reporting-the-gap)** past the ceiling, as proposed
+  there: a warning code that settings can raise, no acceptance step, and the
+  verified range stated in generated headers and package metadata.
 
 ## What it touches
 
