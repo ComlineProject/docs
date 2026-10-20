@@ -121,8 +121,9 @@ for stream in listener.incoming() {
 ```
 
 `MailDispatcher(MyMail).serve(transport, format)` is the generated
-convenience method: it builds the same `Handshake` the client expects,
-then loops `Server::serve_handshaked` until the transport closes. One
+convenience method: it runs the protocol's handshake (`comline@1`
+unless the schema says `none`) with the generated `IR_HASH`, then serves
+calls until the transport closes. One
 thread per connection is the obvious idiom here, not something the
 runtime enforces — nothing stops you from `serve_one` in a loop you drive
 yourself (an event loop, a single thread multiplexing several

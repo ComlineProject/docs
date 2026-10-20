@@ -22,8 +22,9 @@ you pick the formats that fit your deployment.
 
 ## Handshake
 
-Before either side makes a real call, `connect` / `serve` (the
-handshaking variants) exchange a small fixed-size frame declaring the
+Before either side makes a real call, `connect` / `serve` run the
+protocol's handshake. Comline's own, `comline@1` (the default), exchanges a
+small fixed-size frame declaring the
 schema fingerprint both ends were generated from, plus the wire format
 and framing in use. A mismatch on any of those — different schema
 versions, one end MessagePack and the other JSON, incompatible framing —
@@ -31,9 +32,15 @@ is refused immediately, rather than surfacing later as a confusing decode
 error partway through a real call. Capability bits are exchanged too, but
 a difference there is advisory, not a refusal.
 
-A non-handshaking path (`Client::new` / `Server::serve` on the Rust side)
-exists for peers that can't take part in it — a legacy service, say — at
-the cost of losing that up-front check.
+A protocol talking to a peer that can't take part — a legacy service, say —
+declares `@handshake = "none"` and says why with `@unverified` (see [Giving up
+a guarantee](../idl/protocol.md#giving-up-a-guarantee)); its generated
+`connect` / `serve` then skip the exchange. In the runtimes the handshake is
+a trait (`Handshake`; an interface in TypeScript), so a custom one can be
+passed to `Client::connect_with` / `Server::serve_with` by hand. Hand-wired
+code can also skip it at the call site with `Client::new_unverified` /
+`Server::serve_unverified` (`Client.unverified` / `serveUnverified` in
+TypeScript) — named so that skipping is as visible there as in a schema.
 
 ## Concrete API
 

@@ -160,7 +160,7 @@ connections concurrently is ordinary `Promise`-based concurrency on your
 side: call `serveChat` once per connection and let them run.
 
 For manual control over the handshake, the `Server` class underneath
-exposes `serveOne` (one call), `serve` (loop, no handshake), and
-`serveHandshaked` (handshake, then `serve`) — `serveChat` is just
-`serveHandshaked` with the dispatcher and `Handshake` already built for
-you.
+exposes `serveOne` (one call), `serveUnverified` (loop, no handshake),
+and `serve(transport, irHash, handshake?)` (the handshake, `comline@1`
+unless given, then the loop) — `serveChat` is just `serve` with the
+dispatcher and `IR_HASH` already filled in for you.

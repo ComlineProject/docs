@@ -17,7 +17,7 @@ page](../rust/framing-and-wire-format.md) — and both take an optional
 ```typescript
 import { Client, JsonRpcFraming } from "@comline/runtime";
 
-const client = await Client.connect(transport, codec, handshake, new JsonRpcFraming());
+const client = await Client.connect(transport, codec, IR_HASH, new JsonRpcFraming());
 ```
 
 ## Wire format

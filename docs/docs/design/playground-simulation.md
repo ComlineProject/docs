@@ -21,7 +21,7 @@ expandable frame inspector (decoded envelope, hex, framing, Δ latency) and the
 handshake-refusal path — edit a schema, resync one end, watch the connection be
 refused. **Phase 1 is complete.** Buildable because `@comline/runtime` already
 ships the pieces the wire needs: `duplex()` for a
-connected in-memory `Transport` pair, `Client.connect` / `Server.serveHandshaked`
+connected in-memory `Transport` pair, `Client.connect` / `Server.serve`
 that run the real handshake and refuse on an `IR_HASH` mismatch, `Reply` with
 `ok` / `err` / `none` outcomes, and both framings. Nothing here needs a
 `comline-core` change beyond one read-only WASM function. Two shape decisions are settled: the simulation is a
@@ -197,7 +197,7 @@ Mapping rules:
 ## Runtime & wire (route B)
 
 `@comline/runtime` already ships everything: `duplex()` for a connected
-in-memory `Transport` pair, `Client.connect` / `Server.serveHandshaked` which
+in-memory `Transport` pair, `Client.connect` / `Server.serve` which
 run the real handshake and refuse on an `IR_HASH` mismatch, `Reply` with `ok` /
 `err` / `none` outcomes, and the two framings.
 

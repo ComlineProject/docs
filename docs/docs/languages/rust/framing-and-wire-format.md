@@ -29,16 +29,16 @@ hand instead of through generated code, pick one explicitly:
 
 ```rust
 use comline_runtime::client::Client;
-use comline_runtime::contract::Handshake;
 use comline_runtime::format::Json;
 use comline_runtime::framing::JsonRpcFraming;
 
-let hs = Handshake::new(IR_HASH, "json", "jsonrpc", 0);
-let client = Client::connect_with_framing(transport, Json, JsonRpcFraming, hs)?;
+let client = Client::connect_with_framing(transport, Json, JsonRpcFraming, IR_HASH)?;
 ```
 
 `Client::connect` / `Server::new` default to `DatagramFraming`;
-`connect_with_framing` / `with_framing` take any `F: Framing`.
+`connect_with_framing` / `with_framing` take any `F: Framing`. The runtime
+fills the handshake in from the format's and framing's names; you pass only
+the schema's `IR_HASH`.
 
 ## Wire format is a call-site choice
 
@@ -64,7 +64,7 @@ middle would silently desync two ends on different schema versions.
 ## Both ends must agree
 
 The [handshake](../../guide/runtime/call-system.md#handshake) that
-`connect` / `serve_handshaked` run checks the schema fingerprint, the wire
+`connect` / `serve` run checks the schema fingerprint, the wire
 format's name, and the framing's name — and refuses the connection on any
 mismatch, before a real call is attempted. There's no negotiation; both
 sides are expected to be built from the same schema and configured with

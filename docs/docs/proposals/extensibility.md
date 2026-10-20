@@ -21,7 +21,7 @@ and its runtime half is. The generated half isn't, and nothing connects the two.
 | **Transport** | Open. Anything that moves bytes implements Rust's `Transport` or its TypeScript equivalent. |
 | **Wire format** | Open at runtime: `WireFormat` in Rust, `Codec` in TypeScript, picked at the call site. `contract/wire.rs` asks a third-party format to namespace its name (`"com.acme.myformat"`). |
 | **Framing** | The runtime trait is open; generated code isn't. A generator bakes the framing into the generated client and server, and knows only `datagram` and `jsonrpc`. Core checks `@framing` against that list, so a third-party framing can't be named in a schema. An unknown `default_framing` silently becomes datagram ([cli#81](https://github.com/ComlineProject/cli/issues/81)). |
-| **Handshake** | Fixed: Comline's own 31-byte frame, or none at all through the hand-wired `Client::new` / `Server::serve` ("misaligned mode"). The choice is made at the call site, and nothing in the schema shows it. |
+| **Handshake** | **Built** ([runtime#18](https://github.com/ComlineProject/runtime/issues/18)): a declared axis. `comline@1` or `none`, from `@handshake`, the package's `handshake`, or the default; a runtime trait with `connect_with` / `serve_with`; skip paths named `*_unverified`. Custom names wait on third-party encodings. |
 | **Dispatcher** | The generated `<Proto>Dispatcher` implements `Dispatch`, and the server is generic over it, so it can be wrapped (for logging, say). That isn't documented. |
 | **Generator** | Compiled into the CLI behind cargo features. A third-party language means rebuilding the CLI ([core#8](https://github.com/ComlineProject/core/issues/8); [Proposal D](codegen-architecture/target-language-plugins.md)). |
 
@@ -282,6 +282,12 @@ What decides a connection under `comline@2`:
   something up, and adding `@unverified` is already major.
 
 ## Giving up a guarantee
+
+> **Built for handshakes** ([core#132](https://github.com/ComlineProject/core/pull/132)):
+> `@unverified`, the frozen set, its diagnostics, the version comparison and
+> `accept_unverified`. Encodings without vectors and lowered bumps join when
+> third-party encodings and releases exist; `comline accept` and the editor's
+> quick fix follow.
 
 Between peers, Comline gives four guarantees, each established by something
 specific:
