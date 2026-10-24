@@ -174,6 +174,15 @@ Built 2026-10-20, as the
   [comline-rust#68](https://github.com/ComlineProject/comline-rust/pull/68)):
   handlers that take the peer, `provide_on`, a sender per protocol, and
   `CONNECTION_IR_HASH`. Both claim the `connections` feature as partial.
+- **Rust's async driver** ([runtime#24](https://github.com/ComlineProject/runtime/pull/24)):
+  `AsyncConnection`, a future the application spawns on any executor, with
+  cloneable handles that call the peer from any task. Requests run in order
+  unless every running handler is waiting on the peer; `concurrent(n)` opts
+  into more. The `tokio` feature adds TCP and a timer.
+- **Async generated code**, by `comline.toml`'s `async = true`
+  ([generation#80](https://github.com/ComlineProject/generation/pull/80)):
+  Rust generates async handlers, `<Proto>AsyncDispatcher` and
+  `<Proto>AsyncSender`. TypeScript's output was async already.
 
 It differs from the decisions above where they need `comline@2`, which
 isn't written yet:
@@ -190,7 +199,6 @@ Not built yet:
   message.
 - Interceptors.
 - The `duplex` capability check.
-- Rust's async driver, so another thread can call while one serves.
 - The [simulator](../design/playground-simulation.md) doesn't know
   `datagram@2`.
 
