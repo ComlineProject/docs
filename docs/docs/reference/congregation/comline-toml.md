@@ -21,6 +21,7 @@ Defaults for every target.
 | `default_framing` | string | — | Wire framing for protocols that don't pick one with [`@framing`](../../guide/idl/protocol.md#annotations) — see [below](#default_framing). |
 | `external_std` | bool | on in `lib`, off in `code` | Reference `std` as its own package instead of inlining it — see [below](#external_std). |
 | `validate_on_decode` | `"off"` \| `"collect"` \| `"first"` | `"off"` | Whether decoding a value runs its [`@validators`](../../guide/idl/validator.md) — see [below](#validate_on_decode). |
+| `async` | bool | `false` | Generate protocols on a connection for an async driver — see [below](#async). |
 | `only` | list of strings | — | Generate just these languages, out of the ones `config.idp` declares — see [below](#only). |
 
 ## `[[generate.target]]`
@@ -39,7 +40,7 @@ declare is an error. To generate *fewer* than the package declares, use
 |---|---|---|
 | `language` | string | **Required.** Must be one the manifest declares under `code_generation.languages`. |
 | `lang_version` | string | Optional; the toolchain version to generate for. Defaults to what `config.idp` declared, and may raise it but never lower it ([Language versions](../../guide/codegen/generating-code.md#language-versions)). |
-| `out`, `layout`, `mode`, `package_versions`, `default_framing`, `external_std`, `validate_on_decode` | — | Per-target override of the `[generate]` value. |
+| `out`, `layout`, `mode`, `package_versions`, `default_framing`, `external_std`, `validate_on_decode`, `async` | — | Per-target override of the `[generate]` value. |
 | `flatten` | bool | `lib`/`dylib` only, target-only (no `[generate]` default): write the crate straight into `out` instead of `out/<language>/`. See [below](#flatten). |
 
 ```toml
@@ -119,6 +120,23 @@ arguments that don't decode.
 
 Today only the `rust` generator runs validators; `typescript` ignores this.
 `--validate-on-decode` and `COMLINE_GENERATE_VALIDATE_ON_DECODE` override it.
+
+### `async`
+
+A protocol on a [connection](../../guide/idl/protocol.md#calls-in-both-directions)
+is generated for a blocking driver by default. `async = true` generates it for
+an async one instead:
+
+- **`rust`:** async handlers, `<Proto>AsyncDispatcher` and `<Proto>AsyncSender`,
+  for the runtime's `AsyncConnection` on any executor — see
+  [Rust connections](../../languages/rust/connections.md#async). A `lib`
+  package turns on the runtime's `async` feature.
+- **`typescript`:** nothing changes; its handlers and senders return Promises
+  either way.
+
+Protocols that aren't on a connection are the same either way. Like
+`external_std`, it's a consumer's choice: the same package can be generated
+async for one application and blocking for another.
 
 ### `only`
 
