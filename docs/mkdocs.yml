@@ -108,6 +108,7 @@ nav:
     - Language target versions: 'proposals/target-versions.md'
     - Extending the call system: 'proposals/extensibility.md'
     - Connections: 'proposals/connections.md'
+    - Package wire defaults: 'proposals/package-wire-defaults.md'
     - Packet dispatch: 'proposals/packet-dispatch.md'
     - 'Function ids':
       - 'proposals/function-ids/index.md'
