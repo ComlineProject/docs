@@ -112,9 +112,67 @@ messages and no one else's.
 
 A `Connection` is blocking and does one thing at a time. A request is
 handled to the end before the next frame is read, and a call made while
-serving finishes before the request that made it. Calling the peer from
-another thread while this one serves needs an async driver, which isn't
-written yet ([runtime#19](https://github.com/ComlineProject/runtime/issues/19)).
+serving finishes before the request that made it. To call the peer from
+another task while the connection serves, generate for the async driver.
+
+## Async
+
+With `async = true` in [`comline.toml`](../../reference/congregation/comline-toml.md#async),
+connection protocols are generated for the runtime's `AsyncConnection`
+instead, on any executor:
+
+```rust
+pub trait Chat: Send + Sync + 'static {
+    fn send(&self, peer: &impl AsyncPeer, text: &str)
+        -> impl Future<Output = Result<u64, Fault<ChatSendError>>> + Send;
+    // …
+}
+
+pub struct ChatAsyncDispatcher<S>(pub S);       // PROTOCOL, provide_on(&mut AsyncConnection)
+pub struct ChatAsyncSender<'p, P: AsyncPeer>(pub &'p P);
+```
+
+A handler is written as an `async fn`, and awaits its calls back:
+
+```rust
+impl Chat for ChatImpl {
+    async fn send(&self, peer: &impl AsyncPeer, text: &str) -> Result<u64, Fault<ChatSendError>> {
+        let shown = EventsAsyncSender::new(peer).message(text).await.map_err(|_| Fault::Internal)?;
+        // …
+    }
+}
+```
+
+The connection is a future the application spawns; its handles call the
+peer from any task. The generated crate enables the runtime's `async`
+feature; in `code` mode, the file names the feature to add.
+
+```rust
+use comline_runtime::async_connection::AsyncConnection;
+
+let (client, server) = tokio::join!(
+    AsyncConnection::connect(dialler, Json, CONNECTION_IR_HASH),
+    AsyncConnection::accept(acceptor, Json, CONNECTION_IR_HASH),
+);
+let (mut client, mut server) = (client?, server?);
+ChatAsyncDispatcher(ChatImpl).provide_on(&mut server);
+EventsAsyncDispatcher(EventsImpl::default()).provide_on(&mut client);
+
+let to_server = client.handle();
+tokio::spawn(client.run());
+tokio::spawn(server.run());
+
+let sent = ChatAsyncSender::new(&to_server).send("hi").await?;
+```
+
+Requests are handled in order, except that while every running handler
+waits on a call to the peer, the next one starts: it may be that call's
+nested request. `conn.concurrent(n)` lets several run at once, and
+`conn.set_timer(…)` gives `@timeout_ms` a clock. The runtime's `tokio`
+feature adds TCP (`async_connection::tokio::Tcp`) and a timer.
+
+Protocols that aren't on a connection keep their blocking `Client` and
+`Server` either way.
 
 ## Without generated code
 

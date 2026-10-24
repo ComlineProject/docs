@@ -89,6 +89,7 @@ commit. A runtime's suite runs every example against it:
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | ✅ supported | ✅ supported |
 | no handshake <br><sub>`handshake-none`</sub> | ✅ supported | ✅ supported |
 | connections <br><sub>`connections`</sub> | 🟡 partial: over `datagram@2`; JSON-RPC on a connection isn't supported yet ([runtime#19](https://github.com/ComlineProject/runtime/issues/19)) | 🟡 partial: over `datagram@2`; JSON-RPC on a connection isn't supported yet ([runtime#19](https://github.com/ComlineProject/runtime/issues/19)) |
+| `async` <br><sub>`async`</sub> | ✅ supported | ⚪ ignored: handlers and senders always return Promises: the output is async either way |
 
 <!-- matrix:end -->
 
