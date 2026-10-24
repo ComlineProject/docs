@@ -100,6 +100,11 @@ to the same shape:
   calling one server: calls in both directions on a transport-independent core,
   per-connection state and interceptors, several protocols per connection.
   *accepted; calls both ways and several protocols built.*
+- [Package wire defaults](package-wire-defaults.md): a `wire` key in
+  `config.idp` for the package's framing and format, `datagram@2` as the
+  built-in framing, a new packed C-struct-like format `packed@1` as the
+  built-in format, and a generated `Services` struct with a package-level
+  `serve`. *under discussion.*
 
 ### Packet protocols
 
