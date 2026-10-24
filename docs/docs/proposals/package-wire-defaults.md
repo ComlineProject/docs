@@ -92,6 +92,8 @@ wire = {
   `wire` key, as [Schema compatibility](schema-compatibility.md) already
   planned: the framing is part of the contract both peers build from, so the
   producer decides it.
+- A `format` other than `json@1` is an error when the package has a
+  JSON-RPC protocol, since JSON-RPC is JSON by definition.
 - Changing either entry is a **major** change: old and new peers no longer
   understand each other.
 
@@ -327,11 +329,13 @@ In the order it would be built:
    read from the IR, and `packed@1` among the formats.
 7. **language server**, **VS Code extension** and the **docs**.
 
-## Open questions
+## Decided after review
 
 - **JSON-RPC and `wire.format`.** JSON-RPC carries JSON, so a `wire.format`
-  other than `json@1` has no effect on a JSON-RPC protocol. Should declaring
-  both be an error, or should the format apply only to the package's
-  non-JSON-RPC protocols (the proposal's reading)?
-- **A `u64` that is usually small.** Fixed widths make it 8 bytes. Is it
-  worth a later `varint` field annotation, or is "declare it narrower" enough?
+  other than `json@1` can't apply to a JSON-RPC protocol. Declaring one in a
+  package that has a JSON-RPC protocol (by its own `@framing` or by
+  `wire.framing`) is a build error naming the protocol. Leaving `wire.format`
+  out is fine: the built-in `packed@1` then applies only to the non-JSON-RPC
+  protocols.
+- **A `u64` that is usually small** stays 8 bytes. Declaring the field
+  narrower is enough; there's no `varint` field annotation.
