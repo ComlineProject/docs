@@ -25,7 +25,7 @@ Generator `typescript#5.0`.
 | unions <br><sub>`unions`</sub> | `union(A B ...)` types | ✅ supported | `unions` |
 | type aliases <br><sub>`type-aliases`</sub> | `type Name = ...` declarations | ✅ supported | `validators`, `validators_on_decode`, `unions` |
 | constants <br><sub>`constants`</sub> | `const` declarations | ✅ supported | `constant`, `shapes`, `validators`, `validators_on_decode` |
-| protocols <br><sub>`protocols`</sub> | `protocol` declarations and their functions | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `framing_jsonrpc`, `handshake_none`, `connections`, `connections_async` |
+| protocols <br><sub>`protocols`</sub> | `protocol` declarations and their functions | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `framing_jsonrpc`, `handshake_none`, `connections`, `connections_async`, `connections_jsonrpc` |
 | errors <br><sub>`errors`</sub> | `error` declarations | ✅ supported | `protocol`, `error_shapes` |
 | functions that throw <br><sub>`throws`</sub> | functions declared with `! Error` | ✅ supported | `protocol`, `error_shapes` |
 | validators <br><sub>`validators`</sub> | `@validators` on fields and type aliases, checked in generated code | ⚪ ignored: the types are generated; the checks aren't run yet ([core#96](https://github.com/ComlineProject/core/issues/96)) | `validators`, `validators_on_decode` |
@@ -34,9 +34,9 @@ Generator `typescript#5.0`.
 | `lib` mode <br><sub>`lib-mode`</sub> | `--mode lib`: a buildable package, not bare source files | ✅ supported | `nested_namespace`, `external_std` |
 | `external_std` <br><sub>`external-std`</sub> | `[generate] external_std`: `std` referenced as its own package | ✅ supported | `external_std` |
 | `validate_on_decode` <br><sub>`validate-on-decode`</sub> | `[generate] validate_on_decode`: decoding runs the checks | ⚪ ignored: no checks are generated to run on decode yet ([core#96](https://github.com/ComlineProject/core/issues/96)) | `validators_on_decode` |
-| JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | `@framing = "jsonrpc"` (or as the package default) | ✅ supported | `framing_jsonrpc` |
+| JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | `@framing = "jsonrpc"` (or as the package default) | ✅ supported | `framing_jsonrpc`, `connections_jsonrpc` |
 | no handshake <br><sub>`handshake-none`</sub> | `@handshake = "none"` (or as the package default) | ✅ supported | `handshake_none` |
-| connections <br><sub>`connections`</sub> | protocols on a connection, with calls in both directions: `@framing = "datagram@2"`, or `@provider = Client` / `Multiple` | 🟡 partial: over `datagram@2`; JSON-RPC on a connection isn't supported yet ([runtime#19](https://github.com/ComlineProject/runtime/issues/19)) | `connections`, `connections_async` |
+| connections <br><sub>`connections`</sub> | protocols on a connection, with calls in both directions: `@framing = "datagram@2"`, or `@provider = Client` / `Multiple` | ✅ supported | `connections`, `connections_async`, `connections_jsonrpc` |
 | `async` <br><sub>`async`</sub> | `[generate] async`: connection protocols get async handlers and senders | ⚪ ignored: handlers and senders always return Promises: the output is async either way | `connections_async` |
 
 <!-- codegen:end -->
@@ -60,7 +60,7 @@ Runtime `typescript`.
 | envelope <br><sub>`envelope`</sub> | a response's outcome: ok with a payload, an error ordinal with its body, or a provider fault | ✅ supported | [8 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/envelope.json) |
 | datagram framing <br><sub>`framing-datagram`</sub> | Comline's own binary framing of requests and responses | ✅ supported | [9 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram.json) |
 | datagram@2 framing <br><sub>`framing-datagram2`</sub> | the datagram framing with a request/reply kind and a protocol number, for calls in both directions and several protocols on one connection | ✅ supported | [12 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram2.json) |
-| JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | JSON-RPC 2.0 requests and responses, a fault as -32603 | ✅ supported | [9 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-jsonrpc.json) |
+| JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | JSON-RPC 2.0 requests and responses, a fault as -32603 | ✅ supported | [11 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-jsonrpc.json) |
 | JSON wire format <br><sub>`format-json`</sub> | values as UTF-8 JSON: a struct as an object | 🟡 partial: decoding doesn't check enum variants or integer ranges ([comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57)) <br>fails: `format-json/decode-unknown-variant`, `format-json/decode-wider-integer-overflow` | [29 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-json.json) |
 | MessagePack wire format <br><sub>`format-msgpack`</sub> | values as MessagePack: a struct as an array | ❌ unsupported: only JSON ships | — |
 
