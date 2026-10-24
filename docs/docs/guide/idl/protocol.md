@@ -56,6 +56,11 @@ protocol Mail {
   default compact datagram framing. `"datagram@2"` puts the protocol on a
   [connection](#calls-in-both-directions). Both ends of a connection must
   agree — the [handshake](../runtime/call-system.md) refuses a mismatch.
+
+  The name is shorthand for a dictionary, which can say more about the
+  framing: `@framing = { name = "jsonrpc", method_names = qualified }`.
+  `method_names` is JSON-RPC's only setting: `bare` (the default) or
+  `qualified`; see [JSON-RPC on a connection](#json-rpc-on-a-connection).
 - **`@provider`** says which side implements the protocol: `Server` (the
   default), `Client` or `Multiple`. See
   [Calls in both directions](#calls-in-both-directions).
@@ -94,14 +99,15 @@ protocol Events {
 - **The framing has to tell requests from replies,** since both ends now send
   both. `datagram@1`, the default, can't, so a `Client` or `Multiple`
   protocol without `@framing` is a build error
-  (`validation::reverse-calls-need-framing`). Use `@framing = "datagram@2"`.
+  (`validation::reverse-calls-need-framing`). Use `@framing = "datagram@2"`,
+  or [JSON-RPC](#json-rpc-on-a-connection).
   Allowing `@framing` is a package setting
   (`annotations.framing.allowed = true`).
 - **`@consumer` that disagrees with `@provider`** is a build error
   (`validation::provider-consumer-mismatch`).
 
-Protocols on `datagram@2` run on a **connection** instead of a client and a
-server:
+Protocols on `datagram@2`, and `Client` or `Multiple` ones, run on a
+**connection** instead of a client and a server:
 
 - **One connection carries all of them.** Each side provides the protocols it
   implements and calls the others.
@@ -114,9 +120,39 @@ server:
   every handler on it can reach.
 
 How this looks in code: [Rust](../../languages/rust/connections.md),
-[TypeScript](../../languages/typescript/connections.md). Status: generated
-for `datagram@2`; JSON-RPC on a connection isn't supported yet
-([runtime#19](https://github.com/ComlineProject/runtime/issues/19)).
+[TypeScript](../../languages/typescript/connections.md).
+
+### JSON-RPC on a connection
+
+JSON-RPC carries calls both ways too: a message with a `method` is a request,
+any other is a reply.
+
+```ids linenums="1"
+@framing = "jsonrpc"
+protocol Chat {
+    function send(text: string) -> u64;
+}
+
+@provider = Client
+@framing = { name = "jsonrpc", method_names = qualified }
+protocol Events {
+    function message(text: string) -> bool;
+    function ping();
+}
+```
+
+- **Once one JSON-RPC protocol is on a connection, they all are.** `Events`
+  puts the package on a connection, so `Chat`, the server's API, shares it.
+  A JSON-RPC message looks the same with or without one.
+- **A call names its method, not a protocol number.** With `bare` names a
+  call is `send`. With `qualified` it's `namespace.Protocol/function`
+  (`chat.Events/message`). Each side looks a method up among the protocols
+  it provides.
+- **Bare names have to be unique on each side.** Two JSON-RPC protocols one
+  side provides, both with a `send`, can't be told apart, and `comline build`
+  refuses them. Qualify either.
+- **A one-way call is a JSON-RPC notification:** it has no `id`, and nothing
+  is sent back.
 
 ## Giving up a guarantee
 

@@ -64,8 +64,16 @@ struct Message {
 
 ## Annotations
 
-Annotation values are simple — an integer, string or identifier (`@internal=true`).
-Richer forms such as `@validators=[…]` are still being designed.
+An annotation's value is one of three forms:
+
+- **A single value:** an integer, a string, `true`/`false` or a name
+  (`@timeout_ms = 1000`).
+- **A list of calls,** for [`@validators`](validator.md)
+  (`@validators = [StringBounds(min_chars = 3)]`).
+- **A dictionary of `key = value` entries,** for an annotation with several
+  settings, such as
+  [`@framing`](protocol.md#annotations)
+  (`@framing = { name = "jsonrpc", method_names = qualified }`).
 
 ```ids
 struct Message {

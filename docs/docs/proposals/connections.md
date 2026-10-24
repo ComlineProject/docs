@@ -183,6 +183,18 @@ Built 2026-10-20, as the
   ([generation#80](https://github.com/ComlineProject/generation/pull/80)):
   Rust generates async handlers, `<Proto>AsyncDispatcher` and
   `<Proto>AsyncSender`. TypeScript's output was async already.
+- **JSON-RPC on a connection** ([core#138](https://github.com/ComlineProject/core/pull/138),
+  [runtime#25](https://github.com/ComlineProject/runtime/pull/25),
+  [generation#81](https://github.com/ComlineProject/generation/pull/81)):
+  `method_names` is written in `@framing`'s dictionary form,
+  `@framing = { name = "jsonrpc", method_names = qualified }`, where the plain
+  name is shorthand for `{ name = ... }`. A qualified method is
+  `namespace.Protocol/function`, and the receiver looks a method up among the
+  protocols it provides. Once any JSON-RPC protocol in a package runs on a
+  connection, all of them do, so a server's JSON-RPC API shares it. Bare names
+  one side can't tell apart are a build error. A one-way call is a JSON-RPC
+  notification, with no `id`. Both generators claim `connections` as
+  supported.
 
 It differs from the decisions above where they need `comline@2`, which
 isn't written yet:
@@ -195,8 +207,6 @@ isn't written yet:
 
 Not built yet:
 
-- JSON-RPC on a connection (`method_names`). The generators refuse it with a
-  message.
 - Interceptors.
 - The `duplex` capability check.
 - The [simulator](../design/playground-simulation.md) doesn't know

@@ -51,8 +51,9 @@ It differs from a client and server in three ways:
   same in every generated file. It also fixes each protocol's number
   (`ChatDispatcher::PROTOCOL`), its position among the package's protocols.
 
-Protocols on `datagram` or `jsonrpc` in the same package keep their
-`Client` and `Server`.
+Protocols on `datagram` in the same package keep their `Client` and
+`Server`, and so do `jsonrpc` ones unless the package has a JSON-RPC protocol
+on a connection (see [Over JSON-RPC](#over-json-rpc)).
 
 ## The side that accepts
 
@@ -87,6 +88,31 @@ let sent = chat.send("hi")?;
 While `send` waits for its reply, the connection serves whatever the server
 sends first, such as the `Events::message` call its handler makes. A request
 to a protocol this side doesn't provide is answered with a fault.
+
+## Over JSON-RPC
+
+A JSON-RPC protocol the client provides runs on a connection too, and then so
+do the package's other JSON-RPC protocols
+([the rules](../../guide/idl/protocol.md#json-rpc-on-a-connection)). Open the
+connection with `JsonRpcFraming`; the rest of this page is unchanged:
+
+```rust
+use comline_runtime::framing::JsonRpcFraming;
+use comline_runtime::handshake::ComlineHandshake;
+
+let mut conn = Connection::accept_with(transport, Json, JsonRpcFraming, &mut ComlineHandshake, CONNECTION_IR_HASH)?;
+// The dialling side:
+let mut conn = Connection::connect_with(transport, Json, JsonRpcFraming, &mut ComlineHandshake, CONNECTION_IR_HASH)?;
+```
+
+An `AsyncConnection` opens with
+`AsyncConnection::handshake(transport, Json, JsonRpcFraming, CONNECTION_IR_HASH)`.
+
+- **Each call table holds method names:** `["send", "count"]`, or under
+  `method_names = qualified`, `["chat.Events/message", "chat.Events/ping"]`.
+  A request is routed to the provided protocol whose table has its method.
+- **A one-way call is a notification,** sent with no `id`. A request without
+  one gets no reply, even if its function returns a value.
 
 ## A handler calling back
 
