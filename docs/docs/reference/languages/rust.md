@@ -25,7 +25,7 @@ Generator `rust#1.85.0`.
 | unions <br><sub>`unions`</sub> | `union(A B ...)` types | ❌ unsupported: Rust has no anonymous sum type to render one as | `unions` |
 | type aliases <br><sub>`type-aliases`</sub> | `type Name = ...` declarations | ✅ supported | `validators`, `validators_on_decode` |
 | constants <br><sub>`constants`</sub> | `const` declarations | ✅ supported | `constant`, `shapes`, `validators`, `validators_on_decode` |
-| protocols <br><sub>`protocols`</sub> | `protocol` declarations and their functions | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `framing_jsonrpc`, `handshake_none`, `connections` |
+| protocols <br><sub>`protocols`</sub> | `protocol` declarations and their functions | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `framing_jsonrpc`, `handshake_none`, `connections`, `connections_async` |
 | errors <br><sub>`errors`</sub> | `error` declarations | ✅ supported | `protocol`, `error_shapes` |
 | functions that throw <br><sub>`throws`</sub> | functions declared with `! Error` | ✅ supported | `protocol`, `error_shapes` |
 | validators <br><sub>`validators`</sub> | `@validators` on fields and type aliases, checked in generated code | ✅ supported | `validators`, `validators_on_decode` |
@@ -36,7 +36,8 @@ Generator `rust#1.85.0`.
 | `validate_on_decode` <br><sub>`validate-on-decode`</sub> | `[generate] validate_on_decode`: decoding runs the checks | ✅ supported | `validators_on_decode` |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | `@framing = "jsonrpc"` (or as the package default) | ✅ supported | `framing_jsonrpc` |
 | no handshake <br><sub>`handshake-none`</sub> | `@handshake = "none"` (or as the package default) | ✅ supported | `handshake_none` |
-| connections <br><sub>`connections`</sub> | protocols on a connection, with calls in both directions: `@framing = "datagram@2"`, or `@provider = Client` / `Multiple` | 🟡 partial: over `datagram@2`; JSON-RPC on a connection isn't supported yet ([runtime#19](https://github.com/ComlineProject/runtime/issues/19)) | `connections` |
+| connections <br><sub>`connections`</sub> | protocols on a connection, with calls in both directions: `@framing = "datagram@2"`, or `@provider = Client` / `Multiple` | 🟡 partial: over `datagram@2`; JSON-RPC on a connection isn't supported yet ([runtime#19](https://github.com/ComlineProject/runtime/issues/19)) | `connections`, `connections_async` |
+| `async` <br><sub>`async`</sub> | `[generate] async`: connection protocols get async handlers and senders | ✅ supported | `connections_async` |
 
 <!-- codegen:end -->
 
