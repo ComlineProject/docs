@@ -1,8 +1,10 @@
 # Language target versions
 
-Status: **accepted** · tracked in
+Status: **implemented** · tracked in
 [generation#76](https://github.com/ComlineProject/generation/issues/76) ·
-see [Decided](#decided); nothing implemented yet
+see [As implemented](#as-implemented) for where it differs from the text
+below, which is kept as decided. The user guide is
+[Language versions](../guide/codegen/generating-code.md#language-versions).
 
 **The question:** what the version in `rust#1.70.0` means, how it picks a
 generator, and how a generator's output and feature support depend on it.
@@ -280,6 +282,40 @@ none.
 | **`module`** | Lib mode emits ESM (`"type": "module"`, NodeNext), with `.js` extensions in imports | That works under NodeNext and bundler resolution, and Node 22 can `require()` ESM. **ESM only,** unless a CommonJS-only consumer appears. |
 | **Erasable syntax** | `export enum`, and constructor parameter properties (`constructor(private readonly impl …)`) | Neither works under TypeScript 5.8's `erasableSyntaxOnly` or Node's built-in type stripping. **Emit a `const` object and a union type instead of an enum, and plain fields.** `Color.Red` still works; the enum's type changes shape. |
 | **Strict flags** | `import type` already used | **Conformance type-checks the output under the strictest set** (`exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`), so it builds under any. |
+
+## As implemented
+
+Shipped in three steps, October 2026:
+
+1. **The kernel** ([generation#77](https://github.com/ComlineProject/generation/pull/77)): versions, floors, `Registry::resolve`, version gates on support, and conformance at every boundary.
+2. **The generators** ([comline-rust#70](https://github.com/ComlineProject/comline-rust/pull/70), [comline-typescript#66](https://github.com/ComlineProject/comline-typescript/pull/66)): the dialect pass, version headers, and CI that builds generated code at each floor.
+3. **The tools** ([core#137](https://github.com/ComlineProject/core/pull/137), [cli#95](https://github.com/ComlineProject/cli/pull/95), [language-server#82](https://github.com/ComlineProject/language-server/pull/82)): `comline build` proves every declaration, `comline.toml` may only raise a version, and the editor reports the same.
+
+Where it differs from the text:
+
+- **Rust's floor is 1.85, not 1.70.** Building the generated code at 1.70
+  showed the claim was never true: the runtime's dependencies (`rmp`,
+  `rmp-serde`) use the 2024 edition, which cargo before 1.85 can't read. At
+  1.85, edition 2024, `core::error::Error` and `async fn` in traits are all
+  available, so Rust has **no boundaries above its floor**, and `rust#1.70.0`
+  is now an error naming `rust#1.85.0`.
+- **TypeScript keeps its 5.0 floor.** One construct failed before 5.5 and was
+  changed; CI type-checks generated code with TypeScript 5.0.
+- **A declared language this `comline` has no generator for fails
+  `comline build`**, since the declaration can't be proven.
+- **Dependencies' minimums:** `comline build` checks every dependency's
+  declaration, direct or not. The editor checks direct dependencies only.
+- **`comline targets`** keeps `name#floor` first on each line, the token
+  `config.idp` takes, then the range: `rust#1.85.0  (1.85.0 or later;
+  verified up to 1.99, and newer toolchains build its output)`.
+- **TypeScript's `typescript` peer dependency is optional**, so a JavaScript
+  consumer isn't made to install it; npm still warns about an older compiler.
+- **Not done yet:**
+  - Rust's `std` / `alloc` Cargo features, which need `no_std` output first.
+  - The version line in the headers of the generated group files (`lib.rs`,
+    `index.ts`).
+  - Encoding equality across boundaries has nothing to compare until a
+    generator declares a boundary.
 
 ## Open questions
 

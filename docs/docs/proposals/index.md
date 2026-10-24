@@ -13,6 +13,8 @@ Each page opens with a `Status:` line, house style — a status in bold followed
 - **draft** — being written, not yet up for discussion
 - **under discussion** — open for feedback
 - **accepted** — the team is going this way; see the linked Design record
+- **implemented** — accepted and shipped; the page says where what shipped
+  differs from what it proposed
 - **rejected** / **superseded** — with a note saying why, and by what
 
 Proposals may **compete**: two pages proposing different answers to the same
@@ -66,7 +68,7 @@ alternatives are worth. Five proposals, read to the same shape:
 - [Language target versions](target-versions.md): what the version in
   `rust#1.70.0` means, how it picks a generator, and how feature support and
   output depend on it, proven by conformance at each version where they
-  change. ***accepted***.
+  change. ***implemented***.
 
 ### Extensibility
 

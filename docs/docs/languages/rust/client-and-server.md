@@ -196,7 +196,6 @@ NotFound { key: "k".into() }.to_string()   // "no entry for k"
 An error enum delegates to whichever error it holds, so printing
 `MailSendMessageError` prints the raised error's own message.
 
-There is no `core::error::Error` impl yet. That trait is only stable from
-Rust 1.81, while this generator's target declares `rust#1.70.0` and writes
-it into every generated `Cargo.toml` as `rust-version`; the impl lands with
-a `rust#1.81.0` target.
+Every generated error, and every error enum, also implements
+`core::error::Error`, so it works with `?` into `Box<dyn Error>` and with
+error-reporting crates, in `no_std` code too.
