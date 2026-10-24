@@ -38,7 +38,7 @@ declare is an error. To generate *fewer* than the package declares, use
 | Key | Type | Meaning |
 |---|---|---|
 | `language` | string | **Required.** Must be one the manifest declares under `code_generation.languages`. |
-| `lang_version` | string | Optional; selects a version-specific generator. Defaults to what `config.idp` declared. |
+| `lang_version` | string | Optional; the toolchain version to generate for. Defaults to what `config.idp` declared, and may raise it but never lower it ([Language versions](../../guide/codegen/generating-code.md#language-versions)). |
 | `out`, `layout`, `mode`, `package_versions`, `default_framing`, `external_std`, `validate_on_decode` | — | Per-target override of the `[generate]` value. |
 | `flatten` | bool | `lib`/`dylib` only, target-only (no `[generate]` default): write the crate straight into `out` instead of `out/<language>/`. See [below](#flatten). |
 
@@ -49,7 +49,7 @@ layout = "{{language}}/{{namespace}}.{{ext}}"
 
 [[generate.target]]
 language     = "rust"
-lang_version = "1.70.0"
+lang_version = "1.88.0"
 out          = "src/generated"
 ```
 

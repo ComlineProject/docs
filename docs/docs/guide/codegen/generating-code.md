@@ -28,15 +28,16 @@ specification_version = 1
 
 code_generation = {
     languages = {
-        rust#1.70.0 = {}
-        python#3.11.0 = {}
+        rust#1.85.0 = {}
+        typescript#5.0 = {}
     }
 }
 ```
 
-Each entry is a bare `language#lang_version`. `lang_version` selects a
-version-specific generator (e.g. Rust 1.70's output vs a later edition's). The
-`= {}` is required and takes no options.
+Each entry is a bare `language#lang_version`: the language, and the **oldest
+toolchain** its generated code must build on. The `= {}` is required and takes
+no options. See [Language versions](#language-versions) for what the version
+promises and how it's checked.
 
 Declaring a language is what makes it generated: `comline generate` emits every
 language listed here. The entry carries no output path — where the code lands is
@@ -56,7 +57,7 @@ only             = ["rust"]                                 # generate just thes
 # Optional: one block per declared language you want to configure.
 [[generate.target]]
 language     = "rust"
-lang_version = "1.70.0"        # defaults to what config.idp declared
+lang_version = "1.88.0"        # defaults to what config.idp declared; may only raise it
 out          = "src/generated" # this language only
 ```
 
@@ -83,6 +84,79 @@ built-in defaults → [generate] → [[generate.target]] → COMLINE_GENERATE_* 
 `COMLINE_GENERATE_OUT` / `_LAYOUT` / `_MODE` apply to every target (handy in CI);
 `--out` / `--layout` / `--mode` apply to one target and need `--target` when
 several are configured.
+
+## Language versions
+
+The version in `rust#1.85.0` is a **minimum**: generated code builds on that
+toolchain and every newer one, like Cargo's `rust-version`. Raising it can
+unlock newer constructs, and lowering it gives them up.
+
+**Each generator has a floor**, the oldest version it generates for, and
+handles every version from there up. `comline targets` lists them:
+
+```console
+$ comline targets
+rust#1.85.0  (1.85.0 or later; verified up to 1.99, and newer toolchains build its output)
+typescript#5.0  (5.0 or later; verified up to 5.9)
+```
+
+`comline new` scaffolds the floor, which is the widest promise a package can
+make.
+
+### `comline build` proves every declaration
+
+A declared version is a promise consumers rely on, so `comline build` checks
+each `code_generation.languages` entry before it freezes a version. Any of
+these fails the build, and nothing is frozen:
+
+- **No generator handles it:** the version is below the generator's floor
+  ("`rust#1.70.0` is older than the rust generator handles: it needs
+  `rust#1.85.0` or later"), it isn't dotted numbers, or this `comline` was
+  built without that language.
+- **A dependency declares more:** if a dependency declares `rust#1.90.0`, its
+  generated code needs Rust 1.90, so this package must declare at least that.
+- **A feature isn't supported at that version:** the schemas use something
+  the generator doesn't support there. The message names every use and, for
+  a feature that's only supported from a later version, the version to
+  declare.
+
+The editor reports the same problems on the entry in `config.idp` as you
+type.
+
+### Raising the version in `comline.toml`
+
+A consumer can set `lang_version` on a `[[generate.target]]` **higher** than
+`config.idp` declares, for example to unlock an option that needs a newer
+toolchain. Lower is an error: the package was only proven from its declared
+version on.
+
+A version never changes the wire, only the generated code. Peers whose code
+was generated for different versions still talk to each other.
+
+### Past what a generator has verified
+
+Each generator states the newest toolchain its output has been verified
+against. Declaring or raising a version past it still generates, with a
+warning under `generation::unverified-version`. For a language whose newer
+compilers promise to build older code, as Rust's do, there's no such limit.
+
+To insist on verified targets, raise it to an error in the package's
+[settings](../idl/settings.md):
+
+```idp
+settings = {
+    diagnostics = {
+        generation::unverified-version = {
+            level = "error"
+        }
+    }
+}
+```
+
+Every generated file's header also names the range it was generated for
+(`// For Rust 1.85.0 or later; verified up to 1.99.`). A TypeScript `lib`
+package lists `typescript` as an optional peer dependency at the declared
+version and up.
 
 ## Layout templates
 

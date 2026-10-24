@@ -20,8 +20,8 @@ specification_version = 1
 
 code_generation = {
     languages = {
-        rust#1.70.0 = {}
-        python#3.11.0 = {}
+        rust#1.85.0 = {}
+        typescript#5.0 = {}
     }
 }
 ```
@@ -30,7 +30,7 @@ code_generation = {
 |---|---|
 | `congregation` | the package name — a Comline identifier (letters, digits, `_`) |
 | `specification_version` | which version of the schema language these files are written against |
-| `code_generation.languages` | the **capability list**: `language#lang_version` targets this package *can* be generated as. Bare entries — `= {}` is required and takes no options. |
+| `code_generation.languages` | the **capability list**: `language#lang_version` targets this package *can* be generated as, each version the oldest toolchain the output must build on, which `comline build` proves ([Language versions](../codegen/generating-code.md#language-versions)). Bare entries — `= {}` is required and takes no options. |
 | `dependencies` | other packages this one imports — see [Dependencies](#dependencies) |
 | `settings` | package-wide authoring policy, enforced at build time — see [Settings](../idl/settings.md) |
 | `publish_registries` | named registries this package publishes to (planned — [see below](#publishing-planned)) |

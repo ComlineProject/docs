@@ -66,7 +66,7 @@ commit. A runtime's suite runs every example against it:
 <!-- matrix:start -->
 <!-- Rendered from ComlineProject/generation's features.json by scripts/sync-language-support.py - don't edit by hand. -->
 
-| Feature | [rust 1.70.0](rust.md) | [typescript 5.0](typescript.md) |
+| Feature | [rust 1.85.0](rust.md) | [typescript 5.0](typescript.md) |
 |---|---|---|
 | structs <br><sub>`structs`</sub> | ✅ supported | ✅ supported |
 | enums <br><sub>`enums`</sub> | ✅ supported | ✅ supported |

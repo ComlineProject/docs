@@ -89,7 +89,7 @@ comline generate
 ```
 
 Targets come from `code_generation.languages` in `config.idp` (the scaffold
-declares `rust#1.70.0`); output lands under `generated/` by default. Change where
+declares `rust#1.85.0`, the Rust generator's floor); output lands under `generated/` by default. Change where
 and how in [`comline.toml`](reference/congregation/comline-toml.md):
 
 ```toml
