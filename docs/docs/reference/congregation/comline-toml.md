@@ -205,6 +205,11 @@ showed up as a refused handshake.) A single protocol overrides the package setti
 `@framing` — including `@framing = "datagram"` to opt back out of a `jsonrpc`
 default.
 
+`default_framing` takes a name only. JSON-RPC's `method_names` is part of the
+schema's contract, since both ends must name calls alike, so it's set on the
+protocol with `@framing`'s dictionary form
+([JSON-RPC on a connection](../../guide/idl/protocol.md#json-rpc-on-a-connection)).
+
 ```toml
 [generate]
 default_framing = "jsonrpc"

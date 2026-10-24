@@ -58,7 +58,9 @@ It differs from a client and server in three ways:
   package's protocols.
 
 There's no `serveChat` helper: the connection serves. Protocols on
-`datagram` or `jsonrpc` in the same package keep their `Client` and server.
+`datagram` in the same package keep their `Client` and server, and so do
+`jsonrpc` ones unless the package has a JSON-RPC protocol on a connection (see
+[Over JSON-RPC](#over-json-rpc)).
 
 ## Both sides
 
@@ -82,6 +84,26 @@ A connection starts reading as soon as it's made, and `closed` resolves when
 the transport closes. Calls still waiting then reject with a `transport`
 error. A request to a protocol this side doesn't provide is answered with a
 fault.
+
+## Over JSON-RPC
+
+A JSON-RPC protocol the client provides runs on a connection too, and then so
+do the package's other JSON-RPC protocols
+([the rules](../../guide/idl/protocol.md#json-rpc-on-a-connection)). Pass
+`JsonRpcConnectionFraming` to both ends; the rest of this page is unchanged:
+
+```ts
+import { Connection, JsonCodec, JsonRpcConnectionFraming } from "@comline/runtime";
+
+const server = await Connection.accept(transport, new JsonCodec(), CONNECTION_IR_HASH, new JsonRpcConnectionFraming());
+const client = await Connection.connect(transport, new JsonCodec(), CONNECTION_IR_HASH, new JsonRpcConnectionFraming());
+```
+
+- **Each call table holds method names:** `["send", "count"]`, or under
+  `method_names = qualified`, `["chat.Events/message", "chat.Events/ping"]`.
+  A request is routed to the provided protocol whose table has its method.
+- **A one-way call is a notification,** sent with no `id`. A request without
+  one gets no reply, even if its function returns a value.
 
 ## A handler calling back
 
@@ -121,6 +143,6 @@ const chatImpl: Chat = {
 `conn.provide(protocol, dispatcher)` registers any `Dispatch`. One that
 needs the peer implements the optional `dispatchWith(kind, params, reply,
 peer)`. `Peer` has `codec`, `id`, `extensions`, `call(protocol, call, params,
-{ timeoutMs })` and `notify`. `Datagram2Framing` is the framing; another
-`ConnectionFraming` can be passed to `connect`, `accept` or
-`Connection.unverified`.
+{ timeoutMs })` and `notify`. `Datagram2Framing` is the default framing; another
+`ConnectionFraming`, such as `JsonRpcConnectionFraming`, can be passed to
+`connect`, `accept` or `Connection.unverified`.
