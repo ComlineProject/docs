@@ -180,12 +180,8 @@ theme:
 
 
 # TODO: The social plugin is disabled due to not Cairo lib not being available on Nix
-plugins:
+# plugins:
 #  - social
-  - macros:
-      include_yaml:
-        - _data/cli-global-flags.yaml
-      render_by_default: false
 
 extra:
 #  social:

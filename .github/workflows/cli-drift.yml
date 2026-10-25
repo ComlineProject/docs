@@ -17,7 +17,6 @@ on:
   pull_request:
     paths:
       - 'docs/docs/reference/cli.md'
-      - 'docs/_data/cli-global-flags.yaml'
       - 'scripts/check-cli-drift.py'
       - '.github/workflows/cli-drift.yml'
   workflow_dispatch:
