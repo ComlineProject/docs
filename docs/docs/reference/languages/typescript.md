@@ -103,6 +103,7 @@ Where `typescript` and the reference are known to answer differently, from [`kno
 | `jsonrpc-decode-lenient` | jsonrpc@1 decoding accepts a declared member twice, and an id or error code spelled 1.0, 1e0 or -0; the reference refuses both | [comline-typescript#75](https://github.com/ComlineProject/comline-typescript/issues/75) |
 | `reference-jsonrpc-method-escapes` | the reference refuses a JSON-RPC method name written with any escape, and writes a name that needs one unescaped; TypeScript escapes, and reads any spelling | [runtime#41](https://github.com/ComlineProject/runtime/issues/41) |
 | `reference-jsonrpc-ignored-members-unvalidated` | the reference accepts invalid UTF-8 inside JSON-RPC members it ignores (jsonrpc, error.message, undeclared ones); TypeScript refuses any frame that isn't UTF-8 | [runtime#42](https://github.com/ComlineProject/runtime/issues/42) |
+| `connection-replies-in-any-order` | Connection hands a reply to the call it answers in any order; an ordered (nested, blocking) Rust State refuses a reply that skips the innermost waiting call as a framing error. TypeScript has only the async model | [comline-typescript#77](https://github.com/ComlineProject/comline-typescript/issues/77) |
 
 <!-- divergences:end -->
 
