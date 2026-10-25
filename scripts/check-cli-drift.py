@@ -30,9 +30,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS_PAGE = ROOT / "docs/docs/reference/cli.md"
-# The page's tables may be assembled at build time from `_data/*.yaml` by the
-# macros extension, so the documented surface is the page *plus* that data.
-DATA_DIR = ROOT / "docs/_data"
 
 # Inherited by every subcommand; documented once under "Global flags".
 GLOBAL_FLAGS = {"--path", "--verbose", "--quiet", "--plain"}
@@ -130,12 +127,7 @@ def main() -> int:
     if not DOCS_PAGE.exists():
         sys.exit(f"error: {DOCS_PAGE} not found")
 
-    sources = [DOCS_PAGE.read_text(encoding="utf-8")]
-    if DATA_DIR.is_dir():
-        sources += [
-            f.read_text(encoding="utf-8") for f in sorted(DATA_DIR.glob("*.yaml"))
-        ]
-    doc_commands, doc_flags = documented("\n".join(sources))
+    doc_commands, doc_flags = documented(DOCS_PAGE.read_text(encoding="utf-8"))
 
     root_help = run_help([])
     real_commands = parse_commands(root_help)

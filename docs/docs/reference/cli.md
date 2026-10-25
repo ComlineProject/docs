@@ -65,8 +65,10 @@ and `lib` mode.
 
 | Flag | Effect |
 |---|---|
-{% for row in global_flags %}| {{ row.flag }} | {{ row.effect }} |
-{% endfor %}
+| `-p`, `--path <DIR>` | Run against `<DIR>` instead of the current directory. |
+| `-v`, `--verbose` (repeatable: `-vv`, `-vvv`) | Raise log verbosity (info / debug / trace) for `comline-core` diagnostics. |
+| `-q`, `--quiet` | Only errors. Conflicts with `-v`. |
+| `--plain` | No color, symbols, emoji or spinner — for logs and CI. |
 
 `RUST_LOG` overrides the verbosity flags. `NO_COLOR` strips color. stdout is
 reserved for machine output (`completions` and `targets` write there);

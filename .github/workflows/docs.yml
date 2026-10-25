@@ -58,6 +58,17 @@ jobs:
         working-directory: docs
         run: poetry run zensical build --strict
 
+      # zensical doesn't run Jinja (the macros plugin was silently ignored and
+      # the CLI page shipped a raw `{% for %}` loop), and --strict doesn't
+      # notice. Any template syntax left in a built page fails the build.
+      - name: No unrendered template syntax
+        working-directory: docs
+        run: |
+          if grep -rl --include='*.html' -e '{{ ' -e '{% ' site; then
+            echo "::error::the pages above contain unrendered {{ }} or {% %}"
+            exit 1
+          fi
+
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5

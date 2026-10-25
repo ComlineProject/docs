@@ -1,9 +1,0 @@
-global_flags:
-  - flag: "`-p`, `--path <DIR>`"
-    effect: "Run against `<DIR>` instead of the current directory."
-  - flag: "`-v`, `--verbose` (repeatable: `-vv`, `-vvv`)"
-    effect: "Raise log verbosity (info / debug / trace) for `comline-core` diagnostics."
-  - flag: "`-q`, `--quiet`"
-    effect: "Only errors. Conflicts with `-v`."
-  - flag: "`--plain`"
-    effect: "No color, symbols, emoji or spinner — for logs and CI."
