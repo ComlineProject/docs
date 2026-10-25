@@ -359,7 +359,7 @@ The FFI layer is for every other language, and Rust never pays for it.
   exception-handling proposal, which this does not depend on.
 - **Panics are bugs, not a control path.** The decode paths are already
   written as `Option`-returning `split_at_checked` chains. Stage 1's fuzz
-  targets run against the FFI entry points with "no panic" as an oracle.
+  targets run against the FFI entry points with "no panic" as the check.
 
 **Thread safety.**
 - A `comline_connection*` is **movable, not shareable**. Any thread may use
