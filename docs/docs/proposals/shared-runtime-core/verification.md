@@ -153,7 +153,14 @@ Open issues the work turned up:
 - **TypeScript connection sequences** against the reference's `session` op.
 - **Coverage-guided fuzzing and wall-time benchmarks for TypeScript**, on a
   self-hosted `comline-bench` runner, which the user will register.
-- **Report rendering** in the language reference.
+- **Fuzz and benchmark results in the language reference.** The
+  [Rust](../../reference/languages/rust.md#verification) and
+  [TypeScript](../../reference/languages/typescript.md#verification) pages show
+  each runtime's verification, and TypeScript's divergence classes are
+  rendered from `known-divergences.json`. Benchmark results fill in when a
+  runtime checks in its `*.bench.json` (Rust's workflow only uploads it as an
+  artifact so far). Fuzz results wait on a `*.fuzz.json` that no runtime
+  writes yet.
 - **A re-baseline path for the gate.** A correctness fix that costs time needs
   a deliberate way to move the baseline (see [Budgets](#budgets)). It isn't
   built yet.

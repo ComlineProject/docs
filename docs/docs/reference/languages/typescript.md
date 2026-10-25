@@ -64,8 +64,53 @@ Runtime `typescript`.
 | datagram framing <br><sub>`framing-datagram`</sub> | Comline's own binary framing of requests and responses | ✅ supported | [9 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram.json) |
 | datagram@2 framing <br><sub>`framing-datagram2`</sub> | the datagram framing with a request/reply kind and a protocol number, for calls in both directions and several protocols on one connection | ✅ supported | [12 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram2.json) |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | JSON-RPC 2.0 requests and responses, a fault as -32603 | ✅ supported | [11 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-jsonrpc.json) |
-| JSON wire format <br><sub>`format-json`</sub> | values as UTF-8 JSON: a struct as an object | 🟡 partial: decoding doesn't check enum variants or integer ranges ([comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57)) <br>fails: `format-json/decode-unknown-variant`, `format-json/decode-wider-integer-overflow` | [29 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-json.json) |
+| JSON wire format <br><sub>`format-json`</sub> | values as UTF-8 JSON: a struct as an object | 🟡 partial: decoding doesn't check enum variants or integer ranges ([comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57)) <br>fails: `format-json/decode-unknown-variant`, `format-json/decode-wider-integer-overflow` | [44 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-json.json) |
 | MessagePack wire format <br><sub>`format-msgpack`</sub> | values as MessagePack: a struct as an array | ❌ unsupported: JSON and packed@1 ship | — |
-| packed wire format <br><sub>`format-packed`</sub> | values as packed@1: fixed-width fields back to back, varint lengths, no tags | ✅ supported | [44 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-packed.json) |
+| packed wire format <br><sub>`format-packed`</sub> | values as packed@1: fixed-width fields back to back, varint lengths, no tags | ✅ supported | [59 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-packed.json) |
 
 <!-- runtime:end -->
+
+## Verification
+
+The TypeScript runtime is also checked against the Rust reference on random
+inputs, in addition to the vectors above. Its divergences from the reference are
+tracked, each with the issue that will fix it.
+
+### Differential properties
+
+- [Property tests](https://github.com/ComlineProject/comline-typescript/tree/main/runtime/test/prop)
+  (`fast-check`) run the same random types and values through this runtime and
+  the `comline-reference` process, and compare what each encodes, accepts and
+  refuses: the formats, the framings, the envelope and the handshake.
+- Pull requests run a short suite; a nightly run takes 20,000 cases per
+  property and opens an issue on a divergence outside the known classes.
+
+The property suite doesn't write a results file, so there are no run counts to
+show here. Coverage-guided fuzzing (Jazzer.js) isn't set up yet.
+
+### Divergences
+
+<!-- divergences:start -->
+<!-- Rendered from each runtime's verification reports by scripts/sync-language-support.py - don't edit by hand. -->
+
+Where `typescript` and the reference are known to answer differently, from [`known-divergences.json`](https://github.com/ComlineProject/comline-typescript/blob/main/runtime/known-divergences.json). The differential tests report a difference in one of these classes and fail on any other.
+
+| Class | What differs | Issue |
+|---|---|---|
+| `json-decode-unchecked-variants-and-ranges` | json@1 decoding accepts a string that isn't one of the enum's variants, and an integer outside its type's range; the reference refuses both | [comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57) |
+| `json-decode-unchecked-shape` | json@1 decoding accepts the wrong JSON kind, a missing or repeated struct field, an integer spelled 1.0, 1e0 or -0, and a float past its range; the reference refuses them | [comline-typescript#73](https://github.com/ComlineProject/comline-typescript/issues/73) |
+| `json-encode-f32-digits` | json@1 writes an f32 with the shortest digits of a double (1.401298464324817e-45), the reference with those of the f32 (1e-45): the same f32, not the same JSON number | [comline-typescript#74](https://github.com/ComlineProject/comline-typescript/issues/74) |
+| `jsonrpc-decode-lenient` | jsonrpc@1 decoding accepts a declared member twice, and an id or error code spelled 1.0, 1e0 or -0; the reference refuses both | [comline-typescript#75](https://github.com/ComlineProject/comline-typescript/issues/75) |
+| `reference-jsonrpc-method-escapes` | the reference refuses a JSON-RPC method name written with any escape, and writes a name that needs one unescaped; TypeScript escapes, and reads any spelling | [runtime#41](https://github.com/ComlineProject/runtime/issues/41) |
+| `reference-jsonrpc-ignored-members-unvalidated` | the reference accepts invalid UTF-8 inside JSON-RPC members it ignores (jsonrpc, error.message, undeclared ones); TypeScript refuses any frame that isn't UTF-8 | [runtime#42](https://github.com/ComlineProject/runtime/issues/42) |
+
+<!-- divergences:end -->
+
+### Benchmarks
+
+<!-- bench:start -->
+<!-- Rendered from each runtime's verification reports by scripts/sync-language-support.py - don't edit by hand. -->
+
+No benchmark results are published yet: they will appear here once the runtime checks in [`runtime/conformance-bench.json`](https://github.com/ComlineProject/comline-typescript/blob/main/runtime/conformance-bench.json).
+
+<!-- bench:end -->
