@@ -34,9 +34,8 @@ it produces.
 
 ## What's built
 
-Built 2026-10-25, for Rust, in [`runtime`](https://github.com/ComlineProject/runtime)
-except where noted. Nothing here is built for TypeScript yet (see
-[What's left](#whats-left)).
+Built 2026-10-25 and 2026-10-26, in [`runtime`](https://github.com/ComlineProject/runtime)
+except where noted.
 
 - **A pinned toolchain**
   ([runtime#30](https://github.com/ComlineProject/runtime/pull/30)): the
@@ -97,6 +96,30 @@ except where noted. Nothing here is built for TypeScript yet (see
   [playground#100](https://github.com/ComlineProject/playground/pull/100), the
   generators and generation), and the vector
   `format-packed/reject-count-past-input` pins the decoder side.
+- **Connection sequences**
+  ([runtime#39](https://github.com/ComlineProject/runtime/pull/39)):
+  - a proptest model test of the sans-IO `State`, ordered and unordered, under
+    `datagram@2` and `jsonrpc@1`, 20,000 cases each. Two planted `State` bugs
+    were both caught; no bugs were found;
+  - a `session` op in `comline-reference` with the events `call`, `receive`,
+    `abandon` and `reply`, so another language can drive its own connection
+    through the same events and compare frames and events.
+- **TypeScript's differential harness**
+  ([comline-typescript#76](https://github.com/ComlineProject/comline-typescript/pull/76)):
+  fast-check properties against `comline-reference`, covering the formats, the
+  framings, the envelope and the handshake. Pull requests run a short suite;
+  a nightly run takes 20,000 cases.
+  - The corpus was re-vendored to include the new vectors.
+  - `known-divergences.json` lists each divergence class with its issue. A
+    divergence is matched to a class by what is wrong with the input, in the
+    direction the issue describes; anything else fails. #57 shows up as
+    reported, not failed.
+  - A planted off-by-one in the varint writer first went unnoticed: no
+    generated string or array reached 128 elements. The generators now draw
+    long ones around the varint boundaries, and the bug failed 6 runs of 6.
+  - Fixed in TypeScript: `json@1` accepted a fixed-size array of the wrong
+    length; `json@1` and `jsonrpc@1` replaced invalid UTF-8 and skipped a
+    byte-order mark; the JSON reader accepted an escaped lone surrogate.
 
 ## Found along the way
 
@@ -112,19 +135,22 @@ Open issues the work turned up:
 - [comline-rust#76](https://github.com/ComlineProject/comline-rust/issues/76):
   generated Rust params borrow `&str`, so a JSON string with escapes is
   refused.
+- [runtime#41](https://github.com/ComlineProject/runtime/issues/41):
+  `jsonrpc@1` refuses a method name written with any escape, and writes a
+  name that needs one unescaped, producing invalid JSON.
+- [runtime#42](https://github.com/ComlineProject/runtime/issues/42):
+  `jsonrpc@1` accepts invalid UTF-8 inside members it ignores.
+- In TypeScript, each listed as a known divergence:
+  [comline-typescript#73](https://github.com/ComlineProject/comline-typescript/issues/73)
+  (`json@1` decoding doesn't check a value's shape against its type),
+  [#74](https://github.com/ComlineProject/comline-typescript/issues/74)
+  (`json@1` writes an `f32` with a double's digits) and
+  [#75](https://github.com/ComlineProject/comline-typescript/issues/75)
+  (`jsonrpc@1` takes duplicate members and integers spelled as floats).
 
 ## What's left
 
-- **Connection sequences**
-  ([runtime#39](https://github.com/ComlineProject/runtime/pull/39)), in
-  review, not yet merged:
-  - a proptest model test of the sans-IO `State`, ordered and unordered, under
-    `datagram@2` and `jsonrpc@1`, 20,000 cases each. Two planted `State` bugs
-    were both caught; no bugs were found;
-  - a `session` op in `comline-reference` with the events `call`, `receive`,
-    `abandon` and `reply`, so another language can drive its own connection
-    through the same events and compare frames and events.
-- **TypeScript's differential harness** (T1). In progress.
+- **TypeScript connection sequences** against the reference's `session` op.
 - **Coverage-guided fuzzing and wall-time benchmarks for TypeScript**, on a
   self-hosted `comline-bench` runner, which the user will register.
 - **Report rendering** in the language reference.
@@ -235,8 +261,8 @@ the conformance corpus's own encoding: a request carries a vector case's `op`,
 
 - The ops are the corpus's ops (`name_hash`, `handshake`, `envelope`,
   `request`, `response`, `encode`, `decode`), plus `check` and `version`.
-  `session`, for [connection sequences](#connection-sequences), is in review
-  (runtime#39).
+  `session`, for [connection sequences](#connection-sequences), was added in
+  runtime#39.
 - **Requests can be batched,** many to a line, so one round trip covers a
   fuzzer's whole batch. The batch size is the fuzzer's to choose.
 - **A refusal carries no reason.** Rust's formats collapse every decode
