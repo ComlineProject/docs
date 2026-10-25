@@ -243,7 +243,9 @@ class GenericDispatch implements Dispatch {
 ```
 
 Framing and codec come from the `ProtocolShape`: `new JsonCodec()`, and
-`JsonRpcFraming` or `DatagramFraming` per `proto.framing`. The `Handshake` is
+`JsonRpcFraming` or `DatagramFraming` per `proto.framing`. (The Rust engine
+that replaced this sketch defaults to `packed@1`; see
+[Phase 2](playground-simulation-phase-2.md).) The `Handshake` is
 built with the schema's `ir_hash`, the codec name and the framing name — exactly
 as `serveChat` does.
 
@@ -406,6 +408,6 @@ milestones 2a–2i.
 - Datagram vs. JSON-RPC shown side by side for the same call.
 - Route A — transpile the generated TypeScript in the browser and run the real
   module as an instance's implementation.
-- MessagePack codec; a length-prefixed stream transport.
+- A length-prefixed stream transport. (MessagePack and `packed@1` codecs have since shipped.)
 - Extracting `sim/` as a component the tutorial embeds with a fixed topology per
   lesson.

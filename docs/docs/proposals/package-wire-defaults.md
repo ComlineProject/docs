@@ -326,10 +326,9 @@ In the order it would be built:
    - `default_framing` becomes an error;
    - the format reaches the generators;
    - `comline new` writes a commented `wire` entry.
-6. **simulator** and **playground**: `datagram@2` frames and the resolved
-   framing read from the IR. *Not yet:* `packed@1` among the simulator's
-   formats, which needs an encoder driven by the schema's types, since the
-   simulator's values are untyped JSON.
+6. **simulator** and **playground**: `datagram@2` frames, the resolved
+   framing read from the IR, and `packed@1` among the formats (the default),
+   encoded from the schema's types.
 7. **language server**, **VS Code extension** and the **docs**.
 
 ## Decided after review
