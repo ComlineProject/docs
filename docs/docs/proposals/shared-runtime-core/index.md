@@ -1,7 +1,8 @@
 # Shared runtime core
 
-Status: **under discussion** · direction agreed with the user 2026-10-25;
-stages 1–3 are proposals below, stages 4–5 are agreed
+Status: **under discussion** · tracked in
+[runtime#29](https://github.com/ComlineProject/runtime/issues/29) · direction
+agreed 2026-10-25; stages 1–3 are proposals below, stages 4–5 are agreed
 
 **The question:** today every Comline runtime is written from scratch in its
 own language, and every runtime feature is built once per language. That
