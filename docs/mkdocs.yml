@@ -106,6 +106,11 @@ nav:
       - 'Proposal C': 'proposals/codegen-architecture/syntax-tree-emission.md'
       - 'Proposal D': 'proposals/codegen-architecture/target-language-plugins.md'
       - 'Proposal E': 'proposals/codegen-architecture/adopt-existing-model.md'
+    - 'Shared runtime core':
+      - 'proposals/shared-runtime-core/index.md'
+      - 'Stage 1 — verification': 'proposals/shared-runtime-core/verification.md'
+      - 'Stage 2 — core interface': 'proposals/shared-runtime-core/core-interface.md'
+      - 'Stage 3 — generated codecs': 'proposals/shared-runtime-core/generated-codecs.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
     - Schema compatibility: 'proposals/schema-compatibility.md'
     - Language target versions: 'proposals/target-versions.md'
