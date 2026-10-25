@@ -104,7 +104,7 @@ to the same shape:
   `config.idp` for the package's framing and format, `datagram@2` as the
   built-in framing, a new packed C-struct-like format `packed@1` as the
   built-in format, and a generated `Services` struct with a package-level
-  `serve`. *under discussion.*
+  `serve`. *shipped.*
 
 ### Packet protocols
 

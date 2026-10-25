@@ -50,12 +50,19 @@ protocol Mail {
 }
 ```
 
-- **`@framing`** picks the wire framing the generated client and server use.
+- **`@framing`** picks the wire framing the generated code uses. Without it,
+  the protocol takes the package's `wire.framing` from `config.idp`
+  ([Wire defaults](../packages/index.md#wire-defaults)), else `"datagram@2"`,
+  which puts it on a [connection](#calls-in-both-directions).
   `"jsonrpc"` (`json-rpc`, `jsonrpc-2.0`) emits a
-  [JSON-RPC 2.0](https://www.jsonrpc.org/specification) stack; omit it for the
-  default compact datagram framing. `"datagram@2"` puts the protocol on a
-  [connection](#calls-in-both-directions). Both ends of a connection must
-  agree — the [handshake](../runtime/call-system.md) refuses a mismatch.
+  [JSON-RPC 2.0](https://www.jsonrpc.org/specification) stack, and
+  `"datagram"` (`datagram@1`) the lockstep framing, with a client and a server
+  and one protocol per transport. Both ends must agree — the
+  [handshake](../runtime/call-system.md) refuses a mismatch.
+
+  Writing `@framing` is off by default: a package allows it with the setting
+  `annotations.framing.allowed = true`, or sets every protocol's framing at
+  once with `wire.framing`.
 
   The name is shorthand for a dictionary, which can say more about the
   framing: `@framing = { name = "jsonrpc", method_names = qualified }`.
@@ -81,13 +88,11 @@ protocol the client implements turns that round: the server calls it, to push
 a message or to ask the client something mid-request.
 
 ```ids linenums="1"
-@framing = "datagram@2"
 protocol Chat {
     function send(text: string) -> u64;
 }
 
 @provider = Client
-@framing = "datagram@2"
 protocol Events {
     function message(text: string) -> bool;
     function ping();
@@ -97,20 +102,19 @@ protocol Events {
 - **`@provider = Client`**: the client implements it and the server calls it.
   **`@provider = Multiple`**: both sides implement it and either can call.
 - **The framing has to tell requests from replies,** since both ends now send
-  both. `datagram@1`, the default, can't, so a `Client` or `Multiple`
-  protocol without `@framing` is a build error
-  (`validation::reverse-calls-need-framing`). Use `@framing = "datagram@2"`,
-  or [JSON-RPC](#json-rpc-on-a-connection).
-  Allowing `@framing` is a package setting
-  (`annotations.framing.allowed = true`).
+  both. The default, `datagram@2`, does, and so does
+  [JSON-RPC](#json-rpc-on-a-connection). The lockstep `datagram` can't, so a
+  `Client` or `Multiple` protocol on it is a build error
+  (`validation::reverse-calls-need-framing`).
 - **`@consumer` that disagrees with `@provider`** is a build error
   (`validation::provider-consumer-mismatch`).
 
-Protocols on `datagram@2`, and `Client` or `Multiple` ones, run on a
-**connection** instead of a client and a server:
+Every protocol on `datagram@2` — all of them, unless they pick another
+framing — runs on a **connection** instead of a client and a server:
 
 - **One connection carries all of them.** Each side provides the protocols it
-  implements and calls the others.
+  implements and calls the others. The generated package `serve` takes one
+  implementation per protocol and serves them all.
 - **Calls can nest.** A handler receives the peer that called it, so it can
   call back before it answers. While a side waits for a reply, it keeps
   serving the peer's requests.

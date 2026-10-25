@@ -94,15 +94,15 @@ package must say which ones it speaks.
   framings = ["datagram@1", "jsonrpc@1"]
   ```
 
-  The key names are open. Today the format is a call-site choice
-  (`MailClient::connect(transport, MsgPack)`), and a protocol's framing falls
-  back to the consumer's `default_framing` in `comline.toml`. Neither is part of
-  the frozen package, so the comparison can't see them.
+  The key names are open. The package's own choice of one format and one
+  framing has shipped as `config.idp`'s `wire = { format, framing }`
+  ([Package wire defaults](package-wire-defaults.md)); declaring *several*
+  that peers may pick from is still this proposal's.
 - **Defaults belong to the producer.** A protocol's framing is resolved, most
   specific first, from:
   1. its own `@framing`;
   2. the package default in `config.idp`;
-  3. core's built-in default, `datagram@1`.
+  3. core's built-in default, `datagram@2` (was `datagram@1`; see below).
 
   The framing is part of the contract, so the consumer has no say:
   `default_framing` leaves `comline.toml`, and using it there becomes an error
@@ -115,7 +115,13 @@ package must say which ones it speaks.
   - **Core's default only changes in a new edition** (`specification_version`,
     [core#102](https://github.com/ComlineProject/core/issues/102)), never
     between releases, because every package relying on it has it in its
-    contract.
+    contract. *Amended:* before 1.0 the default changed once without an
+    edition, from `datagram@1` to `datagram@2`
+    ([Package wire defaults](package-wire-defaults.md)). The rule holds from
+    1.0 on.
+
+  This part has shipped: `wire.framing`, `default_framing` refused in
+  `comline.toml`, and the resolved framing frozen per protocol.
 
   The package default must be one of the declared framings; with only one
   declared, that one is the default.
@@ -234,12 +240,12 @@ profiles; the rule itself is written against the property, as above.
 
 | Change | Bump | Why |
 |---|---|---|
-| add an optional field | minor under `json@1`; **major under `msgpack@1`** | JSON readers ignore unknown fields and read a missing one as absent; `msgpack@1` is positional |
+| add an optional field | minor under `json@1`; **major under `msgpack@1` and `packed@1`** | JSON readers ignore unknown fields and read a missing one as absent; `msgpack@1` and `packed@1` are positional |
 | add a required field | major | an old writer never sends it |
 | remove a field | major | a name disappears (and a required one stops arriving) |
 | required → optional | major | a new writer may send `null`, which an old reader rejects |
 | optional → required | major | an old writer may send `null` |
-| reorder fields | none under `json@1`; major under `msgpack@1` | |
+| reorder fields | none under `json@1`; major under `msgpack@1` and `packed@1` | |
 | change the type | major | including widening: an old reader fails on a value outside its range, and in TypeScript `u32` → `u64` changes `number` to `bigint` |
 | swap the type for an equivalent alias, either way | patch | same bytes, same generated type; reported as "same type, respelled" |
 | change the default | patch | defaults never reach the wire |

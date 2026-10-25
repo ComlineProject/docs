@@ -1,7 +1,9 @@
 # Client & server
 
-This page follows the runtime's own test fixture — a `Chat` protocol with
-a throwing call, a plain call, a `()` return, and a one-way call:
+A protocol on the lockstep `datagram` framing gets a client and a server; every
+other protocol runs on a [connection](connections.md), the default. This page
+follows the runtime's own test fixture — a lockstep `Chat` protocol with a
+throwing call, a plain call, a `()` return, and a one-way call:
 
 ```ids
 struct Message {
@@ -13,6 +15,7 @@ error Rejected {
     reason: string
 }
 
+@framing = "datagram"
 protocol Chat {
     function send(text: string) -> Message ! Rejected;
     function history(limit: u32) -> Message[];
@@ -75,18 +78,19 @@ transport means implementing the two-method `Transport` interface
 ## Connecting a client
 
 ```typescript
-import { duplex, JsonCodec } from "@comline/runtime";
+import { duplex } from "@comline/runtime";
 import { ChatClient, serveChat } from "./generated/chat.js";
 
 const [clientSide, serverSide] = duplex();
 
-serveChat(new MyChat(), serverSide, new JsonCodec());
+serveChat(new MyChat(), serverSide);
 
-const client = await ChatClient.connect(clientSide, new JsonCodec());
+const client = await ChatClient.connect(clientSide);
 const message = await client.send({ text: "hello" });
 await client.note({ text: "fire and forget" }); // no response awaited
 ```
 
+Both encode with the package's `Format` unless given another `Codec`.
 `ChatClient.connect` builds a `Handshake` from `IR_HASH` and the codec's
 name, sends it, reads the peer's, and rejects with
 `RuntimeError.handshake()` on a mismatch — the same check the Rust runtime
@@ -150,7 +154,7 @@ class MyChat implements Chat {
     async note(): Promise<void> {}
 }
 
-await serveChat(new MyChat(), transport, new JsonCodec());
+await serveChat(new MyChat(), transport);
 ```
 
 Like the Rust runtime, there's no listener/accept loop built in —

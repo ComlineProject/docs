@@ -37,8 +37,8 @@ concurrency](concurrency.md) covers the patterns.
 
 - [Client & server](client-and-server.md) — connecting, serving, and the
   shape codegen actually emits.
-- [Framing & wire format](framing-and-wire-format.md) — `Json` vs.
-  `MsgPack`, `DatagramFraming` vs. `JsonRpcFraming`, and which is a
-  build-time choice vs. a runtime one.
+- [Framing & wire format](framing-and-wire-format.md) — `Packed`, `Json`
+  and `MsgPack`; `Datagram2Framing`, `DatagramFraming` and `JsonRpcFraming`;
+  and how the package's `wire` key picks both.
 - [Sync, async & concurrency](concurrency.md) — using a `Client` from more
   than one thread, or from async code, today.

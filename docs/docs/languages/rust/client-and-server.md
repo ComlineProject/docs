@@ -1,9 +1,13 @@
 # Client & server
 
-This page assumes a schema like [Protocols](../../guide/idl/protocol.md)'s
-`Mail` example has already been generated to Rust:
+A protocol on the lockstep `datagram` framing gets a client and a server: the
+client sends a request and reads the next frame as its reply, one protocol per
+transport. Every other protocol runs on a [connection](connections.md), the
+default. This page assumes a schema like [Protocols](../../guide/idl/protocol.md)'s
+`Mail` example has been generated to Rust:
 
 ```ids
+@framing = "datagram"
 protocol Mail {
     @timeout_ms = 1000
     function send_message(message: Message) -> string ! RecipientNotFound;
@@ -27,6 +31,7 @@ pub struct MailDispatcher<S>(pub S);       // implements `comline_runtime::contr
 pub struct MailClient<T, W>(pub Client<T, W>);
 
 pub const IR_HASH: u64 = 0x…;              // schema fingerprint, used in the handshake
+pub type Format = comline_runtime::format::Packed; // the package's wire format
 ```
 
 - `Mail` is the trait your implementation fills in — plain `&self`, a
@@ -62,16 +67,16 @@ The generated `connect` always runs the
 "skip it" option from the generated stub:
 
 ```rust
-use comline_runtime::format::MsgPack;
 use comline_runtime::transport::Tcp;
 
 let transport = Tcp::connect("127.0.0.1:7000")?;
-let mut client = MailClient::connect(transport, MsgPack)?;
+let mut client = MailClient::connect(transport)?;
 
 let body = client.send_message("hello".to_string())?;
 ```
 
-`connect` builds a `Handshake` from `IR_HASH` and the wire format's name,
+`connect` encodes with the package's `Format`; `connect_with_format` takes
+another. It builds a `Handshake` from `IR_HASH` and the wire format's name,
 sends it, reads the peer's, and fails with `RuntimeError::Handshake` if the
 schema, wire format, or framing don't match on both ends — before a single
 real call goes out.
@@ -96,7 +101,6 @@ closes. Accepting connections is your loop:
 use std::net::TcpListener;
 use std::thread;
 
-use comline_runtime::format::MsgPack;
 use comline_runtime::transport::Tcp;
 
 struct MyMail;
@@ -115,15 +119,16 @@ for stream in listener.incoming() {
     let stream = stream?;
     thread::spawn(move || {
         let mut transport = Tcp::new(stream);
-        MailDispatcher(MyMail).serve(&mut transport, MsgPack).unwrap();
+        MailDispatcher(MyMail).serve(&mut transport).unwrap();
     });
 }
 ```
 
-`MailDispatcher(MyMail).serve(transport, format)` is the generated
+`MailDispatcher(MyMail).serve(&mut transport)` is the generated
 convenience method: it runs the protocol's handshake (`comline@1`
 unless the schema says `none`) with the generated `IR_HASH`, then serves
-calls until the transport closes. One
+calls until the transport closes, encoding with `Format`
+(`serve_with_format` takes another). One
 thread per connection is the obvious idiom here, not something the
 runtime enforces — nothing stops you from `serve_one` in a loop you drive
 yourself (an event loop, a single thread multiplexing several
