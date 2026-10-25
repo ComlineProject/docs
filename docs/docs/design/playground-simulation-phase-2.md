@@ -43,7 +43,7 @@ Concretely, by the end of Phase 2 the playground can:
 - run a **user-written behaviour** for a function as a sandboxed Rhai script
   instead of only the canned ones;
 - compare the **same call across framings and codecs** (datagram / JSON-RPC,
-  JSON / MessagePack) side by side;
+  `packed@1` / JSON / MessagePack) side by side;
 - be **embedded** in a tutorial lesson with a fixed, partly-locked topology.
 
 ## Architecture — the engine is its own crate
@@ -275,10 +275,16 @@ outcome, so a divergence (a bug in a framing or a codec) is visible at a glance.
 The connection inspector's read-only `framing` fact becomes an editable framing /
 wire-format picker, calling `set_transport`.
 
-Three combos ship, not the four originally planned: `datagram/json`,
-`datagram/msgpack`, `jsonrpc/json`. `jsonrpc/msgpack` is never offered —
+Seven combos ship: `datagram@2` and `datagram`, each with `packed`, `json` and
+`msgpack`, plus `jsonrpc/json`. `jsonrpc/msgpack` is never offered —
 JSON-RPC's own spec is JSON text, so a MessagePack-encoded JSON-RPC envelope
-isn't a meaningful combination, and `compare()` never returns it.
+isn't a meaningful combination, and `compare()` never returns it. JSON-RPC
+still needs JSON.
+
+`packed@1` is the default format for new connections; a saved link without a
+format still opens as JSON. The simulator's values are untyped JSON, so the
+schema's types (type aliases included) drive the runtime's own `Packed`
+serializer and deserializer. The bytes are the ones a generated peer writes.
 
 ## Interactive lesson, not an embedded `<sim>` (2i)
 
