@@ -77,7 +77,7 @@ it produces.
 
 ## Differential fuzzing
 
-### The reference oracle
+### The reference process
 
 **The Rust runtime is the reference,** as it already is for the vectors.
 "Correct" means "does what `comline-runtime` does". When a fuzzer finds Rust
@@ -93,23 +93,23 @@ implementation.
 
 | Option | How | Works before stage 2 | Cost |
 |---|---|---|---|
-| **(a) `comline-oracle`, a process** | A binary built from the runtime repository, speaking a line protocol on stdin and stdout | yes | One process round trip per batch. Needs a native binary on the CI runner. |
-| **(b) The oracle linked in** | Through the stage 2 C ABI or WASM build | no | In-process and fastest. But once a language's framing *is* the core, fuzzing that framing against the core compares the core with itself. |
-| **(c) A generated corpus** | Rust writes millions of random cases to files; each language replays them | yes | No process at all. No coverage guidance: language X's fuzzer can't steer toward its own unexplored branches, and mutated inputs X invents never reach the oracle. |
+| **(a) `comline-reference`, a process** | A binary built from the runtime repository, speaking a line protocol on stdin and stdout | yes | One process round trip per batch. Needs a native binary on the CI runner. |
+| **(b) The reference linked in** | Through the stage 2 C ABI or WASM build | no | In-process and fastest. But once a language's framing *is* the core, fuzzing that framing against the core compares the core with itself. |
+| **(c) A generated corpus** | Rust writes millions of random cases to files; each language replays them | yes | No process at all. No coverage guidance: language X's fuzzer can't steer toward its own unexplored branches, and mutated inputs X invents never reach the reference. |
 
 **Recommended: (a).**
 
 - It is the only option that works today and keeps the fuzzer in the host
   language, where coverage guidance sees the host's code.
-- It is versioned the same way as the vectors. The oracle is built at the
+- It is versioned the same way as the vectors. The reference is built at the
   commit in `VECTORS_REV`, so a language's CI answers the same way on every
   run. Every language CI that vendors the corpus already has, or can install,
   a Rust toolchain (comline-typescript's CI has one for its codegen).
 - **(b) comes later as an option, not a replacement.** Once stage 2 exists, a
-  language may link the oracle in-process for speed. Codecs stay native
+  language may link the reference in-process for speed. Codecs stay native
   ([stage 3](generated-codecs.md)), so the differential check stays
   meaningful there. For framing it then checks the binding, not the logic.
-- **(c) falls out of (a)** for free: the oracle can dump a batch of cases to a
+- **(c) falls out of (a)** for free: the reference can dump a batch of cases to a
   file. That is useful for a host where spawning a process is awkward, but it
   is not the main path.
 
@@ -133,9 +133,9 @@ own value and type encoding, so there is nothing new to learn:
   failure into `RuntimeError::Serialization`, so the reasons are already not
   part of the contract. What must agree is *whether* bytes are refused.
 
-**What the oracle needs that doesn't exist yet: decoding a type it has never
+**What the reference needs that doesn't exist yet: decoding a type it has never
 seen.** Today's reference decodes only `Point`, `Tagged` and `Color`. A fuzzer
-sends random schemas, so the oracle has to decode by a type description at
+sends random schemas, so the reference has to decode by a type description at
 run time.
 
 - **The building block is there.** `Packed::decode_seed` exists for this
@@ -143,23 +143,23 @@ run time.
   runtime's `packed@1` serializer and deserializer from a run-time `TypeDef`,
   and `serde_json` and `rmp-serde` take a `DeserializeSeed` the same way.
 - **The risk is that a schema-driven path behaves differently from what
-  generated Rust does,** which is `serde` derives. The oracle's seed must make
+  generated Rust does,** which is `serde` derives. The reference's seed must make
   exactly the deserializer calls a derive makes (`deserialize_struct` with the
   field names, `deserialize_enum` with the variant names, and so on). This is
   checked two ways:
-  - the oracle passes the whole conformance corpus;
+  - the reference passes the whole conformance corpus;
   - a Rust fuzz target decodes the same bytes through the seed and through
     derived types, for a fixed set of shapes, and requires the same answer.
 - **The value model grows** to every shape the IR can declare. `packed@1`
   already handles maps, byte strings and variants with fields, which `Value`
   and `Type` don't describe yet. The vectors gain these shapes at the same
-  time, so the corpus and the oracle never describe different worlds.
+  time, so the corpus and the reference never describe different worlds.
 
 ### What gets fuzzed
 
 | Target | Property | Inputs |
 |---|---|---|
-| **Value → bytes** | For every format a language claims, encoding a value gives exactly the oracle's bytes. JSON compares by the corpus's `"compare": "json"` rule. | random schema, random value of it |
+| **Value → bytes** | For every format a language claims, encoding a value gives exactly the reference's bytes. JSON compares by the corpus's `"compare": "json"` rule. | random schema, random value of it |
 | **Bytes → accept or refuse** | Both accept or both refuse. If both accept, the values are equal. | valid encodings, then mutated ones |
 | **Framing and handshake** | Request and response frames encode identically and decode identically, including refusals. | random call ids, request ids, protocol numbers, envelopes and payloads; mutated frames |
 | **Connection sequences** | The same sequence of events gives the same frames and the same events out. | a generated sequence, see below |
@@ -371,7 +371,7 @@ Results are published the same way as the conformance reports:
 
 | Standard | Enforced by |
 |---|---|
-| **Correctness** | Fuzzing: Rust's own property targets, and every language against the oracle |
+| **Correctness** | Fuzzing: Rust's own property targets, and every language against the reference |
 | **Conformance** | The vectors, plus fuzzing that turns each finding into a new vector |
 | **Performance** | Benchmark gates against base, and ratios to Rust that only tighten |
 
@@ -388,12 +388,12 @@ support check enforces this the way it already enforces `failing` lists.
   case was written for each, and a random schema's shapes are never written
   down at all. Vectors stay as the floor and the record of findings, but they
   can't be the whole check at ten languages.
-- **Property tests per language, without an oracle.** Rejected. A round-trip
+- **Property tests per language, without a reference.** Rejected. A round-trip
   property (`decode(encode(x)) == x`) holds for an encoding that is wrong
   symmetrically, and a decoder that accepts everything never fails it. So it
   catches neither byte incompatibility nor leniency, which are exactly the two
   bug classes found so far. Property engines are used here, but checked
-  against the oracle.
+  against the reference.
 - **Manual benchmarks.** Rejected. `core/benches/parser_benchmark.rs` shows
   how it goes: a report someone opens in a browser, run when someone
   remembers, not comparable across languages, and blocking nothing. Under the
@@ -405,11 +405,11 @@ support check enforces this the way it already enforces `failing` lists.
 
 - **Where the dedicated benchmark runner lives,** and who maintains it. Wall
   time gates for JIT languages depend on it.
-- **How the oracle reaches language CI:** built from source at `VECTORS_REV`
+- **How the reference reaches language CI:** built from source at `VECTORS_REV`
   with `cargo install`, or a prebuilt binary attached to the runtime
   repository per commit.
 - **Whether the simulator's schema-driven `packed@1` code moves into the
-  oracle crate,** with the simulator depending on it, so that schema-driven
+  `comline-reference` crate,** with the simulator depending on it, so that schema-driven
   decoding exists once.
 - **How large the value model grows,** and in what order: maps, byte strings,
   variants with fields, and whatever the IR adds.
@@ -420,16 +420,16 @@ support check enforces this the way it already enforces `failing` lists.
 
 ## Rollout
 
-1. **Rust: the oracle and the benchmarks.** The extended value model with
-   schema-driven decoding and its seed-against-derive check, `comline-oracle`,
+1. **Rust: `comline-reference` and the benchmarks.** The extended value model with
+   schema-driven decoding and its seed-against-derive check, `comline-reference`,
    the random IR generator, Rust's own `cargo-fuzz` targets, the shared
    benchmark definitions with `iai-callgrind` gates, and the pull request and
    nightly CI jobs.
 2. **TypeScript.** fast-check (values, schemas, sequences) and Jazzer.js
-   (bytes) against the oracle pinned by `VECTORS_REV`, with #57 entered as a
+   (bytes) against the reference pinned by `VECTORS_REV`, with #57 entered as a
    known divergence class on day one. Benchmarks on the dedicated runner, with
    the native-against-core comparison added when stage 2 lands.
-3. **The template for every new language:** vendor the corpus and the oracle,
+3. **The template for every new language:** vendor the corpus and `comline-reference`,
    implement the value and schema generators against the shared type grammar,
    provide the four fuzz targets and the shared benchmarks, and write the two
    reports. The language isn't listed in the language reference until every
@@ -441,19 +441,19 @@ support check enforces this the way it already enforces `failing` lists.
   - `runtime/conformance/`: `Value` and `Type` extended; schema-driven
     decoding; findings added to `reference_cases()`; `benches/` definitions;
     `reports/rust.bench.json` and `reports/rust.fuzz.json`.
-  - A new `comline-oracle` crate and binary.
+  - A new `comline-reference` crate and binary.
   - `runtime/fuzz/` with the `cargo-fuzz` targets.
   - `runtime/core/benches/`.
   - `.github/workflows/build_test.yml`, plus a nightly workflow.
 - **`comline-typescript`:**
   - `runtime/test/fuzz/` and a benchmark harness.
   - `scripts/vendor-conformance.sh`, extended to vendor `benches/` and fetch
-    the oracle.
+    the reference.
   - The known-divergence list, next to `conformance-support.json`.
   - `.github/workflows/ci.yml`.
 - **`generation`:** the random frozen-IR generator, shared with
   `conformance`'s fixture builders, and the generated-tier harness.
-- **`simulator`:** possibly, if its `src/packed.rs` moves into the oracle.
+- **`simulator`:** possibly, if its `src/packed.rs` moves into `comline-reference`.
 - **`docs`:** `scripts/sync-language-support.py` renders the fuzz and bench
   reports. The language reference pages and the runtime guide's conformance
   section describe them.

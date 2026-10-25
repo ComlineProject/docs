@@ -347,7 +347,7 @@ Two choices for the Rust backend:
 | | Keep serde derives | Render Rust from the plan |
 |---|---|---|
 | Privileged path | yes: Rust's bytes don't come from the plan | no: Rust is one more consumer |
-| Independent oracle for the plan | **yes:** serde and the plan are two separate derivations of the rules | **no:** a plan bug would appear identically in Rust and every other language, and differential fuzzing against Rust could no longer see it |
+| An independent check of the plan | **yes:** serde and the plan are two separate derivations of the rules | **no:** a plan bug would appear identically in Rust and every other language, and differential fuzzing against Rust could no longer see it |
 | Speed | already fast; monomorphized and `no_std` | possibly faster in places (bulk `u8` copies, one bounds check per fixed run, no `&mut dyn BufMut` call per byte); unmeasured |
 | Zero-copy decode | `&'a str` borrowed from the input today | would have to be rendered again |
 | Other users | `Packed::decode_seed` drives the simulator | none |
@@ -370,7 +370,7 @@ The plan still gets proven in Rust first:
   not a backend bug.
 - **Switching Rust's production path is a measurement, not a preference.** If
   the gates show plan-rendered Rust clearly faster than serde, it can become
-  the production path, and serde stays as the test oracle. Until then nothing
+  the production path, and serde stays as the reference in tests. Until then nothing
   changes for Rust users.
 
 ### 6. Why this is the fast option
