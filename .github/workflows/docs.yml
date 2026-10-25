@@ -16,11 +16,6 @@ on:
     # "Render the verification reports"): the runtime's nightly fuzz run
     # publishes around 03:30 UTC, so this picks it up the same morning.
     - cron: '0 6 * * *'
-  # Lets another repository's workflow ask for a rebuild once it publishes a
-  # report (`gh api repos/ComlineProject/docs/dispatches -f event_type=reports-published`,
-  # with a token that may write to this repository).
-  repository_dispatch:
-    types: [reports-published]
 
 permissions:
   contents: read
