@@ -59,6 +59,23 @@ alternatives are worth. Five proposals, read to the same shape:
   — translate Comline IR to Smithy and inherit its generators. *under
   discussion — assessed, not recommended as a basis.*
 
+### [Shared runtime core](shared-runtime-core/index.md)
+
+How ten or more language runtimes stay correct, conformant and fast without
+writing the same logic in each. One Rust protocol core every language binds,
+codecs generated from one plan, and every language proven against the Rust
+reference. One proposal in three stages, read in order:
+
+- [Stage 1 — verification](shared-runtime-core/verification.md): differential
+  fuzzing against the Rust reference, and benchmark gates, in every
+  language's CI. *under discussion.*
+- [Stage 2 — core interface](shared-runtime-core/core-interface.md): the
+  handshake, framings and connection state machine behind a stable C ABI and
+  WASM, built from one crate. *under discussion.*
+- [Stage 3 — generated codecs](shared-runtime-core/generated-codecs.md):
+  native per-type codecs and protocol glue rendered from one plan in the
+  codegen kernel. *under discussion.*
+
 ### Versioning
 
 - [Schema compatibility](schema-compatibility.md): which schema changes are
