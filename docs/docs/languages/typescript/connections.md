@@ -1,23 +1,58 @@
 # Connections
 
-A protocol on `datagram@2`, or one the client provides, runs on a
-[connection](../../guide/idl/protocol.md#calls-in-both-directions) instead of
-a [client and server](client-and-server.md). This page uses this schema:
+Every protocol runs on a
+[connection](../../guide/idl/protocol.md#calls-in-both-directions) unless it
+picks the lockstep `datagram` framing, in which case it gets a
+[client and server](client-and-server.md) instead. This page uses this
+schema:
 
 ```ids
-@framing = "datagram@2"
 protocol Chat {
     function send(text: string) -> u64;
     function count() -> u64;
 }
 
 @provider = Client
-@framing = "datagram@2"
 protocol Events {
     function message(text: string) -> bool;
     function ping();
 }
 ```
+
+## Serving every protocol
+
+The package gets one `serve`, taking a `Services` object with a field per
+protocol the server provides. Leaving one out doesn't type-check:
+
+```ts
+import { connect, serve, chat } from "my-package";
+
+// The side that accepts: handshake, provide every protocol, serve until
+// the peer leaves.
+await serve(transport, { chat: chatImpl });
+
+// The side that dials: handshake, provide the client's protocols, and call
+// the server's through their senders.
+const conn = await connect(transport, { events: eventsImpl });
+const sent = await new chat.ChatSender(conn).send({ text: "hi" });
+```
+
+- **`accept(transport, services)`** returns the connection, already serving,
+  so the server can call the client through it.
+- **`ClientServices`** holds the protocols the dialling side provides
+  (`@provider = Client` or `Multiple`). With none, `connect` takes only the
+  transport.
+- **Field names** are the protocol's name in camelCase
+  (`CharacterInventory` is `characterInventory`), prefixed with the namespace
+  where two schemas declare a protocol of the same name.
+- **The format** is the package's `Format`
+  ([Framing & wire format](framing-and-wire-format.md)); the framing and
+  handshake are the protocols'. When the protocols on connections disagree on
+  either, no one connection carries them all, so these functions aren't
+  generated and `comline generate` warns why.
+
+They're in `connection.ts`, which a `lib`-mode package's `index.ts`
+re-exports.
 
 ## What codegen emits
 
@@ -41,7 +76,12 @@ export class ChatSender {
 
 // Events, EventsDispatcher (PROTOCOL = 1) and EventsSender, the same way.
 
+// Once per package, in connection.ts:
+export const Format: Codec = new PackedCodec();
 export const CONNECTION_IR_HASH = 0x…n;  // checked by the handshake
+export interface Services { chat: Chat }
+export interface ClientServices { events: Events }
+export async function accept(…); serve(…); connect(…);
 ```
 
 It differs from a client and server in three ways:
@@ -57,22 +97,25 @@ It differs from a client and server in three ways:
   each protocol's number (`ChatDispatcher.PROTOCOL`), its position among the
   package's protocols.
 
-There's no `serveChat` helper: the connection serves. Protocols on
+There's no `serveChat` helper: the package's `serve` serves them all. Protocols on
 `datagram` in the same package keep their `Client` and server, and so do
 `jsonrpc` ones unless the package has a JSON-RPC protocol on a connection (see
 [Over JSON-RPC](#over-json-rpc)).
 
-## Both sides
+## By hand
+
+The package's functions are a few lines over the runtime's `Connection`,
+which is also how to pick another codec for one connection:
 
 ```ts
-import { Connection, JsonCodec } from "@comline/runtime";
+import { Connection } from "@comline/runtime";
 
 // The side that accepts.
-const server = await Connection.accept(transport, new JsonCodec(), CONNECTION_IR_HASH);
+const server = await Connection.accept(transport, Format, CONNECTION_IR_HASH);
 new ChatDispatcher(chatImpl).provideOn(server);
 
 // The side that dials.
-const client = await Connection.connect(transport, new JsonCodec(), CONNECTION_IR_HASH);
+const client = await Connection.connect(transport, Format, CONNECTION_IR_HASH);
 new EventsDispatcher(eventsImpl).provideOn(client);
 const sent = await new ChatSender(client).send({ text: "hi" });
 
@@ -90,7 +133,8 @@ fault.
 A JSON-RPC protocol the client provides runs on a connection too, and then so
 do the package's other JSON-RPC protocols
 ([the rules](../../guide/idl/protocol.md#json-rpc-on-a-connection)). Pass
-`JsonRpcConnectionFraming` to both ends; the rest of this page is unchanged:
+`JsonRpcConnectionFraming` to both ends (the package's `serve` and `connect`
+do); the rest of this page is unchanged:
 
 ```ts
 import { Connection, JsonCodec, JsonRpcConnectionFraming } from "@comline/runtime";

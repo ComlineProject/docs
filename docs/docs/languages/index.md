@@ -27,13 +27,14 @@ system [could in principle](../guide/runtime/call-system.md) support:
 
 | | Transports | Wire formats | Framings |
 |---|---|---|---|
-| Rust | in-memory, TCP | JSON, MessagePack | datagram, JSON-RPC |
-| TypeScript | in-memory only | JSON only | datagram, JSON-RPC |
+| Rust | in-memory, TCP | packed, JSON, MessagePack | datagram@2, datagram, JSON-RPC |
+| TypeScript | in-memory only | packed, JSON | datagram@2, datagram, JSON-RPC |
 
 Not every combination of wire format and framing ships — JSON-RPC's own spec
-is JSON text, so a `jsonrpc` + `msgpack` pairing doesn't exist on either
-side. The combinations that do ship: `datagram`/`json`, `datagram`/`msgpack`
-(Rust only, until TypeScript gets a MessagePack codec), and `jsonrpc`/`json`.
+is JSON text, so a `jsonrpc` + `msgpack`/`packed` pairing doesn't exist on
+either side. MessagePack is Rust only, until TypeScript gets a codec for it.
+`packed@1` and `datagram@2` are the built-in defaults; see
+[Wire defaults](../guide/packages/index.md#wire-defaults).
 
 ## Who maintains this
 

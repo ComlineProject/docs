@@ -33,12 +33,47 @@ code_generation = {
 | `code_generation.languages` | the **capability list**: `language#lang_version` targets this package *can* be generated as, each version the oldest toolchain the output must build on, which `comline build` proves ([Language versions](../codegen/generating-code.md#language-versions)). Bare entries — `= {}` is required and takes no options. |
 | `dependencies` | other packages this one imports — see [Dependencies](#dependencies) |
 | `settings` | package-wide authoring policy, enforced at build time — see [Settings](../idl/settings.md) |
+| `wire` | the package's wire format and framing — see [Wire defaults](#wire-defaults) |
+| `handshake` | what a protocol with no `@handshake` runs before its first call: `"comline@1"` (the default) or `"none"` — see [Giving up a guarantee](../idl/protocol.md#giving-up-a-guarantee) |
 | `publish_registries` | named registries this package publishes to (planned — [see below](#publishing-planned)) |
 
 The manifest is **frozen**: it lowers to IR units and is content-addressed into
 every built version, so a published version carries its own declarations. It
 never contains an output path — that is a consumer choice and lives in
 `comline.toml`.
+
+## Wire defaults
+
+Both ends of a connection have to frame and encode calls alike, so the
+package says how, once:
+
+```idp
+wire = { format = "packed@1" framing = "datagram@2" }
+```
+
+| Key | Values | Default |
+|---|---|---|
+| `format` | `"packed@1"`, `"json@1"`, `"msgpack@1"` | `"packed@1"`: fixed-width fields with no tags or names — see [`packed@1`](../../reference/wire/packed.md) |
+| `framing` | `"datagram@2"`, `"datagram"` (`"datagram@1"`), `"jsonrpc"` | `"datagram@2"`: every protocol on a [connection](../idl/protocol.md#calls-in-both-directions) |
+
+Either key can be left out, and so can `wire`: the defaults are what a package
+that says nothing gets. The values are strings, quoted.
+
+- **`framing`** applies to every protocol with no `@framing` of its own. The
+  build writes it into each one, so it's part of the schema, and changing it
+  is a major change.
+- **`format`** is what the generated code encodes with: Rust's and
+  TypeScript's `Format`. Changing it is a major change too.
+- **JSON-RPC carries JSON.** A package with a JSON-RPC protocol (through its
+  own `@framing` or through `wire.framing`) can't declare another `format`;
+  that's a build error naming the protocol. Leaving `format` out is fine:
+  the default then applies to the other protocols only.
+- **A target has to support the format.** TypeScript has no MessagePack codec
+  yet, so `comline build` refuses `msgpack@1` in a package that declares
+  TypeScript.
+
+These used to be the consumer's choice, in `comline.toml`'s `default_framing`.
+That key is now an error that hands back the `wire` line to write instead.
 
 ## `.comline/` — the store
 

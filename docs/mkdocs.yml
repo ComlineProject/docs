@@ -59,6 +59,9 @@ nav:
       - Rust: 'reference/languages/rust.md'
       - TypeScript: 'reference/languages/typescript.md'
 
+    - Wire formats:
+      - packed@1: 'reference/wire/packed.md'
+
     - Congregation:
       - Congregation: 'reference/congregation/index.md'
       - comline.toml: 'reference/congregation/comline-toml.md'

@@ -202,15 +202,15 @@ isn't written yet:
 - **Protocol numbers are fixed, not negotiated:** a protocol's position among
   the package's protocols, in schema order. The handshake's IR hash covers
   every schema, so both ends agree on them.
-- **`datagram@2` is opt-in.** `datagram@1` stays the default.
+- **`datagram@2` was opt-in** at first. It has since become the default
+  ([Package wire defaults](package-wire-defaults.md)), and `datagram@1`
+  (`datagram`) is the opt-out.
 - **Error ids are still positions across a schema,** not scoped by protocol.
 
 Not built yet:
 
 - Interceptors.
 - The `duplex` capability check.
-- The [simulator](../design/playground-simulation.md) doesn't know
-  `datagram@2`.
 
 ## Open questions
 

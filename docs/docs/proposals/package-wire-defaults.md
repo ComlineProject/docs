@@ -1,7 +1,8 @@
 # Package wire defaults
 
-Status: **under discussion** · decided with the author 2026-10-25, open for
-review before any code · issues:
+Status: **shipped** 2026-10-25 · runtime#27, comline-typescript#70, core#140,
+comline-rust#75, comline-typescript#71, generation#83, cli#101, cli#102,
+simulator#26, language-server#85, playground#98, comline-vscode#19 · issues:
 [core#139](https://github.com/ComlineProject/core/issues/139),
 [runtime#26](https://github.com/ComlineProject/runtime/issues/26),
 [generation#82](https://github.com/ComlineProject/generation/issues/82),
@@ -211,15 +212,15 @@ That's 19 bytes. The same value in `json@1` is 73.
 
 - **Rust**: `comline_runtime::format::Packed`, a `WireFormat` built as a serde
   serializer and deserializer.
-  - It needs `alloc` but not `std`, so it works on targets the `std`-only JSON
-    and MessagePack formats don't.
+  - It needs neither `std` nor an allocator, so it works on targets the
+    `std`-only JSON and MessagePack formats don't.
   - It never needs `deserialize_any`, and the generated types already avoid the
     serde features a positional format can't support (`flatten`, untagged
     enums, skipped fields).
 - **TypeScript** is the larger piece. A JS value doesn't say whether a number
   is a `u16` or an `f64`, so the decoder needs the schema.
-  - The generator emits a shape for each type (field order, widths, element
-    types), and `PackedCodec` walks it.
+  - The generator emits a `Layout` for each type (field order, widths,
+    element types), and `PackedCodec` walks it.
   - `u64` and `s64` stay `bigint`, as in the JSON codec.
 - **Conformance vectors** pin the bytes for each type and each decoding error.
   Both runtimes run them, as they do for the existing formats.
@@ -325,8 +326,10 @@ In the order it would be built:
    - `default_framing` becomes an error;
    - the format reaches the generators;
    - `comline new` writes a commented `wire` entry.
-6. **simulator** and **playground**: `datagram@2` frames, the resolved framing
-   read from the IR, and `packed@1` among the formats.
+6. **simulator** and **playground**: `datagram@2` frames and the resolved
+   framing read from the IR. *Not yet:* `packed@1` among the simulator's
+   formats, which needs an encoder driven by the schema's types, since the
+   simulator's values are untyped JSON.
 7. **language server**, **VS Code extension** and the **docs**.
 
 ## Decided after review

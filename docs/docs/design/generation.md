@@ -189,8 +189,11 @@ enum. A `protocol` emits the full RPC shape against `@comline/runtime` — an
 interfaces, a provider interface of `Promise`-returning methods with `@throws`
 JSDoc, a `<PROTO>_CALLS` table, a `<Proto>Dispatcher` (`implements Dispatch`), a
 `<Proto>Client` (+ static `connect`, running the handshake), and a
-`serve<Proto>` helper. Framing follows `@framing` / the package
-`default_framing` (`DatagramFraming` default, `JsonRpcFraming` for `jsonrpc`).
+`serve<Proto>` helper. Framing follows `@framing` / the package's
+`wire.framing` (`Datagram2Framing` default, `DatagramFraming` for the lockstep
+`datagram`, `JsonRpcFraming` for `jsonrpc`). Each type also gets a `Layout`
+for `PackedCodec`, and the package a `connection.ts` with `Format`,
+`Services` and `serve` / `accept` / `connect`.
 Type map: `string` → `string`, `bool` → `boolean`, `u128`/`i128`/`s128`
 → `bigint`, every other int/float width → `number`, `T[]` → `T[]`, `optional`
 → `name?: type`, `()` → `void`.

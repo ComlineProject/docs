@@ -7,16 +7,21 @@ on a transport and back again.
 It is pluggable along two axes:
 
 - **Call format (framing)** — how a request/response is framed. Three ship
-  today: a compact binary **datagram** framing (the default), its second
-  version **`datagram@2`** for [connections](#connections), and
-  [JSON-RPC 2.0](https://www.jsonrpc.org/specification). Framing is chosen
-  when code is generated (a protocol's `@framing` annotation, or the
-  package's default), not swapped at the call site.
+  today: **`datagram@2`** (the default), a compact binary framing for
+  [connections](#connections); its lockstep first version, **`datagram`**;
+  and [JSON-RPC 2.0](https://www.jsonrpc.org/specification). Framing is
+  chosen when code is generated (a protocol's `@framing` annotation, else the
+  package's `wire.framing`), not swapped at the call site.
 - **Message serialization (wire format)** — how the
-  [structures](../idl/structure.md) carried by a call are encoded. JSON and
-  [MessagePack](https://msgpack.org/) ship for Rust; JSON ships for
-  TypeScript. Unlike framing, this is a runtime choice — passed to the
-  client/server when a connection is made.
+  [structures](../idl/structure.md) carried by a call are encoded:
+  **[`packed@1`](../../reference/wire/packed.md)** (the default: fixed-width
+  fields, no tags or names), JSON, and
+  [MessagePack](https://msgpack.org/) (Rust only, for now). The package
+  declares it as `wire.format`, and generated code names it `Format`; a
+  connection made by hand can pass another.
+
+Both are declared in `config.idp`'s `wire` key
+([Wire defaults](../packages/index.md#wire-defaults)).
 
 The runtime handles routing between a caller and the protocol implementation;
 you pick the formats that fit your deployment.
@@ -45,8 +50,9 @@ TypeScript) — named so that skipping is as visible there as in a schema.
 
 ## Connections
 
-A client and a server work in lockstep: the client sends a request and reads
-the next frame as its reply. A **connection** lifts that limit:
+A client and a server (the `datagram` framing) work in lockstep: the client
+sends a request and reads the next frame as its reply. A **connection**, which
+every protocol uses by default, lifts that limit:
 
 - **Either side can call,** since `datagram@2` marks each frame as a request
   or a reply.

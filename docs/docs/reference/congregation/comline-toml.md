@@ -18,7 +18,6 @@ Defaults for every target.
 | `layout` | string (template) | `"{{language}}/{{namespace}}.{{ext}}"` | Path of each generated file under `out`. Handlebars, strict. |
 | `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. `code` and `lib` are implemented for `rust` and `typescript`; `dylib` is planned — see [Library generation](../../guide/codegen/library-generation.md). |
 | `package_versions` | `"latest"` \| `"all"` \| list | `"latest"` | Which package versions to emit — see [below](#package_versions). |
-| `default_framing` | string | — | Wire framing for protocols that don't pick one with [`@framing`](../../guide/idl/protocol.md#annotations) — see [below](#default_framing). |
 | `external_std` | bool | on in `lib`, off in `code` | Reference `std` as its own package instead of inlining it — see [below](#external_std). |
 | `validate_on_decode` | `"off"` \| `"collect"` \| `"first"` | `"off"` | Whether decoding a value runs its [`@validators`](../../guide/idl/validator.md) — see [below](#validate_on_decode). |
 | `async` | bool | `false` | Generate protocols on a connection for an async driver — see [below](#async). |
@@ -40,7 +39,7 @@ declare is an error. To generate *fewer* than the package declares, use
 |---|---|---|
 | `language` | string | **Required.** Must be one the manifest declares under `code_generation.languages`. |
 | `lang_version` | string | Optional; the toolchain version to generate for. Defaults to what `config.idp` declared, and may raise it but never lower it ([Language versions](../../guide/codegen/generating-code.md#language-versions)). |
-| `out`, `layout`, `mode`, `package_versions`, `default_framing`, `external_std`, `validate_on_decode`, `async` | — | Per-target override of the `[generate]` value. |
+| `out`, `layout`, `mode`, `package_versions`, `external_std`, `validate_on_decode`, `async` | — | Per-target override of the `[generate]` value. |
 | `flatten` | bool | `lib`/`dylib` only, target-only (no `[generate]` default): write the crate straight into `out` instead of `out/<language>/`. See [below](#flatten). |
 
 ```toml
@@ -128,13 +127,16 @@ is generated for a blocking driver by default. `async = true` generates it for
 an async one instead:
 
 - **`rust`:** async handlers, `<Proto>AsyncDispatcher` and `<Proto>AsyncSender`,
-  for the runtime's `AsyncConnection` on any executor — see
+  and an async package `serve` / `accept` / `connect`, for the runtime's
+  `AsyncConnection` on any executor — see
   [Rust connections](../../languages/rust/connections.md#async). A `lib`
   package turns on the runtime's `async` feature.
 - **`typescript`:** nothing changes; its handlers and senders return Promises
   either way.
 
-Protocols that aren't on a connection are the same either way. Like
+Every protocol is on a connection unless it's lockstep (the `datagram`
+framing, or JSON-RPC with no client-provided protocol); those are the same
+either way, and `comline generate` warns when `async = true` changes nothing. Like
 `external_std`, it's a consumer's choice: the same package can be generated
 async for one application and blocking for another.
 
@@ -187,36 +189,18 @@ package_versions = "all"
 layout           = "{{language}}/{{package_version}}/{{namespace}}.{{ext}}"
 ```
 
-## `default_framing`
+## `default_framing` (moved)
 
-The wire framing the generated `connect` / `serve` helpers use for any
-`protocol` that does not set its own [`@framing`](../../guide/idl/protocol.md#annotations).
-Unset ⇒ the generator's built-in default (a compact datagram framing for Rust).
+The framing is part of the schema, since both ends have to agree on it, so it
+moved to the package: `config.idp`'s `wire = { framing = "..." }`
+([Wire defaults](../../guide/packages/index.md#wire-defaults)). A
+`default_framing`, in `[generate]` or in a target, is an error that names the
+line to write there instead:
 
-| Value | Effect |
-|  ---  |  ---   |
-| `"datagram"` (`"comline.datagram"`) | The datagram default, stated explicitly. |
-| `"jsonrpc"` (`"json-rpc"`, `"jsonrpc-2.0"`) | JSON-RPC 2.0 framing. |
-| `"datagram@2"` | The datagram framing with a request/reply marker and a protocol number: every protocol runs on a [connection](../../guide/idl/protocol.md#calls-in-both-directions). |
-
-Any other value is an error naming the accepted ones, with a "did you mean"
-for a near miss. (It used to fall back silently to datagram, so a typo only
-showed up as a refused handshake.) A single protocol overrides the package setting either way with
-`@framing` — including `@framing = "datagram"` to opt back out of a `jsonrpc`
-default.
-
-`default_framing` takes a name only. JSON-RPC's `method_names` is part of the
-schema's contract, since both ends must name calls alike, so it's set on the
-protocol with `@framing`'s dictionary form
-([JSON-RPC on a connection](../../guide/idl/protocol.md#json-rpc-on-a-connection)).
-
-```toml
-[generate]
-default_framing = "jsonrpc"
-
-[[generate.target]]
-language        = "rust"
-default_framing = "datagram"   # this target only
+```text
+`default_framing` moved from comline.toml to config.idp
+  help: drop it here, and declare the package's framing in config.idp:
+      wire = { framing = "jsonrpc" }
 ```
 
 ## Precedence

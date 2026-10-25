@@ -164,9 +164,10 @@ Mapping rules:
   `resolveKind` matches on the wire (the generated `CHAT_CALLS` array is the same
   order).
 - **framing** — from a `Property { name: "framing" }` in the protocol's
-  `parameters`; else the package `default_framing`; else `"datagram"`.
-  `"jsonrpc"` → `JsonRpcFraming` (`name "jsonrpc@1"`), anything else →
-  `DatagramFraming` (`name "datagram@1"`).
+  `parameters` (core has written the package's `wire.framing` there); else
+  `"datagram@2"`. `"jsonrpc"` → `JsonRpcFraming` (`name "jsonrpc@1"`),
+  `"datagram"` → `DatagramFraming` (`name "datagram@1"`), `"datagram@2"` →
+  `Datagram2Framing`, whose frames carry the protocol's number.
 - **oneway** — `_return.is_none()`. Distinct from `Some(Unit)`, which still sends
   an empty `ok` reply.
 - **throws** — each `u16` ordinal joined to the matching `FrozenUnit::Error` by

@@ -1,23 +1,60 @@
 # Connections
 
-A protocol on `datagram@2`, or one the client provides, runs on a
-[connection](../../guide/idl/protocol.md#calls-in-both-directions) instead of
-a [client and server](client-and-server.md). This page uses this schema:
+Every protocol runs on a
+[connection](../../guide/idl/protocol.md#calls-in-both-directions) unless it
+picks the lockstep `datagram` framing, in which case it gets a
+[client and server](client-and-server.md) instead. This page uses this
+schema:
 
 ```ids
-@framing = "datagram@2"
 protocol Chat {
     function send(text: string) -> u64;
     function count() -> u64;
 }
 
 @provider = Client
-@framing = "datagram@2"
 protocol Events {
     function message(text: string) -> bool;
     function ping();
 }
 ```
+
+## Serving every protocol
+
+The package gets one `serve`, with a `Services` struct holding a field per
+protocol the server provides. Leaving one out doesn't compile:
+
+```rust
+use my_package::{connect, serve, ClientServices, Services};
+use my_package::chat::ChatSender;
+
+// The side that accepts: handshake, provide every protocol, serve until
+// the peer leaves.
+serve(transport, Services { chat: ChatImpl })?;
+
+// The side that dials: handshake, provide the client's protocols, and call
+// the server's through their senders.
+let mut conn = connect(transport, ClientServices { events: EventsImpl::default() })?;
+let sent = ChatSender::new(&mut conn).send("hi")?;
+```
+
+- **`accept(transport, Services { .. })`** is `serve` without the serving: it
+  returns the connection, for a server that calls the client first or serves
+  one request at a time.
+- **`ClientServices`** holds the protocols the dialling side provides
+  (`@provider = Client` or `Multiple`). With none, `connect` takes only the
+  transport.
+- **Field names** are the protocol's name in snake case
+  (`CharacterInventory` is `character_inventory`). Where two schemas declare
+  a protocol of the same name, both are prefixed with their namespace.
+- **The format** is the package's `Format`
+  ([Framing & wire format](framing-and-wire-format.md)), and the framing and
+  handshake are the protocols'. When the protocols on connections disagree
+  on either, no one connection carries them all, so these functions aren't
+  generated and `comline generate` warns why.
+
+In `lib` mode they're at the crate root; in `code` mode, in `connection.rs`
+beside the schema files.
 
 ## What codegen emits
 
@@ -34,7 +71,12 @@ pub trait Events { /* the same shape */ }
 pub struct EventsDispatcher<S>(pub S);
 pub struct EventsSender<'p, P: Peer>(pub &'p mut P);
 
+// Once per package:
+pub type Format = comline_runtime::format::Packed;
 pub const CONNECTION_IR_HASH: u64 = 0x…;   // checked by the handshake
+pub struct Services<Chat> { pub chat: Chat }
+pub struct ClientServices<Events> { pub events: Events }
+pub fn accept(…); pub fn serve(…); pub fn connect(…);
 ```
 
 It differs from a client and server in three ways:
@@ -47,21 +89,23 @@ It differs from a client and server in three ways:
   as `ChatClient` would, over anything that implements `Peer`: a
   `Connection`, or a handler's peer. Calls return `CallError` as a client's
   do; `@timeout_ms` applies; one-way functions return `Result<(), RuntimeError>`.
-- **`CONNECTION_IR_HASH`** covers every schema in the package, so it's the
-  same in every generated file. It also fixes each protocol's number
-  (`ChatDispatcher::PROTOCOL`), its position among the package's protocols.
+- **`CONNECTION_IR_HASH`** covers every schema in the package. It also fixes
+  each protocol's number (`ChatDispatcher::PROTOCOL`), its position among the
+  package's protocols.
 
 Protocols on `datagram` in the same package keep their `Client` and
 `Server`, and so do `jsonrpc` ones unless the package has a JSON-RPC protocol
 on a connection (see [Over JSON-RPC](#over-json-rpc)).
 
-## The side that accepts
+## By hand
+
+`serve` is a few lines over the runtime's `Connection`, which is also how to
+pick another format for one connection:
 
 ```rust
 use comline_runtime::connection::Connection;
-use comline_runtime::format::Json;
 
-let mut conn = Connection::accept(transport, Json, CONNECTION_IR_HASH)?;
+let mut conn = Connection::accept(transport, Format::default(), CONNECTION_IR_HASH)?;
 ChatDispatcher(ChatImpl).provide_on(&mut conn);
 conn.serve()?;                              // until the transport closes
 ```
@@ -75,26 +119,18 @@ conn.serve_one()?;
 EventsSender::new(&mut conn).message("pushed")?;
 ```
 
-## The side that dials
-
-```rust
-let mut conn = Connection::connect(transport, Json, CONNECTION_IR_HASH)?;
-EventsDispatcher(EventsImpl::default()).provide_on(&mut conn);
-
-let mut chat = ChatSender::new(&mut conn);
-let sent = chat.send("hi")?;
-```
-
-While `send` waits for its reply, the connection serves whatever the server
-sends first, such as the `Events::message` call its handler makes. A request
-to a protocol this side doesn't provide is answered with a fault.
+The dialling side is `Connection::connect` with the same arguments. While a
+call waits for its reply, the connection serves whatever the server sends
+first, such as the `Events::message` call its handler makes. A request to a
+protocol this side doesn't provide is answered with a fault.
 
 ## Over JSON-RPC
 
 A JSON-RPC protocol the client provides runs on a connection too, and then so
 do the package's other JSON-RPC protocols
 ([the rules](../../guide/idl/protocol.md#json-rpc-on-a-connection)). Open the
-connection with `JsonRpcFraming`; the rest of this page is unchanged:
+connection with `JsonRpcFraming`, which the package's `serve` and `connect`
+do for you; the rest of this page is unchanged:
 
 ```rust
 use comline_runtime::framing::JsonRpcFraming;
@@ -173,20 +209,16 @@ The connection is a future the application spawns; its handles call the
 peer from any task. The generated crate enables the runtime's `async`
 feature; in `code` mode, the file names the feature to add.
 
+The package's `serve`, `accept` and `connect` are `async` too. `accept` and
+`connect` return the connection not yet running, so the caller can take a
+`handle()` before spawning it:
+
 ```rust
-use comline_runtime::async_connection::AsyncConnection;
+let server = tokio::spawn(serve(acceptor, Services { chat: ChatImpl }));
 
-let (client, server) = tokio::join!(
-    AsyncConnection::connect(dialler, Json, CONNECTION_IR_HASH),
-    AsyncConnection::accept(acceptor, Json, CONNECTION_IR_HASH),
-);
-let (mut client, mut server) = (client?, server?);
-ChatAsyncDispatcher(ChatImpl).provide_on(&mut server);
-EventsAsyncDispatcher(EventsImpl::default()).provide_on(&mut client);
-
+let client = connect(dialler, ClientServices { events: EventsImpl::default() }).await?;
 let to_server = client.handle();
 tokio::spawn(client.run());
-tokio::spawn(server.run());
 
 let sent = ChatAsyncSender::new(&to_server).send("hi").await?;
 ```

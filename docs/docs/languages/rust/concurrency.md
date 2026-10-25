@@ -21,7 +21,7 @@ needs a lock:
 ```rust
 use std::sync::{Arc, Mutex};
 
-let client = Arc::new(Mutex::new(MailClient::connect(transport, MsgPack)?));
+let client = Arc::new(Mutex::new(MailClient::connect(transport)?));
 
 let c = Arc::clone(&client);
 thread::spawn(move || {

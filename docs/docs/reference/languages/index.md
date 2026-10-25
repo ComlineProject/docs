@@ -90,6 +90,9 @@ commit. A runtime's suite runs every example against it:
 | no handshake <br><sub>`handshake-none`</sub> | ✅ supported | ✅ supported |
 | connections <br><sub>`connections`</sub> | ✅ supported | ✅ supported |
 | `async` <br><sub>`async`</sub> | ✅ supported | ⚪ ignored: handlers and senders always return Promises: the output is async either way |
+| the `packed@1` format <br><sub>`format-packed`</sub> | ✅ supported | ✅ supported |
+| the `json@1` format <br><sub>`format-json`</sub> | ✅ supported | ✅ supported |
+| the `msgpack@1` format <br><sub>`format-msgpack`</sub> | ✅ supported | ❌ unsupported: `@comline/runtime` has no MessagePack codec yet |
 
 <!-- matrix:end -->
 
@@ -107,7 +110,8 @@ commit. A runtime's suite runs every example against it:
 | datagram@2 framing <br><sub>`framing-datagram2`</sub> | ✅ supported | ✅ supported |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | ✅ supported | ✅ supported |
 | JSON wire format <br><sub>`format-json`</sub> | ✅ supported | 🟡 partial: decoding doesn't check enum variants or integer ranges ([comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57)) |
-| MessagePack wire format <br><sub>`format-msgpack`</sub> | ✅ supported | ❌ unsupported: only JSON ships |
+| MessagePack wire format <br><sub>`format-msgpack`</sub> | ✅ supported | ❌ unsupported: JSON and packed@1 ship |
+| packed wire format <br><sub>`format-packed`</sub> | ✅ supported | ✅ supported |
 
 <!-- runtime-matrix:end -->
 
