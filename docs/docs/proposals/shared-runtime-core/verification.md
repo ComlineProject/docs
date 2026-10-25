@@ -157,10 +157,10 @@ Open issues the work turned up:
   [Rust](../../reference/languages/rust.md#verification) and
   [TypeScript](../../reference/languages/typescript.md#verification) pages show
   each runtime's verification, and TypeScript's divergence classes are
-  rendered from `known-divergences.json`. Benchmark results fill in when a
-  runtime checks in its `*.bench.json` (Rust's workflow only uploads it as an
-  artifact so far). Fuzz results wait on a `*.fuzz.json` that no runtime
-  writes yet.
+  rendered from `known-divergences.json`. Rust's CI publishes
+  `rust.bench.json` (every push to `main`) and `rust.fuzz.json` (nightly) to
+  the runtime's `reports` branch, and the pages render them. TypeScript's
+  benchmark results fill in when it checks in its `conformance-bench.json`.
 - **A re-baseline path for the gate.** A correctness fix that costs time needs
   a deliberate way to move the baseline (see [Budgets](#budgets)). It isn't
   built yet.

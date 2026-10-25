@@ -10,18 +10,26 @@ Two conformance suites feed the pages:
 
 Each runtime's verification results sit next to its support table: the
 divergence classes a runtime is known to have from the reference
-(`known-divergences.json`, see `DIVERGENCES`) and its benchmark results
-(`<lang>.bench.json`, see `BENCHES`). A report that isn't published yet is not
-an error: the page says so, and the section fills in on the first run after the
-runtime publishes it. Fuzz results have no report file to read yet, so the
-pages describe the fuzzing in prose only.
+(`known-divergences.json`, see `DIVERGENCES`), its benchmark results
+(`<lang>.bench.json`, see `BENCHES`) and its fuzzing results
+(`<lang>.fuzz.json`, see `FUZZ`). A report that isn't published yet is not an
+error: the page says so, and the section fills in once the runtime publishes
+it. Rust's CI publishes its bench and fuzz reports to the runtime repository's
+`reports` branch, not to `main`, which only takes pull requests.
+
+The benchmark and fuzzing results change with every runtime push and every
+nightly run, so they aren't committed: `--render-reports` writes them to
+`docs/_generated/reports/<name>.{bench,fuzz}.md` (ignored by git) at site
+build time, and the pages include those files with `--8<--`. That mode never
+fails on a fetch: a report that 404s, times out or doesn't parse renders as
+"not published yet". The default mode and `--check` don't touch them.
 
 This renders, on `reference/languages/`:
 
 - `index.md`: the code generation matrix (`<!-- matrix:start -->` ...
   `<!-- matrix:end -->`) and the runtime matrix (`runtime-matrix`);
 - `<name>.md`: that language's code generation table (`codegen`) and runtime
-  table (`runtime`), divergences (`divergences`) and benchmarks (`bench`).
+  table (`runtime`), and divergences (`divergences`).
 
 Issue references (`core#96`) become links. A generator or runtime with no page
 of its own is an error that names the page to add.
@@ -31,8 +39,10 @@ of its own is an error that names the page to add.
     python3 scripts/sync-language-support.py --file ../generation/features.json \\
         --runtime-features ../runtime/runtime/conformance/features.json \\
         --runtime-report rust=../runtime/runtime/conformance/reports/rust.json \\
-        --divergences typescript=../comline-typescript/runtime/known-divergences.json \\
-        --bench rust=../runtime/runtime/conformance/reports/rust.bench.json
+        --divergences typescript=../comline-typescript/runtime/known-divergences.json
+    python3 scripts/sync-language-support.py --render-reports   # at build time
+    python3 scripts/sync-language-support.py --render-reports \\
+        --bench rust=rust.bench.json --fuzz rust=rust.fuzz.json
 
 Stdlib only: no Rust toolchain needed, so CI runs it per pull request.
 """
@@ -49,6 +59,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PAGES = ROOT / "docs/docs/reference/languages"
+# Where `--render-reports` writes; the pages include it relative to `docs/`,
+# which is `pymdownx.snippets`' base path when the site builds from there.
+GENERATED = ROOT / "docs/_generated/reports"
+# A build-time fetch gives up quickly: the build must not hang on GitHub.
+BUILD_TIMEOUT = 10
 RAW = "https://raw.githubusercontent.com/ComlineProject/{repo}/{rev}/{path}"
 NOTICE = (
     "<!-- Rendered from ComlineProject/generation's features.json by "
@@ -68,19 +83,25 @@ RUNTIMES = {
     "typescript": ("comline-typescript", "runtime/conformance-report.json"),
 }
 
-# Verification results. A runtime with no entry has none to show (Rust is the
-# reference the others are compared against, so it has no divergences file).
-# A report that isn't there yet (HTTP 404) is shown as "not published yet".
-# `rust.bench.json` is what the runtime's bench workflow writes, but it only
-# uploads it as an artifact; the runtime has to check it in for it to appear.
+# Verification results: (repository, revision, path in it); a revision of
+# None is `--runtime-rev`. A runtime with no entry has none to show (Rust is
+# the reference the others are compared against, so it has no divergences
+# file). A report that isn't there yet (HTTP 404) is shown as "not published
+# yet". Rust's are on the runtime repository's `reports` branch: its CI
+# commits them there from `main` (bench, every push) and the nightly fuzz run,
+# since `main` itself only takes pull requests.
+REPORTS_BRANCH = "reports"
 DIVERGENCES = {
-    "typescript": ("comline-typescript", "runtime/known-divergences.json"),
+    "typescript": ("comline-typescript", None, "runtime/known-divergences.json"),
 }
 BENCHES = {
-    "rust": ("runtime", "runtime/conformance/reports/rust.bench.json"),
-    "typescript": ("comline-typescript", "runtime/conformance-bench.json"),
+    "rust": ("runtime", REPORTS_BRANCH, "rust.bench.json"),
+    "typescript": ("comline-typescript", None, "runtime/conformance-bench.json"),
 }
-REPORT_URL = "https://github.com/ComlineProject/{repo}/blob/main/{path}"
+FUZZ = {
+    "rust": ("runtime", REPORTS_BRANCH, "rust.fuzz.json"),
+}
+REPORT_URL = "https://github.com/ComlineProject/{repo}/blob/{rev}/{path}"
 VERIFY_NOTICE = (
     "<!-- Rendered from each runtime's verification reports by "
     "scripts/sync-language-support.py - don't edit by hand. -->"
@@ -126,6 +147,22 @@ def read_optional_json(file: Path | None, repo: str, rev: str, path: str) -> dic
         sys.exit(f"error: fetching {url} failed ({error.code} {error.reason})")
     except urllib.error.URLError as error:
         sys.exit(f"error: fetching {url} failed ({error.reason})")
+
+
+def fetch_report(repo: str, rev: str, path: str) -> dict | None:
+    """A published report, or `None` for anything that keeps it from the page
+    (404, network error, timeout, bad JSON): a build-time fetch never fails
+    the build. Anything but a 404 is warned about."""
+    url = RAW.format(repo=repo, rev=rev, path=path)
+    try:
+        with urllib.request.urlopen(url, timeout=BUILD_TIMEOUT) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            print(f"::warning::fetching {url} failed ({error.code} {error.reason}); rendering it as not published")
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:
+        print(f"::warning::fetching {url} failed ({error}); rendering it as not published")
+    return None
 
 
 def link_issues(text: str) -> str:
@@ -224,11 +261,11 @@ def divergences_table(name: str, report: dict | None) -> str:
             if name == "rust"
             else "No divergences are tracked for this runtime."
         )
-    repo, path = DIVERGENCES[name]
+    repo, rev, path = DIVERGENCES[name]
     if report is None:
         return f"No divergence list is published yet: it will appear here once the runtime checks in `{path}`."
     classes = report["classes"]
-    source = f"[`{path.rsplit('/', 1)[-1]}`]({REPORT_URL.format(repo=repo, path=path)})"
+    source = f"[`{path.rsplit('/', 1)[-1]}`]({REPORT_URL.format(repo=repo, rev=rev or 'main', path=path)})"
     if not classes:
         return f"No known divergences from the reference ({source})."
     lines = [
@@ -243,14 +280,18 @@ def divergences_table(name: str, report: dict | None) -> str:
     return "\n".join(lines)
 
 
+def not_published(what: str, repo: str, rev: str | None, path: str) -> str:
+    link = f"[`{path}`]({REPORT_URL.format(repo=repo, rev=rev or 'main', path=path)})"
+    if rev is None:
+        return f"No {what} are published yet: they will appear here once the runtime checks in {link}."
+    return f"No {what} are published yet: they will appear here once the runtime's CI publishes {link} on its `{rev}` branch."
+
+
 def bench_table(name: str, report: dict | None) -> str:
-    repo, path = BENCHES[name]
-    source = REPORT_URL.format(repo=repo, path=path)
+    repo, rev, path = BENCHES[name]
+    source = REPORT_URL.format(repo=repo, rev=rev or "main", path=path)
     if report is None:
-        return (
-            "No benchmark results are published yet: they will appear here once the runtime "
-            f"checks in [`{path}`]({source})."
-        )
+        return not_published("benchmark results", repo, rev, path)
     metric = {"instructions": "instructions executed"}.get(report.get("metric"), report.get("metric", "value"))
     lines = [
         f"Measured at runtime commit `{report['commit'][:7]}` with `{report['toolchain']}`, "
@@ -264,6 +305,72 @@ def bench_table(name: str, report: dict | None) -> str:
     for bench, result in sorted(report["benches"].items()):
         lines.append(f"    | `{bench}` | {result['ir']:,} |")
     return "\n".join(lines)
+
+
+def fuzz_table(name: str, report: dict | None) -> str:
+    repo, rev, path = FUZZ[name]
+    source = REPORT_URL.format(repo=repo, rev=rev or "main", path=path)
+    if report is None:
+        return not_published("fuzzing results", repo, rev, path)
+
+    def number(n: int | None) -> str:
+        return "—" if n is None else f"{n:,}"
+
+    lines = [
+        f"From the run of {report['date'][:10]} at runtime commit `{report['commit'][:7]}`, "
+        f"with `{report['toolchain']}` ([run]({report['run']}), "
+        f"[`{path.rsplit('/', 1)[-1]}`]({source})).",
+        "",
+        "| Target | Seconds | Executions | Corpus | Findings |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for target, t in sorted(report["targets"].items()):
+        findings = "didn't run" if t.get("error") else number(t["findings"])
+        lines.append(
+            f"| `{target}` | {number(t['seconds'])} | {number(t['executions'])} "
+            f"| {number(t['corpus'])} | {findings} |"
+        )
+    prop = report.get("proptest")
+    lines.append("")
+    if prop is None:
+        lines.append("This run had no long property-test run.")
+    elif prop.get("error") or not prop["properties"]:
+        lines.append(f"The property tests at {prop['cases']:,} cases didn't run.")
+    else:
+        failed = [p for p, verdict in sorted(prop["properties"].items()) if verdict != "pass"]
+        n = len(prop["properties"])
+        verdict = (
+            "all pass"
+            if not failed
+            else f"{len(failed)} fail{'s' if len(failed) == 1 else ''}: " + ", ".join(f"`{p}`" for p in failed)
+        )
+        lines.append(f"Property tests: {n} properties at {prop['cases']:,} cases each, {verdict}.")
+    return "\n".join(lines)
+
+
+def render_reports(out: Path, rev: str, local: dict[str, dict[str, str]]) -> None:
+    """Write each runtime's bench and fuzz sections to `out`, for the pages to
+    include at build time."""
+    out.mkdir(parents=True, exist_ok=True)
+    for kind, known, render, flag in (
+        ("bench", BENCHES, bench_table, "--bench"),
+        ("fuzz", FUZZ, fuzz_table, "--fuzz"),
+    ):
+        for name, (repo, report_rev, path) in known.items():
+            given = local[flag].get(name)
+            report = (
+                json.loads(Path(given).read_text(encoding="utf-8"))
+                if given
+                else fetch_report(repo, report_rev or rev, path)
+            )
+            try:
+                body = render(name, report)
+            except (KeyError, TypeError, ValueError) as error:
+                print(f"::warning::{name}.{kind}: the report doesn't have the expected shape ({error!r})")
+                body = render(name, None)
+            target = out / f"{name}.{kind}.md"
+            target.write_text(f"<!-- Rendered at build time by scripts/sync-language-support.py. -->\n\n{body}\n", encoding="utf-8")
+            print(f"wrote {target.relative_to(ROOT)}")
 
 
 def replace_section(text: str, page: Path, name: str, body: str, notice: str = NOTICE) -> str:
@@ -288,6 +395,15 @@ def page_for(name: str, section: str, what: str) -> Path:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--check", action="store_true", help="exit 1 if a page is out of date")
+    parser.add_argument(
+        "--render-reports",
+        nargs="?",
+        const=GENERATED,
+        type=Path,
+        metavar="DIR",
+        help=f"write the bench and fuzz sections for the site build (default: {GENERATED.relative_to(ROOT)}); "
+        "never fails on a fetch",
+    )
     parser.add_argument("--file", type=Path, help="read generation's features.json from here instead of fetching it")
     parser.add_argument("--rev", default="master", help="generation revision to fetch (default: master)")
     parser.add_argument("--runtime-features", type=Path, help="read the wire corpus's features.json from here")
@@ -298,11 +414,20 @@ def main() -> int:
         metavar="NAME=FILE",
         help="read runtime NAME's conformance report from FILE (repeatable)",
     )
-    for flag, what in (("--divergences", "known-divergences.json"), ("--bench", "benchmark report")):
+    for flag, what in (
+        ("--divergences", "known-divergences.json"),
+        ("--bench", "benchmark report"),
+        ("--fuzz", "fuzzing report"),
+    ):
         parser.add_argument(
             flag, action="append", default=[], metavar="NAME=FILE", help=f"read runtime NAME's {what} from FILE (repeatable)"
         )
-    parser.add_argument("--runtime-rev", default="main", help="revision of the runtime repositories to fetch (default: main)")
+    parser.add_argument(
+        "--runtime-rev",
+        default="main",
+        help="revision of the runtime repositories to fetch (default: main); reports on the "
+        f"`{REPORTS_BRANCH}` branch are always fetched from it",
+    )
     args = parser.parse_args()
 
     local_reports = dict(arg.split("=", 1) for arg in args.runtime_report)
@@ -311,11 +436,19 @@ def main() -> int:
             sys.exit(f"error: unknown runtime `{name}` (known: {', '.join(RUNTIMES)})")
 
     local = {}
-    for flag, known, given in (("--divergences", DIVERGENCES, args.divergences), ("--bench", BENCHES, args.bench)):
+    for flag, known, given in (
+        ("--divergences", DIVERGENCES, args.divergences),
+        ("--bench", BENCHES, args.bench),
+        ("--fuzz", FUZZ, args.fuzz),
+    ):
         local[flag] = dict(arg.split("=", 1) for arg in given)
         for name in local[flag]:
             if name not in known:
                 sys.exit(f"error: unknown runtime `{name}` for {flag} (known: {', '.join(known)})")
+
+    if args.render_reports:
+        render_reports(args.render_reports, args.runtime_rev, local)
+        return 0
 
     report = read_json(args.file, "generation", args.rev, "features.json")
     corpus = read_json(args.runtime_features, CORPUS[0], args.runtime_rev, CORPUS[1])
@@ -327,9 +460,9 @@ def main() -> int:
     def optional(flag: str, known: dict, name: str) -> dict | None:
         if name not in known:
             return None
-        repo, path = known[name]
+        repo, rev, path = known[name]
         given = local[flag].get(name)
-        return read_optional_json(Path(given) if given else None, repo, args.runtime_rev, path)
+        return read_optional_json(Path(given) if given else None, repo, rev or args.runtime_rev, path)
 
     # Every page's wanted text, starting from what's on disk; a page gets
     # its code generation and runtime sections in turn.
@@ -348,7 +481,6 @@ def main() -> int:
         page = page_for(name, "runtime", "runtime")
         update(page, "runtime", runtime_table(corpus, runtime), RUNTIME_NOTICE)
         update(page, "divergences", divergences_table(name, optional("--divergences", DIVERGENCES, name)), VERIFY_NOTICE)
-        update(page, "bench", bench_table(name, optional("--bench", BENCHES, name)), VERIFY_NOTICE)
 
     stale = [(page, text) for page, text in wanted.items() if page.read_text(encoding="utf-8") != text]
     if not stale:

@@ -63,7 +63,7 @@ Runtime `rust`.
 | envelope <br><sub>`envelope`</sub> | a response's outcome: ok with a payload, an error ordinal with its body, or a provider fault | ✅ supported | [8 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/envelope.json) |
 | datagram framing <br><sub>`framing-datagram`</sub> | Comline's own binary framing of requests and responses | ✅ supported | [9 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram.json) |
 | datagram@2 framing <br><sub>`framing-datagram2`</sub> | the datagram framing with a request/reply kind and a protocol number, for calls in both directions and several protocols on one connection | ✅ supported | [12 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram2.json) |
-| JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | JSON-RPC 2.0 requests and responses, a fault as -32603 | ✅ supported | [11 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-jsonrpc.json) |
+| JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | JSON-RPC 2.0 requests and responses, a fault as -32603 | ✅ supported | [19 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-jsonrpc.json) |
 | JSON wire format <br><sub>`format-json`</sub> | values as UTF-8 JSON: a struct as an object | ✅ supported | [46 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-json.json) |
 | MessagePack wire format <br><sub>`format-msgpack`</sub> | values as MessagePack: a struct as an array | ✅ supported | [45 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-msgpack.json) |
 | packed wire format <br><sub>`format-packed`</sub> | values as packed@1: fixed-width fields back to back, varint lengths, no tags | ✅ supported | [59 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-packed.json) |
@@ -87,9 +87,12 @@ are compared against (see [Verification](../../proposals/shared-runtime-core/ver
   nightly with the property tests at 100,000 cases. A nightly failure opens an
   issue. Each finding becomes a `found-*` vector, so every runtime checks it.
 
-Fuzz results aren't published as a report file yet (`reports/rust.fuzz.json`
-doesn't exist), so there are no executions or corpus sizes to show here. They
-will appear once the runtime publishes them.
+The nightly run publishes its results as `rust.fuzz.json` on the runtime's
+[`reports`](https://github.com/ComlineProject/runtime/tree/reports) branch
+(format: [the fuzz README](https://github.com/ComlineProject/runtime/blob/main/runtime/fuzz/README.md#the-report)).
+The latest, fetched when this site was built:
+
+--8<-- "_generated/reports/rust.fuzz.md"
 
 ### Divergences
 
@@ -103,11 +106,9 @@ The Rust runtime is the reference the others are compared against, so it has no 
 ### Benchmarks
 
 Instruction counts for the formats, framings, handshake and a connection step,
-gated on every pull request against its base.
+gated on every pull request against its base. Every push to `main` benches the
+new head and publishes `rust.bench.json` on the runtime's
+[`reports`](https://github.com/ComlineProject/runtime/tree/reports) branch.
+The latest, fetched when this site was built:
 
-<!-- bench:start -->
-<!-- Rendered from each runtime's verification reports by scripts/sync-language-support.py - don't edit by hand. -->
-
-No benchmark results are published yet: they will appear here once the runtime checks in [`runtime/conformance/reports/rust.bench.json`](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/reports/rust.bench.json).
-
-<!-- bench:end -->
+--8<-- "_generated/reports/rust.bench.md"

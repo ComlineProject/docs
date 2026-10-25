@@ -11,6 +11,10 @@ on:
     # Pages silently stale with no error anywhere. This rebuilds and
     # redeploys from `main` daily regardless, so staleness self-heals
     # within a day instead of needing someone to notice.
+    #
+    # It also refreshes the verification results rendered at build time (see
+    # "Render the verification reports"): the runtime's nightly fuzz run
+    # publishes around 03:30 UTC, so this picks it up the same morning.
     - cron: '0 6 * * *'
 
 permissions:
@@ -38,6 +42,17 @@ jobs:
       - name: Install dependencies
         working-directory: docs
         run: poetry install
+
+      # The runtimes' benchmark and fuzzing results change with every runtime
+      # push and nightly run, so they're fetched now instead of committed;
+      # the pages include what this writes (docs/_generated/, ignored). A
+      # report that can't be fetched renders as "not published yet", so this
+      # never fails the build; the timeout and continue-on-error are a
+      # second guard.
+      - name: Render the verification reports
+        timeout-minutes: 2
+        continue-on-error: true
+        run: python3 scripts/sync-language-support.py --render-reports
 
       - name: Build site
         working-directory: docs

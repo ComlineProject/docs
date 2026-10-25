@@ -5,3 +5,6 @@ site/
 # Python bytecode (pygments-comline is a real installed package now)
 __pycache__/
 *.pyc
+
+# Rendered at build time (scripts/sync-language-support.py --render-reports)
+_generated/
