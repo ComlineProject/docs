@@ -68,7 +68,8 @@ reference. One proposal in three stages, read in order:
 
 - [Stage 1 — verification](shared-runtime-core/verification.md): differential
   fuzzing against the Rust reference, and benchmark gates, in every
-  language's CI. *under discussion.*
+  language's CI. ***accepted***, stage 1 in progress: the reference process,
+  fuzz targets and benchmark gates are built for Rust.
 - [Stage 2 — core interface](shared-runtime-core/core-interface.md): the
   handshake, framings and connection state machine behind a stable C ABI and
   WASM, built from one crate. *under discussion.*

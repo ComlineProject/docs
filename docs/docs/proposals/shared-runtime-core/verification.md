@@ -1,6 +1,6 @@
 # Verification: differential fuzzing and benchmark gates
 
-Status: **under discussion** · part of [Shared runtime core](index.md) · stage 1
+Status: **accepted** · part of [Shared runtime core](index.md) · stage 1 in progress
 
 **The question:** with ten or more language runtimes and generators, how does
 each one stay byte-identical to the others, exactly as strict as the others
@@ -32,7 +32,103 @@ language. This stage is what lets CI enforce that. Stages
 [2](core-interface.md), [3](generated-codecs.md) and 4 are judged by the numbers
 it produces.
 
+## What's built
+
+Built 2026-10-25, for Rust, in [`runtime`](https://github.com/ComlineProject/runtime)
+except where noted. Nothing here is built for TypeScript yet (see
+[What's left](#whats-left)).
+
+- **A pinned toolchain**
+  ([runtime#30](https://github.com/ComlineProject/runtime/pull/30)): the
+  toolchain is stable 1.98.0. The old `nightly` file had overridden the CI
+  matrix, so stable was never actually tested.
+- **`decode_seed` on every format**
+  ([runtime#31](https://github.com/ComlineProject/runtime/pull/31)): `Json` and
+  `MsgPack` gained `decode_seed`, as `Packed` has. `decode` goes through it,
+  so a seeded decode and a derived one can't differ.
+- **The reference decodes any generated shape**
+  ([runtime#32](https://github.com/ComlineProject/runtime/pull/32)), through
+  `TypeSeed`.
+  - `Type` covers all scalars to 128 bits, unit, option, `T[]`, `T[N]` (N > 32
+    included), struct and enum.
+  - `tests/seed_vs_derive.rs` holds it to real serde derives on valid bytes,
+    every single-byte mutation, truncation, a trailing byte, and hand-written
+    JSON and MessagePack maps. Three planted seed bugs each fail it.
+  - 14 new vectors per format.
+- **`comline-reference`, the reference process**
+  ([runtime#34](https://github.com/ComlineProject/runtime/pull/34)). It speaks
+  NDJSON on stdio, protocol 1, and its ops are append-only. The
+  [README](https://github.com/ComlineProject/runtime/blob/main/runtime/reference/README.md)
+  has the protocol.
+  - **This differs from the sketch below.** Requests carry the vectors' own
+    `op`, `input` and `bytes`, so any vector case is a valid request. Replies
+    are `bytes`, `accept` with `input`, `not_implemented` or `error`.
+  - It also has `check` and `version`. An encode-only op given bytes answers
+    `error`, never a refusal.
+- **Properties and fuzz targets**
+  ([runtime#37](https://github.com/ComlineProject/runtime/pull/37)): proptest
+  properties and four cargo-fuzz targets, `decode_no_panic`,
+  `packed_canonical`, `framing_decode` and `seed_vs_derive`.
+  - CI runs them on every pull request, 60 seconds per target. A nightly run
+    takes 10 minutes per target plus proptest at 100,000 cases, and opens an
+    issue on a finding.
+  - Findings so far:
+    - JSON read some `f64` values one ulp off. Fixed with serde_json's
+      `float_roundtrip`, and `found-f64-exact-digits` added to the vectors.
+    - `packed@1` couldn't read back an array of elements that take no bytes.
+      See core#141 below.
+- **Instruction-count gates**
+  ([runtime#35](https://github.com/ComlineProject/runtime/pull/35)):
+  iai-callgrind 0.16.1, 58 benches, comparing base against head in the same
+  job. Shared definitions live in `runtime/conformance/benches/`.
+  - The limit is `ir=1%`. Measured noise was 0 instructions across three runs.
+  - A planted 20-iteration slowdown in the handshake encoder failed the gate
+    at +6.25%.
+  - Lessons: the base must build into its own target directory, or Cargo
+    reuses its build for the head; and `codegen-units = 1` for benches stops
+    unrelated benches moving.
+- **Core refuses an array of a type with no data**
+  ([core#141](https://github.com/ComlineProject/core/pull/141)): `T[]` where
+  the element type carries no data is `validation::array-of-dataless-type`.
+  The user chose this over relaxing `packed@1`'s "count no larger than the
+  bytes left" guard. It was cascaded to every tool
+  ([cli#103](https://github.com/ComlineProject/cli/pull/103),
+  [language-server#86](https://github.com/ComlineProject/language-server/pull/86),
+  [playground#100](https://github.com/ComlineProject/playground/pull/100), the
+  generators and generation), and the vector
+  `format-packed/reject-count-past-input` pins the decoder side.
+
+## Found along the way
+
+Open issues the work turned up:
+
+- [runtime#33](https://github.com/ComlineProject/runtime/issues/33): trailing
+  bytes are accepted by `msgpack@1`, the envelope and the handshake, in both
+  runtimes.
+- [runtime#38](https://github.com/ComlineProject/runtime/issues/38): `json@1`
+  writes NaN and infinity as `null`, which the receiver refuses.
+- [comline-rust#76](https://github.com/ComlineProject/comline-rust/issues/76):
+  generated Rust params borrow `&str`, so a JSON string with escapes is
+  refused.
+
+## What's left
+
+- **Connection sequences**: a `State` model test and a `session` op. In
+  progress.
+- **TypeScript's differential harness** (T1). In progress.
+- **Coverage-guided fuzzing and wall-time benchmarks for TypeScript**, on a
+  self-hosted `comline-bench` runner, which the user will register.
+- **Report rendering** in the language reference.
+- **A re-baseline path for the gate.** A correctness fix that costs time needs
+  a deliberate way to move the baseline (see [Budgets](#budgets)). It isn't
+  built yet.
+
+The rest of this page is the plan as proposed. Where it describes something
+that has since changed, it says so.
+
 ## Where things stand
+
+As of the proposal, before the work in [What's built](#whats-built).
 
 - **The wire corpus**, `runtime/runtime/conformance/` on `main`:
   - `features.json` lists 9 wire features. `vectors/<feature>.json` holds 163
@@ -47,14 +143,17 @@ it produces.
   - `support/rust.json` and `reports/rust.json` hold the claims and their proof.
     `docs/scripts/sync-language-support.py` renders the reports into the
     [language reference](../../reference/languages/index.md).
-- **The value model is small.**
+  - The counts are from the proposal. runtime#32 added 14 vectors per format,
+    and the findings above added more.
+- **The value model was small.**
   - `Value` covers the fixed-width numbers, strings, arrays, tuples, options,
     structs and unit variants.
   - `Type`, which a `decode` case reads into, covers `bool`, `u32`, `i32`,
     `string`, options, structs and enums.
   - The reference decodes into three hand-written reader types (`Point`,
     `Tagged`, `Color` in `mod readers`). Any other type is `NotImplemented`.
-    So the reference can't yet decode an arbitrary schema's type.
+    So the reference couldn't decode an arbitrary schema's type. It can now
+    (runtime#32).
 - **The TypeScript runner** is `comline-typescript/runtime/test/conformance.test.ts`
   (589 lines).
   - It vendors the corpus at the commit in `runtime/test/conformance/VECTORS_REV`,
@@ -67,13 +166,14 @@ it produces.
 - **The codegen corpus** (`generation/conformance/`) checks golden output and
   `SUPPORT` claims. It proves what a generator emits, not what the emitted code
   does on the wire.
-- **There is no fuzzing anywhere in the org.** No repository has a fuzz
+- **There was no fuzzing anywhere in the org.** No repository had a fuzz
   target, `proptest`, `fast-check`, Jazzer or Atheris (checked on every
-  repository's default branch, 2026-10-25).
-- **There is one benchmark, and it isn't a gate.** `core/benches/parser_benchmark.rs`
+  repository's default branch, 2026-10-25). Rust has them now (runtime#37);
+  no other language does yet.
+- **There was one benchmark, and it isn't a gate.** `core/benches/parser_benchmark.rs`
   is a Criterion benchmark of the IDL parser, run by hand through
-  `run_bench.sh`. No CI job runs it, and nothing measures the runtime or
-  generated code.
+  `run_bench.sh`. No CI job runs it. The runtime now has gated benchmarks
+  (runtime#35); generated code has none.
 
 ## Differential fuzzing
 
@@ -113,30 +213,31 @@ implementation.
   file. That is useful for a host where spawning a process is awkward, but it
   is not the main path.
 
-**The protocol.** It is newline-delimited JSON, using the conformance corpus's
-own value and type encoding, so there is nothing new to learn:
+**The protocol,** as built in runtime#34. It is newline-delimited JSON, using
+the conformance corpus's own encoding: a request carries a vector case's `op`,
+`input` and `bytes`, so there is nothing new to learn:
 
 ```json
-{"op": "encode", "format": "packed@1", "type": {...}, "value": {...}}
-→ {"bytes": "0102..."}
-{"op": "decode", "format": "packed@1", "type": {...}, "bytes": "0102..."}
-→ {"accept": true, "value": {...}}   or   {"accept": false}
+{"id": 1, "op": "encode", "input": {"format": "packed@1", "value": {...}}}
+→ {"id": 1, "bytes": "0102..."}
+{"id": 2, "op": "decode", "input": {"format": "packed@1", "type": {...}}, "bytes": "0102..."}
+→ {"id": 2, "accept": true, "input": {...}}   or   {"id": 2, "accept": false}
 ```
 
-- The ops are the corpus's ops: `encode`, `decode`, `request`, `response`,
-  `handshake` and `envelope`. They add `session` for
-  [connection sequences](#connection-sequences).
+- The ops are the corpus's ops (`name_hash`, `handshake`, `envelope`,
+  `request`, `response`, `encode`, `decode`), plus `check` and `version`.
+  `session`, for [connection sequences](#connection-sequences), isn't built
+  yet.
 - **Requests can be batched,** many to a line, so one round trip covers a
-  fuzzer's whole batch. The real cost is measured in the Rust rollout step and
-  sets the batch size. No number is assumed here.
+  fuzzer's whole batch. The batch size is the fuzzer's to choose.
 - **A refusal carries no reason.** Rust's formats collapse every decode
   failure into `RuntimeError::Serialization`, so the reasons are already not
   part of the contract. What must agree is *whether* bytes are refused.
 
-**What the reference needs that doesn't exist yet: decoding a type it has never
-seen.** Today's reference decodes only `Point`, `Tagged` and `Color`. A fuzzer
-sends random schemas, so the reference has to decode by a type description at
-run time.
+**What the reference needed: decoding a type it has never seen.** It decoded
+only `Point`, `Tagged` and `Color`. A fuzzer sends random schemas, so the
+reference has to decode by a type description at run time. It does now
+(runtime#32).
 
 - **The building block is there.** `Packed::decode_seed` exists for this
   purpose. The simulator's `src/packed.rs` (~790 lines) already drives the
@@ -150,10 +251,9 @@ run time.
   - the reference passes the whole conformance corpus;
   - a Rust fuzz target decodes the same bytes through the seed and through
     derived types, for a fixed set of shapes, and requires the same answer.
-- **The value model grows** to every shape the IR can declare. `packed@1`
-  already handles maps, byte strings and variants with fields, which `Value`
-  and `Type` don't describe yet. The vectors gain these shapes at the same
-  time, so the corpus and the reference never describe different worlds.
+- **The value model grew** to every shape a generated type can have, except
+  tagged unions. The vectors gained these shapes at the same time, so the
+  corpus and the reference never describe different worlds.
 
 ### What gets fuzzed
 
@@ -186,6 +286,8 @@ exactly the kind of bug this row finds by itself.
 - for `packed@1`, if bytes decode, re-encoding gives the same bytes. The format
   promises one encoding per value;
 - the profile facts hold for random inputs, not only for the named cases.
+
+These are the proptest properties and fuzz targets of runtime#37.
 
 ### Connection sequences
 
@@ -228,6 +330,7 @@ option in an array. The generator draws schemas too:
     per schema, so it runs nightly. Once [stage 3](generated-codecs.md) makes
     codecs generated per type, this tier becomes the main one, and the pull
     request job runs it over a fixed set of pre-generated schemas.
+    The user decided this tier starts with stage 3.
 
 ### Fuzzing engines
 
@@ -277,6 +380,9 @@ fast-check's shrinking), then **becomes a case in the conformance corpus**:
 These are starting values. A nightly failure opens an issue with the
 minimized input rather than blocking a merge no pull request caused. A short
 pull request run catches the obvious mistakes; the depth comes from nightly.
+
+As built for Rust (runtime#37): 60 seconds per target on every pull request,
+and a nightly run of 10 minutes per target plus proptest at 100,000 cases.
 
 ## Benchmark gates
 
@@ -351,6 +457,8 @@ Each language has a budget per benchmark, in two parts:
   forbids losing correctness as much as losing speed. The pull request re-bases
   the budget with its cost recorded, and an issue tracks recovering it. Fixing
   #57 adds checks to TypeScript decoding, so it is the first case of this.
+  The re-baseline path isn't built yet. The Rust gate (runtime#35) fails on
+  any slowdown over its limit, whatever the cause.
 - **The ratios are stage 4's evidence.** For each host and each piece
   (framing, handshake, connection), the native implementation and the core
   through its binding are both measured. The core replaces native code only
@@ -403,22 +511,27 @@ support check enforces this the way it already enforces `failing` lists.
 
 ## Open questions
 
-- **Where the dedicated benchmark runner lives,** and who maintains it. Wall
-  time gates for JIT languages depend on it.
+- **Who maintains the dedicated benchmark runner.** It is a self-hosted
+  runner, `comline-bench`, which the user will register. Wall time gates for
+  JIT languages depend on it.
 - **How the reference reaches language CI:** built from source at `VECTORS_REV`
   with `cargo install`, or a prebuilt binary attached to the runtime
   repository per commit.
 - **Whether the simulator's schema-driven `packed@1` code moves into the
   `comline-reference` crate,** with the simulator depending on it, so that schema-driven
   decoding exists once.
-- **How large the value model grows,** and in what order: maps, byte strings,
-  variants with fields, and whatever the IR adds.
+- **Tagged unions in the value model.** The value model now covers every
+  shape except them (runtime#32). They join when the
+  [proposal](../tagged-unions/index.md) is decided.
 - **Live cross-runtime calls.** The conformance README leaves behaviour such
   as one-way replies and timeouts to "live cross-runtime calls, later". The
   connection-sequence target covers part of that. Whether real processes over
   real transports are still needed is open.
 
 ## Rollout
+
+Step 1 is mostly built; [What's built](#whats-built) and
+[What's left](#whats-left) say what.
 
 1. **Rust: `comline-reference` and the benchmarks.** The extended value model with
    schema-driven decoding and its seed-against-derive check, `comline-reference`,
