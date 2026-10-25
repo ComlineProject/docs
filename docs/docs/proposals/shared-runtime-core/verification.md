@@ -107,14 +107,23 @@ Open issues the work turned up:
   runtimes.
 - [runtime#38](https://github.com/ComlineProject/runtime/issues/38): `json@1`
   writes NaN and infinity as `null`, which the receiver refuses.
+- [runtime#40](https://github.com/ComlineProject/runtime/issues/40):
+  `jsonrpc@1` reads a frame with only an id as a successful null reply.
 - [comline-rust#76](https://github.com/ComlineProject/comline-rust/issues/76):
   generated Rust params borrow `&str`, so a JSON string with escapes is
   refused.
 
 ## What's left
 
-- **Connection sequences**: a `State` model test and a `session` op. In
-  progress.
+- **Connection sequences**
+  ([runtime#39](https://github.com/ComlineProject/runtime/pull/39)), in
+  review, not yet merged:
+  - a proptest model test of the sans-IO `State`, ordered and unordered, under
+    `datagram@2` and `jsonrpc@1`, 20,000 cases each. Two planted `State` bugs
+    were both caught; no bugs were found;
+  - a `session` op in `comline-reference` with the events `call`, `receive`,
+    `abandon` and `reply`, so another language can drive its own connection
+    through the same events and compare frames and events.
 - **TypeScript's differential harness** (T1). In progress.
 - **Coverage-guided fuzzing and wall-time benchmarks for TypeScript**, on a
   self-hosted `comline-bench` runner, which the user will register.
@@ -226,8 +235,8 @@ the conformance corpus's own encoding: a request carries a vector case's `op`,
 
 - The ops are the corpus's ops (`name_hash`, `handshake`, `envelope`,
   `request`, `response`, `encode`, `decode`), plus `check` and `version`.
-  `session`, for [connection sequences](#connection-sequences), isn't built
-  yet.
+  `session`, for [connection sequences](#connection-sequences), is in review
+  (runtime#39).
 - **Requests can be batched,** many to a line, so one round trip covers a
   fuzzer's whole batch. The batch size is the fuzzer's to choose.
 - **A refusal carries no reason.** Rust's formats collapse every decode
