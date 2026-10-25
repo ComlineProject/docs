@@ -63,7 +63,7 @@ Runtime `typescript`.
 | envelope <br><sub>`envelope`</sub> | a response's outcome: ok with a payload, an error ordinal with its body, or a provider fault | ✅ supported | [8 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/envelope.json) |
 | datagram framing <br><sub>`framing-datagram`</sub> | Comline's own binary framing of requests and responses | ✅ supported | [9 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram.json) |
 | datagram@2 framing <br><sub>`framing-datagram2`</sub> | the datagram framing with a request/reply kind and a protocol number, for calls in both directions and several protocols on one connection | ✅ supported | [12 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram2.json) |
-| JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | JSON-RPC 2.0 requests and responses, a fault as -32603 | ✅ supported | [11 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-jsonrpc.json) |
+| JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | JSON-RPC 2.0 requests and responses, a fault as -32603 | ✅ supported | [19 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-jsonrpc.json) |
 | JSON wire format <br><sub>`format-json`</sub> | values as UTF-8 JSON: a struct as an object | 🟡 partial: decoding doesn't check enum variants or integer ranges ([comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57)) <br>fails: `format-json/decode-unknown-variant`, `format-json/decode-wider-integer-overflow` | [44 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-json.json) |
 | MessagePack wire format <br><sub>`format-msgpack`</sub> | values as MessagePack: a struct as an array | ❌ unsupported: JSON and packed@1 ship | — |
 | packed wire format <br><sub>`format-packed`</sub> | values as packed@1: fixed-width fields back to back, varint lengths, no tags | ✅ supported | [59 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-packed.json) |
@@ -101,17 +101,10 @@ Where `typescript` and the reference are known to answer differently, from [`kno
 | `json-decode-unchecked-shape` | json@1 decoding accepts the wrong JSON kind, a missing or repeated struct field, an integer spelled 1.0, 1e0 or -0, and a float past its range; the reference refuses them | [comline-typescript#73](https://github.com/ComlineProject/comline-typescript/issues/73) |
 | `json-encode-f32-digits` | json@1 writes an f32 with the shortest digits of a double (1.401298464324817e-45), the reference with those of the f32 (1e-45): the same f32, not the same JSON number | [comline-typescript#74](https://github.com/ComlineProject/comline-typescript/issues/74) |
 | `jsonrpc-decode-lenient` | jsonrpc@1 decoding accepts a declared member twice, and an id or error code spelled 1.0, 1e0 or -0; the reference refuses both | [comline-typescript#75](https://github.com/ComlineProject/comline-typescript/issues/75) |
-| `reference-jsonrpc-method-escapes` | the reference refuses a JSON-RPC method name written with any escape, and writes a name that needs one unescaped; TypeScript escapes, and reads any spelling | [runtime#41](https://github.com/ComlineProject/runtime/issues/41) |
-| `reference-jsonrpc-ignored-members-unvalidated` | the reference accepts invalid UTF-8 inside JSON-RPC members it ignores (jsonrpc, error.message, undeclared ones); TypeScript refuses any frame that isn't UTF-8 | [runtime#42](https://github.com/ComlineProject/runtime/issues/42) |
 | `connection-replies-in-any-order` | Connection hands a reply to the call it answers in any order; an ordered (nested, blocking) Rust State refuses a reply that skips the innermost waiting call as a framing error. TypeScript has only the async model | [comline-typescript#77](https://github.com/ComlineProject/comline-typescript/issues/77) |
 
 <!-- divergences:end -->
 
 ### Benchmarks
 
-<!-- bench:start -->
-<!-- Rendered from each runtime's verification reports by scripts/sync-language-support.py - don't edit by hand. -->
-
-No benchmark results are published yet: they will appear here once the runtime checks in [`runtime/conformance-bench.json`](https://github.com/ComlineProject/comline-typescript/blob/main/runtime/conformance-bench.json).
-
-<!-- bench:end -->
+--8<-- "_generated/reports/typescript.bench.md"

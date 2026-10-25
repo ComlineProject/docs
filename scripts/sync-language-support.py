@@ -13,18 +13,23 @@ divergence classes a runtime is known to have from the reference
 (`known-divergences.json`, see `DIVERGENCES`), its benchmark results
 (`<lang>.bench.json`, see `BENCHES`) and its fuzzing results
 (`<lang>.fuzz.json`, see `FUZZ`). A report that isn't published yet is not an
-error: the page says so, and the section fills in on the first run after the
-runtime publishes it. Rust's CI publishes its bench and fuzz reports to the
-runtime repository's `reports` branch, not to `main`, which only takes pull
-requests.
+error: the page says so, and the section fills in once the runtime publishes
+it. Rust's CI publishes its bench and fuzz reports to the runtime repository's
+`reports` branch, not to `main`, which only takes pull requests.
+
+The benchmark and fuzzing results change with every runtime push and every
+nightly run, so they aren't committed: `--render-reports` writes them to
+`docs/_generated/reports/<name>.{bench,fuzz}.md` (ignored by git) at site
+build time, and the pages include those files with `--8<--`. That mode never
+fails on a fetch: a report that 404s, times out or doesn't parse renders as
+"not published yet". The default mode and `--check` don't touch them.
 
 This renders, on `reference/languages/`:
 
 - `index.md`: the code generation matrix (`<!-- matrix:start -->` ...
   `<!-- matrix:end -->`) and the runtime matrix (`runtime-matrix`);
 - `<name>.md`: that language's code generation table (`codegen`) and runtime
-  table (`runtime`), divergences (`divergences`), benchmarks (`bench`) and,
-  for a runtime in `FUZZ`, fuzzing (`fuzz`).
+  table (`runtime`), and divergences (`divergences`).
 
 Issue references (`core#96`) become links. A generator or runtime with no page
 of its own is an error that names the page to add.
@@ -34,7 +39,9 @@ of its own is an error that names the page to add.
     python3 scripts/sync-language-support.py --file ../generation/features.json \\
         --runtime-features ../runtime/runtime/conformance/features.json \\
         --runtime-report rust=../runtime/runtime/conformance/reports/rust.json \\
-        --divergences typescript=../comline-typescript/runtime/known-divergences.json \\
+        --divergences typescript=../comline-typescript/runtime/known-divergences.json
+    python3 scripts/sync-language-support.py --render-reports   # at build time
+    python3 scripts/sync-language-support.py --render-reports \\
         --bench rust=rust.bench.json --fuzz rust=rust.fuzz.json
 
 Stdlib only: no Rust toolchain needed, so CI runs it per pull request.
@@ -52,6 +59,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PAGES = ROOT / "docs/docs/reference/languages"
+# Where `--render-reports` writes; the pages include it relative to `docs/`,
+# which is `pymdownx.snippets`' base path when the site builds from there.
+GENERATED = ROOT / "docs/_generated/reports"
+# A build-time fetch gives up quickly: the build must not hang on GitHub.
+BUILD_TIMEOUT = 10
 RAW = "https://raw.githubusercontent.com/ComlineProject/{repo}/{rev}/{path}"
 NOTICE = (
     "<!-- Rendered from ComlineProject/generation's features.json by "
@@ -135,6 +147,22 @@ def read_optional_json(file: Path | None, repo: str, rev: str, path: str) -> dic
         sys.exit(f"error: fetching {url} failed ({error.code} {error.reason})")
     except urllib.error.URLError as error:
         sys.exit(f"error: fetching {url} failed ({error.reason})")
+
+
+def fetch_report(repo: str, rev: str, path: str) -> dict | None:
+    """A published report, or `None` for anything that keeps it from the page
+    (404, network error, timeout, bad JSON): a build-time fetch never fails
+    the build. Anything but a 404 is warned about."""
+    url = RAW.format(repo=repo, rev=rev, path=path)
+    try:
+        with urllib.request.urlopen(url, timeout=BUILD_TIMEOUT) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            print(f"::warning::fetching {url} failed ({error.code} {error.reason}); rendering it as not published")
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:
+        print(f"::warning::fetching {url} failed ({error}); rendering it as not published")
+    return None
 
 
 def link_issues(text: str) -> str:
@@ -320,6 +348,31 @@ def fuzz_table(name: str, report: dict | None) -> str:
     return "\n".join(lines)
 
 
+def render_reports(out: Path, rev: str, local: dict[str, dict[str, str]]) -> None:
+    """Write each runtime's bench and fuzz sections to `out`, for the pages to
+    include at build time."""
+    out.mkdir(parents=True, exist_ok=True)
+    for kind, known, render, flag in (
+        ("bench", BENCHES, bench_table, "--bench"),
+        ("fuzz", FUZZ, fuzz_table, "--fuzz"),
+    ):
+        for name, (repo, report_rev, path) in known.items():
+            given = local[flag].get(name)
+            report = (
+                json.loads(Path(given).read_text(encoding="utf-8"))
+                if given
+                else fetch_report(repo, report_rev or rev, path)
+            )
+            try:
+                body = render(name, report)
+            except (KeyError, TypeError, ValueError) as error:
+                print(f"::warning::{name}.{kind}: the report doesn't have the expected shape ({error!r})")
+                body = render(name, None)
+            target = out / f"{name}.{kind}.md"
+            target.write_text(f"<!-- Rendered at build time by scripts/sync-language-support.py. -->\n\n{body}\n", encoding="utf-8")
+            print(f"wrote {target.relative_to(ROOT)}")
+
+
 def replace_section(text: str, page: Path, name: str, body: str, notice: str = NOTICE) -> str:
     """`text` of `page` with its `name` section set to `body`."""
     start, end = f"<!-- {name}:start -->", f"<!-- {name}:end -->"
@@ -342,6 +395,15 @@ def page_for(name: str, section: str, what: str) -> Path:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--check", action="store_true", help="exit 1 if a page is out of date")
+    parser.add_argument(
+        "--render-reports",
+        nargs="?",
+        const=GENERATED,
+        type=Path,
+        metavar="DIR",
+        help=f"write the bench and fuzz sections for the site build (default: {GENERATED.relative_to(ROOT)}); "
+        "never fails on a fetch",
+    )
     parser.add_argument("--file", type=Path, help="read generation's features.json from here instead of fetching it")
     parser.add_argument("--rev", default="master", help="generation revision to fetch (default: master)")
     parser.add_argument("--runtime-features", type=Path, help="read the wire corpus's features.json from here")
@@ -384,6 +446,10 @@ def main() -> int:
             if name not in known:
                 sys.exit(f"error: unknown runtime `{name}` for {flag} (known: {', '.join(known)})")
 
+    if args.render_reports:
+        render_reports(args.render_reports, args.runtime_rev, local)
+        return 0
+
     report = read_json(args.file, "generation", args.rev, "features.json")
     corpus = read_json(args.runtime_features, CORPUS[0], args.runtime_rev, CORPUS[1])
     runtimes = {
@@ -415,9 +481,6 @@ def main() -> int:
         page = page_for(name, "runtime", "runtime")
         update(page, "runtime", runtime_table(corpus, runtime), RUNTIME_NOTICE)
         update(page, "divergences", divergences_table(name, optional("--divergences", DIVERGENCES, name)), VERIFY_NOTICE)
-        update(page, "bench", bench_table(name, optional("--bench", BENCHES, name)), VERIFY_NOTICE)
-        if name in FUZZ:
-            update(page, "fuzz", fuzz_table(name, optional("--fuzz", FUZZ, name)), VERIFY_NOTICE)
 
     stale = [(page, text) for page, text in wanted.items() if page.read_text(encoding="utf-8") != text]
     if not stale:

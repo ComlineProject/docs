@@ -23,8 +23,8 @@ repositories follow as they gain gates.
 
 ## The `reports` branch: `runtime`
 
-- Holds the latest `rust.bench.json` and `rust.fuzz.json`, which the
-  language reference reads.
+- Holds the latest `rust.bench.json` and `rust.fuzz.json`. The docs fetch
+  them each time the site builds.
 - Not the default branch, so no ruleset covers it.
 - Written only by CI: the bench workflow on every push to the default branch,
   the fuzz workflow nightly. Never by a pull request's run.
@@ -41,10 +41,9 @@ repositories follow as they gain gates.
 
 Listed in [`.github/CODEOWNERS`](https://github.com/ComlineProject/runtime/blob/main/.github/CODEOWNERS):
 
+- `.github/`, all of it: the workflows, their scripts, and `CODEOWNERS`.
 - `runtime/core/benches/accepted-regressions.toml`: the ledger of accepted
   regressions.
-- `.github/scripts/bench-report.py`, `.github/workflows/bench.yml`: the gate.
-- `.github/CODEOWNERS`.
 
 ## Accepting a regression
 

@@ -90,14 +90,9 @@ are compared against (see [Verification](../../proposals/shared-runtime-core/ver
 The nightly run publishes its results as `rust.fuzz.json` on the runtime's
 [`reports`](https://github.com/ComlineProject/runtime/tree/reports) branch
 (format: [the fuzz README](https://github.com/ComlineProject/runtime/blob/main/runtime/fuzz/README.md#the-report)).
-The latest:
+The latest, fetched when this site was built:
 
-<!-- fuzz:start -->
-<!-- Rendered from each runtime's verification reports by scripts/sync-language-support.py - don't edit by hand. -->
-
-No fuzzing results are published yet: they will appear here once the runtime's CI publishes [`rust.fuzz.json`](https://github.com/ComlineProject/runtime/blob/reports/rust.fuzz.json) on its `reports` branch.
-
-<!-- fuzz:end -->
+--8<-- "_generated/reports/rust.fuzz.md"
 
 ### Divergences
 
@@ -114,11 +109,6 @@ Instruction counts for the formats, framings, handshake and a connection step,
 gated on every pull request against its base. Every push to `main` benches the
 new head and publishes `rust.bench.json` on the runtime's
 [`reports`](https://github.com/ComlineProject/runtime/tree/reports) branch.
-The latest:
+The latest, fetched when this site was built:
 
-<!-- bench:start -->
-<!-- Rendered from each runtime's verification reports by scripts/sync-language-support.py - don't edit by hand. -->
-
-No benchmark results are published yet: they will appear here once the runtime's CI publishes [`rust.bench.json`](https://github.com/ComlineProject/runtime/blob/reports/rust.bench.json) on its `reports` branch.
-
-<!-- bench:end -->
+--8<-- "_generated/reports/rust.bench.md"

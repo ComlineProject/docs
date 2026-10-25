@@ -12,6 +12,14 @@ poetry run zensical serve -o    # live preview at http://localhost:8000
 poetry run zensical build       # static output in site/
 ```
 
+The runtimes' benchmark and fuzzing results on Reference → Languages are
+fetched at build time, not committed. Without this first, those sections are
+empty:
+
+```sh
+python3 ../scripts/sync-language-support.py --render-reports   # writes _generated/ (ignored)
+```
+
 `mkdocs` / `mkdocs-material` are kept installed as a fallback during
 Zensical's alpha; `poetry run mkdocs serve` still works against the same
 `mkdocs.yml`.
