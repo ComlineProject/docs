@@ -2,7 +2,9 @@
 
 Status: **under discussion** · tracked in
 [runtime#29](https://github.com/ComlineProject/runtime/issues/29) · direction
-agreed 2026-10-25; stages 1–3 are proposals below, stages 4–5 are agreed
+agreed 2026-10-25; stage 1 accepted and in progress (see
+[what's built](verification.md#whats-built)); stages 2–3 are proposals below,
+stages 4–5 are agreed
 
 **The question:** today every Comline runtime is written from scratch in its
 own language, and every runtime feature is built once per language. That
@@ -64,9 +66,11 @@ without cgo do, the cost is stated, and **measurement decides**, not taste.
     comline-typescript#32.
   - [How generators are built](../codegen-architecture/index.md) has the
     record.
-- **There is no fuzzing anywhere in the org, and no runtime benchmark.** The
-  only benchmark is core's IDL parser benchmark, which is run by hand and in no
-  CI job. The corpus proves only the cases someone wrote down.
+- **There was no fuzzing anywhere in the org, and no runtime benchmark.** The
+  only benchmark was core's IDL parser benchmark, which is run by hand and in no
+  CI job. The corpus proved only the cases someone wrote down. Stage 1 has
+  since added fuzz targets and gated benchmarks for Rust; see
+  [what's built](verification.md#whats-built).
 
 A third language would add roughly 2,000 runtime lines and a generator the size
 of today's (2,184 lines in Rust, 1,635 in TypeScript), and repeat all of the
@@ -106,7 +110,7 @@ Split the work by what can cross a language boundary cheaply.
 
 | Stage | Page | State |
 |---|---|---|
-| 1 | [Verification: differential fuzzing and benchmark gates](verification.md) | proposal |
+| 1 | [Verification: differential fuzzing and benchmark gates](verification.md) | accepted, in progress |
 | 2 | [One protocol core: a C ABI and WASM from one crate](core-interface.md) | proposal |
 | 3 | [Codecs and protocol glue generated from one plan](generated-codecs.md) | proposal |
 | 4 | Move TypeScript onto the core where the benchmarks allow | agreed |
