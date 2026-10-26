@@ -74,7 +74,8 @@ reference. One proposal in three stages, read in order:
   handshake, framings and connection state machine behind a stable C ABI and
   WASM, built from one crate. ***accepted***, steps 1–3 built: the core
   changes, the C ABI at 0.1 ([reference](../reference/c-abi.md)), and its
-  vectors, fuzzing and benchmarks. Bindings and ABI 1.0 are next.
+  vectors, fuzzing and benchmarks. Bindings are next: TypeScript through wasm. The ABI stays `0.x` until the
+  [1.0 announcement](../conduct/phases.md).
 - [Stage 3 — generated codecs](shared-runtime-core/generated-codecs.md):
   native per-type codecs and protocol glue rendered from one plan in the
   codegen kernel. *under discussion.*

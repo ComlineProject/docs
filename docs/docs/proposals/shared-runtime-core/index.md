@@ -112,7 +112,7 @@ Split the work by what can cross a language boundary cheaply.
 | Stage | Page | State |
 |---|---|---|
 | 1 | [Verification: differential fuzzing and benchmark gates](verification.md) | accepted, in progress |
-| 2 | [One protocol core: a C ABI and WASM from one crate](core-interface.md) | accepted; rollout steps 1–3 built, bindings and ABI 1.0 next; see the [C ABI reference](../../reference/c-abi.md) |
+| 2 | [One protocol core: a C ABI and WASM from one crate](core-interface.md) | accepted; rollout steps 1–3 built, bindings next: TypeScript through wasm; see the [C ABI reference](../../reference/c-abi.md) |
 | 3 | [Codecs and protocol glue generated from one plan](generated-codecs.md) | proposal |
 | 4 | Move TypeScript onto the core where the benchmarks allow | agreed |
 | 5 | Clean up the leftovers and the documents that contradict this | agreed |
@@ -129,6 +129,10 @@ rule CI enforces. Without it, stages 2–4 would be judged by opinion.
   vectors, fuzzing and gates.
 - The browser has no native option at all. The playground simulator already
   runs the core there.
+- The current plan is TypeScript through wasm only, each piece moving only
+  where instruction counts show the core is at least as fast. napi and Go
+  come later, chosen by those numbers. The C ABI stays `0.x` until the project
+  announces 1.0 ([phases](../../conduct/phases.md)).
 
 **Stage 5: the cleanup.**
 - **Remove or split `runtime/core/src/package_abi`.** It pulls `abi_stable`

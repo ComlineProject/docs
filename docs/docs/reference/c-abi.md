@@ -5,7 +5,8 @@ for the `comline@1` handshake, the connection framings (`datagram@2`,
 `jsonrpc@1`), envelopes, connection state and frame limits. Codecs,
 transports, async and dispatch stay in each host.
 
-- **ABI version 0.1.** It is not frozen; see [Version](#version).
+- **ABI version 0.1.** It is not frozen; it freezes when the project announces
+  1.0 ([phases](../conduct/phases.md)). See [Version](#version).
 - **Source:** [`runtime/ffi`](https://github.com/ComlineProject/runtime/tree/main/runtime/ffi)
   in the runtime repository.
 - **Header:** [`include/comline.h`](https://github.com/ComlineProject/runtime/blob/main/runtime/ffi/include/comline.h).
@@ -30,6 +31,8 @@ header disagree, the header is right.
 
 - **Before 1.0, a minor counts as a major.** A host built against `0.1` accepts
   only `0.1`. The JS glue does exactly this.
+- **The freeze comes with the project's 1.0 announcement,** not with an ABI
+  milestone of its own ([phases](../conduct/phases.md)).
 - The major changes when a signature, a struct layout or the meaning of a code
   changes. The minor changes when functions, codes or flag bits are added.
 - Structs are frozen within a major. New data comes through new functions or new
@@ -430,8 +433,9 @@ a 1% rise, like the core's benches. Both sides of each pair are gated.
 ## Not here yet
 
 - **`comline_connection_size` and `comline_connection_init`,** for a host that
-  supplies the handle's memory. After 1.0.
+  supplies the handle's memory. A later addition.
 - **`comline@2`'s negotiation** hands protocol numbers out at the handshake and
-  may change the event struct. If it does, it lands before 1.0 freezes the ABI.
+  may change the event struct. If it does, it lands before the 1.0
+  announcement freezes the ABI.
 - **Bindings.** No language binds the ABI yet; the JS glue is the only host
   code, and it is a thin wrapper, not a binding.
