@@ -160,8 +160,8 @@ else on this page is as proposed.
   The glue also reserves its regions on every call, not up front, and returns
   copies, so no view of wasm memory outlives a call.
 - **Deferred:**
-  - `comline_connection_size` and `comline_connection_init` come after 1.0, as a
-    minor addition;
+  - `comline_connection_size` and `comline_connection_init` are a later
+    addition;
   - `comline@2`'s negotiation comes before 1.0 if it changes the event struct.
 
 ### Found along the way
@@ -420,7 +420,7 @@ The FFI layer is for every other language, and Rust never pays for it.
     serde_json. See [Found along the way](#found-along-the-way).
 - A host with no allocator story of its own (embedded C, Zig) can get a
   later `comline_connection_size(cfg)` / `comline_connection_init(mem, …)`
-  pair. That is a minor ABI addition, **after 1.0**, not part of it.
+  pair. That is a later addition, not part of the ABI as built.
 
 **Panics never cross.**
 - Since Rust 1.81, a panic unwinding out of an `extern "C"` function aborts
@@ -468,6 +468,9 @@ The FFI layer is for every other language, and Rust never pays for it.
   first use.
 - **Before 1.0, a minor counts as a major.** A binding built against `0.n`
   accepts only `0.n`, so nothing pre-release is mistaken for compatible.
+- **The freeze comes with the project's 1.0 announcement,** not with a
+  milestone of the ABI's own ([phases](../../conduct/phases.md)). The ABI stays
+  `0.x` until then.
 - **Structs are frozen within a major.** New data comes through new
   functions or new flag bits. A `struct_size` field is not used, because
   every binding would have to honour it.
@@ -627,9 +630,11 @@ addition, not a replacement.
 
 ## Distribution
 
-**This is a sketch and an open question.** It needs its own pass before the
-release workflow and prebuilt binaries ([rollout](#rollout) step 5). Nothing
-in it is built.
+**This is a sketch and an open question.** Nothing in it is built.
+
+- Releases, registries and prebuilt binaries follow the post-1.0 rules on the
+  [phases page](../../conduct/phases.md).
+- Until then, bindings pin a runtime revision.
 
 **Targets.** Prebuilt binaries per triple, from `runtime`'s release
 workflow:
@@ -714,7 +719,7 @@ stays a separate idea.
 **Settled by the build:**
 
 - **Handle memory for no-allocator hosts:** `comline_connection_size` /
-  `comline_connection_init` come after 1.0, as a minor addition.
+  `comline_connection_init` are a later addition.
 - **`max_waiting` overflow:** an error to the caller of `encode_request`,
   `COMLINE_ERR_BUSY`. Queueing is the binding's job.
 - **Whether `jsonrpc@1`'s `serde_json` dependency fits the no-`std` FFI
@@ -725,8 +730,8 @@ stays a separate idea.
 **Still open:**
 
 - **Whether `comline@2`'s negotiation** (protocol numbers handed out at the
-  handshake) changes the event struct. If so, it should land before ABI 1.0
-  freezes.
+  handshake) changes the event struct. If so, it should land before 1.0,
+  when the ABI freezes.
 - **`pyo3` vs `cffi` for Python,** and whether a second binding surface is
   ever worth it. Decided by gates, but the default needs picking.
 - **Go without cgo:** wazero against pure Go, measured on the same
@@ -753,8 +758,8 @@ Steps 1–3 are done ([What's built](#whats-built)).
    - **Go**, through cgo: the most expensive call.
    Both run the stage 1 gates against the TypeScript runtime and a pure-Go
    baseline.
-5. **ABI 1.0** once both bindings pass, then the release workflow and
-   prebuilt binaries.
+5. **Bindings pin a runtime revision.** Releases and prebuilt binaries come
+   with the 1.0 rules ([phases](../../conduct/phases.md)).
 6. **Further languages** each bring a binding and a generator backend in
    their own repo.
 

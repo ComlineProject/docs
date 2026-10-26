@@ -166,7 +166,8 @@ overhead with no payoff, so `comline-core` and `comline-codegen` are consumed by
 git rev — the way `generation` and `cli` already consume `core`. The cost is
 coordinated rev bumps across repos (and one `comline-core` in any given tree, so
 the CLI composes targets pinned to the same rev). Publishing to crates.io is a
-later call, not a prerequisite for anything below.
+later call, not a prerequisite for anything below; the
+[phases page](../conduct/phases.md) says when.
 
 ### Why the reversal
 
@@ -215,7 +216,9 @@ Steps 2–3 are the real prerequisites for a *second* target repo. `generation`'
 G3 in [Generation → G3](generation.md#g3-split-to-per-language-repos) is steps
 1 + 4 + 5 + 6 from the codegen side.
 
-**Publishing to crates.io** stays an open call for later. If the coordinated
+**Publishing to crates.io** stays an open call for later; registries come
+with the 1.0 rules on the [phases page](../conduct/phases.md). If the
+coordinated
 git-rev bumps across `comline-<lang>` repos get painful, that is the trigger to
 revisit — releasing `comline-core` and `comline-codegen` with semver is the fix,
 and it slots in without reordering anything here.
