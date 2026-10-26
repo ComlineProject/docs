@@ -243,7 +243,7 @@ ABI leaves that to the host.
   moves its buffer afterwards. They fit a `u32` under the frame ceiling.
   Nothing is copied out of the input.
 - **No allocation after `comline_connection_new`.** The handle is the one
-  thing the library allocates. The exemption is `jsonrpc@1` decoding, which
+  thing the library allocates. One known exception, a bug: `jsonrpc@1` decoding, which
   allocates through serde_json when it refuses a frame, when a member name has
   an escape, and when a value nests brackets three deep (`"params":[[1]]`). It
   is [runtime#58](https://github.com/ComlineProject/runtime/issues/58), deferred.
