@@ -62,6 +62,9 @@ nav:
     - Wire formats:
       - packed@1: 'reference/wire/packed.md'
 
+    - Runtime:
+      - C ABI: 'reference/c-abi.md'
+
     - Congregation:
       - Congregation: 'reference/congregation/index.md'
       - comline.toml: 'reference/congregation/comline-toml.md'

@@ -1,6 +1,7 @@
 # Verification: differential fuzzing and benchmark gates
 
-Status: **accepted** · part of [Shared runtime core](index.md) · stage 1 in progress
+Status: **accepted** · part of [Shared runtime core](index.md) · stage 1 in progress;
+the C ABI's checks (stage 2, steps 2–3) are built
 
 **The question:** with ten or more language runtimes and generators, how does
 each one stay byte-identical to the others, exactly as strict as the others
@@ -121,6 +122,68 @@ except where noted.
     length; `json@1` and `jsonrpc@1` replaced invalid UTF-8 and skipped a
     byte-order mark; the JSON reader accepted an escaped lone surrogate.
 
+**For the C ABI** (stage 2, steps 2–3 of the
+[core interface](core-interface.md#whats-built)), 2026-10-26:
+
+- **Frame-limit vectors and a fuzz target**
+  ([runtime#55](https://github.com/ComlineProject/runtime/pull/55)): `vectors/stream.json`, 24 cases, and the
+  `stream_split` fuzz target, which checks `split_frame` and `put_prefix`
+  against each other and against the prefix's own rules. It also fixed the
+  transports' frame-limit bugs (see the
+  [core interface](core-interface.md#what-changed-from-the-proposal)).
+- **The ABI's vectors, from Rust, C and Node**
+  ([runtime#56](https://github.com/ComlineProject/runtime/pull/56)): one harness per host, on the same cases and
+  with the same checks, against the six vector files the ABI can carry
+  (`name-hash`, `handshake`, `envelope`, `framing-datagram`,
+  `framing-datagram2`, `framing-jsonrpc`).
+  - The cases are 65. The nine `datagram@1` cases have no connection form, so
+    for them the harness checks that the ABI refuses it.
+  - C is built against `comline.h` and runs on the static library, the dynamic
+    library, and the static one under ASan and UBSan. Node runs against the
+    wasm32 build, through the JS glue.
+  - C and Node can't run a codec, so the `export_vectors` example writes the
+    cases out with their params already encoded. Each harness fails on a
+    mismatch, and on a case count that differs from the vectors'.
+  - CI job `ffi`; Miri runs the Rust side separately as `ffi miri`.
+- **Two fuzz targets and a differential proptest**
+  ([runtime#57](https://github.com/ComlineProject/runtime/pull/57)):
+  - `ffi_feed` runs random configs and sequences (calls, replies, abandons, peer
+    frames, chunked deliveries, flipped bytes) through a `comline_connection`
+    and holds every call to the ABI's rules: no panic crosses, only documented
+    statuses, spans inside the frame, exact retry sizes, refusals spend no
+    request id, nothing allocates after `comline_connection_new`.
+  - `ffi_vs_core` adds the comparison: each call is also made through `State`,
+    the connection framings and `HandshakeFrame` directly, and must give the
+    same status, bytes, request id, `*consumed` and event.
+  - `tests/differential.rs` runs the same driver on proptest's sequences, with
+    100,000 cases nightly. Both targets share the driver, so a sequence fails the
+    same way under either.
+  - The first nightly run with them (main at `b773057`) ran each target for 10
+    minutes: 4,154,468 executions for `ffi_feed` and 2,465,895 for
+    `ffi_vs_core`, no findings, and the differential property passed.
+  - They found [runtime#58](#found-along-the-way), deferred.
+- **FFI benchmarks and a gate over every target**
+  ([runtime#59](https://github.com/ComlineProject/runtime/pull/59), [runtime#60](https://github.com/ComlineProject/runtime/pull/60)):
+  - `runtime/ffi/bench` is a package of its own, so the ABI is built as a host
+    links it, without the crate's test hooks. Each call is measured twice:
+    through its `extern "C"` function (`ffi/abi/...`) and as the same work on
+    `State` and the framings (`ffi/core/...`). That is 104 benchmarks.
+  - The gate now runs every bench target, listed once as `TARGETS` in
+    `bench-report.py`. The limit (1%), the ledger and the rename rules are the
+    same for all. Ids are unique across targets: the runtime's keep the shared
+    definitions' names and every other target's starts with its name.
+  - A target the base doesn't have yet is recorded only, as is the whole report
+    when the base has no benches.
+  - Base and head now build at paths of the same length, because a longer path
+    moved 16 of the 102 FFI counts by a few instructions.
+  - The job summary pairs each ABI call with its core twin, the crossing cost.
+    It informs and isn't gated on its own.
+  - runtime#60 cut the crossing: every ABI call is cheaper, none dearer. The
+    numbers are in the [C ABI reference](../../reference/c-abi.md#what-crossing-costs).
+- **Required checks.** The `main` ruleset requires `ffi`, `ffi miri`,
+  `wasm32 core` and the fuzz jobs `fuzz (ffi_feed)`, `fuzz (ffi_vs_core)` and
+  `fuzz (stream_split)`. See [Branch rules](../../conduct/branch-rules.md).
+
 ## Found along the way
 
 Open issues the work turned up:
@@ -140,6 +203,26 @@ Open issues the work turned up:
   name that needs one unescaped, producing invalid JSON.
 - [runtime#42](https://github.com/ComlineProject/runtime/issues/42):
   `jsonrpc@1` accepts invalid UTF-8 inside members it ignores.
+- [runtime#58](https://github.com/ComlineProject/runtime/issues/58): `jsonrpc@1` decoding allocates after
+  `comline_connection_new`, which the C ABI promises it doesn't. The framing
+  parses with serde_json, which allocates:
+  - on any refused frame, because it boxes its errors;
+  - when a member name has an escape;
+  - when a value nests brackets three deep, as in `"params":[[1]]`, which is an
+    ordinary frame.
+
+  **Deferred (decided 2026-10-26):** Comline's own formats come first, and JSON
+  is left for later. The planned fix is a hand-written strict JSON scanner in the
+  core that allocates nothing, with a differential fuzz target against
+  serde_json. Until then the exemption is narrow and written down:
+  - the test `jsonrpc_decode_allocates_nothing` (`runtime/ffi/tests/rules.rs`)
+    is ignored, and fails with `--ignored`;
+  - `serde_json_allocates` in `tests/common/drive.rs` lets the fuzz targets and
+    the differential proptest through on exactly those three cases, on
+    `jsonrpc@1` feeds only;
+  - every `datagram@2` feed and every encode must still allocate nothing;
+  - the fuzz README lists it under "Open", and the fix deletes the exemption and
+    un-ignores the test.
 - In TypeScript, each listed as a known divergence:
   [comline-typescript#73](https://github.com/ComlineProject/comline-typescript/issues/73)
   (`json@1` decoding doesn't check a value's shape against its type),
@@ -161,6 +244,10 @@ Open issues the work turned up:
   `rust.bench.json` (every push to `main`) and `rust.fuzz.json` (nightly) to
   the runtime's `reports` branch, and the pages render them. TypeScript's
   benchmark results fill in when it checks in its `conformance-bench.json`.
+- **The `jsonrpc@1` allocation** ([runtime#58](https://github.com/ComlineProject/runtime/issues/58)), deferred.
+- **The wasm32 build and the JS glue are not benchmarked.** The ABI's benches
+  are native. A JavaScript call into WebAssembly, and the copies in and out,
+  are what [stage 4](index.md#stages) has to measure.
 - **A re-baseline path for the gate.** A correctness fix that costs time needs
   a deliberate way to move the baseline (see [Budgets](#budgets)). It isn't
   built yet.
@@ -247,8 +334,9 @@ implementation.
   commit in `VECTORS_REV`, so a language's CI answers the same way on every
   run. Every language CI that vendors the corpus already has, or can install,
   a Rust toolchain (comline-typescript's CI has one for its codegen).
-- **(b) comes later as an option, not a replacement.** Once stage 2 exists, a
-  language may link the reference in-process for speed. Codecs stay native
+- **(b) comes later as an option, not a replacement.** Once stage 2 exists (the
+  C ABI is built, [runtime#53](https://github.com/ComlineProject/runtime/pull/53); no language's fuzzer links it
+  yet), a language may link the reference in-process for speed. Codecs stay native
   ([stage 3](generated-codecs.md)), so the differential check stays
   meaningful there. For framing it then checks the binding, not the logic.
 - **(c) falls out of (a)** for free: the reference can dump a batch of cases to a
@@ -445,6 +533,10 @@ and values, and is vendored with the vectors.
 The last row is what [stage 4](index.md#stages) needs. For small frames, a
 TypeScript call into WASM or napi may cost more than the work it replaces.
 Only this row can say where that line is.
+
+As built ([runtime#59](https://github.com/ComlineProject/runtime/pull/59)), the row covers the native ABI only: `ffi/abi/...`
+against `ffi/core/...`, in both stream and message mode, and at the payload
+sizes above for the calls that carry a frame. The wasm32 build and the JS glue aren't measured yet.
 
 ### Judging a regression without flaky CI
 
