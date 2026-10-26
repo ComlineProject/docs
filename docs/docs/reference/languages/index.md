@@ -108,6 +108,7 @@ commit. A runtime's suite runs every example against it:
 | envelope <br><sub>`envelope`</sub> | ✅ supported | ✅ supported |
 | datagram framing <br><sub>`framing-datagram`</sub> | ✅ supported | ✅ supported |
 | datagram@2 framing <br><sub>`framing-datagram2`</sub> | ✅ supported | ✅ supported |
+| stream framing <br><sub>`stream`</sub> | ✅ supported | ❌ unsupported: no length-prefixed framing or frame limit yet: the transports are message-oriented ([comline-typescript#80](https://github.com/ComlineProject/comline-typescript/issues/80)) |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | ✅ supported | ✅ supported |
 | JSON wire format <br><sub>`format-json`</sub> | ✅ supported | 🟡 partial: decoding doesn't check enum variants or integer ranges ([comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57)) |
 | MessagePack wire format <br><sub>`format-msgpack`</sub> | ✅ supported | ❌ unsupported: JSON and packed@1 ship |

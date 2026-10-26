@@ -63,6 +63,7 @@ Runtime `rust`.
 | envelope <br><sub>`envelope`</sub> | a response's outcome: ok with a payload, an error ordinal with its body, or a provider fault | ✅ supported | [8 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/envelope.json) |
 | datagram framing <br><sub>`framing-datagram`</sub> | Comline's own binary framing of requests and responses | ✅ supported | [9 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram.json) |
 | datagram@2 framing <br><sub>`framing-datagram2`</sub> | the datagram framing with a request/reply kind and a protocol number, for calls in both directions and several protocols on one connection | ✅ supported | [12 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram2.json) |
+| stream framing <br><sub>`stream`</sub> | frames on a byte stream (TCP, a pipe): each behind a u32 little-endian length prefix, refused over the limit, by default 16 MiB (16777216 bytes) in every runtime | ✅ supported | [24 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/stream.json) |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | JSON-RPC 2.0 requests and responses, a fault as -32603 | ✅ supported | [19 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-jsonrpc.json) |
 | JSON wire format <br><sub>`format-json`</sub> | values as UTF-8 JSON: a struct as an object | ✅ supported | [46 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-json.json) |
 | MessagePack wire format <br><sub>`format-msgpack`</sub> | values as MessagePack: a struct as an array | ✅ supported | [45 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-msgpack.json) |
@@ -78,9 +79,10 @@ are compared against (see [Verification](../../proposals/shared-runtime-core/ver
 
 ### Fuzzing and properties
 
-- Four [`cargo-fuzz`](https://github.com/ComlineProject/runtime/tree/main/runtime/fuzz)
-  targets: `decode_no_panic`, `packed_canonical`, `framing_decode` and
-  `seed_vs_derive`.
+- Seven [`cargo-fuzz`](https://github.com/ComlineProject/runtime/tree/main/runtime/fuzz)
+  targets: `decode_no_panic`, `packed_canonical`, `framing_decode`,
+  `seed_vs_derive` and `stream_split`, and, for the
+  [C ABI](../c-abi.md), `ffi_feed` and `ffi_vs_core`.
 - [Property tests](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/tests/properties.rs)
   (`proptest`) over random types and values, run with `cargo test`.
 - CI runs each target for a minute on every pull request, and for ten minutes

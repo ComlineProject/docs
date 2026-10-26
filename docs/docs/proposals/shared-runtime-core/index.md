@@ -3,8 +3,9 @@
 Status: **under discussion** · tracked in
 [runtime#29](https://github.com/ComlineProject/runtime/issues/29) · direction
 agreed 2026-10-25; stage 1 accepted and in progress (see
-[what's built](verification.md#whats-built)); stages 2–3 are proposals below,
-stages 4–5 are agreed
+[what's built](verification.md#whats-built)); stage 2 accepted, with its first
+three rollout steps built (see [what's built](core-interface.md#whats-built));
+stage 3 is a proposal below, stages 4–5 are agreed
 
 **The question:** today every Comline runtime is written from scratch in its
 own language, and every runtime feature is built once per language. That
@@ -111,7 +112,7 @@ Split the work by what can cross a language boundary cheaply.
 | Stage | Page | State |
 |---|---|---|
 | 1 | [Verification: differential fuzzing and benchmark gates](verification.md) | accepted, in progress |
-| 2 | [One protocol core: a C ABI and WASM from one crate](core-interface.md) | proposal |
+| 2 | [One protocol core: a C ABI and WASM from one crate](core-interface.md) | accepted; rollout steps 1–3 built, bindings and ABI 1.0 next; see the [C ABI reference](../../reference/c-abi.md) |
 | 3 | [Codecs and protocol glue generated from one plan](generated-codecs.md) | proposal |
 | 4 | Move TypeScript onto the core where the benchmarks allow | agreed |
 | 5 | Clean up the leftovers and the documents that contradict this | agreed |
