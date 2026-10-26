@@ -218,9 +218,8 @@ G3 in [Generation → G3](generation.md#g3-split-to-per-language-repos) is steps
 
 **Publishing to crates.io** stays an open call for later; registries come
 with the 1.0 rules on the [phases page](../conduct/phases.md). If the
-coordinated
-git-rev bumps across `comline-<lang>` repos get painful, that is the trigger to
-revisit — releasing `comline-core` and `comline-codegen` with semver is the fix,
+coordinated git-rev bumps across `comline-<lang>` repos get painful, that is the
+trigger to revisit — releasing `comline-core` and `comline-codegen` with semver is the fix,
 and it slots in without reordering anything here.
 
 ## Ownership & packaging
