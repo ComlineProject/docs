@@ -78,9 +78,10 @@ are compared against (see [Verification](../../proposals/shared-runtime-core/ver
 
 ### Fuzzing and properties
 
-- Four [`cargo-fuzz`](https://github.com/ComlineProject/runtime/tree/main/runtime/fuzz)
-  targets: `decode_no_panic`, `packed_canonical`, `framing_decode` and
-  `seed_vs_derive`.
+- Seven [`cargo-fuzz`](https://github.com/ComlineProject/runtime/tree/main/runtime/fuzz)
+  targets: `decode_no_panic`, `packed_canonical`, `framing_decode`,
+  `seed_vs_derive` and `stream_split`, and, for the
+  [C ABI](../c-abi.md), `ffi_feed` and `ffi_vs_core`.
 - [Property tests](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/tests/properties.rs)
   (`proptest`) over random types and values, run with `cargo test`.
 - CI runs each target for a minute on every pull request, and for ten minutes
