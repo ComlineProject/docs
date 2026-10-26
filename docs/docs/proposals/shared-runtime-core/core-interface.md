@@ -753,11 +753,10 @@ Steps 1–3 are done ([What's built](#whats-built)).
 3. **A C test binding** in `runtime` CI runs the conformance vectors through
    the C ABI and the wasm32 build: **done.** C and Node replay the same 65
    cases as Rust. This proves the boundary before any language depends on it.
-4. **The first two real bindings, chosen to stress the boundary:**
-   - **TypeScript**, through WASM and napi: stage 4's question;
-   - **Go**, through cgo: the most expensive call.
-   Both run the stage 1 gates against the TypeScript runtime and a pure-Go
-   baseline.
+4. **The first real binding: TypeScript, through WASM** (stage 4). Each
+   piece moves only where instruction counts show the core costs no more than
+   the TypeScript it replaces. napi and Go (cgo, the most expensive call)
+   come later, chosen by those numbers.
 5. **Bindings pin a runtime revision.** Releases and prebuilt binaries come
    with the 1.0 rules ([phases](../../conduct/phases.md)).
 6. **Further languages** each bring a binding and a generator backend in
