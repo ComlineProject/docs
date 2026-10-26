@@ -16,10 +16,17 @@ repositories follow as they gain gates.
 ## Required checks: `runtime`
 
 - `Rust project - stable`, `- beta`, `- nightly`: build and test.
+- `wasm32 core`: the core builds for `wasm32` without `std`.
+- `ffi`: the C ABI.
+  - `comline.h` matches its source.
+  - The conformance vectors pass through it from Rust, from C (static,
+    dynamic, sanitized) and from Node (`wasm32`).
+- `ffi miri`: the C ABI's tests under Miri.
 - `fuzz (decode_no_panic)`, `fuzz (framing_decode)`,
-  `fuzz (packed_canonical)`, `fuzz (seed_vs_derive)`: 60 seconds per target.
-- `instruction counts`: no benchmark grows more than 1% unless the pull
-  request accepts it.
+  `fuzz (packed_canonical)`, `fuzz (seed_vs_derive)`, `fuzz (stream_split)`,
+  `fuzz (ffi_feed)`, `fuzz (ffi_vs_core)`: 60 seconds per target.
+- `instruction counts`: no benchmark, the core's or the C ABI's, grows more
+  than 1% unless the pull request accepts it.
 
 ## The `reports` branch: `runtime`
 
