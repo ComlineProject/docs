@@ -8,3 +8,5 @@ How work is done in Comline's repositories.
   announcement, and what is promised in each.
 - [Ready for 1.0](readiness.md): what must be true before the 1.0
   announcement. Draft.
+- [Labels](labels.md): the label set every repository shares: priority,
+  type, status and area.

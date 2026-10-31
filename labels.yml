@@ -1,0 +1,111 @@
+# The label set for every ComlineProject repository.
+# Applied by scripts/sync-labels.sh. Explained in docs/docs/conduct/labels.md.
+
+# Priority
+- name: P0
+  color: b60205
+  description: "Now: top priority"
+- name: P1
+  color: d93f0b
+  description: "Next"
+- name: P2
+  color: fbca04
+  description: "Soon"
+- name: P3
+  color: 0e8a16
+  description: "Eventually"
+- name: later
+  color: c5def5
+  description: "Parked"
+
+# Type
+- name: bug
+  color: d73a4a
+  description: "Something isn't working"
+- name: enhancement
+  color: a2eeef
+  description: "New feature or request"
+- name: design
+  color: 5319e7
+  description: "Needs a design decision"
+- name: question
+  color: d876e3
+  description: "Further information is requested"
+- name: documentation
+  color: 0075ca
+  description: "Improvements or additions to documentation"
+- name: chore
+  color: ededed
+  description: "Maintenance, cleanup, quality"
+- name: breaking-change
+  color: e11d21
+  description: "Breaks an API, generated code or wire bytes"
+
+# Status
+- name: 1.0-blocker
+  color: 1d76db
+  description: "Must be done before the 1.0 announcement (docs conduct/readiness.md)"
+- name: blocked
+  color: 5c5c5c
+  description: "Waiting on something else"
+
+# Areas
+- name: wire
+  color: bfdadc
+  description: "Formats, framings, handshakes"
+- name: compiler
+  color: bfdadc
+  description: "Parser, IR, CAS"
+- name: config
+  color: bfdadc
+  description: "Packages, config.idp, settings"
+- name: codegen
+  color: bfdadc
+  description: "Code generation"
+- name: runtime
+  color: bfdadc
+  description: "Runtimes and the shared core"
+- name: tooling
+  color: bfdadc
+  description: "CLI, language server, editor"
+- name: playground
+  color: bfdadc
+  description: "Playground and simulator"
+- name: stdlib
+  color: bfdadc
+  description: "Standard library"
+- name: versioning
+  color: bfdadc
+  description: "Versions and compatibility"
+- name: extensibility
+  color: bfdadc
+  description: "Third-party encodings and generators"
+- name: testing
+  color: bfdadc
+  description: "Tests, fuzzing, conformance"
+- name: diagnostics
+  color: bfdadc
+  description: "Errors and diagnostics"
+- name: performance
+  color: bfdadc
+  description: "Speed and size"
+- name: security
+  color: bfdadc
+  description: "Security and safety"
+
+# GitHub defaults, kept
+- name: duplicate
+  color: cfd3d7
+  description: "This issue or pull request already exists"
+- name: invalid
+  color: e4e669
+  description: "This doesn't seem right"
+- name: wontfix
+  color: ffffff
+  description: "This will not be worked on"
+- name: good first issue
+  color: 7057ff
+  description: "Good for newcomers"
+- name: help wanted
+  color: 008672
+  description: "Extra attention is needed"
