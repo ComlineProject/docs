@@ -175,4 +175,5 @@ Whether "one of several shapes, with a tag" is a feature of `enum` or of
 - [Automatic documentation](auto-documentation.md) — an optional tool that
   documents a user's own schemas and packages — their structs, enums, protocols,
   errors — from the IR and its docstrings, with the CAS supplying per-version
-  docs and a generated changelog. *draft.*
+  docs and a generated changelog. ***accepted*** — a JSON doc model with
+  external renderers, configured in `comline.toml` only.
