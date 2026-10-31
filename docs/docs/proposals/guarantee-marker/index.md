@@ -34,7 +34,7 @@ so they can be read side by side. Tracked in
 |---|---|---|---|
 | [Proposal A](waives.md) | `@waives(schema_agreement = "…")` | names each guarantee the author knowingly gives up | rejected: repeats what core computes |
 | [Proposal B](assumes.md) | `@assumes(schema_agreement = "…")` | names what the author assumes holds in place of Comline's check | rejected: same, and its direction can be misread |
-| [Proposal C](unverified.md) | `@unverified = "…"` | one marker; core works out which guarantees are affected | **accepted**, with the acceptance recording the set |
+| [Proposal C](unverified.md) | `@unverified = "…"` | one marker; core works out which guarantees are affected | **implemented**, with the acceptance recording the set |
 | [Proposal D](unchecked.md) | `@unchecked = "…"` | the original name, kept | rejected: says neither who nor what, and collides with validation |
 
 ## Two choices, not one
