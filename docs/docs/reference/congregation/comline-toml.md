@@ -21,6 +21,7 @@ Defaults for every target.
 | `external_std` | bool | on in `lib`, off in `code` | Reference `std` as its own package instead of inlining it — see [below](#external_std). |
 | `validate_on_decode` | `"off"` \| `"collect"` \| `"first"` | `"off"` | Whether decoding a value runs its [`@validators`](../../guide/idl/validator.md) — see [below](#validate_on_decode). |
 | `async` | bool | `false` | Generate protocols on a connection for an async driver — see [below](#async). |
+| `encodings` | table | — | Which type implements each encoding (format, framing, handshake) in the generated code — see [below](#encodings). |
 | `only` | list of strings | — | Generate just these languages, out of the ones `config.idp` declares — see [below](#only). |
 
 ## `[[generate.target]]`
@@ -40,6 +41,9 @@ declare is an error. To generate *fewer* than the package declares, use
 | `language` | string | **Required.** Must be one the manifest declares under `code_generation.languages`. |
 | `lang_version` | string | Optional; the toolchain version to generate for. Defaults to what `config.idp` declared, and may raise it but never lower it ([Language versions](../../guide/codegen/generating-code.md#language-versions)). |
 | `out`, `layout`, `mode`, `package_versions`, `external_std`, `validate_on_decode`, `async` | — | Per-target override of the `[generate]` value. |
+| `generator` | string (path) | A generator outside the CLI, a `.wasm` or a native executable, relative to `comline.toml`'s directory. Unset, the built-in generator for `language` is used. See [below](#generator). |
+| `timeout` | integer (seconds) | With `generator` only: how long each call to it may take. At least 1; default 60. |
+| `encodings` | table | Per-target mapping, over `[generate]`'s, name by name. |
 | `flatten` | bool | `lib`/`dylib` only, target-only (no `[generate]` default): write the crate straight into `out` instead of `out/<language>/`. See [below](#flatten). |
 
 ```toml
@@ -52,6 +56,41 @@ language     = "rust"
 lang_version = "1.88.0"
 out          = "src/generated"
 ```
+
+### `generator`
+
+```toml
+[[generate.target]]
+generator = "tools/comline-gen-go.wasm"
+language  = "go"
+timeout   = 120
+```
+
+Runs a generator that is its own program, speaking the
+[generator protocol](../generator-protocol.md). `language` picks among the
+languages it offers, and may be left out if it offers one; it must still be one
+`config.idp` declares. A `.wasm` runs sandboxed; anything else runs as a native
+process, unsandboxed. The limits and path rules are in
+[Generators](../../guide/extending/generators.md#limits).
+
+### `encodings`
+
+```toml
+[generate]
+encodings = { "com.acme.lines@1" = "acme_lines::LinesFraming" }
+
+[[generate.target]]
+language  = "rust"
+encodings = { "com.acme.lines@1" = { type = "acme_lines::LinesFraming", package = "acme-lines", version = "0.1" } }
+```
+
+Maps an encoding's name to the type that implements it, in the target's
+language. A value is the type alone, or a table with `type` and optionally
+`package` and `version`. For each encoding the package uses, the first of these
+that answers wins: this table (the target's over `[generate]`'s), then the
+`map` the declaring package suggests in its `config.idp`. An encoding that is
+used and has no mapping is a generation error. See
+[Map it to a type](../../guide/extending/encodings.md#5-map-it-to-a-type).
 
 ### `flatten`
 

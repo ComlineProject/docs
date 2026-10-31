@@ -36,6 +36,14 @@ nav:
       - Call systems & serialization: 'guide/runtime/call-system.md'
     
     - 'Packages & dependencies': 'guide/packages/index.md'
+
+    - 'Extending Comline':
+      - 'guide/extending/index.md'
+      - Formats & framings: 'guide/extending/encodings.md'
+      - Handshakes: 'guide/extending/handshakes.md'
+      - Generators: 'guide/extending/generators.md'
+      - Transports: 'guide/extending/transports.md'
+      - Dispatchers: 'guide/extending/dispatchers.md'
   
   - Language Guides:
     - Overview: 'languages/index.md'
@@ -77,6 +85,10 @@ nav:
     - Tools:
       - Tools: 'reference/tools/index.md'
       - CLI: 'reference/cli.md'
+
+    - Extending:
+      - Generator protocol: 'reference/generator-protocol.md'
+      - Conformance spec: 'reference/conformance.md'
     
   
   - Design:
