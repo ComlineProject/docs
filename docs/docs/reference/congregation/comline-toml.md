@@ -255,6 +255,23 @@ built-in defaults → [generate] → [[generate.target]] → COMLINE_GENERATE_* 
 - `--out` / `--layout` / `--mode` — apply to **one** target and need `--target`
   when more than one is configured.
 
+## Editor support
+
+`comline.toml` has a JSON Schema, served at
+`https://comlineproject.github.io/docs/schemas/comline-toml/0.x.json`. With it an
+editor completes keys, checks values, and shows each key's description on hover.
+`comline new` writes the pointer as the first line of the file:
+
+```toml
+#:schema https://comlineproject.github.io/docs/schemas/comline-toml/0.x.json
+```
+
+Any TOML language server that reads the `#:schema` directive picks it up: [Even
+Better TOML](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
+in VS Code, or [Taplo](https://taplo.tamasfe.dev/) in other editors. The
+[VS Code extension](https://github.com/ComlineProject/comline-vscode) also associates the schema with
+`comline.toml` files, so an older file without the line is covered too.
+
 ## Forward-looking
 
 ```toml
