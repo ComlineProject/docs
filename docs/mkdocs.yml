@@ -69,6 +69,7 @@ nav:
 
     - Wire formats:
       - packed@1: 'reference/wire/packed.md'
+      - Official encodings: 'reference/wire/official-encodings.md'
 
     - Runtime:
       - C ABI: 'reference/c-abi.md'
@@ -85,6 +86,7 @@ nav:
     - Tools:
       - Tools: 'reference/tools/index.md'
       - CLI: 'reference/cli.md'
+      - comline inspect: 'reference/tools/inspect.md'
 
     - Extending:
       - Generator protocol: 'reference/generator-protocol.md'
