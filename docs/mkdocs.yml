@@ -148,6 +148,7 @@ nav:
     - 'conduct/index.md'
     - 'Branch rules': 'conduct/branch-rules.md'
     - 'Phases and promises': 'conduct/phases.md'
+    - 'Ready for 1.0': 'conduct/readiness.md'
 
 extra_css:
   - stylesheets/nav.css?v=21   # bump on every nav.css change — it is not cache-busted otherwise
