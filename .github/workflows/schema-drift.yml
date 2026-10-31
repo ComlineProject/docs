@@ -1,0 +1,53 @@
+name: Schema drift
+
+# `docs/docs/schemas/comline-toml/0.x.json` is served on the site as the
+# `comline.toml` JSON Schema, which `comline new` points a `#:schema` line at.
+# It is a copy: generation derives it from `comline_codegen::config`. This
+# checks the copy still equals generation's file.
+#
+# Separate from the Docs workflow for the same reason as the other drift
+# checks: a fetch against another repo has no business blocking a deploy.
+
+on:
+  schedule:
+    # A schema change lands in `generation` and never touches this repo, so a
+    # push-triggered run would not see it. Weekly catches that side.
+    - cron: '45 7 * * 1'
+  pull_request:
+    paths:
+      - 'docs/docs/schemas/**'
+      - 'scripts/sync-comline-toml-schema.py'
+      - '.github/workflows/schema-drift.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: schema-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Compare with generation's schema
+        shell: bash
+        run: |
+          if ! python3 scripts/sync-comline-toml-schema.py | tee drift.txt; then
+            {
+              echo '### Schema drift'
+              echo
+              echo '```'
+              cat drift.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          cat drift.txt >> "$GITHUB_STEP_SUMMARY"
