@@ -1,6 +1,6 @@
 # Package wire defaults
 
-Status: **shipped** 2026-10-25 · runtime#27, comline-typescript#70, core#140,
+Status: **implemented** 2026-10-25 · runtime#27, comline-typescript#70, core#140,
 comline-rust#75, comline-typescript#71, generation#83, cli#101, cli#102,
 simulator#26, language-server#85, playground#98, comline-vscode#19 · issues:
 [core#139](https://github.com/ComlineProject/core/issues/139),

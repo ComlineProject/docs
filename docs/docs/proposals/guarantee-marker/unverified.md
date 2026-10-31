@@ -1,6 +1,7 @@
 # Proposal C — `@unverified`, one marker
 
-Status: **accepted** · with one refinement, below · See the [section
+Status: **implemented** ([core#132](https://github.com/ComlineProject/core/pull/132)) ·
+with one refinement, below · See the [section
 overview](index.md) for the question all four answer
 
 **The idea:** a single marker with a reason. Core works out which guarantees

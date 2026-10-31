@@ -1,6 +1,7 @@
 # Proposal A — a shared resolution kernel
 
-Status: **under discussion** · The recommendation of this group · See the
+Status: **implemented** · shipped as `symbols`, `modules`, `stdlib` and `naming` in
+`comline-codegen` (see [What shipped](index.md#what-shipped)) · See the
 [section overview](index.md) for the question all five answer · Complemented
 by, not opposed to, [Proposal B — templates](template-rendering.md)
 

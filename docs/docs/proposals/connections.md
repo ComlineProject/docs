@@ -2,8 +2,9 @@
 
 Status: **accepted** · tracked in
 [runtime#19](https://github.com/ComlineProject/runtime/issues/19) · calls in
-both directions and several protocols per connection are built (see
-[What's built](#whats-built)); the rest is open
+both directions, several protocols per connection, async codegen and JSON-RPC
+on a connection are built (see [What's built](#whats-built)); interceptors and
+the `duplex` check are not
 
 **The question:** what a connection carries beyond one client calling one
 server, and how the runtime models it. This page covers calls in both

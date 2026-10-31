@@ -45,7 +45,7 @@ alternatives are worth. Five proposals, read to the same shape:
 
 - [Proposal A — a shared resolution kernel](codegen-architecture/resolution-kernel.md)
   — a symbol/module layer in `comline-codegen`; generators map a resolved
-  model to syntax. *under discussion — the recommendation of the group.*
+  model to syntax. ***implemented*** — generators share it in `generation/codegen`.
 - [Proposal B — templates](codegen-architecture/template-rendering.md) —
   per-language template files replace `push_str`. *under discussion —
   complementary to A, not a substitute.*
@@ -108,7 +108,7 @@ between peers, the role `unsafe` plays in Rust. Four competing proposals, read
 to the same shape:
 
 - [Proposal C — `@unverified`, one marker](guarantee-marker/unverified.md):
-  core infers which guarantees are affected. ***accepted***, with the
+  core infers which guarantees are affected. ***implemented***, with the
   consumer's acceptance recording that set.
 - [Proposal A — `@waives`, per guarantee](guarantee-marker/waives.md): names
   each guarantee given up. *rejected: repeats what core computes.*
@@ -123,12 +123,12 @@ to the same shape:
 - [Connections](connections.md): what a connection carries beyond one client
   calling one server: calls in both directions on a transport-independent core,
   per-connection state and interceptors, several protocols per connection.
-  *accepted; calls both ways and several protocols built.*
+  *accepted; calls both ways, several protocols, async codegen and JSON-RPC on a connection built; interceptors and the `duplex` check are not.*
 - [Package wire defaults](package-wire-defaults.md): a `wire` key in
   `config.idp` for the package's framing and format, `datagram@2` as the
   built-in framing, a new packed C-struct-like format `packed@1` as the
   built-in format, and a generated `Services` struct with a package-level
-  `serve`. *shipped.*
+  `serve`. ***implemented.***
 
 ### Packet protocols
 
