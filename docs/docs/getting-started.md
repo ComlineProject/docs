@@ -44,7 +44,7 @@ my-api/
 ├── comline.toml       # where generated code goes (all-commented by default)
 ├── src/
 │   └── main.ids      # a sample schema
-└── .gitignore        # ignores .comline/
+└── .gitignore        # ignores .comline/deps-cache/
 ```
 
 `src/main.ids`:

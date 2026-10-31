@@ -82,9 +82,9 @@ After the first `comline build`, a `.comline/` directory holds the
 (`refs/heads/main`). It is the authoritative, append-only history of the
 package's versions, and the only copy of it — nothing pushes it anywhere yet.
 
-The `comline new` scaffold git-ignores it, which suits tests and examples. A
-package with a version history worth keeping should either commit `.comline/` or,
-once [publishing](#publishing-planned) exists, publish it.
+Commit it. Nothing publishes it yet, so a clone without it starts over with no
+recorded versions. The `comline new` scaffold's `.gitignore` ignores only
+`.comline/deps-cache/`, where [git dependencies](#dependencies) are fetched.
 
 !!! warning
     `comline reset` deletes `.comline/` (behind a confirmation). `comline clean`
