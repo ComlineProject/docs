@@ -5,7 +5,8 @@ Status: **under discussion** · tracked in
 agreed 2026-10-25; stage 1 accepted and in progress (see
 [what's built](verification.md#whats-built)); stage 2 accepted, with its first
 three rollout steps built (see [what's built](core-interface.md#whats-built));
-stage 3 is a proposal below, stages 4–5 are agreed
+stage 3 is a proposal below; stage 4 is built (TypeScript runs on the core
+through wasm, see [below](#stages)); stage 5 is agreed
 
 **The question:** today every Comline runtime is written from scratch in its
 own language, and every runtime feature is built once per language. That
@@ -112,15 +113,26 @@ Split the work by what can cross a language boundary cheaply.
 | Stage | Page | State |
 |---|---|---|
 | 1 | [Verification: differential fuzzing and benchmark gates](verification.md) | accepted, in progress |
-| 2 | [One protocol core: a C ABI and WASM from one crate](core-interface.md) | accepted; rollout steps 1–3 built, bindings next: TypeScript through wasm; see the [C ABI reference](../../reference/c-abi.md) |
+| 2 | [One protocol core: a C ABI and WASM from one crate](core-interface.md) | accepted; rollout steps 1–3 built, and TypeScript binds it through wasm (stage 4); see the [C ABI reference](../../reference/c-abi.md) |
 | 3 | [Codecs and protocol glue generated from one plan](generated-codecs.md) | proposal |
-| 4 | Move TypeScript onto the core where the benchmarks allow | agreed |
+| 4 | [Move TypeScript onto the core where the counts allow](#stage-4-moving-typescript) | built: TypeScript runs on the core through wasm ([ts#87](https://github.com/ComlineProject/comline-typescript/pull/87), [ts#88](https://github.com/ComlineProject/comline-typescript/pull/88), [ts#89](https://github.com/ComlineProject/comline-typescript/pull/89)) |
 | 5 | Clean up the leftovers and the documents that contradict this | agreed |
 
 **Stage 1 comes first** because it is what turns "measurement decides" into a
 rule CI enforces. Without it, stages 2–4 would be judged by opinion.
 
-**Stage 4: moving TypeScript.**
+#### Stage 4: moving TypeScript
+
+Built. TypeScript's `Connection` runs framing,
+request ids and waiting state on the core, and `nameHash` and the `comline@1`
+handshake run there too, whenever the core loads. The core was vendored in
+[ts#87](https://github.com/ComlineProject/comline-typescript/pull/87), the
+[transport contract](../../languages/typescript/client-and-server.md#transport-today)
+tightened in [ts#88](https://github.com/ComlineProject/comline-typescript/pull/88), and `Connection` moved in
+[ts#89](https://github.com/ComlineProject/comline-typescript/pull/89). What stays in TypeScript, and the instruction counts that
+decided it, are on the [TypeScript page](../../languages/typescript/index.md#on-the-shared-core).
+The plan that was agreed:
+
 - TypeScript is the first real test. For small frames, hand-written
   TypeScript framing may beat a WASM or napi call, because of the copy into
   WASM memory.
@@ -129,12 +141,14 @@ rule CI enforces. Without it, stages 2–4 would be judged by opinion.
   vectors, fuzzing and gates.
 - The browser has no native option at all. The playground simulator already
   runs the core there.
-- The current plan is TypeScript through wasm only, each piece moving only
-  where instruction counts show the core is at least as fast. napi and Go
+- The plan is TypeScript through wasm only, each piece moving only
+  where instruction counts show the core is at least as fast. Every piece that
+  moved passed that; custom framings and the no-core fallback stay in TypeScript. napi and Go
   come later, chosen by those numbers. The C ABI stays `0.x` until the project
   announces 1.0 ([phases](../../conduct/phases.md)).
 
-**Stage 5: the cleanup.**
+#### Stage 5: the cleanup
+
 - **Remove or split `runtime/core/src/package_abi`.** It pulls `abi_stable`
   and `libloading` under the `std` feature, which is what keeps `std` off
   wasm32 today.

@@ -234,6 +234,8 @@ Open issues the work turned up:
 ## What's left
 
 - **TypeScript connection sequences** against the reference's `session` op.
+- **A CI gate for TypeScript's speed.** Today it is checked by hand, see
+  [How JavaScript is checked](#how-javascript-is-checked).
 - **Coverage-guided fuzzing and wall-time benchmarks for TypeScript**, on a
   self-hosted `comline-bench` runner, which the user will register.
 - **Fuzz and benchmark results in the language reference.** The
@@ -245,12 +247,26 @@ Open issues the work turned up:
   the runtime's `reports` branch, and the pages render them. TypeScript's
   benchmark results fill in when it checks in its `conformance-bench.json`.
 - **The `jsonrpc@1` allocation** ([runtime#58](https://github.com/ComlineProject/runtime/issues/58)), deferred.
-- **The wasm32 build and the JS glue are not benchmarked.** The ABI's benches
-  are native. A JavaScript call into WebAssembly, and the copies in and out,
-  are what [stage 4](index.md#stages) has to measure.
+- **The wasm32 build and the JS glue have no CI gate.** The ABI's benches are
+  native and gated. [Stage 4](index.md#stages) measured a JavaScript call into
+  WebAssembly, and the copies in and out, with a local tool instead: instruction
+  counts at V8's optimized tier, see below.
 - **A re-baseline path for the gate.** A correctness fix that costs time needs
   a deliberate way to move the baseline (see [Budgets](#budgets)). It isn't
   built yet.
+
+### How JavaScript is checked
+
+JavaScript's performance is checked by **instruction counts, not by a CI gate.**
+`runtime/bench/count.py` in
+[`comline-typescript`](https://github.com/ComlineProject/comline-typescript)
+runs a workload under Callgrind at the optimized V8 tier (`--opt`) and takes the
+median of 5 runs. It is a local tool: nothing in CI runs it, and a pull request
+isn't blocked by it. Stage 4 used it to decide each piece: a piece moved to the
+core only when its count was lower there. The results are on the
+[TypeScript page](../../languages/typescript/index.md#what-it-costs).
+The plan below recommends wall time on a dedicated runner for JIT languages;
+that is still unbuilt. **Rust stays CI-gated** by `iai-callgrind`, as above.
 
 The rest of this page is the plan as proposed. Where it describes something
 that has since changed, it says so.

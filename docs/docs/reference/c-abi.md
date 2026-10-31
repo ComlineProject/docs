@@ -74,7 +74,7 @@ connection is open from the start, and `start` writes nothing.
 | `COMLINE_ERR_UNKNOWN_FRAMING` | 19 | A framing name this library has no connection form of. |
 | `COMLINE_ERR_INVALID_ARGUMENT` | 20 | A null pointer where one isn't allowed, a name that isn't UTF-8, a field outside its values, buffers that overlap, or a length over `isize::MAX`. |
 | `COMLINE_ERR_STATE` | 21 | The call doesn't fit the connection's state: a request or reply before the handshake completed, a second `start`, or any call on a closed connection. |
-| `COMLINE_ERR_POISONED` | 22 | An earlier call on this handle panicked. Drop the handle. |
+| `COMLINE_ERR_POISONED` | 22 | An earlier call on this handle panicked. Drop the handle. On wasm32 it is the whole instance, see [below](#wasm32-and-the-js-glue). |
 | `COMLINE_ERR_BUSY` | 23 | The request wasn't made: `max_waiting` calls already wait. Nothing written, no request id spent. Queueing is the host's choice. |
 
 Every call that takes a handle can also return `COMLINE_ERR_INVALID_ARGUMENT`
@@ -298,7 +298,13 @@ cargo build -p comline-runtime-ffi --release --target wasm32-unknown-unknown
     region.
   - Reserving more may move a region and grow memory, which detaches the host's
     views. Take the pointer again after each reserve.
-- **A panic is a trap.** The host discards the instance.
+- **A panic is a trap, and a trap poisons the whole instance.** A trap can't be
+  caught inside the module, so its stack and heap, and every connection in it,
+  are in an unknown state. The call that trapped returns
+  `COMLINE_ERR_POISONED`, and so does every later call on the instance and on
+  any connection from it. The host drops them and instantiates again. Native
+  keeps the per-handle rule: a panic unwinds to its guard and poisons only that
+  handle.
 
 [`js/comline.mjs`](https://github.com/ComlineProject/runtime/blob/main/runtime/ffi/js/comline.mjs)
 and [`comline.d.mts`](https://github.com/ComlineProject/runtime/blob/main/runtime/ffi/js/comline.d.mts)
@@ -307,17 +313,38 @@ are a hand-written ES module over that build, with no dependencies.
 - **Thin.** Every method is one ABI call. It returns the status with whatever
   the call wrote, retries nothing, never throws because of a status and keeps no
   state of its own. A binding builds on it.
-- **`instantiate(source)`** compiles the module, checks that its ABI version is
-  exactly the glue's, and feeds one `datagram@2` request through to check the
+- **Three loaders,** each taking the same checks: the ABI version is exactly
+  the glue's, and one `datagram@2` request is fed through to check the
   `comline_event` layout.
+  - `instantiate(source)` takes bytes or a compiled `WebAssembly.Module` and
+    returns a promise.
+  - `instantiateSync(source)` does the same synchronously, for Node and
+    workers (browsers limit synchronous compiling of large modules).
+  - `instantiateStreaming(source)` takes a `fetch` response and compiles as it
+    downloads. It falls back to `instantiate` when the response isn't served as
+    `application/wasm`.
+- **`encodeBound(args)`** returns the most bytes an encode can write, so the
+  caller sizes its buffer once and the call never retries with
+  `BUFFER_TOO_SMALL`. It takes an object: `framing`, `kind` (`"request"` or
+  `"reply"`), `bodyLen`, and optionally `stream`, `protocol` and, for
+  `jsonrpc@1`, the method `name` or its `nameLen`. It is exact when every field
+  is given, never smaller than what is written, and needs no instance.
+- **`encodeRequestInto(dest, …)` and `encodeReplyInto(dest, …)`** are
+  `encodeRequest` and `encodeReply` writing the frame into the caller's
+  `Uint8Array` instead of returning a fresh copy. The frame is
+  `dest.subarray(0, written)`. `BUFFER_TOO_SMALL` gives the size needed and
+  leaves `dest` as it was. They refuse a view of the instance's wasm memory or a
+  `SharedArrayBuffer` with `ERR_INVALID_ARGUMENT`, without entering the module.
 - **Memory.** Each call reserves its regions, copies inputs in and copies
   outputs back, so a byte output is a fresh copy and nothing returned points
   into wasm memory. A span is an offset into the array the host fed, so the
   host reads a body from its own array.
 - **Types.** A `u64` is a `BigInt` both ways. A name is a string, encoded as
   UTF-8, or a `Uint8Array` of the bytes as they are.
-- **A panic** is thrown as a `WebAssembly.RuntimeError`. The glue doesn't catch
-  it.
+- **A trap** marks the instance dead (`comline.poisoned`). The glue returns
+  `ERR_POISONED` for that call and every later one, and throws nothing for it.
+  Any other exception, such as a `TypeError` for a wrong argument, is thrown
+  as it was and poisons nothing.
 
 ```js
 import { instantiate, Handshake } from "./comline.mjs";
@@ -423,9 +450,10 @@ rustc 1.98.0. Message mode, a 16-byte payload:
   294–299, `handshake_check` 152 to 138. No call got dearer. Counts move by a
   few instructions between machines, because the overlap check compares
   addresses, so the CI figures above differ slightly from the PR's.
-- **Not measured:** the wasm32 build and the JS glue. A JavaScript call into
-  WebAssembly and the copies in and out are the cost [stage 4](../proposals/shared-runtime-core/index.md#stages)
-  has to measure before moving TypeScript.
+- **Not in these tables:** the wasm32 build and the JS glue. Their cost was
+  measured end to end for [stage 4](../proposals/shared-runtime-core/index.md#stage-4-moving-typescript),
+  with a local tool and not a CI gate; the results are on the
+  [TypeScript page](../languages/typescript/index.md#what-it-costs).
 
 The gate compares each call with its base on every pull request and fails at
 a 1% rise, like the core's benches. Both sides of each pair are gated.
@@ -437,5 +465,6 @@ a 1% rise, like the core's benches. Both sides of each pair are gated.
 - **`comline@2`'s negotiation** hands protocol numbers out at the handshake and
   may change the event struct. If it does, it lands before the 1.0
   announcement freezes the ABI.
-- **Bindings.** No language binds the ABI yet; the JS glue is the only host
-  code, and it is a thin wrapper, not a binding.
+- **More bindings.** TypeScript binds the ABI through the JS glue (stage 4,
+  see [TypeScript on the core](../languages/typescript/index.md#on-the-shared-core)). No
+  other language does yet.

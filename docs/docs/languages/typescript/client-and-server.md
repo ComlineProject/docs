@@ -75,6 +75,13 @@ comment. Same-process client/server and tests work today; a real network
 transport means implementing the two-method `Transport` interface
 (`send` / `recv`, both `Promise`-returning) yourself for now.
 
+**When a sender may reuse a frame.** `send(frame)` resolves only once the
+transport no longer needs `frame`. After that the sender is free to reuse or
+overwrite it, and the runtime does: it keeps pooled arrays for larger frames
+and returns each to the pool when `send` resolves. A transport that holds on to
+the frame past that point, to queue it or write it later, must copy it first.
+`duplex()` copies.
+
 ## Connecting a client
 
 ```typescript
