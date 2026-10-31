@@ -266,11 +266,23 @@ editor completes keys, checks values, and shows each key's description on hover.
 #:schema https://comlineproject.github.io/docs/schemas/comline-toml/0.x.json
 ```
 
-Any TOML language server that reads the `#:schema` directive picks it up: [Even
-Better TOML](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
-in VS Code, or [Taplo](https://taplo.tamasfe.dev/) in other editors. The
-[VS Code extension](https://github.com/ComlineProject/comline-vscode) also associates the schema with
-`comline.toml` files, so an older file without the line is covered too.
+In VS Code, the [Comline extension](https://github.com/ComlineProject/comline-vscode)
+gives `comline.toml` its own language, and the Comline language server checks it
+against the package next to it, with or without the line. On top of the schema's
+checks it reports:
+
+- a `language` that `config.idp` doesn't declare;
+- a version no built-in generator handles;
+- an `encodings` key that no package in view declares;
+- an encoding the package uses but leaves unmapped;
+- a `generator` path that isn't a file.
+
+It completes `language` from `config.idp` and `encodings` keys from their
+declarations, and its quick fixes correct a misspelt key or value, or declare a
+missing language in `config.idp`. It never runs a generator.
+
+In other editors, any TOML language server that reads the `#:schema` directive
+picks the schema up, such as [Taplo](https://taplo.tamasfe.dev/).
 
 ## Forward-looking
 
