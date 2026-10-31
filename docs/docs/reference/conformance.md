@@ -13,7 +13,7 @@ differ, they win.
 
 ## Version
 
-**Spec version: `0.1`** (`runner::SPEC_VERSION`). It covers the case format
+**Spec version: `0.2`** (`runner::SPEC_VERSION`). It covers the case format
 (`vectors/*.json`, `profiles/*.json`), the ops, and the value and type
 encodings.
 
@@ -21,6 +21,17 @@ encodings.
   change anything, and the change is named in the pull request that makes it.
 - The **ops protocol** keeps its own number, `protocol: 1` in a `version` reply.
   Under it, ops and reply fields are only ever added.
+
+Changes, newest first (the full changelog is in the
+[runtime README](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/README.md#the-spec-version-02)):
+
+- **0.2:** handshake profiles state `schema_agreement` and
+  `encoding_agreement` as JSON booleans (`"value": true`). A fact stated
+  `false` names no cases, and a handshake profile may leave a fact out, which
+  reads as `false`. A new op, `handshake_check` (decode only), whose cases
+  prove them. `comline@1` has an official profile that states both `true`. The
+  ops protocol stays at 1, since the op is an addition.
+- **0.1:** the first published version.
 
 ## Files
 
@@ -77,6 +88,7 @@ A case is one operation and the bytes it must produce:
 | `response` | `framing`, `request_id`, and an envelope's fields | encode and decode |
 | `encode` | `format`, `value` | encode |
 | `decode` | `format`, `type`, `value` | decode: `bytes` read as `type` give `value` |
+| `handshake_check` | one end's `ir_hash`, `wire_format`, `framing`, `capabilities` | decode only: `bytes`, the peer's `comline@1` frame, is accepted (giving the input back) when the IR hash, format and framing agree, and refused when one differs. Capability bits may differ |
 | `stream_prefix` | `len`, `max` | encode and decode the 4-byte length prefix of a `len`-byte frame under the limit `max` |
 | `stream_split` | `max`, `frames`, `rest`, `needed` | encode and decode a byte stream of `frames`, each behind its prefix, then `rest` |
 
@@ -100,8 +112,9 @@ no prefix. See [Transports](../guide/extending/transports.md).
 - **A rejection** (`expect: "reject"`) asks to decode its `bytes`, which must
   fail. A `stream_prefix` rejection also asks to encode its input, which must
   fail.
-- **Any other case** asks to encode its input (unless it is a `decode`) and to
-  decode its `bytes` (unless it is a `name_hash` or an `encode`).
+- **Any other case** asks to encode its input (unless it is a `decode` or a
+  `handshake_check`) and to decode its `bytes` (unless it is a `name_hash` or an
+  `encode`).
 - It **passes** when every encode gives its bytes (compared as JSON for
   `"compare": "json"`), every decode accepts and gives the input back exactly,
   and a rejection is refused.
@@ -111,7 +124,11 @@ no prefix. See [Transports](../guide/extending/transports.md).
   asked up front.
 - **A profile fact is proven** when every case it names passes and shows its
   value. A format's facts are shown by `decode` cases of the `Point` and `Color`
-  shapes the official profiles use.
+  shapes the official profiles use. A handshake's facts are shown by
+  `handshake_check` cases: one where the peer agrees, accepted, and, for each
+  thing the fact covers, one where the peer differs in only that, refused.
+  `schema_agreement` covers the IR hash; `encoding_agreement` covers the format
+  and the framing.
 
 ## The ops protocol
 
@@ -140,8 +157,8 @@ A request:
   have a format or framing the request names.
 - **`{"id": ..., "error": "..."}`** means the request is malformed. A malformed
   line never stops the process.
-- **`decode`** is decode-only, and **`name_hash`** and **`encode`** are
-  encode-only.
+- **`decode`** and **`handshake_check`** are decode-only, and **`name_hash`**
+  and **`encode`** are encode-only.
 
 ### `version`
 
@@ -150,8 +167,8 @@ implementation supports:
 
 ```json
 {"id": 6, "version": {"protocol": 1, "crate": "0.1.0",
-   "ops": ["name_hash", "handshake", "envelope", "request", "response", "encode", "decode",
-           "stream_prefix", "stream_split", "check", "version", "session"],
+   "ops": ["name_hash", "handshake", "handshake_check", "envelope", "request", "response",
+           "encode", "decode", "stream_prefix", "stream_split", "check", "version", "session"],
    "formats": ["json@1", "msgpack@1", "packed@1"],
    "framings": ["datagram@1", "datagram@2", "jsonrpc@1"]}}
 ```

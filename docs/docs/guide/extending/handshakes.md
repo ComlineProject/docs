@@ -18,8 +18,9 @@ negotiation or authentication needs its own handshake, or none.
 ## Declare and use one
 
 Declare it like any encoding, as `kind = "handshake"`
-([Formats and framings](encodings.md#1-declare-it)). Its profile states no
-facts:
+([Formats and framings](encodings.md#1-declare-it)). Its profile states what
+the handshake establishes (see [Giving up guarantees](#giving-up-guarantees)).
+A handshake that checks nothing states nothing:
 
 ```json
 { "name": "com.acme.hello@1", "kind": "handshake", "facts": {} }
@@ -139,9 +140,74 @@ declared with `@handshake` in the schema.
 
 ## Giving up guarantees
 
-A handshake that doesn't establish schema and encoding agreement gives those
-guarantees up, and the schema says so with `@unverified` and a reason. Core
-doesn't judge a custom handshake: it infers a given-up set only from `none`.
-So the marker on a custom handshake is your word, and core will warn that
-nothing is given up. See
-[Giving up a guarantee](../idl/protocol.md#giving-up-a-guarantee).
+A handshake can establish two things between peers:
+
+| Fact | Means |
+|---|---|
+| `schema_agreement` | both ends were built from compatible schemas (the IR hash is checked) |
+| `encoding_agreement` | both ends use the same format and framing (both are checked) |
+
+A profile states each as a JSON boolean, and a fact it leaves out counts as
+`false`. This is the official `comline@1` profile, which states both true:
+
+```json
+{
+  "name": "comline@1",
+  "kind": "handshake",
+  "facts": {
+    "encoding_agreement": {
+      "value": true,
+      "proven_by": [
+        "handshake/check-agree",
+        "handshake/check-reject-format",
+        "handshake/check-reject-framing"
+      ]
+    },
+    "schema_agreement": {
+      "value": true,
+      "proven_by": [
+        "handshake/check-agree",
+        "handshake/check-reject-ir-hash"
+      ]
+    }
+  }
+}
+```
+
+A fact stated `true` is **proven by vectors**: cases of the decode-only op
+`handshake_check`, in the profile's `.vectors.json`. One case is a peer that
+agrees, which the handshake accepts. For each thing the fact covers there is
+a peer frame that differs in only that, which it refuses: the IR hash for
+`schema_agreement`, the format and the framing for `encoding_agreement`. See
+the [`handshake_check` op](../../reference/conformance.md#ops). A fact stated
+`false` claims nothing, so it names no cases.
+
+A protocol **gives up every agreement its handshake's profile doesn't
+establish**:
+
+| Handshake | Gives up |
+|---|---|
+| `comline@1` | nothing |
+| `none` | schema agreement and encoding agreement |
+| a custom handshake | each fact its profile leaves out or states `false` |
+
+So a custom handshake that states both facts needs no marker, and one that
+states only `encoding_agreement` gives up schema agreement. The usual
+[`@unverified` rules](../idl/protocol.md#giving-up-a-guarantee) apply: a
+missing marker is a build error, a needless one is a warning, and a consumer
+accepts the given-up set with `accept_unverified`. Core reads the facts from
+the declaration, whether the package or one of its dependencies declares it.
+Build output names the cause, for example:
+
+```
+gives up schema agreement (handshake `com.acme.hello@1` doesn't establish it)
+```
+
+For a handshake that states nothing, the `@unverified` marker is your word
+that something else covers both.
+
+```ids
+@handshake = "com.acme.hello@1"
+@unverified = "the gateway checks the schema itself in its HELLO reply"
+protocol Gateway { /* ... */ }
+```

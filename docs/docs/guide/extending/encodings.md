@@ -62,7 +62,9 @@ prove it.
 }
 ```
 
-The facts are fixed per kind, and a profile must state all of them:
+The facts are fixed per kind. A format or framing profile must state all of
+them. A handshake profile may leave either fact out, which reads as `false`
+([Handshakes](handshakes.md#giving-up-guarantees)):
 
 | Kind | Fact | Values |
 |---|---|---|
@@ -74,7 +76,8 @@ The facts are fixed per kind, and a profile must state all of them:
 | format | `integer_width` | `by_value`, `exact` |
 | framing | `calls` | `by_index`, `by_name`, `by_id` |
 | framing | `errors` | `by_ordinal`, `by_name` |
-| handshake | none | a handshake profile is `"facts": {}` |
+| handshake | `schema_agreement` | `true`, `false` |
+| handshake | `encoding_agreement` | `true`, `false` |
 
 The facts are what the version comparison reads, so a profile is fixed for its
 version: changing a fact means a new `@n`. The comparison rules themselves are
@@ -137,6 +140,28 @@ exits with `1`. The flags, limits and report are in the
 - `comline conformance` runs every encoding the package declares. An encoding
   with no vectors file is an error, so name the ones you mean with
   `--encoding`.
+
+### Shipping no vectors
+
+Vectors are optional, but leaving them out is recorded. A namespaced format or
+framing whose package ships no `profiles/x.vectors.json` beside its profile
+`profiles/x.json` **gives up encoding conformance**: nothing proves that an
+implementation encodes what the name promises. Official encodings never give
+it up.
+
+The usual [`@unverified` rules](../idl/protocol.md#giving-up-a-guarantee)
+apply to any protocol that uses it, through `wire.format`, `wire.framing` or
+`@framing`, and the default `packed@1` and `datagram@2` are official so they
+don't. A missing marker is a build error, a needless one is a warning, and a
+consumer accepts the set with `accept_unverified`. The diagnostic names the
+cause:
+
+```
+gives up encoding conformance (framing `com.acme.lines@1` ships no conformance vectors)
+```
+
+Adding the vectors file restores the guarantee, and the marker is then
+needless.
 - Official encodings are proven in the runtime's corpus. Run them with
   `--corpus <runtime>/runtime/conformance`.
 
