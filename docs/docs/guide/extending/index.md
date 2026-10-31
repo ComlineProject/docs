@@ -30,7 +30,10 @@ listed under [What isn't built](#what-isnt-built).
   official package, and `comline build` rejects it anywhere else.
 - **Proof is optional but visible.** An encoding can ship test vectors that
   prove an implementation, run with [`comline conformance`](../../reference/cli.md#commands).
-  Nothing forces you to write them.
+  Nothing forces you to write them, but a format or framing without them, and
+  a handshake whose profile doesn't state what it establishes, give up a
+  guarantee that the schema must mark with `@unverified`. See
+  [Giving up a guarantee](../idl/protocol.md#giving-up-a-guarantee).
 
 ## How the pieces connect
 
@@ -56,10 +59,6 @@ generator or a dependency is a local path or a git dependency you name.
 
 ## What isn't built
 
-- **A record that an encoding has no vectors.** The `@unverified` marker and
-  its acceptance work, but core infers a given-up guarantee only from a
-  handshake of `none`. A custom handshake, or an encoding without vectors, is
-  not yet flagged on its own. See [Giving up a guarantee](../idl/protocol.md#giving-up-a-guarantee).
 - **Compatibility comparison of third-party profiles.** A profile is frozen
   into the package (its hash is stored), but the [schema compatibility
   rules](../../proposals/schema-compatibility.md) that read its facts are

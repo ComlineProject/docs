@@ -301,8 +301,9 @@ What decides a connection under `comline@2`:
 > The editor reports an unaccepted dependency on its `config.idp` entry, with
 > a quick fix
 > ([language-server#78](https://github.com/ComlineProject/language-server/pull/78)).
-> Encodings without vectors and lowered bumps join when third-party encodings
-> exist, and when releases can lower a bump.
+> Encodings without vectors and custom handshakes are built too
+> ([core#148](https://github.com/ComlineProject/core/pull/148)). Lowered bumps
+> join when releases can lower a bump.
 
 Between peers, Comline gives four guarantees, each established by something
 specific:
@@ -555,6 +556,16 @@ Built in October 2026. The guides are under
   a WASI shim and a terminable, capped runner in the playground
   ([playground#103](https://github.com/ComlineProject/playground/pull/103),
   [playground#106](https://github.com/ComlineProject/playground/pull/106)).
+- **Given-up guarantees from declarations:** handshake profiles state
+  `schema_agreement` and `encoding_agreement`, proven by the decode-only
+  `handshake_check` op (conformance spec 0.2,
+  [runtime#70](https://github.com/ComlineProject/runtime/pull/70)). Core gives
+  up every agreement a protocol's handshake doesn't establish, and encoding
+  conformance for a namespaced format or framing that ships no vectors, with
+  diagnostics naming the cause
+  ([core#148](https://github.com/ComlineProject/core/pull/148), closing
+  [core#147](https://github.com/ComlineProject/core/issues/147)). This
+  completes [Giving up a guarantee](#giving-up-a-guarantee) for encodings.
 - **Transports:** the TypeScript contract that `send` lends the frame until it
   resolves ([comline-typescript#88](https://github.com/ComlineProject/comline-typescript/pull/88)).
 - **Guides:** the pages linked above.
@@ -568,10 +579,8 @@ Where it differs from the text, or isn't built:
 - **The facts a handshake gets** are the schema fingerprint, the format and
   framing names and the capability bits. The package version and per-protocol
   lines come with the handshakes that use them.
-- **An encoding without vectors** is allowed, but core doesn't yet record it as
-  a given-up guarantee, and the package-level `unverified` reason on an
-  encoding isn't built. Core infers a given-up set only from the `none`
-  handshake today.
+- **The package-level `unverified` reason on an encoding** isn't built; the
+  marker is on the protocol.
 - **Third-party profiles in the version comparison** wait on the compatibility
   rules ([Schema compatibility](schema-compatibility.md)), which are still a
   proposal.
