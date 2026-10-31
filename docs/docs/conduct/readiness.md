@@ -25,16 +25,15 @@ stable is finished first.
 - The handshake that ships is final. If the compatibility check
   ([runtime#15](https://github.com/ComlineProject/runtime/issues/15)) changes
   `comline@1`'s bytes, it lands first, or becomes `comline@2`.
-- **Open question:** do `json@1` and `jsonrpc@1` ship as stable at 1.0? If they
-  do, their known bugs are fixed first
-  ([runtime#38](https://github.com/ComlineProject/runtime/issues/38),
-  [#40](https://github.com/ComlineProject/runtime/issues/40),
-  [#58](https://github.com/ComlineProject/runtime/issues/58),
-  [comline-typescript#73](https://github.com/ComlineProject/comline-typescript/issues/73),
-  [#74](https://github.com/ComlineProject/comline-typescript/issues/74),
-  [#75](https://github.com/ComlineProject/comline-typescript/issues/75),
-  [comline-rust#76](https://github.com/ComlineProject/comline-rust/issues/76)).
-  If not, they ship marked unstable, outside the 1.0 promise.
+- `json@1` and `jsonrpc@1` ship as stable, so their known bugs are fixed
+  first:
+    - [runtime#38](https://github.com/ComlineProject/runtime/issues/38),
+      [#40](https://github.com/ComlineProject/runtime/issues/40),
+      [#58](https://github.com/ComlineProject/runtime/issues/58);
+    - [comline-typescript#73](https://github.com/ComlineProject/comline-typescript/issues/73),
+      [#74](https://github.com/ComlineProject/comline-typescript/issues/74),
+      [#75](https://github.com/ComlineProject/comline-typescript/issues/75);
+    - [comline-rust#76](https://github.com/ComlineProject/comline-rust/issues/76).
 
 ## Schema language
 
@@ -71,10 +70,11 @@ Semver for a user's schema package means nothing until a break is defined.
   every older version.
 - Each runtime's public API, and the shape of generated code, are reviewed
   once for anything we'd want to change.
-- **Open question:** is the extension API part of 1.0? If so, it is designed
-  and built first
-  ([core#120](https://github.com/ComlineProject/core/issues/120),
-  [core#8](https://github.com/ComlineProject/core/issues/8)).
+- The extension API is part of 1.0, so it is designed, built and frozen
+  first: third-party formats, framings, transports and dispatchers
+  ([core#120](https://github.com/ComlineProject/core/issues/120)), and
+  generators outside the CLI build
+  ([core#8](https://github.com/ComlineProject/core/issues/8)).
 
 ## Proof
 
@@ -83,7 +83,8 @@ Semver for a user's schema package means nothing until a break is defined.
 - The compiler has fuzzing, IR round-trip tests and cross-platform CI
   ([core#9](https://github.com/ComlineProject/core/issues/9)).
 - The benchmark gates hold, with no accepted regression left unexplained.
-- **Open question:** which languages ship at 1.0? Today: Rust and TypeScript.
+- Rust and TypeScript ship at 1.0. Other languages follow in 1.x, on the
+  shared core.
 
 ## Distribution
 
@@ -93,8 +94,8 @@ Semver for a user's schema package means nothing until a break is defined.
   ([cli#1](https://github.com/ComlineProject/cli/issues/1)).
 - Builds are reproducible and checksums are published. The TypeScript core's
   `.wasm` already is.
-- **Open question:** does the hosted package registry ship at 1.0
-  ([package-registry#1](https://github.com/ComlineProject/package-registry/issues/1))?
+- The hosted package registry ships at 1.0, with its meta information API
+  ([package-registry#1](https://github.com/ComlineProject/package-registry/issues/1)).
 
 ## Docs and project
 
