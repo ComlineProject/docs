@@ -65,7 +65,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           cargo install --locked --git https://github.com/ComlineProject/cli \
-            --rev ${{ steps.cli.outputs.sha }}
+            --rev ${{ steps.cli.outputs.sha }} comline
 
       - name: Check for drift
         # `shell: bash` for pipefail: without it the `if !` below reads tee's

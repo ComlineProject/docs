@@ -35,6 +35,7 @@ code_generation = {
 | `settings` | package-wide authoring policy, enforced at build time — see [Settings](../idl/settings.md) |
 | `wire` | the package's wire format and framing — see [Wire defaults](#wire-defaults) |
 | `handshake` | what a protocol with no `@handshake` runs before its first call: `"comline@1"` (the default) or `"none"` — see [Giving up a guarantee](../idl/protocol.md#giving-up-a-guarantee) |
+| `encodings` | the formats, framings and handshakes this package defines, each with a profile — see [Extending Comline](../extending/encodings.md) |
 | `publish_registries` | named registries this package publishes to (planned — [see below](#publishing-planned)) |
 
 The manifest is **frozen**: it lowers to IR units and is content-addressed into

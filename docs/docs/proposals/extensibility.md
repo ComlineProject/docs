@@ -1,20 +1,24 @@
 # Extending the call system
 
-Status: **under discussion** · tracked in
+Status: **implemented** · tracked in
 [core#120](https://github.com/ComlineProject/core/issues/120) (with
 [core#121](https://github.com/ComlineProject/core/issues/121) and
-[runtime#18](https://github.com/ComlineProject/runtime/issues/18)) · nothing
-here is implemented
+[runtime#18](https://github.com/ComlineProject/runtime/issues/18)) · see
+[What shipped](#what-shipped) for the pull requests and for where it differs
+from the text below, which is kept as decided. The user guide is
+[Extending Comline](../guide/extending/index.md).
 
-The open questions were decided on 2026-10-31. The implementation plan comes
-next.
+The open questions were decided on 2026-10-31.
 
 **The question:** how a developer brings their own wire format, framing,
 handshake, transport or dispatcher to Comline, what separates an official
 extension from a third-party one, and how an extension that gives up Comline's
 guarantees is made visible.
 
-## Where things stand
+## Where things stood
+
+This is the position before the work; [What shipped](#what-shipped) says what
+changed.
 
 The [call system](../guide/runtime/call-system.md) is described as pluggable,
 and its runtime half is. The generated half isn't, and nothing connects the two.
@@ -510,3 +514,68 @@ None open. Both were decided on 2026-10-31:
   an importing package lacks offered as a fix.
 - **playground:** a browser WASI shim to run `.wasm` generators.
 - **docs:** a guide to writing each extension, and the generator protocol.
+
+## What shipped
+
+Built in October 2026. The guides are under
+[Extending Comline](../guide/extending/index.md), the
+[generator protocol](../reference/generator-protocol.md) and the
+[conformance spec](../reference/conformance.md) are reference pages.
+
+- **Declaring encodings:** `encodings` in `config.idp`, with a kind, a profile
+  and suggested mappings
+  ([core#142](https://github.com/ComlineProject/core/pull/142)); the official
+  ones, declared by an embedded package ([core#143](https://github.com/ComlineProject/core/pull/143));
+  core's parser behind a feature, for an IR-only build
+  ([core#144](https://github.com/ComlineProject/core/pull/144)).
+- **Mapping to a target:** `encodings` in `comline.toml`
+  ([cli#105](https://github.com/ComlineProject/cli/pull/105)), resolved with
+  the override, then the declaration, then an error
+  ([generation#88](https://github.com/ComlineProject/generation/pull/88)); the
+  Rust and TypeScript generators emit the mapped types
+  ([comline-rust#80](https://github.com/ComlineProject/comline-rust/pull/80),
+  [comline-typescript#92](https://github.com/ComlineProject/comline-typescript/pull/92)).
+- **Handshakes:** the async handshake and
+  `AsyncConnection::connect_with` / `accept_with`
+  ([runtime#65](https://github.com/ComlineProject/runtime/pull/65)); generated
+  code runs a namespaced handshake wherever it opens
+  ([comline-rust#81](https://github.com/ComlineProject/comline-rust/pull/81),
+  [comline-rust#82](https://github.com/ComlineProject/comline-rust/pull/82),
+  [comline-typescript#93](https://github.com/ComlineProject/comline-typescript/pull/93)).
+- **Profiles and vectors:** the conformance runner as a library, and the corpus
+  as a versioned spec ([runtime#69](https://github.com/ComlineProject/runtime/pull/69));
+  `comline conformance` ([cli#108](https://github.com/ComlineProject/cli/pull/108)).
+- **Generators:** the generator protocol
+  ([generation#85](https://github.com/ComlineProject/generation/pull/85)); the
+  Rust and TypeScript generators as stdio processes
+  ([comline-rust#79](https://github.com/ComlineProject/comline-rust/pull/79),
+  [comline-typescript#91](https://github.com/ComlineProject/comline-typescript/pull/91));
+  external native and `.wasm` generators in the CLI, with the built-ins going
+  through the protocol ([cli#104](https://github.com/ComlineProject/cli/pull/104));
+  a WASI shim and a terminable, capped runner in the playground
+  ([playground#103](https://github.com/ComlineProject/playground/pull/103),
+  [playground#106](https://github.com/ComlineProject/playground/pull/106)).
+- **Transports:** the TypeScript contract that `send` lends the frame until it
+  resolves ([comline-typescript#88](https://github.com/ComlineProject/comline-typescript/pull/88)).
+- **Guides:** the pages linked above.
+
+Where it differs from the text, or isn't built:
+
+- **Registry names are deferred.** Naming an encoding package or a generator by
+  a registry package, rather than a path or a dependency, waits for the
+  registry (recorded on [core#8](https://github.com/ComlineProject/core/issues/8)).
+  A generator is named by a path in `comline.toml`.
+- **The facts a handshake gets** are the schema fingerprint, the format and
+  framing names and the capability bits. The package version and per-protocol
+  lines come with the handshakes that use them.
+- **An encoding without vectors** is allowed, but core doesn't yet record it as
+  a given-up guarantee, and the package-level `unverified` reason on an
+  encoding isn't built. Core infers a given-up set only from the `none`
+  handshake today.
+- **Third-party profiles in the version comparison** wait on the compatibility
+  rules ([Schema compatibility](schema-compatibility.md)), which are still a
+  proposal.
+- **Dispatchers** are wrapped by implementing `Dispatch` yourself; the runtime
+  has no helper for composing wrappers.
+- **The playground's interface** doesn't reach external generators yet; its
+  runner does.

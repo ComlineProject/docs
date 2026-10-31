@@ -9,14 +9,15 @@ syntax trees, move out of Rust entirely — or stop being Comline's job at all?
 Five proposals answer it, written to the same shape so they can be read side
 by side. **Proposal A is now accepted and shipped** — see
 [What shipped](#what-shipped) at the end. **Proposal D was
-accepted on 2026-10-31**, as a stdio protocol with native or WASI packaging.
+accepted on 2026-10-31** as a stdio protocol with native or WASI packaging, and
+is now **implemented**.
 
 | | Approach | In one line | Assessment |
 |---|---|---|---|
 | [Proposal A](resolution-kernel.md) | **Shared resolution kernel** | a symbol/module layer in `comline-codegen`; generators map a resolved model to syntax | **implemented** |
 | [Proposal B](template-rendering.md) | **Templates** | per-language template files replace `push_str` | complementary to A, not a substitute |
 | [Proposal C](syntax-tree-emission.md) | **Syntax trees** | build a real AST per target and pretty-print it | narrow value; one cheap piece worth taking |
-| [Proposal D](target-language-plugins.md) | **Target-language plugins** | `protoc`-style: each generator is a program in its own language | **accepted** (2026-10-31): stdio protocol, native or WASI |
+| [Proposal D](target-language-plugins.md) | **Target-language plugins** | `protoc`-style: each generator is a program in its own language | **implemented**: stdio protocol, native or WASI |
 | [Proposal E](adopt-existing-model.md) | **Adopt an existing model** | translate Comline IR to Smithy/protobuf and inherit their generators | assessed, not recommended |
 
 ## What the evidence says

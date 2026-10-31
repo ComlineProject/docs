@@ -1,8 +1,14 @@
 # Proposal D — target-language plugins
 
-Status: **accepted** (decided 2026-10-31) · See the
+Status: **implemented** (decided 2026-10-31) · See the
 [section overview](index.md) for the question all five answer ·
 tracked in [core#8](https://github.com/ComlineProject/core/issues/8)
+
+**As built:** see [What shipped](../extensibility.md#what-shipped), the
+[generator protocol](../../reference/generator-protocol.md) and the
+[guide](../../guide/extending/generators.md). Discovery is by path; naming a
+generator by a registry package waits for the registry
+([core#8](https://github.com/ComlineProject/core/issues/8)).
 
 **Chosen form:** a stdio protocol with native or WASI packaging, not
 `protoc`-style native processes only. See [The decision](#the-decision).

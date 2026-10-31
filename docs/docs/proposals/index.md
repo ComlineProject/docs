@@ -53,9 +53,9 @@ alternatives are worth. Five proposals, read to the same shape:
   build an AST per target and pretty-print it. *under discussion — one cheap
   component recommended, the whole not.*
 - [Proposal D — target-language plugins](codegen-architecture/target-language-plugins.md)
-  — `protoc`-style: each generator is a program in its own language. ***accepted***
-  (2026-10-31) — a stdio protocol, native or WASI `.wasm`, so the playground can
-  run it.
+  — `protoc`-style: each generator is a program in its own language. ***implemented***
+  — a stdio protocol, native or WASI `.wasm`, so the playground can run it;
+  naming a generator by a registry package waits for the registry.
 - [Proposal E — adopt an existing model](codegen-architecture/adopt-existing-model.md)
   — translate Comline IR to Smithy and inherit its generators. *under
   discussion — assessed, not recommended as a basis.*
@@ -100,8 +100,8 @@ reference. One proposal in stages, read in order:
 - [Extending the call system](extensibility.md): how developers bring their own
   wire formats, framings, transports and dispatchers, with official encodings
   defined through the same public mechanism as third-party ones, and generators
-  outside the CLI over one stdio protocol. *under discussion — open questions
-  decided 2026-10-31; implementation plan next.*
+  outside the CLI over one stdio protocol. ***implemented***; registry names
+  wait for the registry.
 
 #### [Marking a given-up guarantee](guarantee-marker/index.md)
 
