@@ -6,6 +6,9 @@ Status: **under discussion** · tracked in
 [runtime#18](https://github.com/ComlineProject/runtime/issues/18)) · nothing
 here is implemented
 
+The open questions were decided on 2026-10-31. The implementation plan comes
+next.
+
 **The question:** how a developer brings their own wire format, framing,
 handshake, transport or dispatcher to Comline, what separates an official
 extension from a third-party one, and how an extension that gives up Comline's
@@ -119,8 +122,12 @@ encodings = { "com.acme.frame@1" = "acme_frame::AcmeFraming" }
 - **The encoding's package can suggest a default mapping** per language (in
   Rust `acme_frame::AcmeFraming`, in TypeScript `@acme/frame`), so a consumer
   writes nothing unless it wants something else (decided 2026-10-20).
-  Shipping the implementation itself, so generated `lib` output depends on it
-  automatically, waits for the third-party half of dependency publishing.
+- **The suggested mapping also names the implementation's package and
+  version** (a crate or an npm package). Decided 2026-10-31:
+  - Generated `lib` output adds that dependency automatically.
+  - A consumer can still override it in `comline.toml`.
+  - It relies on the hosted registry, which ships at 1.0 (see
+    [Ready for 1.0](../conduct/readiness.md)).
 - The generator emits the mapped type where it would emit `JsonRpcFraming`.
 - An encoding that's declared but neither mapped nor suggested for a target is
   a **generation error**, never a fallback.
@@ -418,6 +425,10 @@ Some cases aren't on a protocol:
 Neither changes what's on the wire, so neither needs a name, a profile or a
 declaration.
 
+**Transports stay invisible to the handshake** (decided 2026-10-31). They don't
+change the bytes a format or framing produces, so they need no name, profile or
+declaration.
+
 - **Transports** stay runtime traits per language. What's missing is a guide:
   the trait, its framing expectations (a message boundary, or a byte stream),
   and how to test one.
@@ -429,20 +440,47 @@ declaration.
 
 ## Generators
 
-Third-party languages are a separate question
-([core#8](https://github.com/ComlineProject/core/issues/8),
-[Proposal D](codegen-architecture/target-language-plugins.md)). Nothing above
-depends on loading generators at runtime. The two meet only when a
-third-party language wants a third-party encoding, and the `comline.toml`
-mapping already covers that.
+Decided 2026-10-31 ([core#8](https://github.com/ComlineProject/core/issues/8),
+[Proposal D](codegen-architecture/target-language-plugins.md)): generators
+outside the CLI speak **one stdio protocol**.
+
+- **The request:** a generator gets the compiled IR (the existing CBOR IR, with
+  its core-owned IR format stamp) plus the generation request on stdin.
+- **The reply:** it writes the generated files on stdout.
+- **Packaging:** a generator ships either as a native executable or as a WASI
+  `.wasm` (stdin and stdout).
+  - The CLI runs a `.wasm` under wasmtime, sandboxed.
+  - The playground runs it through a browser WASI shim. That removes the blocker
+    on Proposal D: the playground can't spawn processes.
+- **Compatibility:** a generator declares which IR format stamps and which
+  protocol version it accepts. The CLI refuses a mismatch with a clear message.
+- **Discovery** (proposed default, still to be confirmed in the implementation
+  plan): `comline.toml`'s `[[generate.target]]` names a built-in by language id,
+  a local path, or a registry package name.
+- **The official generators use the same protocol.** The Rust and TypeScript
+  generators stay linked into the CLI for speed, but are called through the same
+  request and response types, so the public protocol is exercised every day.
+  This is the encodings principle again: official means maintained here, not a
+  private path.
+
+Nothing about encodings depends on this. The two meet when a third-party
+language wants a third-party encoding, and the `comline.toml` mapping already
+covers that.
+
+## Part of the 1.0 promise
+
+The extension API and the generator protocol are part of 1.0, so they're
+designed, built and frozen first. See [Ready for 1.0](../conduct/readiness.md).
 
 ## Open questions
 
-- **Shipping implementations.** Could an encoding package carry its crate or npm
-  package, so `lib`-mode output depends on it automatically? Waits for the
-  third-party half of dependency publishing.
-- **Transports in the handshake.** Should a transport ever be named, as a
-  capability for instance, or stay invisible?
+None open. Both were decided on 2026-10-31:
+
+- **Shipping implementations:** an encoding package's suggested mapping carries
+  the implementation's package and version
+  ([How generated code reaches one](#how-generated-code-reaches-one)).
+- **Transports in the handshake:** they stay invisible
+  ([Transports and dispatchers](#transports-and-dispatchers)).
 
 ## What it touches
 
@@ -461,9 +499,14 @@ mapping already covers that.
   - `@handshake`;
   - the marker for a given-up guarantee: its gate, its required-where-it-applies
     rule, and the consumer's acceptance.
-- **cli:** the per-target mapping in `comline.toml`.
+- **cli:**
+  - the per-target mapping in `comline.toml`, including the implementation's
+    package and version;
+  - the generator protocol: running native and `.wasm` generators (wasmtime),
+    and refusing a format-stamp or protocol-version mismatch.
 - **generation**, **comline-rust** and **comline-typescript:** mapped types wired
   into generated code; an unmapped encoding is an error.
 - **language server:** a given-up guarantee shown on hover, and the acceptance
   an importing package lacks offered as a fix.
-- **docs:** a guide to writing each extension.
+- **playground:** a browser WASI shim to run `.wasm` generators.
+- **docs:** a guide to writing each extension, and the generator protocol.

@@ -1,11 +1,40 @@
 # Proposal D — target-language plugins
 
-Status: **under discussion** · Blocked by a current constraint, not rejected ·
-See the [section overview](index.md) for the question all five answer
+Status: **accepted** (decided 2026-10-31) · See the
+[section overview](index.md) for the question all five answer ·
+tracked in [core#8](https://github.com/ComlineProject/core/issues/8)
+
+**Chosen form:** a stdio protocol with native or WASI packaging, not
+`protoc`-style native processes only. See [The decision](#the-decision).
+The sections after it are the case as it was argued.
 
 **The idea:** Comline stops generating code. It compiles schemas, serialises
 the request, and hands it to a plugin program — which may be written in any
 language, most usefully the target's own. `protoc`'s model.
+
+## The decision
+
+Decided 2026-10-31. The shape below stands, with these choices:
+
+- **One stdio protocol.** A generator gets the compiled IR (the existing CBOR
+  IR, with its core-owned IR format stamp) plus the generation request on
+  stdin. It writes the generated files on stdout.
+- **Native or WASI packaging.** A generator ships either as a native executable
+  or as a WASI `.wasm` (stdin and stdout).
+- **Sandboxed `.wasm`.** The CLI runs it under wasmtime. The playground runs it
+  through a browser WASI shim, which removes the blocker named under
+  [the case against](#the-case-against): the playground can't spawn processes.
+- **Versions are checked.** A generator declares which IR format stamps and
+  which protocol version it accepts. The CLI refuses a mismatch with a clear
+  message.
+- **Discovery** (proposed default, still to be confirmed in the implementation
+  plan): `comline.toml`'s `[[generate.target]]` names a built-in by language id,
+  a local path, or a registry package name.
+- **The official generators use it too.** Rust and TypeScript stay linked into
+  the CLI for speed, but are called through the same request and response types.
+  The public protocol is exercised every day.
+- **Part of 1.0.** See [Ready for 1.0](../../conduct/readiness.md) and
+  [Extending the call system](../extensibility.md#generators).
 
 ## Shape
 
@@ -53,7 +82,8 @@ across languages.
 
 ## The case against
 
-- **The wasm playground blocks it.** `playground/wasm` compiles the generators
+- **The wasm playground blocks it** (resolved by WASI packaging, see
+  [The decision](#the-decision)). `playground/wasm` compiles the generators
   to wasm32 and runs them in the browser, on purpose — its manifest states the
   playground runs *that* code, "not a re-implementation." A browser cannot
   spawn `comline-gen-typescript`. Keeping the playground would mean either a
@@ -90,6 +120,8 @@ Worth noting that the newest entrant, built for a polyglot wasm world, chose
 the in-process kernel rather than the plugin protocol.
 
 ## When this would be the right call
+
+*Superseded by [The decision](#the-decision): accepted on 2026-10-31. What follows is the original reasoning.*
 
 When the number of target languages passes the point where Rust-authored
 emitters stop being credible — plausibly around five or six, or the first time

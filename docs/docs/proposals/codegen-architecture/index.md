@@ -8,14 +8,15 @@ syntax trees, move out of Rust entirely — or stop being Comline's job at all?
 
 Five proposals answer it, written to the same shape so they can be read side
 by side. **Proposal A is now accepted and shipped** — see
-[What shipped](#what-shipped) at the end.
+[What shipped](#what-shipped) at the end. **Proposal D was
+accepted on 2026-10-31**, as a stdio protocol with native or WASI packaging.
 
 | | Approach | In one line | Assessment |
 |---|---|---|---|
 | [Proposal A](resolution-kernel.md) | **Shared resolution kernel** | a symbol/module layer in `comline-codegen`; generators map a resolved model to syntax | **implemented** |
 | [Proposal B](template-rendering.md) | **Templates** | per-language template files replace `push_str` | complementary to A, not a substitute |
 | [Proposal C](syntax-tree-emission.md) | **Syntax trees** | build a real AST per target and pretty-print it | narrow value; one cheap piece worth taking |
-| [Proposal D](target-language-plugins.md) | **Target-language plugins** | `protoc`-style: each generator is a program in its own language | blocked by a current constraint |
+| [Proposal D](target-language-plugins.md) | **Target-language plugins** | `protoc`-style: each generator is a program in its own language | **accepted** (2026-10-31): stdio protocol, native or WASI |
 | [Proposal E](adopt-existing-model.md) | **Adopt an existing model** | translate Comline IR to Smithy/protobuf and inherit their generators | assessed, not recommended |
 
 ## What the evidence says
@@ -61,7 +62,8 @@ resolution, primitive maps and manifest emission by hand. Nobody finished.
 browser**, deliberately: its manifest says the playground runs *that* code,
 "not a re-implementation."
 
-That is what blocks [Proposal D](target-language-plugins.md), otherwise the
+That is what blocked [Proposal D](target-language-plugins.md) (resolved by
+WASI packaging, decided 2026-10-31), otherwise the
 strongest strategic option — it would let a TypeScript developer write the
 TypeScript generator with TypeScript's own tooling, and would retire the
 git-rev pin cascade across seven repositories. It also rules out heavyweight
