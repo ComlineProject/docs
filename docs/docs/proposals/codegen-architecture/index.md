@@ -12,7 +12,7 @@ by side. **Proposal A is now accepted and shipped** — see
 
 | | Approach | In one line | Assessment |
 |---|---|---|---|
-| [Proposal A](resolution-kernel.md) | **Shared resolution kernel** | a symbol/module layer in `comline-codegen`; generators map a resolved model to syntax | **accepted — shipped** |
+| [Proposal A](resolution-kernel.md) | **Shared resolution kernel** | a symbol/module layer in `comline-codegen`; generators map a resolved model to syntax | **implemented** |
 | [Proposal B](template-rendering.md) | **Templates** | per-language template files replace `push_str` | complementary to A, not a substitute |
 | [Proposal C](syntax-tree-emission.md) | **Syntax trees** | build a real AST per target and pretty-print it | narrow value; one cheap piece worth taking |
 | [Proposal D](target-language-plugins.md) | **Target-language plugins** | `protoc`-style: each generator is a program in its own language | blocked by a current constraint |
