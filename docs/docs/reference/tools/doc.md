@@ -61,8 +61,9 @@ docs/api/
 **Caching.** A built version never changes, so its folder is kept between
 runs. `<out>/<format>/.comline-doc.json` records each folder's key: the
 version's commit, the commit of the version before it, the renderer's id and
-version (and the `comline` version for a built-in renderer, or the renderer
-file's hash for `[doc] renderer`), the model version and `[doc] links`. A
+version (for a built-in renderer, its crate version plus a content hash of
+its sources and assets, `0.1.0+<hash>`, and the `comline` version; for
+`[doc] renderer`, the renderer file's hash), the model version and `[doc] links`. A
 folder whose key still matches is left alone, so a run re-renders only the
 unreleased state and new versions. A folder for a version no longer listed
 (trimmed by `versions`, or the unreleased state once it's built) is removed.
