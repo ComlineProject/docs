@@ -1,6 +1,7 @@
 # Generator protocol
 
-How the CLI talks to a code generator. For a walkthrough, see
+How the CLI talks to a code generator, and to a documentation renderer. For a
+walkthrough, see
 [Generators](../guide/extending/generators.md); to point a target at one, see
 the [CLI reference](cli.md#commands) and
 [`comline.toml`](congregation/comline-toml.md#generator).
@@ -12,6 +13,9 @@ The Rust definitions are in `codegen/src/protocol.rs` of the
 
 **Protocol version: `0`** (`PROTOCOL_VERSION`). While Comline is in its early
 days, the protocol may change incompatibly, and the number moves when it does.
+An additive change keeps the number: a new field with a default, or a new
+request that only goes to a program whose `Description` says it handles it
+(`Render` was added this way).
 
 The protocol is also pinned to an **IR format** (`IR_FORMAT`), the stamp on
 `.comline/` that `comline-core` owns. A generator accepts the IR formats it
@@ -24,7 +28,7 @@ lists and refuses others.
 - Each is a single **CBOR** document, in the encoding `comline-core` stores
   its IR with (name-tagged fields).
 - A generator process serves one request per run. The CLI starts it once for
-  `Describe` and once for each `Generate`.
+  `Describe` and once for each `Generate` or `Render`.
 - Exit successfully whenever a response was written, an error response
   included. A nonzero exit or a response that isn't a protocol response is a
   failure.
@@ -35,7 +39,7 @@ lists and refuses others.
 |---|---|---|
 | `protocol` | integer | the protocol version the sender speaks |
 | `ir_format` | integer | the IR format of every frozen unit in the body |
-| `body` | `Describe` or `Generate(GenerateRequest)` | what is asked |
+| `body` | `Describe`, `Generate(GenerateRequest)` or `Render(RenderRequest)` | what is asked |
 
 `protocol` and `ir_format` come first, and a generator reads them before the
 body. A mismatch is reported even when the body has a shape the generator
@@ -72,12 +76,29 @@ Generate one target. A `GenerateRequest` holds:
   ([Map it to a type](../guide/extending/encodings.md#5-map-it-to-a-type)).
 - `mode` is `Code` or `Lib`. `dylib` isn't part of the protocol today.
 
+### `Render`
+
+Render a package's documentation, for [`comline doc`](tools/doc.md). Only sent
+to a program whose `Description` lists the renderer at the model version. A
+`RenderRequest` holds:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `renderer` | string | the renderer's id, from `Description.renderers`: `markdown` |
+| `model_version` | integer | the documentation model's version (`DOC_MODEL_VERSION`, `1`), readable without parsing `model` |
+| `model` | string | the documentation model as JSON text, in the shape of [`doc-model/1.json`](../schemas/doc-model/1.json) |
+| `options` | `{ links }` | `links`: a dependency's name (or `std`) to the base URL of its docs |
+
+A renderer accepts every option and ignores the ones it has no use for. The
+answer is `Render(Generated)`: files, checked like a generator's.
+
 ## Response
 
 | Variant | Carries |
 |---|---|
 | `Describe(Description)` | the answer to `Describe` |
 | `Generate(Generated)` | the answer to `Generate` |
+| `Render(Generated)` | the answer to `Render`: the rendered files |
 | `Error { message }` | the request was refused or generation failed |
 
 ### `Description`
@@ -87,6 +108,7 @@ Generate one target. A `GenerateRequest` holds:
 | `languages` | one entry per generator; a language with several floors has several |
 | `protocols` | `(min, max)` protocol versions it accepts, inclusive |
 | `ir_formats` | the IR formats it accepts |
+| `renderers` | the documentation renderers it offers, each `{ id, model_versions }`; empty, or absent from an older program, when it offers none |
 
 A language entry holds:
 
@@ -114,6 +136,9 @@ target's version.
   both sides.
 - **Language:** the generator must offer the target's language at the target's
   version, or the CLI refuses it.
+- **Renderer:** for `comline doc`, the program must list the format in
+  `renderers`, with the CLI's model version in `model_versions`, or the CLI
+  refuses it before sending `Render`.
 - **Output:** every path, then the total size, is checked before anything is
   written.
 
@@ -146,9 +171,13 @@ environment and isn't otherwise sandboxed.
 
 The `comline_codegen::protocol` module exports:
 
-- `Request`, `RequestBody`, `GenerateRequest`, `Response`, `Description`,
-  `Generated` and the types in the tables above;
+- `Request`, `RequestBody`, `GenerateRequest`, `RenderRequest`,
+  `RenderOptions`, `Response`, `Description`, `RendererInfo`, `Generated` and
+  the types in the tables above;
 - `encode` and `decode`, to and from CBOR;
 - `respond(registry, bytes)`, which answers one request without panicking, and
   `handle`, which does the same on bytes;
-- `serve_stdio(registry)`: a generator process's whole `main`.
+- `serve_stdio(registry)`: a generator process's whole `main`. A registry
+  holds renderers too (`Registry::register_renderer`), so one binary can
+  generate, render, or both. The official Markdown renderer is
+  `comline-doc-markdown` in the generation repository.

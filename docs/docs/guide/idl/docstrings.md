@@ -67,6 +67,8 @@ The editor shows them wherever a path segment is. In
 the modules in it, and hovering `validators` shows that module's docs and the
 types it declares. `use` completion shows the same docs beside each module and
 type. Like docstrings, module docs are for readers and tools: they don't change
-a build, a version or generated code.
+generated code or the version bump. A build stores them with the version, so
+[`comline doc`](../documenting.md) documents a built version with the headers
+it was built with; editing only docs makes a new build with no bump.
 
 [The standard library](use.md#the-standard-library) documents itself this way.
