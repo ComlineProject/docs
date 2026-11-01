@@ -180,6 +180,7 @@ version — but only the parts that describe the schema API:
 | Unit | Change | Bump |
 |---|---|---|
 | `wire.format`, `wire.framing` | changed | **major** |
+| `id` | changed | **major**: it names another package. Adding one where there was none is no change |
 | `SpecificationVersion` | changed | **major** |
 | `Dependency` | added, removed, or version changed | **patch** on its own: what the package uses of it is compared by reach (above) |
 | `CodeGeneration` | added / removed / `lang_version` changed | **none** — recorded, never diffed. It is a tooling-capability list, orthogonal to the wire format. |
@@ -188,6 +189,108 @@ version — but only the parts that describe the schema API:
 
 `comline build` and `comline diff` print every change: the package's own,
 each dependency's within reach, the config's, and the bump they call for.
+
+## Compatibility facts
+
+Each version provides what a compatibility-checking handshake
+(`comline@2`, [runtime#15](https://github.com/ComlineProject/runtime/issues/15))
+needs to compare two peers. Core computes these facts; a handshake chooses
+what to do with them. `comline inspect` shows them for the latest build.
+
+| Fact | What it is |
+|---|---|
+| package id | `id` in `config.idp`: which package this is, whatever its name |
+| line | per protocol: the release at which it last had a breaking change |
+| since | per function: the release it first appeared in, in its protocol |
+| shape hash | per protocol: a hash of what it puts on the wire |
+| parameter hash | per encoding: a hash of its name and parameters |
+
+Facts are kept per protocol **path**, `namespace::Protocol`, so protocols
+of the same name in two schemas each have their own. A renamed namespace or
+protocol keeps its line and sinces.
+
+### Line
+
+A protocol's line moves to the release that carries a breaking change to it,
+by the rules above. A change counts for a protocol when it changes:
+
+- the protocol itself or one of its functions;
+- a declaration the protocol reaches: the types its functions take, return
+  and throw, what those use in turn, their validators and the constants
+  those validators' arguments name, including a dependency's declarations,
+  as far as the protocol reaches into the dependency.
+
+A break anywhere else in the package leaves the line alone. A change to the
+package's `wire.format`, `wire.framing` or `handshake` moves every
+protocol's line. Renaming a namespace or a protocol doesn't move it, because
+neither name travels. Each protocol's changes come from the diff with every
+other protocol left out, so a change to a protocol of the same name in
+another schema isn't its.
+
+### Since
+
+A function's since is the release in which it was added to its protocol. A
+function removed in one release and added back in a later one starts again
+from the later release.
+
+### Releases only
+
+Lines and sinces always name **releases**. Before 1.0 a breaking change makes
+a `0.x` minor release, so a line names a `0.x.0` version.
+
+- A build carries the facts of the release it leads to: after `0.1.0`, a
+  build with a breaking change, `0.2.0-dev.2`, gives the protocols it breaks
+  the line `0.2.0`.
+- Both are computed against the last release, not build by build, so a
+  change a later build undoes doesn't count.
+- If `comline release` makes a different version than the builds led to (a
+  raised bump, or `release 1.0`), the facts are renamed to the version
+  released. A raise isn't a break, so it moves no line, but a function added
+  since the last release gets the raised version as its since.
+
+### Shape hash
+
+The shape hash is blake3 over a canonical CBOR encoding of only what reaches
+the wire:
+
+- the format, framing and handshake in play, by their parameter hashes;
+- the functions: names, argument names and types, return type, the errors
+  they throw (ordinal, name, fields) and `@provider`/`@consumer`;
+- every struct, enum and error they reach, with field names, types and
+  optionality and variant names.
+
+Order counts only where it travels, as the encodings' profiles state:
+
+- functions are hashed in declaration order where the framing calls them by
+  index (`calls = by_index`), and sorted by name otherwise;
+- fields and variants keep their order where the format goes by position
+  (`struct_fields = by_position`, `enum_variants = by_index`), and are
+  sorted by name otherwise.
+
+An encoding without an official profile counts as order-sensitive. So
+reordering functions under `jsonrpc` leaves the hash alone, and under
+`datagram@2` changes it.
+
+Aliases are resolved. Each declaration gets a number in the order it is first
+reached, so type names don't count. Docstrings, spans, validators, constants,
+field defaults, advisory annotations and namespaces are left out. The
+namespace is in the facts' key, not in the hash. The hash is
+computed when asked for, not stored.
+
+### Parameter hash
+
+Each format, framing and handshake in play gets blake3 over the CBOR of its
+kind, canonical name and parameters. The parameters are a framing's
+`{ name = ..., ... }` entries other than `name`, plus, for an encoding the
+package declares in `encodings`, its profile's hash.
+
+### Storage
+
+Lines and sinces need history, so each build records them in its commit as a
+`facts` blob beside `config` and `docs`. The schema blobs, `schema_ir_hash`
+and generated code don't change. A version built before facts were recorded
+gets them computed from its history when read, and recomputing a stored blob
+from history gives back the same blob.
 
 ## History model
 

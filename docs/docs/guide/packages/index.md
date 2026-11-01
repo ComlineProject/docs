@@ -16,6 +16,7 @@ my-api/
 
 ```idp
 congregation my_api
+id = "3f2a9c41d07e4b1c8a65f2e0d91b7c34"
 specification_version = 1
 
 code_generation = {
@@ -29,6 +30,7 @@ code_generation = {
 | Field | Meaning |
 |---|---|
 | `congregation` | the package name — a Comline identifier (letters, digits, `_`) |
+| `id` | the package's identity: 32 lowercase hex digits, random. `comline new` writes it, and `comline build` adds one to a package without it, as one line after `congregation`, with a note. A rename keeps it; a copy of the package must change it. Changing it is a major change. See [Compatibility facts](../../reference/versioning.md#compatibility-facts) |
 | `specification_version` | which version of the schema language these files are written against |
 | `code_generation.languages` | the **capability list**: `language#lang_version` targets this package *can* be generated as, each version the oldest toolchain the output must build on, which `comline build` proves ([Language versions](../codegen/generating-code.md#language-versions)). Bare entries — `= {}` is required and takes no options. |
 | `dependencies` | other packages this one imports — see [Dependencies](#dependencies) |

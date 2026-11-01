@@ -18,6 +18,10 @@ For each protocol, the package's own and then its dependencies':
   conformance and version honesty. Each one is held or given up. A given-up
   one shows the cause and whether it's been accepted. The protocol's
   `@unverified` reason is shown with its choices.
+- **The compatibility facts**, for your own protocols, once the package has
+  been built: its path, line, shape hash and each function's since, as the
+  latest build records them, keyed by `namespace::Protocol` ([Compatibility facts](../versioning.md#compatibility-facts)).
+  They're of the latest build, not of unbuilt edits.
 
 ### Where a choice comes from
 
@@ -68,6 +72,13 @@ protocol api::Orders (shop)
   encoding conformance   held
   version honesty        held
 
+  api::Orders as of build 0.2.0-dev.1
+  line       0.2.0
+  shape      5a13d1c49ddfb76184bfe703563fa91bd772175ee15baf65244bf4f16be339cd
+  since      place                    0.1.0
+  since      cancel                   0.1.0
+  since      track                    0.2.0
+
 protocol api::Legacy (shop)
   format     json@1                   JSON-RPC's format
   framing    jsonrpc (method_names = qualified) from @framing
@@ -89,7 +100,8 @@ marked and coloured.
 
 ## JSON
 
-`--json` prints the same as `{ "protocols": [...] }`:
+`--json` prints the same as `{ "protocols": [...], "facts": {...} }`. Each
+protocol looks like this:
 
 ```json
 {
@@ -118,6 +130,34 @@ marked and coloured.
 for your own protocol's, `not_accepted`, or
 `{ "state": "accepted", "by": "<package>" }`.
 
+`facts` is the latest build's compatibility facts, or `null` before the first
+build:
+
+```json
+{
+  "id": "3f2a9c41d07e4b1c8a65f2e0d91b7c34",
+  "version": "0.2.0-dev.1",
+  "protocols": [
+    {
+      "path": "api::Orders",
+      "namespace": "api",
+      "name": "Orders",
+      "line": "0.2.0",
+      "shape_hash": "5a13d1c4…",
+      "functions": [
+        { "name": "place", "since": "0.1.0" },
+        { "name": "cancel", "since": "0.1.0" },
+        { "name": "track", "since": "0.2.0" }
+      ]
+    }
+  ],
+  "encodings": [
+    { "kind": "format", "name": "packed@1", "params": {}, "param_hash": "…" },
+    ...
+  ]
+}
+```
+
 ## In the editor
 
 Hovering a protocol's name, its `@framing` or its `@handshake` in VS Code
@@ -126,7 +166,7 @@ from disk for it, so it reflects the last save.
 
 ## Not shown
 
-A protocol's compatibility facts (its line, version and shape hash) aren't
-shown, because they aren't built yet
-([core#119](https://github.com/ComlineProject/core/issues/119)). Comparing two
-packages or versions will belong to `comline diff` once they are.
+A dependency's compatibility facts aren't shown: they belong to its own
+package. Comparing the facts of two packages or versions is left to
+`comline diff` and to the handshake
+([runtime#15](https://github.com/ComlineProject/runtime/issues/15)).
