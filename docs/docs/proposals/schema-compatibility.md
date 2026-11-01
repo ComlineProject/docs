@@ -3,7 +3,12 @@
 Status: **under discussion** · tracked in
 [core#119](https://github.com/ComlineProject/core/issues/119) (with
 [core#122](https://github.com/ComlineProject/core/issues/122) for versions
-before 1.0 and author-set bumps) · nothing here is implemented
+before 1.0 and author-set bumps) · **the rules are implemented**
+([core#154](https://github.com/ComlineProject/core/pull/154), step 1 of
+core#119): see [Versioning rules](../reference/versioning.md#schema-changes).
+Not yet: `@open` enums, facts recorded per version (step 2), `comline@2`
+(step 3), `versioning.allow` / `--deny`. Builds and releases, and bumps set
+by the author, shipped separately ([core#122](https://github.com/ComlineProject/core/issues/122))
 
 **The question:** which schema changes are breaking, and so which version bump
 a build takes. A bump is only worth something if it tells a reader whether an
@@ -483,9 +488,10 @@ A build whose computed bump goes above it fails and lists the changes
 responsible. `comline build --deny major` overrides it for one run
 ([cli#80](https://github.com/ComlineProject/cli/issues/80)).
 
-## Dependencies (tentative)
+## Dependencies
 
-*Still being thought through; recorded here so it isn't lost.*
+*Decided 2026-11-01 and implemented in core#154: counted by reach; adding or
+removing an unused dependency is a patch.*
 
 Today any breaking change in a dependency makes this package major, even in a
 part it never uses. The proposed rule is that a dependency's change counts only
@@ -513,7 +519,7 @@ Points to weigh:
 - **Third-party profiles** are settled in
   [Extending the call system](extensibility.md#test-vectors-and-trust): with
   vectors, conformance is proven; without, it's given up.
-- **Dependencies** (tentative, [above](#dependencies-tentative)).
+- **Dependencies:** decided, [above](#dependencies).
 
 ## What it touches
 

@@ -44,24 +44,133 @@ which all count as releases; from a `0.0.z` release the next one is `0.1.0`.
 
 ## Schema changes
 
-| Bump | When | Examples |
+A build compares each version of the package with the last release and takes
+the **largest** bump among the changes. Breaking means **wire or names**: an
+old peer and a new one can no longer exchange messages, or a name consumers
+refer to (a type, member, alias, constant, generated error variant, protocol
+or namespace) disappears.
+
+Types are compared **after resolving aliases**, each version through its own.
+Schema files are paired by **namespace**, so adding or reordering files
+doesn't compare the wrong schemas; a file that only exists on one side counts
+as its declarations being added or removed.
+
+### Rules that depend on the encoding
+
+Some changes break one format and not another. The comparison doesn't list
+formats: it reads the facts each encoding's **profile** states (the official
+ones are in `core_stdlib/packages/comline/profiles/`, proven by the runtime's
+conformance vectors) and applies the **strictest** among the encodings in
+play.
+
+- **In play:** each protocol's framing (its `@framing`, else the package's
+  `wire.framing`, else `datagram@2`) and the package's format (`wire.format`,
+  else `json@1` under JSON-RPC, else `packed@1`), in both versions compared.
+  A package without protocols has its defaults in play.
+- **Unknown encodings:** one whose profile the comparison can't read (any
+  third-party encoding, for now) counts as the strictest.
+
+| Fact | Lenient value | Strict value |
 |---|---|---|
-| **major** | a breaking change | removed struct, enum, protocol, error, constant, type alias or validator; removed field, optional or not; a field's `optional` flipped either way; added a required field (structs and errors); removed or renamed variant (a rename is reported as one); removed function; changed a field's type (compared as written); changed a function's argument names or types, or its return; a function no longer declares an error it did (`!`); an error's ordinal changed; a constant's type changed; a type alias's target changed; a validator's declaration changed; the validators applied to a declaration changed other than by removal (*validation tightened*); `@framing` or `@handshake` changed (writing out the default `comline@1` isn't a change); a protocol gave up a guarantee (`@unverified`, or more given up than before) |
-| **minor** | a new feature | added struct, enum, protocol, error, constant, type alias or validator; added a variant; added a function; added an optional field; a function declares a new error; a constant's value changed; validators only removed from a declaration; `@deprecated` added; a protocol gives up fewer guarantees |
-| **patch** | a modification | a declaration's docstring changed; a field's default changed; an error's message changed; another annotation changed (`@timeout_ms`, `@idempotent`, `@deprecated` removed or reworded, `@unverified`'s reason reworded, or one core doesn't know) |
-| **none** | | a `settings` change |
+| `struct_fields` | `by_name` (`json@1`) | `by_position` (`packed@1`, `msgpack@1`) |
+| `unknown_field` / `missing_optional` | `ignored` / `absent` (`json@1`) | `rejected` (`packed@1`, `msgpack@1`) |
+| `enum_variants` | `by_name` (`json@1`, `msgpack@1`) | `by_index` (`packed@1`) |
+| `calls` (per protocol) | `by_name` (`jsonrpc@1`) | `by_index` (`datagram@1`, `datagram@2`) |
+| `errors` | `by_name` (no official framing yet) | `by_ordinal` (every official framing) |
 
-The bump applied is the **maximum** over all changes in the build. Schema files
-are paired by **namespace**, so adding, renaming or reordering files doesn't
-compare the wrong schemas: a file that only exists on one side counts as its
-declarations being added or removed.
+### Fields (structs and error bodies)
 
-Not compared yet: a type swapped for an alias of the same type is still
-reported as a type change
-([core#110](https://github.com/ComlineProject/core/issues/110)), a constant's
-value counts as minor wherever it's used, and validators reached through a
-type alias are compared on the alias, not on each use. The rules being worked
-out are in [Schema compatibility](../proposals/schema-compatibility.md).
+| Change | Bump |
+|---|---|
+| add an optional field | **minor** where every format keys fields by name, ignores an unknown field and accepts a missing optional one (`json@1`); **major** otherwise (`packed@1`, `msgpack@1`), reported as *added optional field* |
+| add a required field | major |
+| remove a field, optional or not | major |
+| required → optional, or optional → required | major |
+| reorder fields | none where fields travel by name; major where they travel by position |
+| change the type (after resolving aliases) | major, including widening |
+| swap the type for an equivalent alias, either way, or one alias for another with the same target | patch, reported as *same type, respelled* |
+| change the default | patch |
+| change a field's docstring | patch |
+
+### Enums
+
+| Change | Bump |
+|---|---|
+| add a variant at the end | minor (an old reader can't decode it, so a peer mustn't send it to one) |
+| insert a variant before others, or reorder | none where variants travel by name; major where they travel by index (`packed@1`) |
+| remove or rename a variant | major (a rename is reported as one) |
+
+### Protocols and functions
+
+| Change | Bump |
+|---|---|
+| add a function at the end | minor |
+| insert a function before others, or reorder | major where the protocol's framing calls by index (`datagram@1`, `datagram@2`); none under `jsonrpc@1` (a new function is minor) |
+| remove a function | major |
+| rename, add, remove or reorder an argument | major |
+| change the return type, or switch between one-way and request/response | major |
+| respell an argument or return type through an equivalent alias | patch |
+| add an error to `!` | minor (an old client receives it as `Remote`) |
+| remove an error from `!` | major (a generated error variant disappears) |
+| `@framing` or `@handshake` changes (compared by meaning: writing out the default isn't a change) | major |
+| a guarantee given up (`@unverified`, or one more joining the set) | major |
+| a given-up guarantee restored | minor |
+| the `@unverified` reason changed | patch |
+| `@timeout_ms`, `@idempotent` or an annotation Comline doesn't know changed | patch |
+| a function's docstring changed | patch |
+| a protocol renamed (one removed, one added with the same functions) | major, reported as a rename |
+
+### Errors
+
+| Change | Bump |
+|---|---|
+| append a new error | minor |
+| insert, remove or reorder local errors so that an ordinal changes | major where errors travel by ordinal (every official framing) |
+| change the fields | as for fields |
+| change the message | patch |
+
+### Constants, aliases and validators
+
+| Change | Bump |
+|---|---|
+| add a constant, alias or validator | minor |
+| remove one | major |
+| change a constant's type | major |
+| change a constant's value | by what it reaches: a validator argument, *validation tightened* (major); only field defaults, patch; nothing on the wire, minor |
+| change an alias's target | major, at the alias and at every use |
+| change a validator's declaration (targets, parameters or body) | major |
+| a field's **effective validators** change other than by removal | major, reported as *validation tightened* |
+| validators only removed from a field | minor (*validation loosened*) |
+
+A field's effective validators are its own plus those on its alias chain, so
+switching a field to an alias that carries `@validators` tightens it.
+
+### Annotations, documentation and the package
+
+| Change | Bump |
+|---|---|
+| `@deprecated` added | minor |
+| `@deprecated` removed, or its message changed | patch |
+| any docstring, on a declaration or a member | patch |
+| `@settings`, or a `settings` block | none |
+| a namespace (schema file) renamed (one removed, one added with the same declarations) | major, reported as a rename |
+
+### Dependencies
+
+A dependency counts only as far as the package **reaches** into it: the types
+its own declarations use or re-export (fields, arguments, returns, errors,
+aliases, validators, imports), and everything those use in turn. That part is
+compared with the same rules, and the build lists its changes under the
+dependency. A change anywhere else in the dependency doesn't move the
+version.
+
+Not implemented yet: `@open` enums (enums don't carry annotations in the
+frozen IR yet; [runtime#17](https://github.com/ComlineProject/runtime/issues/17)),
+validator arguments resolved against their defaults when comparing effective
+sets, and facts for third-party encodings (they count as the strictest until
+each version records its encodings' facts). Bumps stay advisory until
+`comline@2` checks compatibility at the handshake
+([core#119](https://github.com/ComlineProject/core/issues/119)).
 
 ## Manifest (`config.idp`) changes
 
@@ -70,17 +179,15 @@ version — but only the parts that describe the schema API:
 
 | Unit | Change | Bump |
 |---|---|---|
-| `Dependency` | removed, or version changed | **major** (conservative — a dependency's shapes are part of this package's surface) |
-| `Dependency` | added | **minor** |
+| `wire.format`, `wire.framing` | changed | **major** |
 | `SpecificationVersion` | changed | **major** |
+| `Dependency` | added, removed, or version changed | **patch** on its own: what the package uses of it is compared by reach (above) |
 | `CodeGeneration` | added / removed / `lang_version` changed | **none** — recorded, never diffed. It is a tooling-capability list, orthogonal to the wire format. |
 | `PublishRegistry` | any | **none** — publish metadata |
 | `Namespace` | changed | **not a bump** — renaming the package is a new package |
 
-A dependency present in both versions is also compared like your own schemas.
-Its changes move the bump, and the build reports them per dependency. The CLI
-shows them once it picks this up
-([cli#80](https://github.com/ComlineProject/cli/issues/80)).
+`comline build` and `comline diff` print every change: the package's own,
+each dependency's within reach, the config's, and the bump they call for.
 
 ## History model
 
