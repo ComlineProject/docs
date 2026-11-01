@@ -1,7 +1,7 @@
 # comline doc
 
 ```
-comline doc [--out <dir>] [--version <v>] [--changelog-from <v>] [--format markdown|json]
+comline doc [--out <dir>] [--version <v>] [--changelog-from <v>] [--format markdown|html|json]
 ```
 
 `comline doc` writes a package's documentation. Like `comline check`, it writes
@@ -15,7 +15,7 @@ nothing to `.comline/`. For a walkthrough, see
 | `--out <dir>` | `[doc] out`, else `docs/api` | Where to write, relative to the project. |
 | `--version <v>` | the working tree | Document a built version: a version string, a commit hash (4+ characters), or `HEAD`. |
 | `--changelog-from <v>` | `[doc] changelog_from` | Add what changed from built version `<v>` to the documented one. |
-| `--format <f>` | `[doc] format`, else `markdown` | `markdown`, `json`, or another renderer id `[doc] renderer` offers. |
+| `--format <f>` | `[doc] format`, else `markdown` | `markdown`, `html`, `json`, or another renderer id `[doc] renderer` offers. |
 
 The `[doc]` keys are in [`comline.toml`](../congregation/comline-toml.md#doc).
 
@@ -38,6 +38,23 @@ dependency a base URL, and is plain text otherwise.
 The wire summary has the rows [`comline inspect`](inspect.md) prints: the
 format, framing and handshake with where each came from, then each guarantee,
 held or given up, with its cause and acceptance.
+
+`html`, rendered by the official HTML renderer, also built into `comline`,
+writes a self-contained static site with the same content:
+
+| File | Contents |
+|---|---|
+| `index.html` | As `index.md`. |
+| `<module>.html` | As `<module>.md` (`types::user` → `types/user.html`), with the same anchors. |
+| `changelog.html` | With a changelog: as `changelog.md`. |
+| `style.css` | The theme: fixed, light and dark following the OS setting. |
+| `search.js` | The search index (each declaration's name, kind, module and first line of docs), inlined as data, and the search box's script. |
+
+Every page has a sidebar of modules and their declarations and a search box.
+Doc text is rendered from Markdown to HTML; raw HTML in it is shown as text.
+Nothing loads from the network and every link is relative, so `index.html`
+opens straight from disk (the index is inlined because a browser blocks
+`fetch` under `file://`) or from any static host. There is no `nav.yml`.
 
 `json` writes `model.json`, the documentation model, in the shape of
 [`doc-model/1.json`](../../schemas/doc-model/1.json).

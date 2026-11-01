@@ -65,6 +65,22 @@ render into the site's `docs/` tree and copy `nav.yml`'s entries into
 comline doc --out site/docs/api
 ```
 
+### Or as a site of its own
+
+`--format html` writes a finished static site instead, with the same content
+as the Markdown pages:
+
+```bash
+comline doc --format html --out site
+```
+
+Open `site/index.html` straight from disk, or put the folder on any static
+host. Each page has a sidebar of modules and their declarations and a search
+box over every declaration. The theme follows the OS's light or dark setting.
+Nothing loads from the network: the stylesheet and the search script (with its
+index inlined) are files in the folder, and every link is relative. To make it
+the default, set `format = "html"` under `[doc]` in `comline.toml`.
+
 ### Link to dependencies
 
 A type from a dependency or `std` is plain text, unless you say where that
@@ -134,7 +150,8 @@ and the flag wins:
 
 The standard library is rendered this way, and is the live example: the
 [`std` pages](../std/index.md) are `comline doc` run over std's own package,
-with nothing written by hand. A type from `std` in your own docs links to them
+with nothing written by hand. They use the Markdown format, so they become
+pages of this site rather than a separate one. A type from `std` in your own docs links to them
 with `links = { std = "https://comlineproject.github.io/docs/std" }`, so
 `std::http::Request` in a field's type links to
 `https://comlineproject.github.io/docs/std/http/#request`.
