@@ -207,7 +207,7 @@ Settings for [`comline doc`](../tools/doc.md). Each key but `renderer`,
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `out` | string (path) | `"docs/api"` | Output directory, relative to `comline.toml`. `--out` overrides it. |
-| `format` | string | `"markdown"` | `markdown` (pages), `json` (the documentation model, `model.json`), or another renderer id `renderer` offers. `--format` overrides it. |
+| `format` | string | `"markdown"` | `markdown` (pages), `html` (a static site), `json` (the documentation model, `model.json`), or another renderer id `renderer` offers. `--format` overrides it. |
 | `renderer` | string (path) | — | A renderer outside `comline`: a `.wasm` (run sandboxed under wasmtime) or an executable, relative to `comline.toml`'s directory. Run exactly like an external [`generator`](#generator). Unset, the built-in renderer for `format` is used. |
 | `timeout` | integer (seconds, ≥ 1) | `60` | The wall-time limit for each call to `renderer`. |
 | `links` | table | — | Where each dependency's docs live, by the name the package gives it (or `std`): a base URL. A type from a dependency listed here links to `<base>/<module>/#<anchor>`; one that isn't is plain text. |
