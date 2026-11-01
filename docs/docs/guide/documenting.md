@@ -130,7 +130,11 @@ and the flag wins:
 | `renderer`, `timeout` | none | the built-in renderer |
 | `links` | none | none |
 
-## What's next
+## The standard library, rendered
 
-The standard library will be rendered onto this site the same way, so that
-`links = { std = ... }` has somewhere to point.
+The standard library is rendered this way, and is the live example: the
+[`std` pages](../std/index.md) are `comline doc` run over std's own package,
+with nothing written by hand. A type from `std` in your own docs links to them
+with `links = { std = "https://comlineproject.github.io/docs/std" }`, so
+`std::http::Request` in a field's type links to
+`https://comlineproject.github.io/docs/std/http/#request`.

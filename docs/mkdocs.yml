@@ -85,6 +85,13 @@ nav:
         - Compliance features: 'reference/congregation/compliance_features/index.md'
         - Versioning rules: 'reference/versioning.md'
 
+    # std:start
+    - Standard library:
+      - std: 'std/index.md'
+      - http: 'std/http.md'
+      - validators: 'std/validators.md'
+    # std:end
+
     - Tools:
       - Tools: 'reference/tools/index.md'
       - CLI: 'reference/cli.md'

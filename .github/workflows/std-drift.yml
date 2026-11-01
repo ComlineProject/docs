@@ -1,0 +1,92 @@
+name: Std drift
+
+# The pages under `docs/docs/std/` are not written by hand: they are `comline
+# doc` run over the standard library package core embeds
+# (`core_stdlib/packages/std`), and the std block of `docs/mkdocs.yml` is its
+# generated nav. This regenerates both and fails on a difference, so a
+# docstring changed in core, or a renderer change in the CLI, reaches the
+# site, and a hand edit to a generated page does not stay.
+#
+# It lives apart from the Docs workflow for the reason the CLI drift check
+# does: it needs the CLI binary, so a Rust build, and a fetch against other
+# repos has no business blocking a Pages deploy.
+
+on:
+  schedule:
+    # Drift arrives when core's std or the CLI's renderer changes, which this
+    # repo never sees. Weekly is the backstop for that; the pull_request
+    # trigger below only covers edits made here.
+    - cron: '15 7 * * 1'
+  pull_request:
+    paths:
+      - 'docs/docs/std/**'
+      - 'docs/mkdocs.yml'
+      - 'scripts/sync-std-docs.py'
+      - '.github/workflows/std-drift.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: std-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  std:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      # Checking against the tip of the default branch, not a pinned rev: a
+      # CLI that has moved ahead of the docs is what this is here to catch.
+      # The branch is resolved rather than hardcoded — ComlineProject repos are
+      # not consistent about `main` vs `master`.
+      - name: Resolve the CLI's current commit
+        id: cli
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch=$(gh api repos/ComlineProject/cli --jq .default_branch)
+          echo "sha=$(gh api "repos/ComlineProject/cli/commits/$branch" --jq .sha)" >> "$GITHUB_OUTPUT"
+
+      # Keyed on that exact commit, so an unchanged CLI costs nothing and a
+      # changed one rebuilds. Without this every run pays a full cargo build.
+      - name: Cache the comline binary
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/comline
+          key: comline-${{ runner.os }}-${{ steps.cli.outputs.sha }}
+
+      # cargo comes preinstalled on the runner image; comline-core and the
+      # generator crates resolve from the pinned git revs in Cargo.lock.
+      - name: Install the CLI
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          cargo install --locked --git https://github.com/ComlineProject/cli \
+            --rev ${{ steps.cli.outputs.sha }} comline
+
+      # std from core's default branch, rendered by the CLI's default branch.
+      - name: Check for drift
+        # `shell: bash` for pipefail: the `if !` must see the checker's exit
+        # status, not tee's.
+        shell: bash
+        run: |
+          if ! python3 scripts/sync-std-docs.py --check | tee drift.txt; then
+            {
+              echo '### Std drift'
+              echo
+              echo 'The std pages no longer match what `comline doc` renders from core.'
+              echo
+              echo '```'
+              cat drift.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          cat drift.txt >> "$GITHUB_STEP_SUMMARY"
