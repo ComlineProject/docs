@@ -1,6 +1,6 @@
 # Ready for 1.0
 
-What must be true before the 1.0 announcement. **Draft,** 2026-10-31.
+What must be true before the 1.0 announcement. **Draft,** 2026-10-31, updated 2026-11-01.
 
 From 1.0 the [promises](phases.md#from-the-10-announcement) hold: semver,
 deprecation before removal, frozen wire bytes, a frozen C ABI within a major,
@@ -52,7 +52,9 @@ A schema written for 1.0 keeps building on every 1.x.
 Semver for a user's schema package means nothing until a break is defined.
 
 - The compatibility rules are decided and enforced
-  ([core#119](https://github.com/ComlineProject/core/issues/119)).
+  ([core#119](https://github.com/ComlineProject/core/issues/119)), applying
+  the rules of the encodings a package declares
+  ([core#117](https://github.com/ComlineProject/core/issues/117)).
 - `comline diff` and `comline build` report every change that matters
   ([cli#80](https://github.com/ComlineProject/cli/issues/80)), and no false
   breaks ([core#110](https://github.com/ComlineProject/core/issues/110)).
@@ -60,6 +62,8 @@ Semver for a user's schema package means nothing until a break is defined.
   ([cli#82](https://github.com/ComlineProject/cli/issues/82)).
 - Releases carry a changelog
   ([core#7](https://github.com/ComlineProject/core/issues/7)).
+  [`comline doc`](../reference/tools/doc.md) generates one between any two
+  versions. What's left is the change kinds the diff doesn't classify yet.
 
 ## Interfaces that freeze
 
@@ -67,19 +71,35 @@ Semver for a user's schema package means nothing until a break is defined.
   `comline_connection_size`/`init` and whether a `comline@2` changes the event
   struct ([C ABI](../reference/c-abi.md)).
 - The IR and `config.idp` formats are stable, or versioned with a reader for
-  every older version.
+  every older version
+  ([core#146](https://github.com/ComlineProject/core/issues/146)).
 - Each runtime's public API, and the shape of generated code, are reviewed
-  once for anything we'd want to change.
+  once for anything we'd want to change
+  ([runtime#68](https://github.com/ComlineProject/runtime/issues/68)).
+- The versioned specifications that tools outside this project rely on are
+  reviewed and numbered for 1.0:
+    - the [generator protocol](../reference/generator-protocol.md), including
+      its render request (version 0 today);
+    - encoding profiles and the [conformance](../reference/conformance.md)
+      corpus and ops protocol;
+    - the documentation model behind [`comline doc`](../reference/tools/doc.md)
+      (version 1 today);
+    - the [`comline.toml` schema](../reference/congregation/comline-toml.md)
+      (`0.x` today);
+    - the JSON from [`comline inspect --json`](../reference/tools/inspect.md).
 - The extension API is part of 1.0, so it is designed, built and frozen
   first: third-party formats, framings, transports and dispatchers
   ([core#120](https://github.com/ComlineProject/core/issues/120)), and
   generators outside the CLI build
   ([core#8](https://github.com/ComlineProject/core/issues/8)).
+  **Built** (2026-11-01). Freezing it is the specifications item above.
 
 ## Proof
 
 - Every runtime that ships passes the conformance vectors and the
-  differential harness against the Rust reference.
+  differential harness against the Rust reference, driven by
+  `comline conformance --impl`
+  ([comline-typescript#98](https://github.com/ComlineProject/comline-typescript/issues/98)).
 - The compiler has fuzzing, IR round-trip tests and cross-platform CI
   ([core#9](https://github.com/ComlineProject/core/issues/9)).
 - The benchmark gates hold, with no accepted regression left unexplained.
@@ -89,7 +109,7 @@ Semver for a user's schema package means nothing until a break is defined.
 ## Distribution
 
 - Package names are owned by ComlineProject on every registry used (crates.io,
-  npm, …).
+  npm, …) ([docs#102](https://github.com/ComlineProject/docs/issues/102)).
 - Publishing runs from CI with trusted publishing (OIDC), no long-lived tokens
   ([cli#1](https://github.com/ComlineProject/cli/issues/1)).
 - Builds are reproducible and checksums are published. The TypeScript core's
@@ -102,6 +122,8 @@ Semver for a user's schema package means nothing until a break is defined.
 - The docs describe 1.0 as it ships: guides, references, feature-support
   tables, and the tutorial and examples.
 - The deprecation and changelog process from the
-  [promises](phases.md#from-the-10-announcement) is written down.
+  [promises](phases.md#from-the-10-announcement) is written down
+  ([docs#103](https://github.com/ComlineProject/docs/issues/103)).
 - Each repository has a licence, a security policy saying how to report a
-  vulnerability, and contributing notes.
+  vulnerability, and contributing notes
+  ([docs#101](https://github.com/ComlineProject/docs/issues/101)).
