@@ -207,17 +207,19 @@ Settings for [`comline doc`](../tools/doc.md). Each key but `renderer`,
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `out` | string (path) | `"docs/api"` | Output directory, relative to `comline.toml`. `--out` overrides it. |
-| `format` | string | `"markdown"` | `markdown` (pages), `html` (a static site), `json` (the documentation model, `model.json`), or another renderer id `renderer` offers. `--format` overrides it. |
-| `renderer` | string (path) | — | A renderer outside `comline`: a `.wasm` (run sandboxed under wasmtime) or an executable, relative to `comline.toml`'s directory. Run exactly like an external [`generator`](#generator). Unset, the built-in renderer for `format` is used. |
+| `formats` | array of strings | `["markdown"]` | What to write, each into `<out>/<format>/` in one run: `markdown` (pages), `html` (a static site), `json` (the documentation model, `model.json`), or another renderer id `renderer` offers. `--format` overrides it. Replaces `format`, which is no longer accepted. |
+| `versions` | `"all"` or table | `"all"` | Which versions to document. `"all"`: every release, every dev build and the unreleased working state. A table trims the list, and its keys combine, applied in this order: `releases_only = true` keeps releases alone (no dev builds, no unreleased state), `since = "0.3.0"` keeps that version and newer, `last = N` keeps the newest N (the unreleased state counts as one). `--version` documents one version instead. |
+| `renderer` | string (path) | — | A renderer outside `comline`: a `.wasm` (run sandboxed under wasmtime) or an executable, relative to `comline.toml`'s directory. Run exactly like an external [`generator`](#generator). Unset, the built-in renderer for each format is used. |
 | `timeout` | integer (seconds, ≥ 1) | `60` | The wall-time limit for each call to `renderer`. |
 | `links` | table | — | Where each dependency's docs live, by the name the package gives it (or `std`): a base URL. A type from a dependency listed here links to `<base>/<module>/#<anchor>`; one that isn't is plain text. |
-| `changelog_from` | string | — | Add a changelog from this built version (a version or commit hash) to the documented one. `--changelog-from` overrides it. |
+| `changelog_from` | string | — | With `--version`: add a changelog from this built version (a version or commit hash) to the documented one. `--changelog-from` overrides it. Every version already carries the changelog from the one before it, so a run without `--version` ignores it, with a warning. |
 
 ```toml
 [doc]
 out = "site/docs/api"
+formats = ["html", "markdown"]
+versions = { since = "0.3.0", last = 10 }
 links = { std = "https://example.com/std" }
-changelog_from = "0.1.0"
 ```
 
 ## Layout variables

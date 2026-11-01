@@ -87,10 +87,32 @@ to a program whose `Description` lists the renderer at the model version. A
 | `renderer` | string | the renderer's id, from `Description.renderers`: `markdown` |
 | `model_version` | integer | the documentation model's version (`DOC_MODEL_VERSION`, `1`), readable without parsing `model` |
 | `model` | string | the documentation model as JSON text, in the shape of [`doc-model/1.json`](../schemas/doc-model/1.json) |
-| `options` | `{ links }` | `links`: a dependency's name (or `std`) to the base URL of its docs |
+| `options` | `{ links, version, versions, notes }` | see below |
+
+| Option | Meaning |
+|---|---|
+| `links` | a dependency's name (or `std`) to the base URL of its docs |
+| `version` | set when this render is one version of a multi-version site: the version's folder (`0.2.0`, `0.3.0-dev.2`, `unreleased`). The files land in `<site>/<version>/`, so the site's shared files are at `../`. Absent for a site of its own. |
+| `versions` | set for a site's index render: every version, oldest first, each `{ id, release, kind, model }`. `release` is the release a dev build leads to (`0.3.0` for `0.3.0-dev.2`), itself for a release, `unreleased` for the working tree; `kind` is `release`, `dev` or `unreleased`; `model` is that version's model as JSON, with its `changelog` from the version before it in the list. The files land at the site's root, and the request's own `model` is the newest version's. |
+| `notes` | plain-text notes for every page of this version: what an old version's documentation lacks |
 
 A renderer accepts every option and ignores the ones it has no use for. The
 answer is `Render(Generated)`: files, checked like a generator's.
+
+**Several versions.** [`comline doc`](tools/doc.md) documents every version
+with one `Render` per version (with `version` set), then one for the site's
+index (with `versions` set). A per-version request carries one model, like a
+single-version one, so a renderer that ignores `version` still works: it
+renders each version on its own. The index request goes only to a renderer
+whose `Description` entry sets `sites`. Both options are additive, so the
+protocol version stays `0`.
+
+**The model's version.** The documentation model follows the same rule as the
+protocol: an additive change keeps `model_version` (a new unit, type or change
+kind, or a new field that may be absent), so a renderer skips a `kind` it
+doesn't know and ignores unknown fields. A consumer validating strictly against
+`doc-model/1.json` should expect the schema to grow. Only an incompatible
+change bumps the version.
 
 ## Response
 
@@ -108,7 +130,7 @@ answer is `Render(Generated)`: files, checked like a generator's.
 | `languages` | one entry per generator; a language with several floors has several |
 | `protocols` | `(min, max)` protocol versions it accepts, inclusive |
 | `ir_formats` | the IR formats it accepts |
-| `renderers` | the documentation renderers it offers, each `{ id, model_versions }`; empty, or absent from an older program, when it offers none |
+| `renderers` | the documentation renderers it offers, each `{ id, model_versions, version, sites }`; empty, or absent from an older program, when it offers none. `version` is the renderer's own version, part of `comline doc`'s cache key (empty when absent); `sites` says it renders a multi-version site's index (`false` when absent) |
 
 A language entry holds:
 
