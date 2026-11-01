@@ -111,6 +111,11 @@ def main() -> int:
 
         out = tmp / "out"
         document(args.comline, package, out)
+        # A `comline doc` that documents every version (generation#101)
+        # writes `<out>/markdown/<version>/`; std is never built, so its one
+        # version is the working tree, `unreleased`.
+        if (out / "markdown").is_dir():
+            out = out / "markdown" / "unreleased"
 
         generated = pages(out)
         block = nav_block(out / "nav.yml")
