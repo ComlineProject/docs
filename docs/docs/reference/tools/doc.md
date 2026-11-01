@@ -79,7 +79,7 @@ version's folder:
 |---|---|
 | `index.md` | Package name and version, its `config.idp` `//!` header, a module table, a link to the changelog. |
 | `<module>.md` | Per schema (`types::user` → `types/user.md`): its `//!` header, a table of its declarations, then each one with its `///` docs, annotations, fields and arguments (a field's own docs, else its parent's `/// @name:` line), enum variants, an error's ordinal and message, a validator's targets, parameters and asserts, and each protocol's functions and wire summary. |
-| `changelog.md` | With a changelog: breaking changes, additions and other changes. |
+| `changelog.md` | With a changelog: breaking changes, additions and other changes. Each entry is a heading line (its severity, `MAJOR`, `MINOR` or `PATCH`, and a title such as `` `Orders.place`: signature changed `` linking to the declaration), then the change as a fenced `diff` block: the old IDL line with `-`, the new with `+`. An addition has only the `+` line, a removal only the `-` line, and a change with no IDL to show (a docstring, an error's ordinal, guarantees) a sentence instead. |
 | `nav.yml` | A `nav` list for mkdocs or zensical. |
 
 `<out>/markdown/index.md` lists the versions, newest first, grouped by release.
@@ -103,12 +103,17 @@ writes a self-contained static site per version with the same content:
 |---|---|
 | `index.html` | As `index.md`. |
 | `<module>.html` | As `<module>.md` (`types::user` → `types/user.html`), with the same anchors. |
-| `changelog.html` | With a changelog: as `changelog.md`. |
-| `style.css` | The theme: fixed, light and dark following the OS setting. |
+| `changelog.html` | With a changelog: as `changelog.md`, with a severity badge, and the old and new lines marked `−` and `+` and syntax-highlighted. |
+| `style.css` | The theme: fixed, light and dark following the OS setting unless the header's toggle picks one. |
 | `search.js` | The search index (each declaration's name, kind, module and first line of docs), inlined as data, and the search box's script. |
 
-Every page has a sidebar of modules and their declarations, a search box, and
-a version picker in the header:
+Every page has a sidebar of modules and their declarations, a search box, a
+theme toggle, and a version picker in the header:
+
+- The theme toggle cycles auto (the OS setting), light and dark. The choice is
+  kept in the browser's `localStorage` where it's allowed, so it carries across
+  pages and versions, and is applied before the page paints. Where storage is
+  blocked it lasts for the page.
 
 - The picker is a native drop-down, newest first, with dev builds grouped under
   the release they lead to, and a Go button. Choosing a version with the mouse
@@ -131,12 +136,16 @@ At `<out>/html/`, the site's root:
 | `style.css` | The same theme. |
 
 On `compare.html`, two versions show what changed between them, grouped by
-unit, each change labelled major, minor or patch, with the step it came from.
+unit, each change shown as on `changelog.html` (badge, title, highlighted old
+and new lines), with the step it came from. The root's pages have the theme
+toggle too.
 More versions show a grid with units and members as rows and the chosen
 versions as columns. Each cell is the type or signature, or "absent", and a
 unit's badge is the largest change across the range. The labels are never
 computed in the browser. Core computes each version's changelog from the one
-before it (breaking is major, a feature minor, anything else patch), and the
+before it (breaking is major, a feature minor, anything else patch), along
+with each entry's old and new IDL lines (the documentation model's optional
+`old` and `new` on a changelog entry), and the
 page only collects the steps after the older version up to the newer one. The
 grid's cells are structural only.
 Doc text is rendered from Markdown to HTML; raw HTML in it is shown as text.
