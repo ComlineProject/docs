@@ -353,12 +353,14 @@ branch's commits.
 The planned reconcile handles that after a Git merge leaves two heads:
 
 - The next build rebuilds a single line of history from the two.
-- Identifiers that were never released, the `-dev.N` counts, are renumbered
-  to fit the one line. Released versions keep theirs.
+- Anything not yet released is renumbered to fit the one line: the `-dev.N`
+  counts, and the wire numbers of protocols and functions added since the last
+  release. Released versions and released numbers keep theirs, since peers may
+  already depend on them.
 - It refuses only if both branches made releases, since two releases cannot
   both keep their version.
 
-The conditions for refusing, and what the user does then, are not decided.
+What the user does after such a refusal is not decided yet.
 
 ## Compared with Git
 
