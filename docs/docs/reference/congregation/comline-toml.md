@@ -1,7 +1,8 @@
 # `comline.toml`
 
 Consumer-owned configuration for `comline generate`: where generated code goes,
-in what layout, in what form, and for which package versions. It is committed,
+in what layout, in what form, and for which package versions. Its `[doc]`
+table configures `comline doc`. It is committed,
 never frozen, and never part of a published package. With no `comline.toml` (or
 an all-commented one) the defaults below apply and targets come from
 `config.idp`'s `code_generation.languages`.
@@ -197,6 +198,27 @@ This is also the escape hatch when a declared language has no generator in
 your `comline` build: declaring a language means you mean it, so a missing
 generator is an error rather than a silent skip, and `only` is how you say
 you want fewer.
+
+## `[doc]`
+
+Settings for [`comline doc`](../tools/doc.md). Each key but `renderer`,
+`timeout` and `links` has a flag that overrides it.
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `out` | string (path) | `"docs/api"` | Output directory, relative to `comline.toml`. `--out` overrides it. |
+| `format` | string | `"markdown"` | `markdown` (pages), `json` (the documentation model, `model.json`), or another renderer id `renderer` offers. `--format` overrides it. |
+| `renderer` | string (path) | — | A renderer outside `comline`: a `.wasm` (run sandboxed under wasmtime) or an executable, relative to `comline.toml`'s directory. Run exactly like an external [`generator`](#generator). Unset, the built-in renderer for `format` is used. |
+| `timeout` | integer (seconds, ≥ 1) | `60` | The wall-time limit for each call to `renderer`. |
+| `links` | table | — | Where each dependency's docs live, by the name the package gives it (or `std`): a base URL. A type from a dependency listed here links to `<base>/<module>/#<anchor>`; one that isn't is plain text. |
+| `changelog_from` | string | — | Add a changelog from this built version (a version or commit hash) to the documented one. `--changelog-from` overrides it. |
+
+```toml
+[doc]
+out = "site/docs/api"
+links = { std = "https://example.com/std" }
+changelog_from = "0.1.0"
+```
 
 ## Layout variables
 

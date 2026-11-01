@@ -37,6 +37,8 @@ nav:
     
     - 'Packages & dependencies': 'guide/packages/index.md'
 
+    - Documenting your schemas: 'guide/documenting.md'
+
     - 'Extending Comline':
       - 'guide/extending/index.md'
       - Formats & framings: 'guide/extending/encodings.md'
@@ -87,6 +89,7 @@ nav:
       - Tools: 'reference/tools/index.md'
       - CLI: 'reference/cli.md'
       - comline inspect: 'reference/tools/inspect.md'
+      - comline doc: 'reference/tools/doc.md'
 
     - Extending:
       - Generator protocol: 'reference/generator-protocol.md'
