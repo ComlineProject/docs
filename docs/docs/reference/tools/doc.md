@@ -52,15 +52,24 @@ docs/api/
   the release it leads to (`0.2.0`).
 - The working tree appears as `unreleased` only when its schemas or headers
   differ from the last build. With nothing built, it is the only version.
-- Each version carries the changelog from the version before it in the list,
-  computed by core with the same rules as `comline diff`. The first version
-  has none.
+- Each version carries the changelog from the version before it in the list
+  (a step), computed by core with the same rules as `comline diff`. The first
+  version has none.
+- A release also carries everything since the previous release, compared
+  directly between the two built versions, and its changelog page shows that
+  (`0.1.0 to 0.2.0`), not the step. A release built from the same files as its
+  last dev build still lists that dev build's changes. The first release, with
+  none before it, shows its step.
+- A dev build (or the unreleased state) after the first build following a
+  release carries its changes since that release too: its page shows its step
+  and links to them. These are measured from the real previous release even
+  when `versions` trims it away.
 - The latest version, which `index.html` points at, is the newest release,
   else the newest dev build, else the unreleased state.
 
 **Caching.** A built version never changes, so its folder is kept between
 runs. `<out>/<format>/.comline-doc.json` records each folder's key: the
-version's commit, the commit of the version before it, the renderer's id and
+version's commit, the commits its changelogs start from, the renderer's id and
 version (for a built-in renderer, its crate version plus a content hash of
 its sources and assets, `0.1.0+<hash>`, and the `comline` version; for
 `[doc] renderer`, the renderer file's hash), the model version and `[doc] links`. A
@@ -77,10 +86,11 @@ version's folder:
 
 | File | Contents |
 |---|---|
-| `index.md` | Package name and version, its `config.idp` `//!` header, a module table, a link to the changelog. |
-| `<module>.md` | Per schema (`types::user` → `types/user.md`): its `//!` header, a table of its declarations, then each one with its `///` docs, annotations, fields and arguments (a field's own docs, else its parent's `/// @name:` line), enum variants, an error's ordinal and message, a validator's targets, parameters and asserts, and each protocol's functions and wire summary. |
-| `changelog.md` | With a changelog: breaking changes, additions and other changes. Each entry is a heading line (its severity, `MAJOR`, `MINOR` or `PATCH`, and a title such as `` `Orders.place`: signature changed `` linking to the declaration), then the change as a fenced `diff` block: the old IDL line with `-`, the new with `+`. An addition has only the `+` line, a removal only the `-` line, and a change with no IDL to show (a docstring, an error's ordinal, guarantees) a sentence instead. |
-| `nav.yml` | A `nav` list for mkdocs or zensical. |
+| `index.md` | Package name and version, its `config.idp` `//!` header, a module table (Module, Summary), a Dependencies table (each dependency and the modules of it the package uses), a link to the changelog. |
+| `<module>.md` | Per schema (`types::user` → `types/user.md`): its `//!` header, a table of its declarations (Item, Summary), then each one with its `///` docs, annotations, fields and arguments (a field's own docs, else its parent's `/// @name:` line), enum variants, an error's ordinal and message, a validator's targets, parameters and asserts, and each protocol's functions and wire summary. |
+| `changelog.md` | With a changelog: breaking changes, additions and other changes. Each entry is a heading line (its severity, `MAJOR`, `MINOR` or `PATCH`, and a title such as `` `Orders.place`: signature changed `` linking to the declaration), then the change as a fenced `diff` block: the old IDL line with `-`, the new with `+`. An addition has only the `+` line, a removal only the `-` line, and a change with no IDL to show (a docstring, an error's ordinal, guarantees) a sentence instead. A release shows its changes since the previous release; a dev build its step, then a link to its changes since the last release, listed below it. |
+| `deps/<package>/<module>.md` | Per module of a dependency without a published base URL: what the package reaches of it, as `<module>.md`. |
+| `nav.yml` | A `nav` list for mkdocs or zensical: the package's modules, then a `Dependencies` section (a dependency's pages, or its published base URL). |
 
 `<out>/markdown/index.md` lists the versions, newest first, grouped by release.
 There is no version picker: switching versions on a published site is left to
@@ -90,7 +100,17 @@ each version folder as a version of the site and adds a version selector.
 Each declaration has an anchor, its name in lowercase; a function has
 `<protocol>-<function>`. A type links to its declaration's anchor. A type from
 a dependency links to `<base>/<module>/#<anchor>` when `[doc] links` gives the
-dependency a base URL, and is plain text otherwise.
+dependency a base URL; `std` defaults to the hosted std docs,
+`https://comlineproject.github.io/docs/std/` (`std::http::HttpMethod` links to
+`.../std/http/#httpmethod`). Otherwise it links to the dependency's own pages,
+`deps/<package>/<module>.md`, and is plain text only when the package doesn't
+reach that declaration.
+
+**Dependencies.** Only the package's own modules are its modules. What it
+reaches of each dependency, and of `std`, is listed apart: the declarations its
+own use or re-export and what those use in turn, the same reach
+[versioning](../versioning.md#dependencies) measures a dependency by. A dependency it reaches
+nothing of isn't listed.
 
 The wire summary has the rows [`comline inspect`](inspect.md) prints: the
 format, framing and handshake with where each came from, then each guarantee,
@@ -103,12 +123,32 @@ writes a self-contained static site per version with the same content:
 |---|---|
 | `index.html` | As `index.md`. |
 | `<module>.html` | As `<module>.md` (`types::user` → `types/user.html`), with the same anchors. |
-| `changelog.html` | With a changelog: as `changelog.md`, with a severity badge, and the old and new lines marked `−` and `+` and syntax-highlighted. |
+| `changelog.html` | With a changelog: as `changelog.md`, with a severity badge, and the old and new lines marked `−` and `+` and syntax-highlighted. A dev build's changes since the last release are a collapsed section the line under its step opens. |
+| `deps/<package>/<module>.html` | As `deps/<package>/<module>.md`. |
 | `style.css` | The theme: fixed, light and dark following the OS setting unless the header's toggle picks one. |
 | `search.js` | The search index (each declaration's name, kind, module and first line of docs), inlined as data, and the search box's script. |
 
-Every page has a sidebar of modules and their declarations, a search box, a
-theme toggle, and a version picker in the header:
+Every page has a header with the package's name (the version is in the
+picker beside it), a search box, a theme toggle and a version picker, and a
+sidebar: the package's modules and their declarations, then a Dependencies
+section, collapsed unless the page is a dependency's, with one group per
+dependency. A group links to the dependency's published docs when it has a
+base URL, else to its pages here:
+
+```text
+Overview
+api
+  struct Order ...
+types
+Dependencies            (collapsed)
+  localdeps
+    greeting            -> deps/localdeps/greeting.html
+  std ↗                 -> https://comlineproject.github.io/docs/std/
+    http                -> .../std/http/
+Changelog
+```
+
+The header and sidebar work like this:
 
 - The theme toggle cycles auto (the OS setting), light and dark. The choice is
   kept in the browser's `localStorage` where it's allowed, so it carries across
@@ -138,15 +178,16 @@ At `<out>/html/`, the site's root:
 On `compare.html`, two versions show what changed between them, grouped by
 unit, each change shown as on `changelog.html` (badge, title, highlighted old
 and new lines), with the step it came from. The root's pages have the theme
-toggle too.
+toggle too, and show the package's name alone.
 More versions show a grid with units and members as rows and the chosen
 versions as columns. Each cell is the type or signature, or "absent", and a
 unit's badge is the largest change across the range. The labels are never
-computed in the browser. Core computes each version's changelog from the one
+computed in the browser. Core computes each version's step from the one
 before it (breaking is major, a feature minor, anything else patch), along
 with each entry's old and new IDL lines (the documentation model's optional
 `old` and `new` on a changelog entry), and the
-page only collects the steps after the older version up to the newer one. The
+page only collects the steps after the older version up to the newer one, never
+a release's changes since the previous release. The
 grid's cells are structural only.
 Doc text is rendered from Markdown to HTML; raw HTML in it is shown as text.
 Nothing loads from the network and every link is relative, so `index.html`
@@ -159,15 +200,17 @@ shape of [`doc-model/1.json`](../../schemas/doc-model/1.json), and
 and each version's `id`, `release`, `kind` and model path. Version 1 of the
 model grows additively: new kinds and fields that may be absent keep the
 version, so a reader should skip a `kind` it doesn't know and ignore unknown
-fields.
+fields. `dependencies` lists what the package reaches of each dependency
+(`package`, and `modules` holding only the units reached), and a changelog's
+`span` says what it covers: `step` (the default, when absent), `release` or
+`since_release`.
 
 ## Built versions
 
 A built version's model comes from its frozen IR and the `//!` headers stored
 with it. A built version keeps no source, so:
 
-- its protocols have no wire summary;
-- a type from a dependency has no link.
+- its protocols have no wire summary.
 
 A version built before headers were stored has no headers. Each page of such a
 version opens with a note saying what it lacks, in both formats.
