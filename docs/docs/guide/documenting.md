@@ -63,7 +63,7 @@ version's folder has these pages:
 |---|---|
 | `index.md` | The package's name and version, its `config.idp` header, and a table of its modules. |
 | `<module>.md` | One per schema (`types::user` is `types/user.md`): its header, a table of what it declares, then each declaration with its docs, annotations, fields, arguments, variants, and each protocol's wire summary, the same table the editor's hover and `comline inspect` show. |
-| `changelog.md` | What changed since the version before it, as `comline diff` reports it. |
+| `changelog.md` | What changed since the version before it, as `comline diff` reports it: each change's severity and a short title, then the old and new IDL lines as a `diff` block. |
 | `nav.yml` | The pages as a `nav` list for mkdocs or zensical. |
 
 Every declaration has an anchor, its name in lowercase (`api.md#order`), and a
@@ -104,7 +104,8 @@ host. It opens the latest version: the newest release, or the newest dev build
 before the first release.
 
 - **Each page** has a sidebar of modules and their declarations and a search box
-  over every declaration. The theme follows the OS's light or dark setting.
+  over every declaration. The theme follows the OS's light or dark setting
+  until you pick one with the toggle in the header, which the site remembers.
 - **The version picker** in the header switches versions and keeps your place:
   the same page and declaration in the chosen version, or that version's
   overview, with a note, when it doesn't have them. Dev builds are grouped under
