@@ -205,6 +205,10 @@ what to do with them. `comline inspect` shows them for the latest build.
 | shape hash | per protocol: a hash of what it puts on the wire |
 | parameter hash | per encoding: a hash of its name and parameters |
 
+Facts are kept per protocol **path**, `namespace::Protocol`, so protocols
+of the same name in two schemas each have their own. A renamed namespace or
+protocol keeps its line and sinces.
+
 ### Line
 
 A protocol's line moves to the release that carries a breaking change to it,
@@ -219,7 +223,9 @@ by the rules above. A change counts for a protocol when it changes:
 A break anywhere else in the package leaves the line alone. A change to the
 package's `wire.format`, `wire.framing` or `handshake` moves every
 protocol's line. Renaming a namespace or a protocol doesn't move it, because
-neither name travels.
+neither name travels. Each protocol's changes come from the diff with every
+other protocol left out, so a change to a protocol of the same name in
+another schema isn't its.
 
 ### Since
 
@@ -248,15 +254,27 @@ The shape hash is blake3 over a canonical CBOR encoding of only what reaches
 the wire:
 
 - the format, framing and handshake in play, by their parameter hashes;
-- the functions in declaration order: names, argument names and types,
-  return type, the errors they throw (ordinal, name, fields) and
-  `@provider`/`@consumer`;
+- the functions: names, argument names and types, return type, the errors
+  they throw (ordinal, name, fields) and `@provider`/`@consumer`;
 - every struct, enum and error they reach, with field names, types and
-  optionality and variant names, in order.
+  optionality and variant names.
+
+Order counts only where it travels, as the encodings' profiles state:
+
+- functions are hashed in declaration order where the framing calls them by
+  index (`calls = by_index`), and sorted by name otherwise;
+- fields and variants keep their order where the format goes by position
+  (`struct_fields = by_position`, `enum_variants = by_index`), and are
+  sorted by name otherwise.
+
+An encoding without an official profile counts as order-sensitive. So
+reordering functions under `jsonrpc` leaves the hash alone, and under
+`datagram@2` changes it.
 
 Aliases are resolved. Each declaration gets a number in the order it is first
 reached, so type names don't count. Docstrings, spans, validators, constants,
-field defaults, advisory annotations and namespaces are left out. The hash is
+field defaults, advisory annotations and namespaces are left out. The
+namespace is in the facts' key, not in the hash. The hash is
 computed when asked for, not stored.
 
 ### Parameter hash

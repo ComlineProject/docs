@@ -19,8 +19,8 @@ For each protocol, the package's own and then its dependencies':
   one shows the cause and whether it's been accepted. The protocol's
   `@unverified` reason is shown with its choices.
 - **The compatibility facts**, for your own protocols, once the package has
-  been built: the line, the shape hash and each function's since, as the
-  latest build records them ([Compatibility facts](../versioning.md#compatibility-facts)).
+  been built: its path, line, shape hash and each function's since, as the
+  latest build records them, keyed by `namespace::Protocol` ([Compatibility facts](../versioning.md#compatibility-facts)).
   They're of the latest build, not of unbuilt edits.
 
 ### Where a choice comes from
@@ -72,7 +72,7 @@ protocol api::Orders (shop)
   encoding conformance   held
   version honesty        held
 
-  as of build 0.2.0-dev.1
+  api::Orders as of build 0.2.0-dev.1
   line       0.2.0
   shape      5a13d1c49ddfb76184bfe703563fa91bd772175ee15baf65244bf4f16be339cd
   since      place                    0.1.0
@@ -139,6 +139,8 @@ build:
   "version": "0.2.0-dev.1",
   "protocols": [
     {
+      "path": "api::Orders",
+      "namespace": "api",
       "name": "Orders",
       "line": "0.2.0",
       "shape_hash": "5a13d1c4…",
