@@ -140,6 +140,8 @@ exits with `1`. The flags, limits and report are in the
 - `comline conformance` runs every encoding the package declares. An encoding
   with no vectors file is an error, so name the ones you mean with
   `--encoding`.
+- Official encodings are proven in the runtime's corpus. Run them with
+  `--corpus <runtime>/runtime/conformance`.
 
 ### Shipping no vectors
 
@@ -162,8 +164,6 @@ gives up encoding conformance (framing `com.acme.lines@1` ships no conformance v
 
 Adding the vectors file restores the guarantee, and the marker is then
 needless.
-- Official encodings are proven in the runtime's corpus. Run them with
-  `--corpus <runtime>/runtime/conformance`.
 
 ## 4. Use it in a schema
 

@@ -141,10 +141,8 @@ This is why a function that declares no `!` is still worth calling
 defensively — and why it needs no `!` to be able to fail. Declare a `!`
 for the failures a caller should *handle*; leave the rest to this channel.
 
-It also means one bad call no longer costs the connection. Before, a
-handler that threw something undeclared unwound the server loop: the
-connection died and the caller, who was never sent a frame, waited out its
-timeout instead. Now that call is answered and the next one still works.
+One bad call doesn't cost the connection: that call is answered with the
+failure, and the next one still works.
 
 ## Serving
 

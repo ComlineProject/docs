@@ -4,8 +4,8 @@ Primitives:
 
 | Group | Types |
 |---|---|
-| signed integers | `s8` `s16` `s32` `s64` |
-| unsigned integers | `u8` `u16` `u32` `u64` |
+| signed integers | `s8` `s16` `s32` `s64` `s128` |
+| unsigned integers | `u8` `u16` `u32` `u64` `u128` |
 | floats | `f32` `f64` |
 | boolean | `bool` |
 | text | `string` (see below) |
@@ -47,8 +47,10 @@ check every value of it, and `@deprecated`, which warns wherever it's used.
 
 | Comline | Rust | TypeScript |
 |---|---|---|
-| `s8` … `s64` | `i8` … `i64` | `number` |
-| `u8` … `u64` | `u8` … `u64` | `number` |
+| `s8` … `s32` | `i8` … `i32` | `number` |
+| `u8` … `u32` | `u8` … `u32` | `number` |
+| `s64`, `s128` | `i64`, `i128` | `bigint` |
+| `u64`, `u128` | `u64`, `u128` | `bigint` |
 | `f32` / `f64` | `f32` / `f64` | `number` |
 | `bool` | `bool` | `boolean` |
 | `string` | `String` | `string` |
@@ -58,8 +60,8 @@ check every value of it, and `@deprecated`, which warns wherever it's used.
 | `union(string u32)` | not supported yet | `string \| number` |
 | `optional x: T` | `Option<T>` | `x?: T` |
 
-TypeScript's `number` holds integers exactly only up to 2^53, so an `s64` or
-`u64` above that loses precision there.
+TypeScript's `number` holds integers exactly only up to 2^53, so the 64- and
+128-bit integers are `bigint` there, in generated types and in both codecs.
 
 ### Fixed arrays
 

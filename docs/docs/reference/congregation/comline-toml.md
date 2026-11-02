@@ -307,13 +307,3 @@ missing language in `config.idp`. It never runs a generator.
 
 In other editors, any TOML language server that reads the `#:schema` directive
 picks the schema up, such as [Taplo](https://taplo.tamasfe.dev/).
-
-## Forward-looking
-
-```toml
-# Generate bindings for a registry dependency rather than the local schemas.
-# Parsed but not yet operational — needs dependency resolution (core#6).
-[generate.dependencies.stdlib]
-out     = "src/gen/stdlib"
-targets = ["rust"]
-```

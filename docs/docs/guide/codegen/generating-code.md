@@ -255,7 +255,7 @@ is a dedicated one, e.g. `generated/`). It leaves `.comline/` alone —
 |---|---|
 | `struct` | `#[derive(…)] pub struct` with `serde` derives |
 | `enum` | `pub enum` |
-| `protocol` | `pub trait` with a method per function |
+| `protocol` | `pub trait` with a method per function, a dispatcher and a sender; see [Rust connections](../../languages/rust/connections.md) |
 
 A cross-schema reference (a type pulled in via `use`) is emitted as a
 `crate`-qualified path (`crate::shared::Shared`), not a bare name — a
@@ -279,7 +279,7 @@ than carrying a copy of it.
 | `struct` | `export interface` |
 | `error` | `export interface` (the payload) + `export class <Name>Error` |
 | `enum` | `export enum` with string values |
-| `protocol` | a client, a dispatcher, and a `serve<Proto>` helper against `@comline/runtime` |
+| `protocol` | a provider interface and a sender, with a package-wide `serve` / `accept` / `connect` for [connections](../../languages/typescript/connections.md); a client, a dispatcher and a `serve<Proto>` helper for one on the lockstep `datagram` framing |
 
 A cross-schema reference is emitted as an `import type` from the schema that
 declares it, by relative specifier:

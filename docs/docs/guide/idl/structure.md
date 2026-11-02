@@ -35,53 +35,27 @@ struct Message {
 
 ## Field types
 
-| Kind | Examples |
-|---|---|
-| integers | `s8 s16 s32 s64`, `u8 u16 u32 u64` |
-| floats | `f32`, `f64` |
-| other | `bool`, `string` |
-| named | another `struct` / `enum`, scoped as `pkg::module::Type` |
-| array | `Message[]` (any length), `u8[16]` (fixed) |
-| union | `union(string u32)` |
+A field can be any [type](types.md): a primitive (`u32`, `bool`, `string`), a
+`struct`, `enum` or `type` alias by name (scoped as `pkg::module::Type`), an
+array (`Message[]`, `u8[16]`) or a union (`union(string u32)`).
 
-Use `string` for text; `str` and `String` are not Comline types — see
-[Text](types.md#text-string).
+## Docstrings and annotations
 
-## Docstrings
-
-A [docstring](docstrings.md) (`///` lines) and `@key=value` annotations attach to
-a struct or an individual field.
+A [docstring](docstrings.md) (`///` lines) documents the struct or a field.
+[Annotations](annotations.md) (`@key = value`) above a field attach to it, as
+[`@validators`](validator.md) does; above the struct, they attach to the
+struct, as `@deprecated` and [`@settings`](settings.md#named-presets-settings)
+do.
 
 ```ids linenums="1"
 /// A message routed through the mail protocol.
+@deprecated = "use Envelope"
 struct Message {
+    /// Plain-text body, UTF-8.
+    @validators = [StringBounds(min_chars = 1)]
     body: string
 
     /// Shown in the client's list view.
     optional subject: string
 }
 ```
-
-
-## Annotations
-
-An annotation's value is one of three forms:
-
-- **A single value:** an integer, a string, `true`/`false` or a name
-  (`@timeout_ms = 1000`).
-- **A list of calls,** for [`@validators`](validator.md)
-  (`@validators = [StringBounds(min_chars = 3)]`).
-- **A dictionary of `key = value` entries,** for an annotation with several
-  settings, such as
-  [`@framing`](protocol.md#annotations)
-  (`@framing = { name = "jsonrpc", method_names = qualified }`).
-
-```ids
-struct Message {
-    @optional // <- This is an annotation
-    body: string
-}
-```
-
-TODO: annotations might not apply to structures, only fields
-

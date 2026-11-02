@@ -1,8 +1,8 @@
 # TypeScript
 
-Status: shipped, `code` mode only — there's no `lib` mode for TypeScript
-yet (Rust is the only language that has it; see [Library
-generation](../../guide/codegen/library-generation.md)). Generated code
+Status: shipped. `comline-codegen-typescript` generates `code` mode (plain
+source files) and `lib` mode (an npm package); see [Library
+generation](../../guide/codegen/library-generation.md). Generated code
 depends on **`@comline/runtime`** (MPL-2.0, ESM, Node).
 
 Not published to npm yet. Depend on it from a git checkout or workspace
@@ -23,7 +23,8 @@ it from async code is simply using it as it's already written, with
 
 Part of the runtime is the Rust [shared runtime core](../../proposals/shared-runtime-core/index.md),
 loaded through wasm (the [C ABI](../../reference/c-abi.md#wasm32-and-the-js-glue)),
-and part is still TypeScript. The core is vendored at `runtime` `257bc02`
+and part is still TypeScript. The core is vendored into the package, pinned
+to a `runtime` revision by `scripts/vendor-core.sh`
 ([ts#87](https://github.com/ComlineProject/comline-typescript/pull/87)).
 
 | Runs on the core, once it has loaded | Stays in TypeScript |
@@ -62,5 +63,7 @@ median of 5. They are not a CI gate; see
 
 - [Client & server](client-and-server.md) — connecting, serving, and the
   shape codegen actually emits.
+- [Connections](connections.md) — the default: every protocol on one
+  connection, calls in both directions.
 - [Framing & wire format](framing-and-wire-format.md) — what's pluggable
   today and what isn't yet.

@@ -106,10 +106,10 @@ use comline_runtime::transport::Tcp;
 struct MyMail;
 
 impl Mail for MyMail {
-    fn send_message(&self, message: Message) -> Result<String, MailSendMessageError> {
+    fn send_message(&self, message: Message) -> Result<String, Fault<MailSendMessageError>> {
         Ok(format!("sent: {}", message.body))
     }
-    fn fetch_inbox(&self) -> Result<Vec<Message>, MailFetchInboxError> {
+    fn fetch_inbox(&self) -> Result<Vec<Message>, Fault<MailFetchInboxError>> {
         Ok(vec![])
     }
 }

@@ -2,32 +2,25 @@
 
 ## Install
 
-At the moment the is no proper `comline` releases in crates.io, so install **From source** below.
+`comline` isn't released on crates.io or as an OS package yet, so build it
+from source. You need a Rust toolchain ([rustup](https://rustup.rs/)) and
+`git`:
 
-After installing from any of the two options, you should now have access to the `comline` binary (which should be at `~/.cargo/bin`). You can check by doing:
-
-```bash
-comline --help
-```
-
-
-### From Source (Github)
 ```bash
 git clone https://github.com/ComlineProject/cli
 cd cli
 cargo install --path .
 ```
 
-### From Cargo (crates.io)
+This puts the `comline` binary in `~/.cargo/bin`. Check it's on your `PATH`:
 
-`comline` is on crates.io but there is no proper releases being done yet, so build from source by doing the following:
+```bash
+comline --help
+```
 
-
-A `cargo install comline` from crates.io, and OS packages (Fedora, Arch,
-Windows, macOS), are planned — packaging is tracked in
+`cargo install comline` and OS packages (Fedora, Arch, Windows, macOS) are
+planned; packaging is tracked in
 [`ComlineProject/distributions`](https://github.com/ComlineProject/distributions).
-
-
 
 ## Create a project
 

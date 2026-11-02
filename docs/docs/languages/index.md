@@ -12,8 +12,8 @@ Each language gets its own tree. Pick one from the tabs on the left.
 
 | Language | Generator | Modes | Runtime |
 |---|---|---|---|
-| [Rust](rust/index.md) | shipped | `code`, `lib` | `comline-runtime`, sync, `no_std`-first |
-| [TypeScript](typescript/index.md) | shipped | `code` | `@comline/runtime`, async/Promise-based |
+| [Rust](rust/index.md) | shipped | `code`, `lib` | `comline-runtime`, `no_std`-first; sync, or async with `async = true` |
+| [TypeScript](typescript/index.md) | shipped | `code`, `lib` | `@comline/runtime`, async/Promise-based |
 | Python, Lua, Luau, C | none yet | — | — |
 
 Python, Lua, Luau and C appear in example `config.idp` manifests and design

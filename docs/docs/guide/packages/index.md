@@ -27,18 +27,10 @@ code_generation = {
 }
 ```
 
-| Field | Meaning |
-|---|---|
-| `congregation` | the package name — a Comline identifier (letters, digits, `_`) |
-| `id` | the package's identity: 32 lowercase hex digits, random. `comline new` writes it, and `comline build` adds one to a package without it, as one line after `congregation`, with a note. A rename keeps it; a copy of the package must change it. Changing it is a major change. See [Compatibility facts](../../reference/versioning.md#compatibility-facts) |
-| `specification_version` | which version of the schema language these files are written against |
-| `code_generation.languages` | the **capability list**: `language#lang_version` targets this package *can* be generated as, each version the oldest toolchain the output must build on, which `comline build` proves ([Language versions](../codegen/generating-code.md#language-versions)). Bare entries — `= {}` is required and takes no options. |
-| `dependencies` | other packages this one imports — see [Dependencies](#dependencies) |
-| `settings` | package-wide authoring policy, enforced at build time — see [Settings](../idl/settings.md) |
-| `wire` | the package's wire format and framing — see [Wire defaults](#wire-defaults) |
-| `handshake` | what a protocol with no `@handshake` runs before its first call: `"comline@1"` (the default) or `"none"` — see [Giving up a guarantee](../idl/protocol.md#giving-up-a-guarantee) |
-| `encodings` | the formats, framings and handshakes this package defines, each with a profile — see [Extending Comline](../extending/encodings.md) |
-| `publish_registries` | named registries this package publishes to (planned — [see below](#publishing-planned)) |
+Every key, its syntax and what it does is in the
+[`config.idp` reference](../../reference/congregation/config-id.md). The ones
+with more to them have their own sections below: [wire defaults](#wire-defaults)
+and [dependencies](#dependencies).
 
 The manifest is **frozen**: it lowers to IR units and is content-addressed into
 every built version, so a published version carries its own declarations. It

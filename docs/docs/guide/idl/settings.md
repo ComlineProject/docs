@@ -160,9 +160,7 @@ peers rely on is the same kind of decision.
 
 It is the base layer every package starts from, whether or not the package
 writes a `settings` block of its own: writing an unrelated setting does not
-drop it. (It used to — the default was installed only when a package wrote
-no `settings` key at all, so writing any setting silently removed the
-protection entirely.) A package that genuinely wants no built-in policy can
+drop it. A package that genuinely wants no built-in policy can
 drop the layer with `mode = replace` at the root, the same escape hatch any
 other layer has.
 

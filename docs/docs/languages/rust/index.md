@@ -16,22 +16,19 @@ worked example):
 comline-runtime = { git = "https://github.com/ComlineProject/runtime", rev = "…" }
 ```
 
-## The one fact everything else here builds on
+## Sync by default, async when asked
 
-The runtime is **sync**, `&mut self`-based, and `no_std`-first. There is
-no `Arc`, `Rc`, `Mutex`, or thread spawned anywhere inside it — every call
-blocks the caller until the response arrives, by design, so it works the
-same on a bare-metal target with no allocator as it does in a normal
-`std` binary. The crate's own intent, stated in
-`contract/dispatch.rs`, is explicit about this being deliberate for now:
+The runtime is `no_std`-first and **sync** by default: a call blocks until
+its reply arrives, and nothing inside the runtime spawns a thread or takes a
+lock, so it works the same on a bare-metal target with no allocator as in a
+normal `std` binary.
 
-> Sync — no boxed futures on the `no_std` path. An async server layer
-> wraps this behind the `std` feature.
-
-That layer doesn't exist yet. Concurrency — running calls on several
-threads, or from an async runtime — is entirely something *you* build on
-top, not something the runtime hands you. [Sync, async &
-concurrency](concurrency.md) covers the patterns.
+Set [`async = true`](../../reference/congregation/comline-toml.md#async) in
+`comline.toml` and connection protocols are generated for the runtime's
+**async** driver instead: handlers are `async fn`s, the connection is a future
+you spawn on any executor, and handles call the peer from any task
+([Connections → Async](connections.md#async)). Protocols on the lockstep
+`datagram` framing keep their blocking client and server either way.
 
 ## Where to go next
 
@@ -40,5 +37,7 @@ concurrency](concurrency.md) covers the patterns.
 - [Framing & wire format](framing-and-wire-format.md) — `Packed`, `Json`
   and `MsgPack`; `Datagram2Framing`, `DatagramFraming` and `JsonRpcFraming`;
   and how the package's `wire` key picks both.
-- [Sync, async & concurrency](concurrency.md) — using a `Client` from more
-  than one thread, or from async code, today.
+- [Connections](connections.md) — the default: every protocol on one
+  connection, calls in both directions, sync or async.
+- [Sync, async & concurrency](concurrency.md) — sharing a lockstep `Client`
+  between threads, and calling it from async code.
