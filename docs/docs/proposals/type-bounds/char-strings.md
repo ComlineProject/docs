@@ -121,6 +121,25 @@ those languages use a code point instead:
 | Dart | `int`, a rune | the same reason |
 | TypeScript, Python | a string of exactly one code point, checked | no character type |
 
+**On the wire** (decided 2026-11-02: per format, at no size or speed cost
+against the alternatives). A one-character string carries a length prefix a
+single character doesn't need: UTF-8 already says from its first byte how long
+a character is. So each format picks its cheapest form:
+
+| Format | One `char` | Size | Instead of |
+|---|---|---|---|
+| `packed@1` | the raw UTF-8 bytes, no prefix, checked by the strict UTF-8 check | 1–4 bytes | a one-character string, 2–5 bytes |
+| `msgpack@1` | a one-character string, so other msgpack tools see text | 2–5 bytes | the code point as an integer, 1–5 bytes: 1 byte smaller for ASCII, but a number to every other tool |
+| `json@1` | a one-character string, `"a"` | 3–14 bytes | the code point as a number, `97` |
+
+The per-format choices are proposed; each format's specification records its
+own. A fixed 4 bytes in `packed@1` would keep a struct of fixed-size fields
+fixed-size, at 3 extra bytes per ASCII character; it isn't proposed.
+
+Adding `char` adds a type to formats that already exist. No existing bytes
+change, but a runtime that doesn't know `char` can't read a schema that uses
+it, and its support claim says so.
+
 ## Issues
 
 - **`string[max 64]` is an array of 64 strings, not a bounded string.** Someone
@@ -130,17 +149,15 @@ those languages use a code point instead:
 - **`string` takes no bound itself,** because bounds don't go on named types
   ([issue 2](max-only.md#issues-and-resolutions)). A bounded string is always
   spelled `char[…]`.
-- **A lone `char` needs its own encoding** (open, below).
+- **A lone `char` needs its own encoding:** see
+  [A single `char`](#a-single-char).
 
 ## Open
 
 - ~~**Keep the name `string`, or deprecate it**~~: decided, kept as the name
   for a sequence of characters.
-- **How a lone `char` is sent:**
-  - as a one-character string in every format, the same as `char[1]`; simplest
-    and consistent;
-  - or as its code point, a `u32`, in `packed@1`; fixed size, but a second
-    representation.
+- ~~**How a lone `char` is sent**~~: decided, per format at no size or speed
+  cost; the per-format forms are [proposed](#a-single-char).
 - ~~**`char[N]` in generated code**~~: decided, the
   [three levels](#generated-code), on the condition that measurement confirms
   no correctness or performance cost.
