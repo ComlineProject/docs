@@ -5,6 +5,15 @@ wraps a call or a reply around those bytes (`datagram@2`, `jsonrpc@1`). You
 can add either one. This page covers the whole path: declare it, profile it,
 prove it, map it, use it.
 
+```mermaid
+flowchart LR
+    D["1. declare<br/>config.idp encodings"] --> P["2. profile<br/>its facts"]
+    P --> V["3. vectors<br/>prove an implementation"]
+    D --> U["4. use<br/>wire, @framing"]
+    U --> M["5. map<br/>a type per language"]
+    M --> G["generated code<br/>names that type"]
+```
+
 ## 1. Declare it
 
 A package declares the encodings it defines under `encodings` in `config.idp`:

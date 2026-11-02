@@ -136,12 +136,20 @@ protocol Accounts {
 }
 ```
 
+```mermaid
+flowchart LR
+    A["Handle's validators<br/>StringBounds(2, 8)"] --> F["the field's own<br/>@validators"]
+    F --> OK["value accepted"]
+```
+
+A value of the alias is checked by the alias's validators first (an alias of
+an alias: innermost first), then by the field's own.
+
 - The alias stays the type it stands for: `Handle` is still a `String` in
   generated Rust. Adding a validator never changes a type's API or its wire
   format.
 - The validator's `for` target is checked once, against what the alias
   resolves to.
-- A field of the alias runs the alias's checks first, then its own.
 - An alias of an alias collects the checks along the chain.
 - An array of the alias (`Handle[]`) checks each element.
 - An alias is the only way to check a **function argument**: arguments take no

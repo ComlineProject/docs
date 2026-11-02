@@ -149,6 +149,16 @@ decides where the package comes from:
 | Git | `version`, `uri`, `commit` (optional `hash`) | cloned once per pin into `.comline/deps-cache/`, using the `git` binary |
 | Registry | `version`, `uri` (optional `hash`, `signature`) | **not supported yet** — there's no registry server, so `comline check` / `build` reject it |
 
+```mermaid
+flowchart LR
+    E["config.idp<br/>dependencies"] -->|path| L["../shared-types"]
+    E -->|"git commit"| G[".comline/deps-cache/"]
+    L --> C["compiled under<br/>its own settings"]
+    G --> C
+    C -->|"hash checked"| U["your schemas<br/>use shared_types::…"]
+    C -->|"comline build"| V[("vendored into<br/>the version")]
+```
+
 `comline check` and `comline build` resolve every dependency, then compile it
 like any other package. Your package uses that compile as it is: a
 dependency's schemas aren't compiled again under your settings, its own
