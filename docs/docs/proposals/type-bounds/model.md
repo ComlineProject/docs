@@ -247,6 +247,20 @@ already within its bounds.
 - **Docs:** the doc model carries each position's bound, so generated docs show
   it next to the type.
 - **Diagnostics:** name the bound in the same words as hover.
+- **Sizes:** with every value bounded
+  ([issue 6](max-only.md#issues-and-resolutions)), hover shows each type's
+  smallest and worst-case encoded size **per format**, and checks the
+  worst case against each framing's default frame limit and every limit the
+  consumer configures, resolved from the schemas, `config.idp` and the
+  consumer's configuration. For `char[max 64]`: 1–258 bytes in `packed@1`
+  (a 1–2 byte length prefix, then up to 256 bytes of UTF-8), 2–770 bytes in
+  `json@1` (quotes, then up to 12 bytes per character when escaped). The
+  per-format rules come from the codegen kernel's layout plan, not repeated in
+  the language server.
+- **Cost per target:** hover also shows what each configured target makes of
+  the type: the generated type ([levels](char-strings.md#generated-code)),
+  its in-memory size where fixed, and whether the target supports the
+  declared maximum ([issue 4](max-only.md#issues-and-resolutions)).
 
 This explaining is what keeps a bracket after `string` from being read as the
 array suffix, under whichever spelling is chosen.
