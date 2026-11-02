@@ -63,14 +63,24 @@ Every string and dynamic array, at any position, has a maximum from, in order:
 3. a give-up, `@unverified = "reason"`.
 
 A type that can contain itself needs a depth limit from the same three sources
-(`@max_depth`). Every message then has a computable worst-case size per format.
+(`@max_depth`). Every message then has a computable worst-case size per format,
+and a worst-case size in memory per target.
+
+- **A package default reaches only its own positions.** A dependency's types
+  keep the maximum resolved in the dependency; std bounds its own strings.
+- **Only the resolved maximum counts:** `string` at a default of 64 and
+  `char[max 64]` are the same type to version comparison.
+- **The rule applies to the version being built,** not to stored history.
+- **Giving up "bounded size"** goes through the `@unverified` rules: enabled in
+  settings, accepted by consumers per protocol, a major bump when added.
 
 ### What's checked, and where
 
 | Where | What |
 |---|---|
-| Build | `max 0`; a value breaking a bound (defaults, constants); a validator's minimum above the type's maximum (error) or a validator capping below it (warning); worst-case sizes against each framing's default frame limit and every configured one |
-| Generating | a target supports the full declared maximum or refuses to generate, naming the target; a generator that doesn't declare the bounds feature is refused |
+| Build | `max 0`; a constant named `max` used as a length; a value breaking a bound (defaults, constants); a validator's minimum above the type's maximum (error) or a validator capping below it (warning); untagged union members differing only by bound; worst-case wire sizes against each framing's default frame limit and every configured one; worst-case memory per target against its budget |
+| Generating | a target supports the full declared maximum and depth or refuses to generate, naming the target (generators configure their parsers' depth); a generator that doesn't declare the bounds feature is refused |
+| Handshake | the compatibility facts (`comline@2`) carry each position's resolved maximum |
 | Sending | an encoder never produces bytes a conforming decoder refuses: out-of-bound values fail locally |
 | Receiving | decoders refuse out-of-bound values while decoding, before allocating where the format allows; validators, on by default, run after |
 | Connecting | the shared runtime core refuses a connection configured below a protocol's worst-case message, unless given up |
@@ -148,7 +158,7 @@ runtime core primitive is used only where measurement shows it's faster.
 | 4 | core | version comparison: bound changes breaking |
 | 5 | core, std | `NonEmpty`, `MinChars`, `MinItems`, `IntRange`; `StringBounds.max_chars` default |
 | 6 | core, generation | the doc model and the codegen kernel carry bounds; generators declare the bounds feature, and the CLI refuses those that don't |
-| 7 | runtime | conformance vectors for bounds per format, and the depth limit |
+| 7 | runtime | conformance vectors for bounds per format, the depth limit, and bounds in the compatibility facts |
 | 8 | comline-rust | checks while decoding and encoding, alias newtypes, validators on by default |
 | 9 | comline-typescript | checks while decoding and encoding, branded aliases; validators with core#96's step 4d |
 | 10 | cli | `validate_on_decode` default, worst-case sizes against configured limits, migration |
