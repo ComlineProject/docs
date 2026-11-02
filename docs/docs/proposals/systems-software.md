@@ -112,9 +112,8 @@ struct OpenRequest {
   keywords, following Rust's `core::ffi`. They're the first std types whose
   meaning core knows, so generators treat them specially, as they already
   build in std's validators.
-- **Checked:** decoding refuses an array without a NUL, and `c_char` invalid
-  UTF-8; encoding refuses text of N bytes or more; converting a `char[]`
-  refuses U+0000, which C would read as the end of the text.
+- **Checked:** the NUL rule (below), and for `c_char`, UTF-8; converting a
+  `char[]` refuses U+0000, which C would read as the end of the text.
 - **Generated code:** C, `char name[16]` for both, byte-identical to existing
   headers; Rust as above; TypeScript, a `string` for `c_char` and bytes for
   `c_byte`.
@@ -123,15 +122,42 @@ struct OpenRequest {
 
 | Type | Sent as | Decoder checks |
 |---|---|---|
-| `c_char[N]` | a JSON string of the text, without the NUL or padding: `"eth0"` | no `\u0000`; the text's UTF-8 length is at most N − 1 **bytes**, since the limit is C's storage |
-| `c_byte[N]` | the bytes before the NUL, as an array of numbers, as `json@1` sends any `u8` array: `[101,116,104,48]` | no 0 inside; at most N − 1 bytes |
+| `c_char[N]` | a JSON string of the text, without the NUL or padding: `"eth0"` | no `\u0000`; the text's UTF-8 length fits the NUL rule, in **bytes**, since the limit is C's storage |
+| `c_byte[N]` | the text's bytes, as an array of numbers, as `json@1` sends any `u8` array: `[101,116,104,48]` | no 0 inside; the length fits the NUL rule |
 
 `c_char` is always valid UTF-8, so a JSON string loses nothing. `c_byte` as
 numbers keeps byte arrays consistent within `json@1`; base64 would be smaller,
 but should then apply to every byte array, a `json@2` decision.
 
-**Open:** NUL-padded fields that may fill all N bytes without a NUL, as some
-fixed formats use (more types, or a variant).
+**The NUL rule is a validator, on by default** (suggested 2026-11-02). Whatever
+the rule, the text is read the same way: the bytes before the first NUL, or all
+N if there's none. Rules differ only in what they check, so they're validators,
+not types:
+
+| Rule | Checks | Typical use |
+|---|---|---|
+| `NulTerminated()`, **the default** | a NUL within the N bytes: text of at most N − 1 bytes | most C interfaces: `ifr_name`, `utsname` |
+| `NulPadded()` | text may fill all N bytes; any bytes after it are NUL | fixed record formats: `tar` headers (`name[100]`), `utmp` (`ut_user[32]`) |
+
+```ids
+struct TarHeader {
+    /// May fill all 100 bytes, with no NUL.
+    @validators = [NulPadded()]
+    name: c_byte[100]
+}
+```
+
+- **Stating the other rule replaces the default.** std declares `NulPadded` as
+  the alternative to `NulTerminated`, so listing it replaces the default rather
+  than adding to it. That isn't giving up a guarantee; it's a different rule,
+  still checked.
+- **Where the line falls between types and validators:** a **type** when what's
+  generated differs (UTF-8 makes Rust's accessor a `&str`, so `c_char` and
+  `c_byte` are two types); a **validator** when only the check differs (the NUL
+  rule generates the same accessor).
+- **Not C strings at all:** fields that may hold a NUL inside the text, such as
+  Linux abstract socket addresses, which start with a NUL and are measured by a
+  separate length. Those are `u8[N]` with a length field.
 
 ## Target constraints
 
@@ -187,8 +213,8 @@ format from what Comline has. When 3 is taken up, it likely starts from
 ## Open
 
 - **The exact-layout format:** its name, and how a target ABI is named.
-- **C text:** `c_char` and `c_byte` as [proposed](#c-text-c_char-and-c_byte),
-  and NUL-padded fields.
+- **C text:** `c_char` and `c_byte`, and the NUL rule as a validator on by
+  default, as [proposed](#c-text-c_char-and-c_byte).
 - **Target constraints:** the list, their defaults per kind of target, and
   where they're declared.
 - **Proving no panics:** which checks CI runs.
