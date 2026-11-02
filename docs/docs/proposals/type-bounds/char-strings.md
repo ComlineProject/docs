@@ -142,13 +142,16 @@ it, and its support claim says so.
 
 ## Issues
 
-- **`string[max 64]` is an array of 64 strings, not a bounded string.** Someone
-  meaning "a string of at most 64" may write it. With `string` kept, hover and
-  diagnostics say "an array of at most 64 strings", and the docs teach
+- **`string` is a string at the package's default maximum**
+  ([issue 6](max-only.md#issues-and-resolutions)), and `char[max N]` a string
+  at a specific one. `string` takes no bound itself; it is exempt from the rule
+  against a suffix after an alias ([issue 2](max-only.md#narrowing-an-alias)),
+  so `string[max 10]` is a list of 10 strings.
+- **`string[max 64]` is a list of 64 strings, not a bounded string.** Someone
+  meaning "a string of at most 64" may write it. They get a list, which their
+  language's type checker flags as soon as the code uses it as one string, and
+  hover and diagnostics say "a list of at most 64 strings". The docs teach
   `char[max 64]` for a bounded string.
-- **`string` takes no bound itself,** because bounds don't go on named types
-  ([issue 2](max-only.md#issues-and-resolutions)). A bounded string is always
-  spelled `char[…]`.
 - **A lone `char` needs its own encoding:** see
   [A single `char`](#a-single-char).
 

@@ -189,7 +189,7 @@ Raised 2026-11-02 while weighing D. **Decided** marks what the user settled;
 | # | Issue | Resolution | State |
 |---|---|---|---|
 | 1 | `max` becoming a keyword would break names already in use: validator parameters called `max`, `params.max` | `max` is a keyword only right after `[` in a type; everywhere else it stays a name. Tests prove `max: u32` and `params.max` still parse | **decided** |
-| 2 | A bound after an alias can't narrow it: with `type Tags = char[max 32][max 10]`, `Tags[max 5]` is an array of 5 `Tags` lists, not "Tags, at most 5" | No bound on a named type; a tighter limit is a new alias: `type FewTags = char[max 32][max 5]`. Narrowing would need its own syntax, since a suffix after a name already means an array; see [Narrowing an alias](#narrowing-an-alias) for what it would imply | open |
+| 2 | A bound after an alias can't narrow it: with `type Tags = char[max 32][max 10]`, `Tags[max 5]` is an array of 5 `Tags` lists, not "Tags, at most 5" | **No suffix after such an alias where it's used.** For an alias whose target takes a bound (`char[]`, `T[]`), `[…]` at a field, parameter, return or union member is an error; the limit is changed in the alias itself, and a list of it is declared as its own alias (`type TagLists = Tags[max 5]`), where the suffix stays allowed. Aliases of numbers and structs keep the suffix (`UserId[max 10]`), having no limit to narrow. **`string` is exempt:** it means a string at the package's default maximum (issue 6), so `string[max 10]` stays a list of 10 strings. See [Narrowing an alias](#narrowing-an-alias) | **decided** |
 | 3 | Constants as bounds | Allowed: `char[max MAX_NAME]`, any unsigned integer constant, stored resolved. A dependency's constant changing changes your wire contract, and version comparison reports it | **decided** |
 | 4 | `max 0`, values too large for a target, and messages too large for a framing or a connection | `max 0` is an error. Core caps at `u32::MAX`. **A target supports the full declared maximum or refuses to generate,** naming the target, so nothing quietly accepts less. Each message's worst-case size, per format, is checked against each framing's default frame limit and against every limit a consumer configures: the language server resolves them from the schemas, `config.idp` and the consumer's configuration. Generated code passes each protocol's worst-case size to its connection, and the shared runtime core refuses a connection configured below it unless that's given up explicitly | **decided** |
 | 5 | Nested bounds read right to left: in `char[max 20][max 8][max 16]` the outermost limit comes last | Hover and diagnostics say it in words ("up to 16 rows, each up to 8 labels, each up to 20 characters"); a lint suggests an alias past two bounded levels. Prefix arrays, as Go writes them, were considered and not proposed: they'd change every array | proposed |
@@ -200,7 +200,7 @@ Raised 2026-11-02 while weighing D. **Decided** marks what the user settled;
 | 10 | Adopting a maximum is breaking: adding one to an unbounded field tightens it, so a major version | Accepted before 1.0. Later, version comparison may weigh direction (via `@provider` from [packet dispatch](../packet-dispatch.md)), so a limit on a value only the server receives breaks nobody | **decided** |
 | 11 | A generator using fixed-capacity types (`ArrayString<32>`) changes its consumers' code when a maximum changes, beyond the wire | Fixed-capacity types are opt-in in a generator's configuration; the default is the language's normal heap type with a check | to be proposed |
 | 12 | Every language pays for checking, and writes the check itself | Following the [shared runtime core](../shared-runtime-core/index.md): the core owns what is bytes and integers, not host values. **Decoding** works on bytes, so "strict UTF-8 and count characters up to N" can be a core primitive; it moves into a language's path only where instruction counts show the call is at least as fast, as in [stage 4](../shared-runtime-core/index.md#stage-4-moving-typescript). **Encoding** starts from a host string, which the core doesn't own. The rule itself is written once: [stage 3](../shared-runtime-core/generated-codecs.md)'s layout plan carries each maximum, and every generator renders the check from it, held together by the vectors and differential fuzzing. The runtime cost per language is what the [validator benchmarks](../validator-benchmarks.md) would measure | proposed |
-| 13 | Transports have limits of their own (a UDP datagram holds about 65 KB), which no configuration states today | Transports are declared in configuration, with their limits, and take part in the guarantees core works out: a protocol whose worst-case message exceeds its transport's limit is an error, or a give-up. How transports are declared is a design of its own | open: raised 2026-11-02 |
+| 13 | Transports have limits of their own (a UDP datagram holds about 65 KB), which no configuration states today | Optional transport declarations, by the schema's author and by the consumer, adding a "transport fit" guarantee only where declared: [Transports](../transports.md) | open: a draft |
 
 ### Narrowing an alias
 
@@ -223,6 +223,27 @@ would imply:
 
 Without narrowing, a tighter limit is a new alias: an explicit name, its own
 generated type, and nothing to resolve. The cost is more aliases.
+
+**Decided 2026-11-02: no suffix after such an alias where it's used.** It
+can't be misread as narrowing, because it isn't allowed:
+
+```
+`Tags` is an alias of an array: change its limit in `type Tags`,
+or for a list of Tags declare `type TagLists = Tags[max 5]`.
+```
+
+- **Which aliases:** those whose target takes a bound (`char[]`, `T[]`). An
+  alias of a number or a struct has no limit to narrow, so `UserId[max 10]`
+  stays a list of ids.
+- **Alias declarations keep the suffix:** `type TagLists = Tags[max 5]` is
+  allowed there, or a list of `Tags` couldn't be written at all.
+- **`string` is exempt.** With every value bounded (issue 6), a bare `string`
+  is a string at the package's default maximum, and `char[max N]` a specific
+  one. `string[max 10]` is therefore a list of 10 default strings, with nothing
+  to misread as narrowing. Writing `string[max 64]` meaning 64 characters
+  gives a list instead, which the language's type checker flags as soon as the
+  code uses it as one string (`Vec<String>`, not `String`, in Rust), and hover
+  says so.
 
 ### Senders, by format and framing
 
