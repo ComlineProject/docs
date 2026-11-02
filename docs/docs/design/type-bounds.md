@@ -51,15 +51,21 @@ struct OrderLine {
   or `T[]`, `[…]` at a field, parameter, return or union member is an error; the
   limit changes in the alias, and a list of it is its own alias. Aliases of
   numbers and structs keep the suffix; `string` is exempt.
-- **`max 0` is an error;** core caps a maximum at `u32::MAX`.
+- **`max 0` is an error,** and so are an exact length of 0 and any negative
+  size; core caps a maximum at `u32::MAX`.
+- **One stored form for strings:** `string`, `char[]`, `char[max N]` and
+  `char[N]` all resolve to a string with an optional maximum or exact length.
+- **A single `char` literal is `"a"`,** checked to be exactly one character.
+- **Validators ignore bounds when matching:** `for string` applies to every
+  string, `for u32[]` to every `u32[max N]`.
 
 ### No unbounded value
 
 Every string and dynamic array, at any position, has a maximum from, in order:
 
 1. the position itself;
-2. a package default in `settings`, stored resolved at each position it
-   reaches;
+2. a default from any `settings` layer (package, schema, preset), merged as
+   settings are, stored resolved at each position it reaches;
 3. a give-up, `@unverified = "reason"`.
 
 A type that can contain itself needs a depth limit from the same three sources
@@ -95,7 +101,9 @@ The bytes don't change; only what a decoder accepts does.
 | `json@1` | refused at item N + 1 | counted after unescaping |
 
 A single `char` is sent per format at no size or speed cost: raw UTF-8 in
-`packed@1`, a one-character string in `msgpack@1` and `json@1`.
+`packed@1`, a one-character string in `msgpack@1` and `json@1`. An array of
+`char` is always text: `char[N]` sends a byte length too, unlike other fixed
+arrays in `packed@1`. Text is never normalized; what's sent is what's counted.
 
 ### Version comparison
 
@@ -120,6 +128,9 @@ receivers. Adopting a maximum is breaking too, accepted before 1.0.
    so a wrong value can't be built.
 3. **Opt-in:** fixed-capacity storage, in the consumer's generator
    configuration.
+
+A generator setting keeps plain types (level 1 for aliases too) while
+consumers migrate; decoding still checks.
 
 A single `char` maps to a code-point type where a language's own `char` is a
 UTF-16 unit (`int` in Java, `Rune` in C#).
@@ -152,7 +163,7 @@ runtime core primitive is used only where measurement shows it's faster.
 
 | Step | Repository | Work |
 |---|---|---|
-| 1 | core | grammar: `T[max N]`, `char`, `max` as a keyword after `[` only, constants as bounds; the alias-suffix rule |
+| 1 | core | grammar: `T[max N]`, `char`, `max` as a keyword after `[` only, constants as bounds; the alias-suffix rule; negative and zero sizes refused |
 | 2 | core | the stored schema: a maximum per position, unbounded positions byte-identical to today; settings defaults and `@max_depth` resolved |
 | 3 | core | build checks (the table above), and the unbounded-position listing for migration |
 | 4 | core | version comparison: bound changes breaking |

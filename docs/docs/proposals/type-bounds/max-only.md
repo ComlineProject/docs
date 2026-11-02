@@ -213,6 +213,14 @@ Raised 2026-11-02 while weighing D. **Decided** marks what the user settled;
 | 22 | `string` (default 64) changed to `char[max 64]`, or any change that leaves the resolved number alone | No change: comparison uses resolved maxima only | **decided** (clarification) |
 | 23 | Built versions from before bounds have none | "No unbounded value" applies to the version being built, not to stored history; comparing with an old version reports each new maximum as an added bound | **decided** (clarification) |
 | 24 | Giving up "bounded size" | Through the existing `@unverified` rules: enabled in settings, accepted by consumers per protocol, a major bump when added. Deliberately heavy | **decided** (clarification) |
+| 25 | Strings have no single stored form: `string` is stored as a primitive today, while `string`, `char[]` and `char[max N]` are now one type written three ways | One stored form, a string with an optional maximum or exact length, that every spelling resolves to, so comparison and hashes see one type | **decided** |
+| 26 | `char[N]` breaks `packed@1`'s fixed-array rule: `T[N]` is sent as N elements with no length | An array of `char` is always text, so `char[N]` and `char[max N]` both send a byte length (N characters are 1 to 4 × N bytes); "no length for `T[N]`" holds for every element type except `char` | **decided** |
+| 27 | Validators wouldn't match bounded strings: a validator's target matches exactly after resolving aliases, so `StringBounds for string` wouldn't apply to `char[max 32]` | Bounds take no part in matching: `for string` applies to every string, `for u32[]` to every `u32[max N]` | **decided** |
+| 28 | No literal for a single `char`: the grammar has only `"…"` | A `char` default or constant is written `"a"`, checked at build to be exactly one character; no new syntax | **decided** |
+| 29 | "Package default" is too narrow: settings layer as package default, schema block, named preset | A default maximum comes from any settings layer, merged as settings are; a maximum written at the position wins | **decided** |
+| 30 | Upgrading a generator changes consumers' code (`name: String` becomes `name: AccountName`), though the wire doesn't change | A generator setting keeps plain types during migration; decoding still checks, so no guarantee is lost | **decided** |
+| 31 | Unicode normalization: "é" is 1 character precomposed and 2 decomposed (macOS file names are decomposed), so text can fit in one form and not the other | Comline never normalizes text; it counts what's sent. Docs and hover say so; a validator (e.g. `Nfc()`) can require a form | **decided** |
+| 32 | Negative and zero sizes: `u8[-3]` builds, silently becoming `u8[0]`, and `u8[0]` builds | A negative size is a build error (a bug in core today); an exact length of 0 is an error, like `max 0` | **decided** |
 
 ### Narrowing an alias
 
