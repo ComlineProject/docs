@@ -187,6 +187,13 @@ competing proposals, *under discussion*:
 - [Proposal D — a maximum only](type-bounds/max-only.md): `Order[max 100]`,
   `string(max 64)`; minimums stay with validators. *leaning.*
 
+### Performance
+
+- [Validator benchmarks](validator-benchmarks.md): what running a validator
+  costs against decoding alone and against a check inside the decoder;
+  definitions shared in the runtime's corpus, measured in each generator's
+  repository, gated like the runtime's benchmarks. *draft.*
+
 ### Tooling
 
 - [Automatic documentation](auto-documentation.md) — an optional tool that
