@@ -184,8 +184,9 @@ competing proposals, *under discussion*:
 - [Proposal B — `string<..n>`](type-bounds/angle-brackets.md).
 - [Proposal C — bounds as annotations](type-bounds/annotation.md): `@length`,
   `@items`.
-- [Proposal D — a maximum only](type-bounds/max-only.md): `Order[max 100]`,
-  `string(max 64)`; minimums stay with validators. *leaning.*
+- [Proposal D — a maximum only](type-bounds/max-only.md): `Order[max 100]`;
+  strings are [arrays of `char`](type-bounds/char-strings.md), so
+  `char[max 64]`; minimums stay with validators. *leaning.*
 
 ### Performance
 

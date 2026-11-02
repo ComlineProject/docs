@@ -1,10 +1,12 @@
 # Bounds on types
 
 > **Under discussion, leaning towards [Proposal D](max-only.md):** a maximum
-> only, `Order[max 100]` for arrays and `string(max 64)` for strings (the
-> string form decided 2026-11-02). The ranges in A to C proved easy to misread
-> (see [Misreadings](#misreadings-a-spelling-must-avoid)). What a string bound
-> counts is still open.
+> only, written `T[max N]` for everything. Strings are arrays of `char`
+> ([decided 2026-11-02](char-strings.md)), so a bounded string is
+> `char[max 64]` and a string bound counts characters. The ranges in A to C
+> proved easy to misread (see [Misreadings](#misreadings-a-spelling-must-avoid)).
+> D's open issues and their resolutions are
+> [on its page](max-only.md#issues-and-resolutions).
 
 **The question.** How does a schema say "at most 64 characters" or "1 to 100
 items" as part of a type, so that a decoder can refuse an oversized value
@@ -31,7 +33,7 @@ Four proposals answer the question, written to the same shape. Tracked in
 | [Proposal A](parentheses.md) | `string(1..32)` | the bound in parentheses after `string` |
 | [Proposal B](angle-brackets.md) | `string<1..32>` | the bound in angle brackets after `string` |
 | [Proposal C](annotation.md) | `@length = 1..32` on the field or alias | the bound as an annotation, not part of the type's spelling |
-| [Proposal D](max-only.md) | `string(max 32)`, arrays `Order[max 100]` | a maximum only, written with `max`; minimums stay with validators |
+| [Proposal D](max-only.md) | `char[max 32]`, arrays `Order[max 100]` | a maximum only, written with `max`; strings are `char[]`; minimums stay with validators |
 
 ## The same schema, four ways
 
@@ -77,13 +79,13 @@ protocol Orders {
 }
 
 // D: maximums only; a minimum is a validator
-type AccountName = string(max 32)
+type AccountName = char[max 32]
 struct Customer {
-    tags: string(max 32)[max 10]
-    discount: union(string(max 16) u32)
+    tags: char[max 32][max 10]
+    discount: union(char[max 16] u32)
 }
 protocol Orders {
-    function search(query: string(max 100), limit: u32) -> Order[max 50];
+    function search(query: char[max 100], limit: u32) -> Order[max 50];
 }
 ```
 
@@ -95,14 +97,14 @@ bound.
 
 | | A `string(..n)` | B `string<..n>` | C `@length` | D `[max n]` |
 |---|---|---|---|---|
-| Can be confused with `string[]` | yes: a bracket after `string`, like the array suffix | yes, as A | no: the type stays `string` | less: the word `max` says it's a limit |
+| Can be confused with `string[]` | yes: a bracket after `string`, like the array suffix | yes, as A | no: the type stays `string` | no `string(…)` form; but `string[max 64]` (strings) and `char[max 64]` (a string) differ |
 | Can be read as a slice or numbering | yes: `T[1..12]` | yes | the range in `@items = 1..12` too | no: one number |
 | "Exactly" against "at most" | `T[3]` against `T[..3]` | as A | `T[3]` against `@items = ..3` | `T[3]` against `T[max 3]` |
 | A minimum in the type | yes | yes | yes | no: a validator |
-| Inside a union or a parameter list | parentheses inside parentheses | reads as a type | needs an alias | `union(string(max 16) u32)` |
-| A bounded element in a bounded array | `string(..32)[..10]` | `string<..32>[..10]` | an alias for the element | `string(max 32)[max 10]` |
+| Inside a union or a parameter list | parentheses inside parentheses | reads as a type | needs an alias | `union(char[max 16] u32)` |
+| A bounded element in a bounded array | `string(..32)[..10]` | `string<..32>[..10]` | an alias for the element | `char[max 32][max 10]` |
 | Keeps `<>` free for generics | yes | no | yes | yes |
-| New grammar | a suffix on `string` | a suffix on `string` | none: an annotation | a suffix on `string`, and `max` inside `[]` |
+| New grammar | a suffix on `string` | a suffix on `string` | none: an annotation | `max` inside `[]`, and the `char` type |
 | Settings can set a default bound | no | no | yes, like any annotation | no |
 | Familiar from | SQL `varchar(64)` | Rust and TypeScript generics | Protobuf field options, JSON Schema `maxLength` | Protobuf validate's `max_len` |
 
@@ -193,6 +195,10 @@ What a bound always means, whatever the spelling:
 
 ## What a string bound counts
 
+**Decided 2026-11-02: characters,** by making strings arrays of `char`
+([Strings as `char[]`](char-strings.md)). What follows is the comparison that
+led there.
+
 The issue first proposed UTF-8 **bytes**. Checking what strings are across the
 project points to **characters (Unicode scalar values)** instead.
 
@@ -248,10 +254,10 @@ encoded differently from `string`.
   `string(..64)` can look like it's in the same family as `string[]`. This
   argues for C, for a spelling with a keyword, or for teaching bounds as one
   concept across strings and arrays.
-- **What a string bound counts:** characters, as argued above, or bytes, as
-  first proposed.
-- **Constants as bounds:** may a bound name a constant (`..MAX_NAME`), or
-  only a literal?
+- ~~**What a string bound counts**~~: decided, characters, with strings as
+  `char[]` ([Strings as `char[]`](char-strings.md)).
+- ~~**Constants as bounds**~~: decided, allowed
+  ([issue 3](max-only.md#issues-and-resolutions)).
 - **An exact length:** `8..8` only, or a shorthand. A shorthand like
   `string(8)` reads too much like the fixed array `f32[3]`.
 - **Which types take a bound:** size bounds only (strings, arrays), or range
@@ -260,7 +266,7 @@ encoded differently from `string`.
 - **Under D, the cost of minimums as validators:** an extra pass per string,
   and checks that run only when the receiver opts in
   ([weighed here](max-only.md#what-a-validator-minimum-costs)). Unmeasured.
-- ~~**Under D, a string's own maximum**~~: decided, `string(max 64)`
-  ([why](max-only.md#shape)).
+- ~~**Under D, a string's own maximum**~~: decided, `char[max 64]`, replacing
+  the earlier `string(max 64)` ([why](char-strings.md)).
 - **Under D, minimum validators std would need:** `NonEmpty`, and `IntRange` for
   integer value ranges.

@@ -1,8 +1,9 @@
 # Proposal D — a maximum only: `Order[max 100]`
 
-Status: **leaning** · A string's maximum is `string(max n)` (decided
-2026-11-02) · See the [section overview](index.md) for the question all four
-answer
+Status: **leaning** · Strings are `char[]`, so a bounded string is
+`char[max n]` ([decided 2026-11-02](char-strings.md), replacing `string(max n)`)
+· Issues and resolutions [below](#issues-and-resolutions) · See the
+[section overview](index.md) for the question all four answer
 
 **The idea:** a type carries only a **maximum**, written with the word `max`:
 `Order[max 100]` is at most 100 orders. There's no minimum and no range.
@@ -27,24 +28,20 @@ exactly `N`.
 
 ## Shape
 
-The array form is `T[max N]`. A **string's** own maximum can't be written
-`string[max 64]`, because that's an array of up to 64 strings. It's written
-**`string(max 64)`** (decided 2026-11-02). Two forms were weighed:
+Every bound is `T[max N]`, strings included. A string is an array of `char`
+([Strings as `char[]`](char-strings.md)), so a string of at most 64 characters
+is `char[max 64]`, and exactly 2 characters is `char[2]`. `string` stays the
+built-in name for `char[]`, and takes no bound itself.
 
-| | Chosen: `string(max 64)` | Not chosen: `string max 64` |
-|---|---|---|
-| A field | `name: string(max 32)` | `name: string max 32` |
-| Inside a union | `union(string(max 16) u32)` | `union(string max 16 u32)`: harder to see where the member ends |
-| An array of bounded strings | `string(max 32)[max 10]` | `(string max 32)[max 10]`: needs grouping |
-
-`string max 64` reads well alone, but inside a union or an array it needs
-grouping, so the parenthesized form won.
+*History:* a string's maximum was first decided as `string(max 64)`, a form
+only strings had. Making strings `char[]` replaced it the same day, so one
+syntax covers everything.
 
 ```ids
 const MAX_NAME: u32 = 64
 
 /// A display name: at most 32 characters.
-type AccountName = string(max 32)
+type AccountName = char[max 32]
 
 /// Raw image bytes, at most 64 KiB.
 type Avatar = u8[max 65536]
@@ -52,11 +49,11 @@ type Avatar = u8[max 65536]
 struct Customer {
     id: u64
     /// Never empty: the minimum is a validator.
-    @validators = [StringBounds(min_chars = 1)]
+    @validators = [NonEmpty()]
     name: AccountName
-    optional email: string(max 254)
+    optional email: char[max 254]
     /// Up to 10 tags of up to 32 characters each.
-    tags: string(max 32)[max 10]
+    tags: char[max 32][max 10]
     optional avatar: Avatar
 }
 
@@ -70,14 +67,13 @@ struct Order {
     /// At least one line (a validator), at most 100 (the type).
     @validators = [NonEmpty()]
     lines: OrderLine[max 100]
-    discount: union(string(max 16) u32)
-    optional note: string(max MAX_NAME)
+    discount: union(char[max 16] u32)
+    optional note: char[max MAX_NAME]
 }
 
 struct OrderLine {
-    /// Exactly 8 characters: the maximum in the type, the minimum a validator.
-    @validators = [StringBounds(min_chars = 8)]
-    sku: string(max 8)
+    /// Exactly 8 characters: an exact length is in the type.
+    sku: char[8]
     /// A month, 1 to 12: a value rule, so a validator, not a bound.
     @validators = [IntRange(min = 1, max = 12)]
     month: u8
@@ -85,17 +81,17 @@ struct OrderLine {
 
 /// Up to 16 rows, each with up to 8 labels of up to 20 characters.
 struct Board {
-    rows: string(max 20)[max 8][max 16]
+    rows: char[max 20][max 8][max 16]
 }
 
 error OutOfStock {
     message = f"{item} is out of stock"
-    item: string(max 64)
+    item: char[max 64]
 }
 
 protocol Orders {
     function place(order: Order) -> u64;
-    function search(query: string(max 100), limit: u32) -> Order[max 50];
+    function search(query: char[max 100], limit: u32) -> Order[max 50];
     function rename(id: u64, name: AccountName) -> ();
 }
 ```
@@ -123,11 +119,9 @@ this proposal would need.
   loss for safety, since minimums don't protect allocation, but an empty list
   is refused one step later.
 - **A new word, `max`,** inside type brackets.
-- **A string's maximum is written differently from an array's:**
-  `string(max 64)` against `T[max 64]`, since `string[max 64]` is already an
-  array of strings.
-- **Exact strings** (`sku`, exactly 8 characters) take two pieces: the maximum in
-  the type, the minimum in a validator.
+- **`string[max 64]` is an array of strings,** while a bounded string is
+  `char[max 64]`. Someone meaning the second may write the first
+  ([Strings as `char[]`](char-strings.md#issues)).
 - **A minimum as a validator costs more, and isn't always enforced.** See
   [What a validator minimum costs](#what-a-validator-minimum-costs).
 
@@ -183,9 +177,29 @@ What that means:
 
 **The larger difference is enforcement, not speed.** A validator minimum is
 checked only when the receiver opts in, and not at all in TypeScript today. A
-bound is checked by every decoder. If "at least one item" must hold for every
-receiver, D needs either validation on by default, or minimums lowered into the
-decoder as in option 1.
+bound is checked by every decoder. Decided since: validators are enforced by
+default, and turning them off is an explicit give-up
+([issue 8](#issues-and-resolutions)).
+
+## Issues and resolutions
+
+Raised 2026-11-02 while weighing D. **Decided** marks what the user settled;
+**proposed** is a resolution not yet agreed.
+
+| # | Issue | Resolution | State |
+|---|---|---|---|
+| 1 | `max` becoming a keyword would break names already in use: validator parameters called `max`, `params.max` | `max` is a keyword only right after `[` in a type; everywhere else it stays a name. Tests prove `max: u32` and `params.max` still parse | **decided** |
+| 2 | A bound after an alias can't narrow it: with `type Tags = char[max 32][max 10]`, `Tags[max 5]` is an array of 5 `Tags` lists, not "Tags, at most 5" | No bound on a named type. A tighter limit is a new alias: `type FewTags = char[max 32][max 5]` | proposed |
+| 3 | Constants as bounds | Allowed: `char[max MAX_NAME]`, any unsigned integer constant, stored resolved. A dependency's constant changing changes your wire contract, and version comparison reports it | **decided** |
+| 4 | `max 0`, and values too large for a target | `max 0` is an error. Core caps at `u32::MAX`; each generator declares its target's ceilings (a JavaScript array holds at most 2³²−1 items; 32-bit targets less), and a larger maximum is an error when generating that target, naming it | `max 0` **decided**; ceilings proposed |
+| 5 | Nested bounds read right to left: in `char[max 20][max 8][max 16]` the outermost limit comes last | Hover and diagnostics say it in words ("up to 16 rows, each up to 8 labels, each up to 20 characters"); a lint suggests an alias past two bounded levels. Prefix arrays, as Go writes them, were considered and not proposed: they'd change every array | proposed |
+| 6 | A bounded array of unbounded values isn't bounded: ten strings of a gigabyte each fit `string[max 10]`; recursive types nest without limit | **No unbounded string or dynamic array reachable from a protocol.** Each has a maximum written at its position, from a package default in settings ([core#125](https://github.com/ComlineProject/core/issues/125)), or is given up with [`@unverified = "reason"`](../guarantee-marker/index.md), making "bounded size" one of the guarantees core works out. Every message then has a computable worst-case size per format. Recursion is held by a nesting-depth limit in the [shared runtime core](../shared-runtime-core/core-interface.md#what-the-core-owns), next to its frame limit. Every existing schema breaks, which is acceptable before 1.0 | direction **decided** (unbounded is forbidden unless given up); details proposed |
+| 7 | `StringBounds` brings a hidden maximum: `max_chars` defaults to 1024, so `StringBounds(min_chars = 1)` on `char[max 2000]` refuses 1025 to 2000 characters after decoding | `StringBounds` stops carrying a maximum: `max_chars` defaults to `u32::MAX`, then is deprecated, since the type always has one (issue 6). std gains `NonEmpty` and `MinChars`. The build errors when a validator's minimum exceeds the type's maximum, and warns when a validator caps lower than the type | direction **decided**; details proposed |
+| 8 | Validator minimums are enforced only when the receiver opts in, and not at all in TypeScript | **Validators are enforced everywhere by default.** `validate_on_decode` defaults to checking; turning it off is an explicit give-up with a reason, recorded and visible like `@unverified`. This breaks Rust consumers relying on today's `off` default. TypeScript's support claim stays `partial` until it generates validators ([core#96](https://github.com/ComlineProject/core/issues/96), step 4d). Senders check too, failing locally before sending | enforcement **decided**; sender checks proposed |
+| 9 | What a string's bound counts, and byte budgets | Strings are `char[]`, counted in characters: [Strings as `char[]`](char-strings.md). Byte budgets belong to the framing | **decided** |
+| 10 | Adopting a maximum is breaking: adding one to an unbounded field tightens it, so a major version | Accepted before 1.0. Later, version comparison may weigh direction (via `@provider` from [packet dispatch](../packet-dispatch.md)), so a limit on a value only the server receives breaks nobody | **decided** |
+| 11 | A generator using fixed-capacity types (`ArrayString<32>`) changes its consumers' code when a maximum changes, beyond the wire | Fixed-capacity types are opt-in in a generator's configuration; the default is the language's normal heap type with a check | to be proposed |
+| 12 | Every language pays for checking, and writes the check itself | Following the [shared runtime core](../shared-runtime-core/index.md): the core owns what is bytes and integers, not host values. **Decoding** works on bytes, so "strict UTF-8 and count characters up to N" can be a core primitive; it moves into a language's path only where instruction counts show the call is at least as fast, as in [stage 4](../shared-runtime-core/index.md#stage-4-moving-typescript). **Encoding** starts from a host string, which the core doesn't own. The rule itself is written once: [stage 3](../shared-runtime-core/generated-codecs.md)'s layout plan carries each maximum, and every generator renders the check from it, held together by the vectors and differential fuzzing. The runtime cost per language is what the [validator benchmarks](../validator-benchmarks.md) would measure | proposed |
 
 ## When this would be the right call
 

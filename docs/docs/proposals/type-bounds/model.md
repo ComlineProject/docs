@@ -5,7 +5,9 @@ Examples use Proposal A's `string(1..32)` for brevity.
 
 Under [Proposal D](max-only.md) a bound is a maximum only: read every bound
 here as its maximum, every minimum as a validator, and range bounds on
-integers as not part of the type.
+integers as not part of the type. Under D a string is also an array of `char`
+([Strings as `char[]`](char-strings.md)), so `string(1..32)` here reads as
+`char[max 32]`.
 
 The [overview](index.md) compares how a bound is *written*. This page describes
 what a bound *is*: which types take one, where it can be written, where it comes
