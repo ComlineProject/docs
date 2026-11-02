@@ -74,6 +74,12 @@ changes, so its folder is kept: `docs/api/markdown/.comline-doc.json` records
 what each folder was rendered from. Usually only `unreleased/` and any new
 version are rendered.
 
+To look at the result, `comline doc open` opens it (the HTML site if you
+render one, else the first format you configured), rendering it first when
+there is nothing to open; `comline doc --open` renders, then opens. HTML opens
+in the browser `$BROWSER` names, else your default one. See
+[comline doc](../reference/tools/doc.md#opening-the-result).
+
 ### Put them on a site
 
 The pages are plain Markdown, so they drop into an mkdocs or zensical site:
