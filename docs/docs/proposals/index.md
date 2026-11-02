@@ -171,6 +171,17 @@ Whether "one of several shapes, with a tag" is a feature of `enum` or of
   as in Rust and Swift.
 - [Proposal C — both](tagged-unions/both.md).
 
+#### [Bounds on types](type-bounds/index.md)
+
+How a size limit is written on a type (`T[1..10]`, a string of at most 64
+characters), what a string bound counts, and which types take one. Three
+competing proposals, *under discussion*:
+
+- [Proposal A — `string(..n)`](type-bounds/parentheses.md).
+- [Proposal B — `string<..n>`](type-bounds/angle-brackets.md).
+- [Proposal C — bounds as annotations](type-bounds/annotation.md): `@length`,
+  `@items`.
+
 ### Tooling
 
 - [Automatic documentation](auto-documentation.md) — an optional tool that

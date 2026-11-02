@@ -6,7 +6,7 @@ Each takes its parameters by name:
 
     @validators = [StringBounds(min_chars = 3, max_chars = 32)]
 
-| | |
+| Item | Summary |
 |---|---|
 | validator [`StringBounds`](#stringbounds) | Checks a string's length is within a minimum and a maximum. |
 
@@ -18,7 +18,7 @@ Checks a string's length is within a minimum and a maximum.
 
 Applies to: `string`
 
-| Parameter | Type | |
+| Parameter | Type | Description |
 |---|---|---|
 | `min_chars` | `u32` = `0` | minimum length of the string |
 | `max_chars` | `u32` = `1024` | maximum length of the string |
