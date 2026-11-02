@@ -132,6 +132,10 @@ to the same shape:
   built-in framing, a new packed C-struct-like format `packed@1` as the
   built-in format, and a generated `Services` struct with a package-level
   `serve`. ***implemented.***
+- [Return forms](return-forms.md): one-way, acknowledged (`-> ()`) and value
+  returns, and quiet calls (errors only) as a future form; which each framing
+  and transport supports, checked at build, and `()` only as a return.
+  ***accepted***, not implemented.
 - [Transports](transports.md): optional transport declarations, by a schema's
   author and its consumer, with profiles stating each transport's largest
   message and whether it loses, reorders or duplicates; a "transport fit"
