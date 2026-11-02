@@ -145,6 +145,8 @@ nav:
     - Connections: 'proposals/connections.md'
     - Package wire defaults: 'proposals/package-wire-defaults.md'
     - Transports: 'proposals/transports.md'
+    - IPC: 'proposals/ipc.md'
+    - Systems software: 'proposals/systems-software.md'
     - Packet dispatch: 'proposals/packet-dispatch.md'
     - 'Function ids':
       - 'proposals/function-ids/index.md'

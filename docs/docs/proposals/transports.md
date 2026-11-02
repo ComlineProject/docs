@@ -40,6 +40,8 @@ run-time failures to build time.
 - **Once declared, it's checked,** and a failure is an error unless given up
   with `@unverified = "reason"`, for example when the application splits large
   messages itself.
+- **Required for a protocol that sends handles** ([IPC](ipc.md#handles)): only
+  some transports carry them, so such a protocol must declare one.
 
 This differs from validators, which are enforced by default
 ([issue 8](type-bounds/max-only.md#issues-and-resolutions)): a validator is a
