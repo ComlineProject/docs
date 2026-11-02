@@ -16,6 +16,9 @@ Each page carries a status and links the issues / PRs that carry it out.
   automatic versioning, and the `comline clean` redesign. *Partly implemented.*
 - [Codegen by language](codegen-by-language.md) — worked examples of one schema
   across Rust, Python, TypeScript, Luau. *Sketch.*
+- [Bounds on types](type-bounds.md) — a maximum in the type, `T[max N]`, with
+  strings as `char[]`: what's checked where, the wire, generated code, and the
+  rollout. *Accepted, not implemented.*
 - [Validators](validators.md) — `validator` declarations and the `@validators`
   field annotation: the intended shape and what has to change to get there.
   *Not implemented.*
