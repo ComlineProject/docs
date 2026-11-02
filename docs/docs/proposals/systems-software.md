@@ -53,10 +53,10 @@ What it would define:
   `T[max N]` takes room for N items plus a count. Unbounded types can't appear,
   which [issue 6](type-bounds/max-only.md#issues-and-resolutions) already
   ensures.
-- **Strings:** C interfaces use fixed byte arrays (`char name[32]`). A
-  `char[max N]` takes 4 × N bytes of UTF-8 room, since characters vary in
-  size; `u8[N]` is the byte-exact choice. Which one a C interface maps to is
-  open.
+- **Strings:** a `char[max N]` keeps its meaning (characters) and takes a
+  length plus 4 × N bytes of UTF-8 room: correct, if wasteful, for interfaces
+  designed in Comline. C's own text is a type of its own,
+  [`c_char`](#c-text-stdffic_char).
 - **`optional`, enums and unions:** a presence flag, and a tag of a stated
   width.
 - **The same layout in every language:** generated Rust uses `#[repr(C)]`,
@@ -66,6 +66,44 @@ What it would define:
 
 How it's named and versioned (a format such as `c-layout@1`, parameterized by
 target ABI) is open.
+
+### C text: `std::ffi::c_char`
+
+Proposed 2026-11-02. C structures measure text in **bytes**, end it with a NUL,
+and often promise no encoding (Linux file names are arbitrary bytes). Comline's
+`char[max N]` counts **characters** and is always valid Unicode. Rather than
+bend one onto the other, C text gets its own element type, the way `char` is
+Unicode text's:
+
+```ids
+use std::ffi::c_char
+
+struct InterfaceRequest {
+    /// C's `char ifr_name[16]`: up to 15 bytes of text, then a NUL.
+    name: c_char[16]
+    flags: u16
+}
+```
+
+- **`c_char[N]` is C's `char name[N]`, one to one:** N bytes of storage holding
+  up to N − 1 bytes of text, then a NUL. A C header translates directly.
+- **Why an element type, not `CString[16]`:** a suffix after a name means an
+  array of it ([issue 2](type-bounds/max-only.md#issues-and-resolutions)), so
+  a sized type has to be an array of an element, as `char[N]` is.
+- **In std, as `std::ffi::c_char`,** not a global keyword, following Rust's
+  `core::ffi::c_char`. It's the first std type whose meaning core knows, so
+  generators treat it specially, as they already build in std's validators.
+- **Checked:** decoding refuses an array without a NUL; encoding refuses text of
+  N bytes or more; converting a `char[]` refuses U+0000, which C would read as
+  the end of the text.
+- **Encoding is a validator:** `Utf8()` when an interface promises UTF-8,
+  nothing for raw bytes.
+- **Generated code:** C, `char name[16]`, byte-identical to existing headers;
+  Rust, a 16-byte array type with `as_bytes()` and a fallible `to_str()`;
+  TypeScript, bytes with a decode helper.
+- **Open:** NUL-padded fields that may fill all N bytes without a NUL, as some
+  fixed formats use (a second type, or a variant); how `json@1` shows
+  `c_char[N]`.
 
 ## Target constraints
 
@@ -120,8 +158,9 @@ format from what Comline has. When 3 is taken up, it likely starts from
 
 ## Open
 
-- **The exact-layout format:** its name, how a target ABI is named, and how
-  strings map to C.
+- **The exact-layout format:** its name, and how a target ABI is named.
+- **C text:** `std::ffi::c_char` as [proposed](#c-text-stdffic_char), NUL-padded
+  fields, and `json@1`.
 - **Target constraints:** the list, their defaults per kind of target, and
   where they're declared.
 - **Proving no panics:** which checks CI runs.

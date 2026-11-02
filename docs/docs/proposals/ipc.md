@@ -1,6 +1,7 @@
 # IPC
 
-Status: **draft** · Builds on [Transports](transports.md) and
+Status: **draft** · Handles are typed, one type per kind (decided
+2026-11-02) · Builds on [Transports](transports.md) and
 [Connections](connections.md) · Handles answer part of the open
 [capabilities design](https://github.com/ComlineProject/docs/issues/98) · The
 first step of [Comline for systems software](systems-software.md)
@@ -67,7 +68,7 @@ bytes, not in them.
 | | In the schema | In one line | Assessment |
 |---|---|---|---|
 | **H1** | `handle` | one opaque type for any handle | rejected: a receiver can't tell a file from a memory region, so it can't check what it was given |
-| **H2** | `file`, `memory`, `channel`, and endpoints of a protocol | **a type per kind of handle**, each checked on arrival | **recommended** |
+| **H2** | `file`, `memory`, `channel`, and endpoints of a protocol | **a type per kind of handle**, each checked on arrival | **decided** 2026-11-02 |
 | **H3** | nothing: handles are a transport feature, passed beside calls | handles outside the schema | rejected: the schema couldn't say which call carries which handle, so nothing could check it |
 
 ### H2: a type per kind
@@ -120,9 +121,22 @@ protocol Files {
 
 ### Rights
 
-Some systems attach rights to a handle (Zircon: read, write, map, duplicate;
-Mach: send and receive rights). Whether the schema states the rights a handle
-must carry, as `memory(read)` or similar, is open.
+A right restricts what the receiver can do with a handle: read but not write,
+map but not execute. It matters most for handing a sandboxed process a
+**read-only** view of a buffer or a file. Some systems attach rights to every
+handle (Zircon: read, write, map, duplicate; Mach: send and receive rights).
+
+Open, to be settled after the rest of IPC:
+
+| | Option | Trade-off |
+|---|---|---|
+| **R1** | no rights in the schema: the kind only | simplest; the receiver can do whatever the OS lets the handle do |
+| **R2** | a small portable set in the schema (`read`, `write`), as in `memory(read)` | the sender drops extra rights before sending, and the decoder verifies them. Every platform can express read and write: a file's open mode and sealed shared memory (`memfd` seals) on Linux, access masks on Windows, rights on Zircon |
+| **R3** | each platform's full set of rights | the most precise, but not portable |
+
+Adding rights later tightens existing protocols, a breaking change, so it's
+best settled before 1.0. If rights come, R2 is the recommendation: read-only
+sharing is the real security need, and its small set works everywhere.
 
 ## Who the peer is
 
@@ -168,9 +182,9 @@ in [Comline for systems software](systems-software.md#an-exact-layout-format).
 
 ## Open
 
-- **Handles:** H2 as recommended, and the spellings (`file`, `memory`,
-  `channel`, `remote P`, `receiver P`).
-- **Rights** on handles.
+- ~~**Handles**~~: decided, H2. The spellings (`file`, `memory`, `channel`,
+  `remote P`, `receiver P`) are as proposed.
+- **Rights** on handles: R1, R2 or R3 ([above](#rights)), settled later.
 - **Which platform IPCs** get official profiles, and in what order.
 - **A shared-memory ring** of Comline's own, and its side channel for peer
   death.
