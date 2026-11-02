@@ -165,6 +165,7 @@ nav:
       - 'Proposal B': 'proposals/type-bounds/angle-brackets.md'
       - 'Proposal C': 'proposals/type-bounds/annotation.md'
       - 'Proposal D': 'proposals/type-bounds/max-only.md'
+      - 'Strings as char[]': 'proposals/type-bounds/char-strings.md'
     - Validator benchmarks: 'proposals/validator-benchmarks.md'
     - 'Marking a given-up guarantee':
       - 'proposals/guarantee-marker/index.md'
