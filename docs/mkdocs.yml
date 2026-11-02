@@ -164,6 +164,7 @@ nav:
       - 'Proposal A': 'proposals/type-bounds/parentheses.md'
       - 'Proposal B': 'proposals/type-bounds/angle-brackets.md'
       - 'Proposal C': 'proposals/type-bounds/annotation.md'
+      - 'Proposal D': 'proposals/type-bounds/max-only.md'
     - 'Marking a given-up guarantee':
       - 'proposals/guarantee-marker/index.md'
       - 'Proposal A': 'proposals/guarantee-marker/waives.md'

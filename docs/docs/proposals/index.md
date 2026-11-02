@@ -174,7 +174,7 @@ Whether "one of several shapes, with a tag" is a feature of `enum` or of
 #### [Bounds on types](type-bounds/index.md)
 
 How a size limit is written on a type (`T[1..10]`, a string of at most 64
-characters), what a string bound counts, and which types take one. Three
+characters), what a string bound counts, and which types take one. Four
 competing proposals, *under discussion*:
 
 - [How bounds work](type-bounds/model.md): which types take a bound, where it
@@ -184,6 +184,8 @@ competing proposals, *under discussion*:
 - [Proposal B — `string<..n>`](type-bounds/angle-brackets.md).
 - [Proposal C — bounds as annotations](type-bounds/annotation.md): `@length`,
   `@items`.
+- [Proposal D — a maximum only](type-bounds/max-only.md): `Order[max 100]`,
+  `string(max 64)`; minimums stay with validators. *leaning.*
 
 ### Tooling
 

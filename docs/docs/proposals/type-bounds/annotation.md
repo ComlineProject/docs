@@ -1,7 +1,7 @@
 # Proposal C — bounds as annotations
 
 Status: **under discussion** · See the [section overview](index.md) for the
-question all three answer
+question all four answer
 
 **The idea:** the type's spelling doesn't change. A bound is an annotation on
 the field or alias that holds the value: `@length` for a string's characters,
