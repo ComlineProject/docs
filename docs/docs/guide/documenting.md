@@ -61,9 +61,9 @@ version's folder has these pages:
 
 | File | What's on it |
 |---|---|
-| `index.md` | The package's name and version, its `config.idp` header, and a table of its modules. |
+| `index.md` | The package's name and version, its `config.idp` header, a table of its modules, and a table of its dependencies. |
 | `<module>.md` | One per schema (`types::user` is `types/user.md`): its header, a table of what it declares, then each declaration with its docs, annotations, fields, arguments, variants, and each protocol's wire summary, the same table the editor's hover and `comline inspect` show. |
-| `changelog.md` | What changed since the version before it, as `comline diff` reports it: each change's severity and a short title, then the old and new IDL lines as a `diff` block. |
+| `changelog.md` | What changed, as `comline diff` reports it: each change's severity and a short title, then the old and new IDL lines as a `diff` block. A release shows everything since the previous release; a dev build what changed since the build before it, with a link to everything since the last release. |
 | `nav.yml` | The pages as a `nav` list for mkdocs or zensical. |
 
 Every declaration has an anchor, its name in lowercase (`api.md#order`), and a
@@ -103,8 +103,8 @@ Open `site/html/index.html` straight from disk, or put the folder on any static
 host. It opens the latest version: the newest release, or the newest dev build
 before the first release.
 
-- **Each page** has a sidebar of modules and their declarations and a search box
-  over every declaration. The theme follows the OS's light or dark setting
+- **Each page** has a sidebar of your modules and their declarations, then a
+  collapsed Dependencies section, and a search box over every declaration. The theme follows the OS's light or dark setting
   until you pick one with the toggle in the header, which the site remembers.
 - **The version picker** in the header switches versions and keeps your place:
   the same page and declaration in the chosen version, or that version's
@@ -129,10 +129,17 @@ formats = ["html", "markdown"]
 The site is generated, so a new project's `.gitignore` (from `comline new`)
 leaves out `docs/api/html/`.
 
-### Link to dependencies
+### Dependencies
 
-A type from a dependency or `std` is plain text, unless you say where that
-package's docs live. Give each one a base URL in `comline.toml`:
+Your docs document your package. What it uses of each dependency, and of
+`std`, is listed apart, under Dependencies in the sidebar and the index: only
+the declarations your own use, and what those use in turn, never the whole
+dependency. Each dependency gets its own pages (`deps/<package>/<module>`), and
+a type from it links there.
+
+`std` links to its hosted docs instead, `https://comlineproject.github.io/docs/std/`.
+To link another dependency to its published docs rather than render pages for
+it, give it a base URL in `comline.toml`:
 
 ```toml
 [doc]
@@ -141,7 +148,8 @@ links = { std = "https://example.com/std", billing = "https://docs.example.com/b
 
 A type from `billing`'s `api` module, `Invoice`, then links to
 `https://docs.example.com/billing/api/#invoice`: the base, the module, and the
-anchor, in the directory-URL form mkdocs and zensical publish pages at.
+anchor, in the directory-URL form mkdocs and zensical publish pages at. A
+`links` entry for `std` replaces its default.
 
 ## 3. Choose the versions
 
@@ -171,10 +179,9 @@ comline doc --version 0.2.0 --changelog-from 0.1.0
 ```
 
 A build stores the `//!` headers with the version, so a version documents with
-the headers it was built with, even after the sources change. Two things need
-the source and are missing from a built version: protocols have no wire
-summary, and dependency types have no link. A version built before headers
-were stored has no headers. Its pages open with a note saying what's missing.
+the headers it was built with, even after the sources change. One thing needs
+the source: protocols in a built version have no wire summary. A version built
+before headers were stored has no headers. Its pages open with a note saying what's missing.
 
 ## 4. Or take the model
 
@@ -214,7 +221,6 @@ and the flag wins:
 The standard library is rendered this way, and is the live example: the
 [`std` pages](../std/index.md) are `comline doc` run over std's own package,
 with nothing written by hand. They use the Markdown format, so they become
-pages of this site rather than a separate one. A type from `std` in your own docs links to them
-with `links = { std = "https://comlineproject.github.io/docs/std" }`, so
-`std::http::Request` in a field's type links to
-`https://comlineproject.github.io/docs/std/http/#request`.
+pages of this site rather than a separate one. A type from `std` in your own
+docs links to them by default, so `std::http::Request` in a field's type links
+to `https://comlineproject.github.io/docs/std/http/#request`.
