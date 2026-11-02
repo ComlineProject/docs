@@ -160,6 +160,7 @@ nav:
       - 'Proposal C': 'proposals/tagged-unions/both.md'
     - Bounds on types:
       - 'proposals/type-bounds/index.md'
+      - 'How bounds work': 'proposals/type-bounds/model.md'
       - 'Proposal A': 'proposals/type-bounds/parentheses.md'
       - 'Proposal B': 'proposals/type-bounds/angle-brackets.md'
       - 'Proposal C': 'proposals/type-bounds/annotation.md'

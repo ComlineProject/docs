@@ -19,6 +19,8 @@ Where things stand:
   can't be written as `string[..64]`: that's an array of up to 64 strings.
 - Settling this syntax is on the [1.0 list](../../conduct/readiness.md#schema-language).
 
+What a bound is and how it works, whichever spelling is chosen, is in [How bounds work](model.md).
+
 Three proposals answer the question, written to the same shape. Tracked in
 [core#98](https://github.com/ComlineProject/core/issues/98).
 
@@ -110,6 +112,8 @@ bound.
   or `comline.toml` setting.
 
 ## Which types take a bound
+
+[How bounds work](model.md) has the full model: each type and why, every position a bound can be written in, where a bound comes from (written, through an alias, a constant, a default), and what the build, version comparison, generated code, decoders and the language server each do with it. This section is the short version.
 
 Not settled. core#98 names arrays and strings, and its reason, refusing an
 oversized value before allocating, only covers types whose size varies. A

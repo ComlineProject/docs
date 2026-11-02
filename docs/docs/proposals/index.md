@@ -177,6 +177,9 @@ How a size limit is written on a type (`T[1..10]`, a string of at most 64
 characters), what a string bound counts, and which types take one. Three
 competing proposals, *under discussion*:
 
+- [How bounds work](type-bounds/model.md): which types take a bound, where it
+  can be written, where it comes from, and what each part of Comline does with
+  it. Holds whichever proposal is chosen.
 - [Proposal A — `string(..n)`](type-bounds/parentheses.md).
 - [Proposal B — `string<..n>`](type-bounds/angle-brackets.md).
 - [Proposal C — bounds as annotations](type-bounds/annotation.md): `@length`,
