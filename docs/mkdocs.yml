@@ -145,6 +145,7 @@ nav:
     - Extending the call system: 'proposals/extensibility.md'
     - Connections: 'proposals/connections.md'
     - Package wire defaults: 'proposals/package-wire-defaults.md'
+    - Return forms: 'proposals/return-forms.md'
     - Transports: 'proposals/transports.md'
     - IPC: 'proposals/ipc.md'
     - Systems software: 'proposals/systems-software.md'

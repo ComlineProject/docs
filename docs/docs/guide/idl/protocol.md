@@ -39,6 +39,35 @@ protocol Mail {
 Functions take [docstrings](docstrings.md) (including the `/// @name:` form for
 arguments) and `@key=value` annotations.
 
+### One-way, or acknowledged
+
+A function without `->` and one that returns `()` look alike but behave
+differently:
+
+```ids linenums="1"
+protocol Sensors {
+    /// Fire and forget: no reply at all.
+    function report(reading: f32);
+    /// Waits until the provider has handled it.
+    function calibrate() -> ();
+}
+```
+
+| | `function report(…);` | `function calibrate() -> ();` |
+|---|---|---|
+| Reply | none: a one-way call | an empty reply |
+| The caller | continues as soon as the call is sent | waits until the handler finishes |
+| Learns it was handled | no | yes, or gets a fault if the handler failed |
+| Errors (`! E`) | can't reach the caller | delivered |
+| Timeouts | none | apply |
+| Under `jsonrpc@1` | a notification, with no `id` | a request, answered with `"result": null` |
+| Cost | one frame | two |
+
+Use one-way for events and telemetry, and `-> ()` when the caller needs to
+know the call completed. Which forms each framing and transport supports, and
+the build checks planned for them, are in the
+[Return forms](../../proposals/return-forms.md) proposal.
+
 ## Annotations
 
 A `@key=value` annotation on the `protocol` itself configures the whole service.

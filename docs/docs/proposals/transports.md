@@ -130,7 +130,8 @@ above it, never lower the promise.
 In scope, through the facts above:
 
 - **Loss** means timeouts, and a call happens at most once. Retrying risks
-  running a call twice.
+  running a call twice. What loss does to each return form (one-way, quiet,
+  acknowledged) is in [Return forms](return-forms.md#what-each-transport-changes).
 - **Duplicates** are filtered by request id, by the framing or the core.
 - **Over an unreliable transport,** reliability comes from the framing
   (acknowledgements, as a packet framing might provide) or from the transport

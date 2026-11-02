@@ -239,6 +239,9 @@ Packet protocols do both, often within one protocol and chosen per packet:
 - memcached: "quiet" opcodes answer only on error.
 - X11: some requests have replies and some don't, and events arrive unprompted.
 
+The return forms these map to (one-way, quiet, acknowledged, value), and which
+framings carry each, are in [Return forms](return-forms.md).
+
 Real protocols match a reply to its request in about five ways:
 
 | How a reply is matched | Examples |
