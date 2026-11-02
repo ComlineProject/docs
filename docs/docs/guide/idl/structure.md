@@ -27,10 +27,11 @@ struct Message {
 ```
 
 - **`optional`** — the field may be absent. Without it, the field is required.
-- **`= <value>`** — a default. Any value form a [constant](const.md) accepts —
-  a literal, another constant by name, a `::`-path, or an f-string — plus the
-  bare word `default` (the type's own default, e.g. an enum's first variant).
-  Non-literals are recorded but not resolved yet.
+- **`= <value>`** — a default. Any value a [constant](const.md) accepts — a
+  literal, a constant by name, or an integer type's bound (`u16::MAX`) — plus
+  the bare word `default` (the type's own default, e.g. an enum's first
+  variant). It has to fit the field's type, through any `type` alias: a
+  `u8 = 300` or a `u8 = LIMIT` where `LIMIT` is 300 is an error.
 
 ## Field types
 

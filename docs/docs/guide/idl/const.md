@@ -14,15 +14,25 @@ const NAME: Type = value
 - **`NAME`** — a plain identifier (not scoped).
 - **`Type`** — any [type](structure.md#field-types); in practice a primitive.
 - **`value`** — one of:
-    - a literal: an integer or a `"quoted string"` (plain, no interpolation)
-    - an identifier — another constant, by name
-    - a `::`-path — `u32::MIN`, `pkg::mod::DEFAULT`
-    - an **f-string** — `f"page {N} of {total}"`, with `{path}` placeholders and
-      `{{` / `}}` escapes (same interpolation as an [`error`](error.md)'s
-      `message`)
+    - a literal: an integer, `true` / `false`, or a `"quoted string"` (plain,
+      no interpolation)
+    - another constant, by name — `WORLD_COUNT`, or `pkg::mod::DEFAULT` for one
+      another schema declares
+    - an integer type's bound — `u32::MIN`, `u64::MAX`
 
-Everything except a plain literal is recorded as text and **not resolved to a
-value yet** — including the `{N}` in an f-string.
+A value that names a constant or a bound is checked as the value it comes to.
+It has to be the constant's kind of value (an integer is also a fine float)
+and, for an integer, fit the declared width:
+
+```ids
+const LIMIT: u32 = 500
+const SMALL: u8 = LIMIT     // error: `LIMIT` is 500, which does not fit in `u8`
+const TOP: u64 = u64::MAX   // fine
+```
+
+A name that isn't a constant is an error, and so are constants that name each
+other in a loop. Generated code holds the value a name comes to, as if the
+literal had been written.
 
 A constant can carry a [docstring](docstrings.md):
 
@@ -33,11 +43,15 @@ const WORLD_COUNT: u8 = 10
 
 ## Using one
 
-A constant is referenced by name as a struct [field default](structure.md#fields):
+A constant is referenced by name wherever a value is written: a struct's or an
+error's [field default](structure.md#fields), a validator property's default,
+or a validator's argument. It's checked there the same way, against the type
+it's written for:
 
 ```ids
 struct Person {
     name: string = DEFAULT_NAME
+    worlds: u8 = WORLD_COUNT
 }
 ```
 
