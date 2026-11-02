@@ -257,6 +257,9 @@ encoded differently from `string`.
 - **Which types take a bound:** size bounds only (strings, arrays), or range
   bounds on scalars too. See [Which types take a bound](#which-types-take-a-bound).
   Under D, only maximums on strings and arrays.
+- **Under D, the cost of minimums as validators:** an extra pass per string,
+  and checks that run only when the receiver opts in
+  ([weighed here](max-only.md#what-a-validator-minimum-costs)). Unmeasured.
 - ~~**Under D, a string's own maximum**~~: decided, `string(max 64)`
   ([why](max-only.md#shape)).
 - **Under D, minimum validators std would need:** `NonEmpty`, and `IntRange` for
