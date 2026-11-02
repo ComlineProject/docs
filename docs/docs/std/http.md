@@ -4,7 +4,7 @@ Types for talking HTTP: request methods, requests and responses.
 
 Plain data types: use them as fields and arguments in your own schemas.
 
-| | |
+| Item | Summary |
 |---|---|
 | enum [`HttpMethod`](#httpmethod) | An HTTP request method. |
 | struct [`Request`](#request) | An HTTP request: its method and target URI. |
@@ -29,10 +29,10 @@ Variants:
 
 An HTTP request: its method and target URI.
 
-| Field | Type | |
-|---|---|---|
-| `method` | [`HttpMethod`](#httpmethod) |  |
-| `uri` | `string` |  |
+| Field | Type |
+|---|---|
+| `method` | [`HttpMethod`](#httpmethod) |
+| `uri` | `string` |
 
 <a id="response"></a>
 
@@ -40,6 +40,6 @@ An HTTP request: its method and target URI.
 
 An HTTP response, by its status code.
 
-| Field | Type | |
-|---|---|---|
-| `status_code` | `u16` |  |
+| Field | Type |
+|---|---|
+| `status_code` | `u16` |
