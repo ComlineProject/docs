@@ -1,10 +1,10 @@
 # Bounds on types
 
-> **Under discussion.** [Proposal D](max-only.md), a maximum only
-> (`Order[max 100]`), is the latest proposed. The ranges in A to C proved easy
-> to misread (see [Misreadings](#misreadings-a-spelling-must-avoid)). How a
-> string's own maximum is written, and what a string bound counts, are still
-> open.
+> **Under discussion, leaning towards [Proposal D](max-only.md):** a maximum
+> only, `Order[max 100]` for arrays and `string(max 64)` for strings (the
+> string form decided 2026-11-02). The ranges in A to C proved easy to misread
+> (see [Misreadings](#misreadings-a-spelling-must-avoid)). What a string bound
+> counts is still open.
 
 **The question.** How does a schema say "at most 64 characters" or "1 to 100
 items" as part of a type, so that a decoder can refuse an oversized value
@@ -257,7 +257,7 @@ encoded differently from `string`.
 - **Which types take a bound:** size bounds only (strings, arrays), or range
   bounds on scalars too. See [Which types take a bound](#which-types-take-a-bound).
   Under D, only maximums on strings and arrays.
-- **Under D, a string's own maximum:** `string(max 64)` or `string max 64`
-  ([the variants](max-only.md#shape)).
+- ~~**Under D, a string's own maximum**~~: decided, `string(max 64)`
+  ([why](max-only.md#shape)).
 - **Under D, minimum validators std would need:** `NonEmpty`, and `IntRange` for
   integer value ranges.

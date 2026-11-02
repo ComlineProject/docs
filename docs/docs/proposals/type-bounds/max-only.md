@@ -1,7 +1,8 @@
 # Proposal D — a maximum only: `Order[max 100]`
 
-Status: **under discussion** · See the [section overview](index.md) for the
-question all four answer
+Status: **leaning** · A string's maximum is `string(max n)` (decided
+2026-11-02) · See the [section overview](index.md) for the question all four
+answer
 
 **The idea:** a type carries only a **maximum**, written with the word `max`:
 `Order[max 100]` is at most 100 orders. There's no minimum and no range.
@@ -27,16 +28,17 @@ exactly `N`.
 ## Shape
 
 The array form is `T[max N]`. A **string's** own maximum can't be written
-`string[max 64]`, because that's an array of up to 64 strings. Its form is
-open, between two candidates:
+`string[max 64]`, because that's an array of up to 64 strings. It's written
+**`string(max 64)`** (decided 2026-11-02). Two forms were weighed:
 
-| | Variant D1: `string(max 64)` | Variant D2: `string max 64` |
+| | Chosen: `string(max 64)` | Not chosen: `string max 64` |
 |---|---|---|
 | A field | `name: string(max 32)` | `name: string max 32` |
 | Inside a union | `union(string(max 16) u32)` | `union(string max 16 u32)`: harder to see where the member ends |
 | An array of bounded strings | `string(max 32)[max 10]` | `(string max 32)[max 10]`: needs grouping |
 
-The example below uses D1.
+`string max 64` reads well alone, but inside a union or an array it needs
+grouping, so the parenthesized form won.
 
 ```ids
 const MAX_NAME: u32 = 64
@@ -121,7 +123,9 @@ this proposal would need.
   loss for safety, since minimums don't protect allocation, but an empty list
   is refused one step later.
 - **A new word, `max`,** inside type brackets.
-- **The string form is still open,** with its own trade-offs (above).
+- **A string's maximum is written differently from an array's:**
+  `string(max 64)` against `T[max 64]`, since `string[max 64]` is already an
+  array of strings.
 - **Exact strings** (`sku`, exactly 8 characters) take two pieces: the maximum in
   the type, the minimum in a validator.
 
