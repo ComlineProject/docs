@@ -109,6 +109,7 @@ nav:
     - Multi-version generation: 'design/multi-version-generation.md'
     - IR freezing & the version state: 'design/ir-generation.md'
     - Codegen by language: 'design/codegen-by-language.md'
+    - Bounds on types: 'design/type-bounds.md'
     - Validators: 'design/validators.md'
     - Generation: 'design/generation.md'
     - Runtime & generation repo structure: 'design/runtime-repo-structure.md'

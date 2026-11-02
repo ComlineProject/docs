@@ -189,18 +189,19 @@ Whether "one of several shapes, with a tag" is a feature of `enum` or of
 
 How a size limit is written on a type (`T[1..10]`, a string of at most 64
 characters), what a string bound counts, and which types take one. Four
-competing proposals, *under discussion*:
+competing proposals, ***decided: D*** (2026-11-02; the
+[Design record](../design/type-bounds.md)):
 
 - [How bounds work](type-bounds/model.md): which types take a bound, where it
   can be written, where it comes from, and what each part of Comline does with
-  it. Holds whichever proposal is chosen.
-- [Proposal A — `string(..n)`](type-bounds/parentheses.md).
-- [Proposal B — `string<..n>`](type-bounds/angle-brackets.md).
+  it. ***accepted***, with D.
+- [Proposal A — `string(..n)`](type-bounds/parentheses.md). *rejected.*
+- [Proposal B — `string<..n>`](type-bounds/angle-brackets.md). *rejected.*
 - [Proposal C — bounds as annotations](type-bounds/annotation.md): `@length`,
-  `@items`.
+  `@items`. *rejected.*
 - [Proposal D — a maximum only](type-bounds/max-only.md): `Order[max 100]`;
   strings are [arrays of `char`](type-bounds/char-strings.md), so
-  `char[max 64]`; minimums stay with validators. *leaning.*
+  `char[max 64]`; minimums stay with validators. ***accepted.***
 
 ### Performance
 

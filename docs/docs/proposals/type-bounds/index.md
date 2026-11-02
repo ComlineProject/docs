@@ -1,12 +1,13 @@
 # Bounds on types
 
-> **Under discussion, leaning towards [Proposal D](max-only.md):** a maximum
-> only, written `T[max N]` for everything. Strings are arrays of `char`
-> ([decided 2026-11-02](char-strings.md)), so a bounded string is
-> `char[max 64]` and a string bound counts characters. The ranges in A to C
-> proved easy to misread (see [Misreadings](#misreadings-a-spelling-must-avoid)).
-> D's open issues and their resolutions are
-> [on its page](max-only.md#issues-and-resolutions).
+> **Decided 2026-11-02: [Proposal D](max-only.md),** a maximum only, written
+> `T[max N]` for everything, with strings as arrays of `char`
+> ([Strings as `char[]`](char-strings.md)), so a bounded string is
+> `char[max 64]` and a string bound counts characters. A, B and C are rejected:
+> their ranges proved easy to misread
+> (see [Misreadings](#misreadings-a-spelling-must-avoid)). The decided design
+> and its rollout are in the [Design record](../../design/type-bounds.md);
+> D's issues and resolutions are [on its page](max-only.md#issues-and-resolutions).
 
 **The question.** How does a schema say "at most 64 characters" or "1 to 100
 items" as part of a type, so that a decoder can refuse an oversized value

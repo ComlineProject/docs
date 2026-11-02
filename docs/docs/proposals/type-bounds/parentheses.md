@@ -1,7 +1,10 @@
 # Proposal A — `string(..n)`
 
-Status: **under discussion** · See the [section overview](index.md) for the
-question all four answer
+Status: **rejected** 2026-11-02: a range reads as a slice, numbering or
+traffic, and `string(…)` reads as kin to `string[]`
+([misreadings](index.md#misreadings-a-spelling-must-avoid));
+[Proposal D](max-only.md) was accepted · See the
+[section overview](index.md) for the question all four answer
 
 **The idea:** a string's bound follows it in parentheses: `string(1..32)`.
 Array bounds use the array suffix: `T[1..10]`.

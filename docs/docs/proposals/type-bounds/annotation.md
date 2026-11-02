@@ -1,7 +1,9 @@
 # Proposal C — bounds as annotations
 
-Status: **under discussion** · See the [section overview](index.md) for the
-question all four answer
+Status: **rejected** 2026-11-02: every bounded element, union member and
+parameter needs an alias, and `@items = 1..12` keeps the range misreadings;
+[Proposal D](max-only.md) was accepted · See the
+[section overview](index.md) for the question all four answer
 
 **The idea:** the type's spelling doesn't change. A bound is an annotation on
 the field or alias that holds the value: `@length` for a string's characters,

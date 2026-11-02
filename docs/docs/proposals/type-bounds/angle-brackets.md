@@ -1,7 +1,9 @@
 # Proposal B — `string<..n>`
 
-Status: **under discussion** · See the [section overview](index.md) for the
-question all four answer
+Status: **rejected** 2026-11-02: the same misreadings as
+[A](parentheses.md), and it takes `<>` from generics;
+[Proposal D](max-only.md) was accepted · See the
+[section overview](index.md) for the question all four answer
 
 **The idea:** a string's bound follows it in angle brackets: `string<1..32>`.
 Array bounds use the array suffix: `T[1..10]`.

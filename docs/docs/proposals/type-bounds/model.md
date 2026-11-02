@@ -1,6 +1,7 @@
 # How bounds work
 
-Status: **under discussion** · Holds whichever [spelling](index.md) is chosen.
+Status: **accepted** 2026-11-02, with [Proposal D](max-only.md); the decided
+design is in the [Design record](../../design/type-bounds.md).
 Examples use Proposal A's `string(1..32)` for brevity.
 
 Under [Proposal D](max-only.md) a bound is a maximum only: read every bound
