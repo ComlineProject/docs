@@ -137,6 +137,16 @@ to the same shape:
   message and whether it loses, reorders or duplicates; a "transport fit"
   guarantee checked only where declared. *draft.*
 
+### Systems
+
+- [IPC](ipc.md): interfaces between processes on one machine: IPC transports,
+  typed handles (files, shared memory, endpoints to call or serve), the peer's
+  identity as the OS reports it, and peers that die. *draft.*
+- [Comline for systems software](systems-software.md): drivers and kernel
+  interfaces. User-space drivers first through IPC; then an exact-layout
+  format and target constraints (no allocation, no floating point, no
+  panics); hardware protocols and kernel code later. *draft; scope decided.*
+
 ### Packet protocols
 
 - [Packet dispatch](packet-dispatch.md): message-oriented packet protocols
