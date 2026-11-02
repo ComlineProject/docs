@@ -1,8 +1,10 @@
 # Bounds on types
 
-> **Under discussion.** No proposal is leading. How a bounded string is written
-> is contested (see [Open points](#open-points)), and so is what a string bound
-> counts.
+> **Under discussion.** [Proposal D](max-only.md), a maximum only
+> (`Order[max 100]`), is the latest proposed. The ranges in A to C proved easy
+> to misread (see [Misreadings](#misreadings-a-spelling-must-avoid)). How a
+> string's own maximum is written, and what a string bound counts, are still
+> open.
 
 **The question.** How does a schema say "at most 64 characters" or "1 to 100
 items" as part of a type, so that a decoder can refuse an oversized value
@@ -21,7 +23,7 @@ Where things stand:
 
 What a bound is and how it works, whichever spelling is chosen, is in [How bounds work](model.md).
 
-Three proposals answer the question, written to the same shape. Tracked in
+Four proposals answer the question, written to the same shape. Tracked in
 [core#98](https://github.com/ComlineProject/core/issues/98).
 
 | | Bounded string | In one line |
@@ -29,8 +31,9 @@ Three proposals answer the question, written to the same shape. Tracked in
 | [Proposal A](parentheses.md) | `string(1..32)` | the bound in parentheses after `string` |
 | [Proposal B](angle-brackets.md) | `string<1..32>` | the bound in angle brackets after `string` |
 | [Proposal C](annotation.md) | `@length = 1..32` on the field or alias | the bound as an annotation, not part of the type's spelling |
+| [Proposal D](max-only.md) | `string(max 32)`, arrays `Order[max 100]` | a maximum only, written with `max`; minimums stay with validators |
 
-## The same schema, three ways
+## The same schema, four ways
 
 ```ids
 // A
@@ -72,6 +75,16 @@ struct Customer {
 protocol Orders {
     function search(query: SearchQuery, limit: u32) -> Results;
 }
+
+// D: maximums only; a minimum is a validator
+type AccountName = string(max 32)
+struct Customer {
+    tags: string(max 32)[max 10]
+    discount: union(string(max 16) u32)
+}
+protocol Orders {
+    function search(query: string(max 100), limit: u32) -> Order[max 50];
+}
 ```
 
 Each proposal page has the full example: aliases, nested arrays, fixed arrays,
@@ -80,23 +93,25 @@ bound.
 
 ## How they compare
 
-| | A `string(..n)` | B `string<..n>` | C `@length` |
-|---|---|---|---|
-| Can be confused with `string[]` | yes: a bracket after `string`, like the array suffix | yes, as A | no: the type stays `string` |
-| Inside a union or a parameter list | parentheses inside parentheses | reads as a type | needs an alias |
-| A bounded element in a bounded array | `string(..32)[..10]` | `string<..32>[..10]` | an alias for the element |
-| Keeps `<>` free for generics | yes | no | yes |
-| New grammar | a suffix on `string` | a suffix on `string` | none: an annotation |
-| Settings can set a default bound | no | no | yes, like any annotation |
-| Familiar from | SQL `varchar(64)` | Rust and TypeScript generics | Protobuf field options, JSON Schema `maxLength` |
+| | A `string(..n)` | B `string<..n>` | C `@length` | D `[max n]` |
+|---|---|---|---|---|
+| Can be confused with `string[]` | yes: a bracket after `string`, like the array suffix | yes, as A | no: the type stays `string` | less: the word `max` says it's a limit |
+| Can be read as a slice or numbering | yes: `T[1..12]` | yes | the range in `@items = 1..12` too | no: one number |
+| "Exactly" against "at most" | `T[3]` against `T[..3]` | as A | `T[3]` against `@items = ..3` | `T[3]` against `T[max 3]` |
+| A minimum in the type | yes | yes | yes | no: a validator |
+| Inside a union or a parameter list | parentheses inside parentheses | reads as a type | needs an alias | `union(string(max 16) u32)` |
+| A bounded element in a bounded array | `string(..32)[..10]` | `string<..32>[..10]` | an alias for the element | `string(max 32)[max 10]` |
+| Keeps `<>` free for generics | yes | no | yes | yes |
+| New grammar | a suffix on `string` | a suffix on `string` | none: an annotation | a suffix on `string`, and `max` inside `[]` |
+| Settings can set a default bound | no | no | yes, like any annotation | no |
+| Familiar from | SQL `varchar(64)` | Rust and TypeScript generics | Protobuf field options, JSON Schema `maxLength` | Protobuf validate's `max_len` |
 
 ## Shared, whichever is chosen
 
-- **Array bounds are `T[a..b]`:** `T[1..10]`, `T[..10]` (at most 10),
-  `T[2..]` (at least 2). `T[N]` stays exactly `N`. (Under C, `@items` sets the
-  bound of a `T[]` field instead.)
-- **Ranges are inclusive at both ends.** `..64` means at most 64, the way
-  `StringBounds(max_chars = 64)` reads.
+- **`T[N]` stays exactly `N`.** An array's maximum is `T[..10]` under A and B,
+  `@items` under C, and `T[max 10]` under D.
+- **Under A to C, ranges are inclusive at both ends.** `..64` means at most 64,
+  the way `StringBounds(max_chars = 64)` reads. D has no ranges.
 - **A bound is part of the type's shape,** so it lives in the frozen IR.
   Unbounded types stay byte-identical in the IR, so existing builds keep their
   hashes.
@@ -152,6 +167,29 @@ The rule interacts with the syntax. Under A or B, `u8(1..12)` or `u8<1..12>`
 would look the same as a string bound but mean a different kind of limit.
 Under C, separate annotations (`@length`, `@items`, `@range`) keep each kind
 apart.
+
+## Misreadings a spelling must avoid
+
+Each of these came up when reading the examples above. A spelling that allows
+one needs the docs, hover and diagnostics to undo it every time.
+
+| Written | Meant | Can be read as |
+|---|---|---|
+| `Order[1..100]` | each value holds 1 to 100 orders | a **slice**, elements 1 to 100 of a list, as `xs[1..100]` is in Rust and Python |
+| `Order[1..100]` | each value holds 1 to 100 orders | **numbering**: the items numbered 1 to 100 |
+| `Order[1..100]` | each value holds 1 to 100 orders | **traffic**: someone may send 1 to 100 orders over time, or must send them all at once |
+| `u8(1..12)` | a `u8` whose value is 1 to 12 | a **count**, since `u8[1..12]` right beside it is 1 to 12 `u8`s |
+| `u8()`, `string()` | a type | a **call** or a **constant** |
+| `string(..64)`, `string<..64>` | a string of at most 64 characters | something in the **family of `string[]`**, the array |
+
+What a bound always means, whatever the spelling:
+
+- **It describes one value.** Every value of that field, parameter or return is
+  checked on its own, in the message that carries it.
+- **It says nothing about traffic:** how many messages are sent, how often, or
+  whether items arrive at once or over time. Nothing accumulates across
+  messages.
+- **"At most" is not "exactly".** `T[N]` is exactly `N` in every value.
 
 ## What a string bound counts
 
@@ -218,3 +256,8 @@ encoded differently from `string`.
   `string(8)` reads too much like the fixed array `f32[3]`.
 - **Which types take a bound:** size bounds only (strings, arrays), or range
   bounds on scalars too. See [Which types take a bound](#which-types-take-a-bound).
+  Under D, only maximums on strings and arrays.
+- **Under D, a string's own maximum:** `string(max 64)` or `string max 64`
+  ([the variants](max-only.md#shape)).
+- **Under D, minimum validators std would need:** `NonEmpty`, and `IntRange` for
+  integer value ranges.

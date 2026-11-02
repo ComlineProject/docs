@@ -1,7 +1,7 @@
 # Proposal A — `string(..n)`
 
 Status: **under discussion** · See the [section overview](index.md) for the
-question all three answer
+question all four answer
 
 **The idea:** a string's bound follows it in parentheses: `string(1..32)`.
 Array bounds use the array suffix: `T[1..10]`.

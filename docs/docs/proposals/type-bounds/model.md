@@ -3,6 +3,10 @@
 Status: **under discussion** · Holds whichever [spelling](index.md) is chosen.
 Examples use Proposal A's `string(1..32)` for brevity.
 
+Under [Proposal D](max-only.md) a bound is a maximum only: read every bound
+here as its maximum, every minimum as a validator, and range bounds on
+integers as not part of the type.
+
 The [overview](index.md) compares how a bound is *written*. This page describes
 what a bound *is*: which types take one, where it can be written, where it comes
 from, and what each part of Comline does with it, from the schema to the bytes
