@@ -1,7 +1,8 @@
 # comline doc
 
 ```
-comline doc [--out <dir>] [--version <v>] [--changelog-from <v>] [--format <f>[,<f>...]]
+comline doc [--out <dir>] [--version <v>] [--changelog-from <v>] [--format <f>[,<f>...]] [--open]
+comline doc open [<format>] [--out <dir>]
 ```
 
 `comline doc` writes a package's documentation for every version: each
@@ -17,6 +18,27 @@ walkthrough, see [Documenting your schemas](../../guide/documenting.md).
 | `--version <v>` | every version | Document only this built version, into `<out>/<format>/<v>/`: a version string, a commit hash (4+ characters), or `HEAD`. |
 | `--changelog-from <v>` | `[doc] changelog_from` | With `--version`: add what changed from built version `<v>` to the documented one. |
 | `--format <f>` | `[doc] formats`, else `markdown` | `markdown`, `html`, `json`, or another renderer id `[doc] renderer` offers. Repeat it, or separate formats with commas. |
+| `--open` | off | After rendering, open the first format's index, as `comline doc open` does. With `--version`, it opens that version's own `index.html` or `index.md` (`model.json` for `json`). |
+
+## Opening the result
+
+`comline doc open [<format>]` opens the generated documentation with the
+system's default handler: `<out>/<format>/index.html`, `index.md` or
+`index.json`, for `html`, `markdown` or `json`. `--out` is read as `comline doc`
+reads it.
+
+- With no `<format>`, it opens `html` if that is among `[doc] formats`, else
+  the first configured format.
+- If the file isn't there, it renders that format first, exactly as
+  `comline doc --format <format>` would. If it is, it opens it as it is,
+  without re-rendering, and says so in one line with how to refresh it
+  (`comline doc --format <format>`).
+- HTML opens in the browser named by `$BROWSER`, else the system's default;
+  Markdown and JSON open in whatever the system associates with the file.
+- It prints the absolute path it opens. With no display, or when nothing
+  opens, it prints that path and a hint instead, and exits `0`.
+
+`comline doc --open` is the same after a render, as `cargo doc --open` is.
 
 The `[doc]` keys are in [`comline.toml`](../congregation/comline-toml.md#doc),
 including `versions`, which trims the list of versions.
@@ -87,7 +109,7 @@ version's folder:
 | File | Contents |
 |---|---|
 | `index.md` | Package name and version, its `config.idp` `//!` header, a module table (Module, Summary), a Dependencies table (each dependency and the modules of it the package uses), a link to the changelog. |
-| `<module>.md` | Per schema (`types::user` → `types/user.md`): its `//!` header, a table of its declarations (Item, Summary), then each one with its `///` docs, annotations, fields and arguments (a field's own docs, else its parent's `/// @name:` line), enum variants, an error's ordinal and message, a validator's targets, parameters and asserts, and each protocol's functions and wire summary. |
+| `<module>.md` | Per schema (`types::user` → `types/user.md`): its `//!` header, a table of its declarations (Item, Summary, then Type and Value, each only when some declaration in the module has one: a constant's type and value, a type alias's target), then each one with its `///` docs, annotations, fields and arguments (a field's own docs, else its parent's `/// @name:` line), enum variants, an error's ordinal and message, a validator's targets, parameters and asserts, and each protocol's functions and wire summary. |
 | `changelog.md` | With a changelog: breaking changes, additions and other changes. Each entry is a heading line (its severity, `MAJOR`, `MINOR` or `PATCH`, and a title such as `` `Orders.place`: signature changed `` linking to the declaration), then the change as a fenced `diff` block: the old IDL line with `-`, the new with `+`. An addition has only the `+` line, a removal only the `-` line, and a change with no IDL to show (a docstring, an error's ordinal, guarantees) a sentence instead. A release shows its changes since the previous release; a dev build its step, then a link to its changes since the last release, listed below it. |
 | `deps/<package>/<module>.md` | Per module of a dependency without a published base URL: what the package reaches of it, as `<module>.md`. |
 | `nav.yml` | A `nav` list for mkdocs or zensical: the package's modules, then a `Dependencies` section (a dependency's pages, or its published base URL). |
