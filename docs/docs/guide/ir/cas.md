@@ -369,8 +369,10 @@ A ref that was already resolved by picking one side does not reconcile on its
 own: the build sees one head, and the other side's commits are simply not on
 the line. Its changes are still built from the merged working tree. To record
 the dropped head as well, core's `cas::reconcile::mark_diverged` puts it back
-beside the current one, and the next build reconciles the two. The CLI does
-not expose this yet.
+beside the current one, and the next build reconciles the two. From the CLI,
+`comline build --reconcile <hash>` does both, given the dropped head's full
+hash. Either way, the build says it reconciled: which head the line continued
+from, and which one it recorded as the second parent.
 
 ## Compared with Git
 

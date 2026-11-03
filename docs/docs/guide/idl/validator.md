@@ -220,10 +220,12 @@ Each `ValidationError` carries `field`, the path to the failing value
 filled in (`friends[1] must be at least 2 characters`). An absent `optional`
 field skips its checks.
 
-Nothing calls `validate()` for you unless you ask:
-[`validate_on_decode`](../../reference/congregation/comline-toml.md#validate_on_decode)
-in `comline.toml` makes decoding run the checks, and makes a provider refuse a
-call whose arguments fail them.
+Decoding runs the checks for you by default (`validate_on_decode = "collect"`
+in `comline.toml`; `"first"` stops at the first failure), and a provider
+refuses a call whose arguments fail them. Turning that off is a give-up with
+its reason, `validate_on_decode = { off = "why" }`; then nothing runs until you
+call `validate()`. See
+[`validate_on_decode`](../../reference/congregation/comline-toml.md#validate_on_decode).
 
 Properties are filled in when the code is generated: the argument you wrote,
 else the property's default, with constants resolved. Nothing about the

@@ -20,7 +20,7 @@ Defaults for every target.
 | `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. `code` and `lib` are implemented for `rust` and `typescript`; `dylib` is planned — see [Library generation](../../guide/codegen/library-generation.md). |
 | `package_versions` | `"latest"` \| `"all"` \| list | `"latest"` | Which package versions to emit — see [below](#package_versions). |
 | `external_std` | bool | on in `lib`, off in `code` | Reference `std` as its own package instead of inlining it — see [below](#external_std). |
-| `validate_on_decode` | `"off"` \| `"collect"` \| `"first"` | `"off"` | Whether decoding a value runs its [`@validators`](../../guide/idl/validator.md) — see [below](#validate_on_decode). |
+| `validate_on_decode` | `"collect"` \| `"first"` \| `{ off = "why" }` | `"collect"` | Whether decoding a value runs its [`@validators`](../../guide/idl/validator.md); off is a give-up with its reason — see [below](#validate_on_decode). |
 | `async` | bool | `false` | Generate protocols on a connection for an async driver — see [below](#async). |
 | `encodings` | table | — | Which type implements each encoding (format, framing, handshake) in the generated code — see [below](#encodings). |
 | `only` | list of strings | — | Generate just these languages, out of the ones `config.idp` declares — see [below](#only). |
@@ -147,18 +147,33 @@ whether **decoding** calls them too:
 
 | Value | Decoding a value that fails its checks |
 |---|---|
-| `"off"` | succeeds; nothing runs until you call `validate()` |
-| `"collect"` | fails, with every failed check |
+| `"collect"` (the default) | fails, with every failed check |
 | `"first"` | fails, with the first failed check |
+| `{ off = "why" }` | succeeds; nothing runs until you call `validate()` |
 
-It's yours to choose rather than the schema's: it changes what decoding costs,
-and a form that wants every problem at once and a hot path that wants to stop
-early want different things from the same type. With it on, a provider also
-refuses a call whose arguments fail their checks, the same way it refuses
-arguments that don't decode.
+Validators are enforced by default: a schema's checks hold wherever its values
+are decoded. Choosing between `collect` and `first` is yours rather than the
+schema's: a form that wants every problem at once and a hot path that wants to
+stop early want different things from the same type. A provider also refuses a
+call whose arguments fail their checks, the same way it refuses arguments that
+don't decode.
+
+Not running them is a **give-up**, like [`@unverified`](../../guide/idl/protocol.md),
+and it carries its reason:
+
+```toml
+[generate]
+validate_on_decode = { off = "the gateway validates every request first" }
+```
+
+A bare `"off"` is refused, with that fix. `comline generate` notes each target
+that gives it up, with the reason, and `comline inspect` lists it after the
+protocols (`--json`: `validate_on_decode_given_up`).
 
 Today only the `rust` generator runs validators; `typescript` ignores this.
-`--validate-on-decode` and `COMLINE_GENERATE_VALIDATE_ON_DECODE` override it.
+`--validate-on-decode collect|first` and `COMLINE_GENERATE_VALIDATE_ON_DECODE`
+override it for one run; turning it off is written in `comline.toml`, where
+its reason is kept.
 
 ### `async`
 
