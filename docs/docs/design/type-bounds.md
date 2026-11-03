@@ -1,6 +1,8 @@
 # Bounds on types
 
-Status: **accepted 2026-11-02; steps 1–6 shipped, 7–12 in progress** ·
+Status: **accepted 2026-11-02; steps 1–10 shipped, except step 10's
+`validate_on_decode` default (undecided) and worst-case sizes against
+configured limits; 11–12 in progress** ·
 [core#98](https://github.com/ComlineProject/core/issues/98) · Decided through
 [the proposals](../proposals/type-bounds/index.md):
 [Proposal D](../proposals/type-bounds/max-only.md), with
@@ -172,6 +174,6 @@ runtime core primitive is used only where measurement shows it's faster.
 | 7 | runtime | conformance vectors for bounds per format, the depth limit, and bounds in the compatibility facts |
 | 8 | comline-rust | checks while decoding and encoding, alias newtypes, validators on by default |
 | 9 | comline-typescript | checks while decoding and encoding, branded aliases; validators with core#96's step 4d |
-| 10 | cli | `validate_on_decode` default, worst-case sizes against configured limits, migration |
+| 10 | cli | `validate_on_decode` default, worst-case sizes against configured limits, migration. **Shipped:** the migration (the build lists each unbounded position, shows the `settings` block to add, and offers to write it from the author's input) and the pin bump. **Left:** the default's mode (`collect` or `first`) and how its give-up records a reason are undecided; checking worst-case sizes against configured limits |
 | 11 | language-server | hover sizes and cost per target, the nested-bounds lint |
 | 12 | docs | the guide: bounds, `char`, and the migration |

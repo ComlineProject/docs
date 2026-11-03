@@ -29,10 +29,10 @@ Variants:
 
 An HTTP request: its method and target URI.
 
-| Field | Type |
-|---|---|
-| `method` | [`HttpMethod`](#httpmethod) |
-| `uri` | `string` |
+| Field | Type | Description |
+|---|---|---|
+| `method` | [`HttpMethod`](#httpmethod) |  |
+| `uri` | `char``[max 8192]` | At most 8192 characters, as most servers allow. |
 
 <a id="response"></a>
 
