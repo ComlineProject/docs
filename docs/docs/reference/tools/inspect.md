@@ -8,6 +8,12 @@ comline inspect [--json]
 [guarantees](../../guide/idl/protocol.md#giving-up-a-guarantee) it keeps. Like
 `comline check`, it compiles the package and writes nothing to `.comline/`.
 
+It reads the latest build's facts from `.comline/`, so it first checks the
+store's [IR format stamp](../../guide/ir/cas.md#the-ir-format-stamp). A store
+written in another IR format is refused, exiting `2`, with a hint to run
+`comline build`, which rebuilds it in the current format. A project never built
+has no store to check, and shows no facts.
+
 ## What it shows
 
 For each protocol, the package's own and then its dependencies':

@@ -68,7 +68,7 @@ A case is one operation and the bytes it must produce:
 | `input` | the operation's input |
 | `bytes` | the encoded form, lowercase hex |
 | `expect` | optional: `"reject"` means decoding `bytes` must fail; the input then names only what selects the decoder (the framing) |
-| `compare` | optional: `"json"` compares JSON text as JSON (RFC 8259) instead of byte for byte |
+| `compare` | optional: `"json"` compares JSON text as JSON (RFC 8259) instead of byte for byte; see [Comparing as JSON](#comparing-as-json) |
 
 - **Bytes** are lowercase hex.
 - **64-bit and wider integers** (`ir_hash`, `request_id`, `u64`, `i64`, `u128`,
@@ -94,6 +94,20 @@ A case is one operation and the bytes it must produce:
 
 A framing is proven with `request` and `response` cases; a format with `encode`
 and `decode` cases.
+
+### Comparing as JSON
+
+A case with `"compare": "json"` holds bytes that are JSON text (a JSON value,
+or a JSON-RPC frame). An encode passes when its output equals `bytes` as JSON:
+
+- Whitespace and member order don't matter.
+- **Numbers compare as exact decimals:** `1` equals `1.0`, but
+  `9007199254740992` doesn't equal `9007199254740993`, though both read as the
+  same double ([runtime#72](https://github.com/ComlineProject/runtime/pull/72)).
+- Strings compare by the text they hold, however they're escaped:
+  `"app.Chat\/count"` equals `"app.Chat/count"`.
+- The same holds for JSON inside a frame: JSON-RPC params, results and error
+  data.
 
 Values and types are written in a typed encoding (`{"u8": 255}`,
 `{"struct": {"name": "Point", "fields": [...]}}`, and so on). The full list is
@@ -206,8 +220,9 @@ comline conformance --impl "<command line>" [--encoding <name>]... [--corpus <di
 
 The flags are described in the
 [CLI reference](cli.md#commands). The implementation runs under the same rules
-as an external generator: a cleared environment, a time limit (60 seconds by
-default) and a capped stdout, with its stderr shown. The command line is split
+as an external generator: a cleared environment, a time limit (`--timeout`,
+60 seconds by default, for every case together) and a capped stdout, with its
+stderr shown. The command line is split
 on whitespace, with no shell quoting, and a bare program name is looked up on
 `PATH`.
 
