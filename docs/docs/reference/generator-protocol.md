@@ -84,7 +84,7 @@ to a program whose `Description` lists the renderer at the model version. A
 
 | Field | Type | Meaning |
 |---|---|---|
-| `renderer` | string | the renderer's id, from `Description.renderers`: `markdown` |
+| `renderer` | string | the renderer's id, from `Description.renderers`: `markdown` or `html` for the official ones |
 | `model_version` | integer | the documentation model's version (`DOC_MODEL_VERSION`, `1`), readable without parsing `model` |
 | `model` | string | the documentation model as JSON text, in the shape of [`doc-model/1.json`](../schemas/doc-model/1.json) |
 | `options` | `{ links, version, versions, notes }` | see below |
@@ -94,7 +94,7 @@ to a program whose `Description` lists the renderer at the model version. A
 | `links` | a dependency's name (or `std`) to the base URL of its docs |
 | `version` | set when this render is one version of a multi-version site: the version's folder (`0.2.0`, `0.3.0-dev.2`, `unreleased`). The files land in `<site>/<version>/`, so the site's shared files are at `../`. Absent for a site of its own. |
 | `versions` | set for a site's index render: every version, oldest first, each `{ id, release, kind, model }`. `release` is the release a dev build leads to (`0.3.0` for `0.3.0-dev.2`), itself for a release, `unreleased` for the working tree; `kind` is `release`, `dev` or `unreleased`; `model` is that version's model as JSON, with its `changelog` from the version before it in the list. The files land at the site's root, and the request's own `model` is the newest version's. |
-| `notes` | plain-text notes for every page of this version: what an old version's documentation lacks |
+| `notes` | plain-text notes for every page of this version: what a built version's documentation lacks (headers, for one built before they were stored; wire summaries, which no built version records yet) |
 
 A renderer accepts every option and ignores the ones it has no use for. The
 answer is `Render(Generated)`: files, checked like a generator's.
@@ -155,7 +155,8 @@ target's version.
 
 - **Describe:** the CLI's protocol version must be inside `protocols`, and its
   IR format must be in `ir_formats`. Otherwise it refuses the generator and names
-  both sides.
+  both sides. The other way round, `serve_stdio` answers a request whose
+  `protocol` or `ir_format` isn't its own with an `Error` naming both.
 - **Language:** the generator must offer the target's language at the target's
   version, or the CLI refuses it.
 - **Renderer:** for `comline doc`, the program must list the format in
@@ -201,5 +202,6 @@ The `comline_codegen::protocol` module exports:
   `handle`, which does the same on bytes;
 - `serve_stdio(registry)`: a generator process's whole `main`. A registry
   holds renderers too (`Registry::register_renderer`), so one binary can
-  generate, render, or both. The official Markdown renderer is
-  `comline-doc-markdown` in the generation repository.
+  generate, render, or both. The official renderers are
+  `comline-doc-markdown` and `comline-doc-html` in the generation repository;
+  both are linked into `comline` and both set `sites`.

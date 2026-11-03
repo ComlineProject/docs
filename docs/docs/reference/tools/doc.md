@@ -15,9 +15,9 @@ walkthrough, see [Documenting your schemas](../../guide/documenting.md).
 | Flag | Default | Meaning |
 |---|---|---|
 | `--out <dir>` | `[doc] out`, else `docs/api` | Where to write, relative to the project. |
-| `--version <v>` | every version | Document only this built version, into `<out>/<format>/<v>/`: a version string, a commit hash (4+ characters), or `HEAD`. |
+| `--version <v>` | every version | Document only this built version, into its version's folder, `<out>/<format>/<version>/`: `<v>` is a version string, a commit hash (4+ characters), or `HEAD`. |
 | `--changelog-from <v>` | `[doc] changelog_from` | With `--version`: add what changed from built version `<v>` to the documented one. |
-| `--format <f>` | `[doc] formats`, else `markdown` | `markdown`, `html`, `json`, or another renderer id `[doc] renderer` offers. Repeat it, or separate formats with commas. |
+| `--format <f>` | `[doc] formats`, else `markdown` | `markdown`, `html`, `json`, or another renderer id `[doc] renderer` offers. Repeat it, or separate formats with commas. With `[doc] renderer` set, every format but `json` comes from that renderer ([External renderers](#external-renderers)). |
 | `--open` | off | After rendering, open the first format's index, as `comline doc open` does. With `--version`, it opens that version's own `index.html` or `index.md` (`model.json` for `json`). |
 
 ## Opening the result
@@ -27,8 +27,8 @@ system's default handler: `<out>/<format>/index.html`, `index.md` or
 `index.json`, for `html`, `markdown` or `json`. `--out` is read as `comline doc`
 reads it.
 
-- With no `<format>`, it opens `html` if that is among `[doc] formats`, else
-  the first configured format.
+- With no `<format>`, it opens `html` if that is among `[doc] formats` or
+  `<out>/html/index.html` is already there, else the first configured format.
 - If the file isn't there, it renders that format first, exactly as
   `comline doc --format <format>` would. If it is, it opens it as it is,
   without re-rendering, and says so in one line with how to refresh it
@@ -71,7 +71,8 @@ docs/api/
 ```
 
 - A dev build's folder is its full version (`0.2.0-dev.1`), and it belongs to
-  the release it leads to (`0.2.0`).
+  the release it leads to (`0.2.0`). A version built more than once keeps its
+  newest build.
 - The working tree appears as `unreleased` only when its schemas or headers
   differ from the last build. With nothing built, it is the only version.
 - Each version carries the changelog from the version before it in the list
@@ -112,7 +113,7 @@ version's folder:
 | `<module>.md` | Per schema (`types::user` → `types/user.md`): its `//!` header, a table of its declarations (Item, Summary, then Type and Value, each only when some declaration in the module has one: a constant's type and value, a type alias's target), then each one with its `///` docs, annotations, fields and arguments (a field's own docs, else its parent's `/// @name:` line), enum variants, an error's ordinal and message, a validator's targets, parameters and asserts, and each protocol's functions and wire summary. |
 | `changelog.md` | With a changelog: breaking changes, additions and other changes. Each entry is a heading line (its severity, `MAJOR`, `MINOR` or `PATCH`, and a title such as `` `Orders.place`: signature changed `` linking to the declaration), then the change as a fenced `diff` block: the old IDL line with `-`, the new with `+`. An addition has only the `+` line, a removal only the `-` line, and a change with no IDL to show (a docstring, an error's ordinal, guarantees) a sentence instead. A release shows its changes since the previous release; a dev build its step, then a link to its changes since the last release, listed below it. |
 | `deps/<package>/<module>.md` | Per module of a dependency without a published base URL: what the package reaches of it, as `<module>.md`. |
-| `nav.yml` | A `nav` list for mkdocs or zensical: the package's modules, then a `Dependencies` section (a dependency's pages, or its published base URL). |
+| `nav.yml` | A `nav` list for mkdocs or zensical: the overview (`index.md`), the package's modules, then a `Dependencies` section (a dependency's pages, or its published base URL), then `Changelog` when there is one. |
 
 `<out>/markdown/index.md` lists the versions, newest first, grouped by release.
 There is no version picker: switching versions on a published site is left to
@@ -151,7 +152,8 @@ writes a self-contained static site per version with the same content:
 | `search.js` | The search index (each declaration's name, kind, module and first line of docs), inlined as data, and the search box's script. |
 
 Every page has a header with the package's name (the version is in the
-picker beside it), a search box, a theme toggle and a version picker, and a
+picker beside it), a version picker with a link to `compare.html`, a search
+box and a theme toggle, and a
 sidebar: the package's modules and their declarations, then a Dependencies
 section, collapsed unless the page is a dependency's, with one group per
 dependency. A group links to the dependency's published docs when it has a
@@ -173,9 +175,14 @@ Changelog
 The header and sidebar work like this:
 
 - The theme toggle cycles auto (the OS setting), light and dark. The choice is
-  kept in the browser's `localStorage` where it's allowed, so it carries across
-  pages and versions, and is applied before the page paints. Where storage is
-  blocked it lasts for the page.
+  applied before the page paints, and carries across pages and versions: it is
+  kept in `localStorage` where that's allowed, and also in the tab
+  (`window.name`) and on internal links (`?theme=`), so it follows the reader
+  under `file://`, where some browsers give each file its own storage, and into
+  a page opened in a new tab.
+- A page's title is `<page> - package <name> - Comline` (`Schema types::user`,
+  `Changelog`, `Compare`), or `package <name> - Comline` for the overview. It
+  carries no version.
 
 - The picker is a native drop-down, newest first, with dev builds grouped under
   the release they lead to, and a Go button. Choosing a version with the mouse
@@ -232,10 +239,13 @@ fields. `dependencies` lists what the package reaches of each dependency
 A built version's model comes from its frozen IR and the `//!` headers stored
 with it. A built version keeps no source, so:
 
-- its protocols have no wire summary.
+- its protocols have no wire summary
+  ([core#153](https://github.com/ComlineProject/core/issues/153));
+- a version built before headers were stored
+  ([core#152](https://github.com/ComlineProject/core/pull/152)) has no headers.
 
-A version built before headers were stored has no headers. Each page of such a
-version opens with a note saying what it lacks, in both formats.
+Each page of such a version opens with a note saying what it lacks, in
+`markdown` and `html`.
 
 ## External renderers
 
@@ -243,7 +253,9 @@ version opens with a note saying what it lacks, in both formats.
 [generator protocol](../generator-protocol.md#render), and runs like an
 external generator: a `.wasm` under wasmtime with no filesystem, environment or
 network, a native executable with an empty environment, the same time limit
-(`[doc] timeout`, 60 seconds), output caps and path checks. `comline` asks it
+per call (`[doc] timeout`, 60 seconds), output caps and path checks. It takes
+the built-ins' place: every format but `json`, `markdown` and `html` included,
+is asked of it. `comline` asks it
 to describe itself first and refuses it unless it lists the format, at the
 model version this `comline` writes, in its `renderers`. It renders each
 version's folder with one `Render` each. The site's index is asked for only
@@ -254,4 +266,7 @@ folders alone.
 
 `0` on success. `1` when the package doesn't compile, a version doesn't exist,
 or the renderer refuses or fails. `2` when `--version` or `--changelog-from` is
-given and the project was never built.
+given and the project was never built, or when `.comline/` was written in
+another IR format: `comline doc` checks the store's
+[IR format stamp](../../guide/ir/cas.md#the-ir-format-stamp) before reading any
+built version, and `comline build` rebuilds the store in the current format.

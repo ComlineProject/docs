@@ -191,10 +191,12 @@ Whether "one of several shapes, with a tag" is a feature of `enum` or of
 
 #### [Bounds on types](type-bounds/index.md)
 
-How a size limit is written on a type (`T[1..10]`, a string of at most 64
+How a size limit is written on a type (`Order[max 100]`, a string of at most 64
 characters), what a string bound counts, and which types take one. Four
 competing proposals, ***decided: D*** (2026-11-02; the
-[Design record](../design/type-bounds.md)):
+[Design record](../design/type-bounds.md), [core#98](https://github.com/ComlineProject/core/issues/98);
+the language side is shipped and documented in the
+[guide](../guide/idl/types.md#bounds), the runtimes' checks are next):
 
 - [How bounds work](type-bounds/model.md): which types take a bound, where it
   can be written, where it comes from, and what each part of Comline does with

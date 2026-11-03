@@ -72,8 +72,8 @@ enum Class {
 struct Player {
     id: u32
     hp: u16
-    name: string
-    optional guild: string
+    name: char[max 32]
+    optional guild: char[max 32]
     class: Class
     pos: f32[2]
 }

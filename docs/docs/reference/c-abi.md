@@ -14,7 +14,7 @@ transports, async and dispatch stay in each host.
   comments are the doc comments of the Rust source.
 - **Why it exists and what was decided:** [one protocol core](../proposals/shared-runtime-core/core-interface.md).
 
-This page was written against runtime `main` at `cb41d31`. Where it and the
+This page was checked against runtime `main` at `b101fe9`. Where it and the
 header disagree, the header is right.
 
 ## Version
@@ -382,9 +382,9 @@ cbindgen --config cbindgen.toml --output include/comline.h
   (`tests/c/vectors.c`, C11 against `comline.h`) and Node (`js/test/vectors.test.mjs`,
   against the wasm32 build). C runs against the static library, the dynamic
   library, and the static library under ASan and UBSan.
-  - The cases are every one in `name-hash` (8), `handshake` (9), `envelope`
+  - The cases are every one in `name-hash` (8), `handshake` (13), `envelope`
     (8), `framing-datagram` (9), `framing-datagram2` (12) and `framing-jsonrpc`
-    (19): 65 in all. Each harness fails on any mismatch, and on a case count
+    (26): 76 in all. Each harness fails on any mismatch, and on a case count
     that differs from the vectors'.
   - The nine `datagram@1` cases have no connection form. For them the harness
     checks that the ABI refuses `datagram@1`.
@@ -443,7 +443,10 @@ rustc 1.98.0. Message mode, a 16-byte payload:
   16 B.
 - **`jsonrpc@1` decoding is its own cost.** It scans the frame with serde_json
   at about 2.8 instructions a byte (185,825 for 64 KiB, on the core). The
-  crossing adds the same 153 on top.
+  crossing adds the same 153 on top. Since these figures,
+  [runtime#76](https://github.com/ComlineProject/runtime/pull/76) made the
+  decoder check the `jsonrpc` version and the shape of `params`, which raised
+  the core side of the `jsonrpc@1` `feed`; the crossing is unchanged.
 - **runtime#60 cut it.** The overlap check was most of `encode_request`'s
   crossing. From the PR's body, measured locally at the same paths:
   `encode_request` `datagram@2` 965 to 742, `feed` `datagram@2` 319–327 to
