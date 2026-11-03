@@ -6,7 +6,7 @@ set of **functions** a caller can invoke.
 ```ids linenums="1"
 protocol Mail {
     function send_message(message: Message) -> bool;
-    function fetch_inbox() -> Message[];
+    function fetch_inbox() -> Message[max 100];
     function poke();
 }
 ```
@@ -32,7 +32,7 @@ function NAME( [args] ) [-> ReturnType] [! ErrorName, ...] ;
 protocol Mail {
 
     @timeout_ms=1000
-    function send_message(message: Message) -> string ! RecipientNotFound;
+    function send_message(message: Message) -> char[max 64] ! RecipientNotFound;
 }
 ```
 
@@ -86,7 +86,7 @@ A `@key=value` annotation on the `protocol` itself configures the whole service.
 ```ids linenums="1"
 @framing = "jsonrpc"
 protocol Mail {
-    function send_message(message: Message) -> string ! RecipientNotFound;
+    function send_message(message: Message) -> char[max 64] ! RecipientNotFound;
 }
 ```
 
@@ -130,12 +130,12 @@ a message or to ask the client something mid-request.
 
 ```ids linenums="1"
 protocol Chat {
-    function send(text: string) -> u64;
+    function send(text: char[max 1024]) -> u64;
 }
 
 @provider = Client
 protocol Events {
-    function message(text: string) -> bool;
+    function message(text: char[max 1024]) -> bool;
     function ping();
 }
 ```
@@ -181,13 +181,13 @@ any other is a reply.
 ```ids linenums="1"
 @framing = "jsonrpc"
 protocol Chat {
-    function send(text: string) -> u64;
+    function send(text: char[max 1024]) -> u64;
 }
 
 @provider = Client
 @framing = { name = "jsonrpc", method_names = qualified }
 protocol Events {
-    function message(text: string) -> bool;
+    function message(text: char[max 1024]) -> bool;
     function ping();
 }
 ```

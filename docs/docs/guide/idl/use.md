@@ -83,17 +83,19 @@ in `config.idp`, and the editor and the playground know it too.
 
 | Schema | Declares |
 |---|---|
-| `std::http` | `HttpMethod` (enum: `GET`, `POST`, `PUT`, `DELETE`), `Request` (`method`, `uri`), `Response` (`status_code`) |
-| `std::validators` | `StringBounds`, a validator with `min_chars` and `max_chars` |
+| `std::http` | `HttpMethod` (enum: `GET`, `POST`, `PUT`, `DELETE`), `Request` (`method`, `uri`: at most 8192 characters), `Response` (`status_code`) |
+| `std::validators` | the [validators](validator.md#the-standard-validators) `NonEmpty`, `MinChars`, `MinItems`, `IntRange` and `StringBounds` |
 
 ```ids
 use std::http::Request
-use std::validators::StringBounds
+use std::validators::{NonEmpty, MinChars}
 
 struct Call {
     request: Request
-    @validators = [StringBounds(min_chars = 1, max_chars = 64)]
-    label: string
+    @validators = [MinChars(min = 1)]
+    label: char[max 64]
+    @validators = [NonEmpty]
+    tags: char[max 16][max 8]
 }
 ```
 

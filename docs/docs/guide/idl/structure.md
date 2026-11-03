@@ -5,9 +5,9 @@ carries typed **fields**.
 
 ```ids linenums="1"
 struct Message {
-    sender: string
-    recipient: string
-    body: string
+    sender: char[max 64]
+    recipient: char[max 64]
+    body: char[max 4096]
     priority: u8
 }
 ```
@@ -19,8 +19,8 @@ marked `optional` and may carry a default.
 
 ```ids linenums="1"
 struct Message {
-    body: string
-    optional subject: string
+    body: char[max 4096]
+    optional subject: char[max 128]
     priority: u8 = 1
     language: Language = default
 }
@@ -35,9 +35,9 @@ struct Message {
 
 ## Field types
 
-A field can be any [type](types.md): a primitive (`u32`, `bool`, `string`), a
+A field can be any [type](types.md): a primitive (`u32`, `bool`, `char[max 64]`), a
 `struct`, `enum` or `type` alias by name (scoped as `pkg::module::Type`), an
-array (`Message[]`, `u8[16]`) or a union (`union(string u32)`).
+array (`Message[max 100]`, `u8[16]`) or a union (`union(char[max 64] u32)`).
 
 ## Docstrings and annotations
 
@@ -53,9 +53,9 @@ do.
 struct Message {
     /// Plain-text body, UTF-8.
     @validators = [StringBounds(min_chars = 1)]
-    body: string
+    body: char[max 4096]
 
     /// Shown in the client's list view.
-    optional subject: string
+    optional subject: char[max 128]
 }
 ```

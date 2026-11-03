@@ -1,6 +1,6 @@
 # Bounds on types
 
-Status: **accepted 2026-11-02, not implemented** ·
+Status: **accepted 2026-11-02; steps 1–6 shipped, 7–12 in progress** ·
 [core#98](https://github.com/ComlineProject/core/issues/98) · Decided through
 [the proposals](../proposals/type-bounds/index.md):
 [Proposal D](../proposals/type-bounds/max-only.md), with
