@@ -17,9 +17,9 @@ enum Language {
 
 /// A greeting in a given language.
 struct Greeting {
-    message: string
+    message: char[max GREETING_MAX]
     language: Language
-    optional sender: string
+    optional sender: char[max 64]
 }
 
 protocol Greeter {

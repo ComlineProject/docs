@@ -50,7 +50,7 @@ it's written for:
 
 ```ids
 struct Person {
-    name: string = DEFAULT_NAME
+    name: char[max 32] = DEFAULT_NAME
     worlds: u8 = WORLD_COUNT
 }
 ```

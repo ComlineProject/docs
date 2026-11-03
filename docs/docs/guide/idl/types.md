@@ -14,9 +14,9 @@ Plus any `struct` / `enum` name (scoped: `pkg::module::Type`), arrays (`Type[]`,
 `Type[max 100]` or fixed `Type[10]`), and unions (`union(TypeA TypeB)`).
 
 Every string and every dynamic array needs a [maximum](#bounds), written in its
-type or given by a [setting](settings.md#default-maximums). The short examples
-elsewhere in this guide write a bare `string` or `T[]` to keep them readable; in
-a real package they build once a default is set.
+type or given by a [setting](settings.md#default-maximums). The examples in this guide
+carry maxima so they build as written; a bare `string` or `T[]` in one of your
+schemas builds only once a default is set.
 
 ### Text: `string` and `char`
 

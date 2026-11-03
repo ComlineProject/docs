@@ -24,7 +24,7 @@ ordinary comment and is discarded.
 /// A message routed through the mail protocol.
 struct Message {
     /// Plain-text body, UTF-8.
-    body: string
+    body: char[max 4096]
 }
 ```
 

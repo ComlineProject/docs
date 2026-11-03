@@ -168,10 +168,11 @@ use std::validators::StringBounds
 
 @validators = [StringBounds(min_chars = 2, max_chars = 8)]
 type Handle = char[max 32]
+type Handles = Handle[max 20]
 
 struct Account {
     handle: Handle
-    friends: Handle[]
+    friends: Handles
 }
 
 protocol Accounts {
@@ -194,7 +195,7 @@ an alias: innermost first), then by the field's own.
 - The validator's `for` target is checked once, against what the alias
   resolves to.
 - An alias of an alias collects the checks along the chain.
-- An array of the alias (`Handle[]`) checks each element.
+- A list of the alias (`Handles`, above) checks each element.
 - An alias is the only way to check a **function argument**: arguments take no
   annotations of their own, but `to: Handle` runs `Handle`'s checks.
 

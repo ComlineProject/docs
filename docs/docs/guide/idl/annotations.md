@@ -10,7 +10,7 @@ protocol Mail {
     function send(message: Message) -> bool;
 
     @idempotent
-    function fetch_inbox() -> Message[];
+    function fetch_inbox() -> Message[max 100];
 }
 ```
 
