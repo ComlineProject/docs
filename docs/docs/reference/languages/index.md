@@ -93,6 +93,8 @@ commit. A runtime's suite runs every example against it:
 | the `packed@1` format <br><sub>`format-packed`</sub> | ✅ supported | ✅ supported |
 | the `json@1` format <br><sub>`format-json`</sub> | ✅ supported | ✅ supported |
 | the `msgpack@1` format <br><sub>`format-msgpack`</sub> | ✅ supported | ❌ unsupported: `@comline/runtime` has no MessagePack codec yet |
+| bounds <br><sub>`bounds`</sub> | ⚪ ignored: a bounded string is a `String` and a bounded list a `Vec`; nothing checks the maximum yet ([core#98](https://github.com/ComlineProject/core/issues/98)) | ⚪ ignored: a bounded string is a `string` and a bounded list an array; nothing checks the maximum yet ([core#98](https://github.com/ComlineProject/core/issues/98)) |
+| single characters <br><sub>`chars`</sub> | ❌ unsupported: no wire format carries a single `char` yet ([core#98](https://github.com/ComlineProject/core/issues/98)) | ❌ unsupported: no wire format carries a single `char` yet ([core#98](https://github.com/ComlineProject/core/issues/98)) |
 
 <!-- matrix:end -->
 
