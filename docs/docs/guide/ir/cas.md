@@ -162,6 +162,28 @@ flowchart TD
 `dep_<name>` trees mean a version can be rebuilt from its commit alone, without
 resolving the dependencies again.
 
+### The facts record
+
+The `facts` blob holds what a version's compatibility facts need from
+history (see [Compatibility facts](../../reference/versioning.md#compatibility-facts)).
+It's CBOR like every other object, with fields by name:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `protocols` | list | One entry per protocol of the package's own, in schema and declaration order. |
+| `protocols[].path` | string | `namespace::Protocol`, the key every fact is kept by. |
+| `protocols[].line` | string | The release at which the protocol last broke. |
+| `protocols[].number` | `u16` | The protocol's wire number, unique in the package. |
+| `protocols[].functions` | list | `name`, `since` (the release it first appeared in) and `number` (its wire number, unique in the protocol), in declaration order. |
+| `protocols[].retired` | list, optional | Function numbers the protocol has had and no function holds now: `number` and the `name` that last held it. |
+| `retired` | list, optional | Protocol numbers the package has had and no protocol holds now: `number` and the `path` that last held it. |
+| `numbered` | bool | Whether the numbers were assigned. |
+
+Retired numbers are never assigned again. `number`, `retired` and `numbered`
+were added without a format bump: a blob written before them reads with
+`numbered` false, and its numbers are computed from the history when it's
+read, the same way a missing `facts` blob is.
+
 ### Why config, docs and facts sit beside the schemas
 
 They are separate entries in the root tree, not part of any `schema_<n>` tree.

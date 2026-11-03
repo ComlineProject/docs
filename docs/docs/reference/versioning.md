@@ -105,7 +105,7 @@ play.
 | Change | Bump |
 |---|---|
 | add a function at the end | minor |
-| insert a function before others, or reorder | major where the protocol's framing calls by index (`datagram@1`, `datagram@2`); none under `jsonrpc@1` (a new function is minor) |
+| insert a function before others, or reorder | major where the protocol's framing calls by index (`datagram@1`, `datagram@2`); none where it calls by name (`jsonrpc@1`) or by number (`calls = by_id`); a new function is minor |
 | remove a function | major |
 | rename, add, remove or reorder an argument | major |
 | change the return type, or switch between one-way and request/response | major |
@@ -116,6 +116,8 @@ play.
 | a guarantee given up (`@unverified`, or one more joining the set) | major |
 | a given-up guarantee restored | minor |
 | the `@unverified` reason changed | patch |
+| `@id` changed so the protocol's or function's [number](#number) moves | major where the framing calls by number (`calls = by_id`); patch elsewhere |
+| `@id` written out as the number the item already has, or dropped (it keeps its number) | patch |
 | `@timeout_ms`, `@idempotent` or an annotation Comline doesn't know changed | patch |
 | a function's docstring changed | patch |
 | a protocol renamed (one removed, one added with the same functions) | major, reported as a rename |
@@ -202,12 +204,13 @@ what to do with them. `comline inspect` shows them for the latest build.
 | package id | `id` in `config.idp`: which package this is, whatever its name |
 | line | per protocol: the release at which it last had a breaking change |
 | since | per function: the release it first appeared in, in its protocol |
+| number | per protocol (unique in the package) and per function (unique in its protocol): a `u16` wire number |
 | shape hash | per protocol: a hash of what it puts on the wire |
 | parameter hash | per encoding: a hash of its name and parameters |
 
 Facts are kept per protocol **path**, `namespace::Protocol`, so protocols
 of the same name in two schemas each have their own. A renamed namespace or
-protocol keeps its line and sinces.
+protocol keeps its line, sinces and numbers.
 
 ### Line
 
@@ -232,6 +235,44 @@ another schema isn't its.
 A function's since is the release in which it was added to its protocol. A
 function removed in one release and added back in a later one starts again
 from the later release.
+
+### Number
+
+Every protocol and function gets a `u16` **wire number**: a protocol's is
+unique in the package, a function's in its protocol. A framing that calls by
+number (`calls = by_id`) addresses calls with them. The numbers live in the
+version's facts, never in the schema.
+
+- **Assigned.** A first version numbers its protocols, and each protocol
+  its functions, from 0 in declaration order. After that, a new item gets
+  the next number above every number its scope has ever had, retired ones
+  included.
+- **Bound at release.** Numbers are computed against the last release, like
+  lines. What a release numbered never changes. A build after it numbers what
+  it adds provisionally, so a change a later build undoes doesn't count, and
+  a build that [reconciles](../guide/ir/cas.md) two Git branches renumbers
+  whatever neither released.
+- **Never reused.** When an item is removed, its number is retired. A
+  re-added item gets a new number. A renamed protocol keeps its number.
+
+**`@id = N`** (decimal, 0 to 65535) on a protocol or a function writes its
+number out. It's optional: Comline numbers everything anyway.
+
+- An `@id` wins over the assigned number. Assigned numbers skip any id
+  taken this way.
+- An id is unique in its scope. Two protocols with `@id = 3` fail the
+  build: ``protocols `a` and `b` both have `@id = 3`: an id is unique in the
+  package``.
+- **Reuse guard:** an id that history shows belonged to another item fails
+  the build, naming both: ``` `@id = 0` on protocol `x::Health`: 0 was
+  protocol `x::Users`'s number in an earlier release ```. An older peer
+  would call the other item. The item that last held a number may take it
+  back.
+- Dropping an `@id` keeps the item's number. Changing it to another number
+  retires the old one, and it's major where calls are by number.
+
+No framing requires `@id`s today. A framing whose profile demands explicit
+ids may require them.
 
 ### Releases only
 
@@ -263,6 +304,10 @@ Order counts only where it travels, as the encodings' profiles state:
 
 - functions are hashed in declaration order where the framing calls them by
   index (`calls = by_index`), and sorted by name otherwise;
+- where the framing calls by number (`calls = by_id`), the protocol's number
+  and each function's are hashed too, so a moved number changes the hash and
+  the order doesn't. Elsewhere numbers are left out, and the hash is what it
+  was before numbers existed;
 - fields and variants keep their order where the format goes by position
   (`struct_fields = by_position`, `enum_variants = by_index`), and are
   sorted by name otherwise.
@@ -286,10 +331,11 @@ package declares in `encodings`, its profile's hash.
 
 ### Storage
 
-Lines and sinces need history, so each build records them in its commit as a
+Lines, sinces and numbers need history, so each build records them in its commit as a
 `facts` blob beside `config` and `docs`. The schema blobs, `schema_ir_hash`
 and generated code don't change. A version built before facts were recorded
-gets them computed from its history when read, and recomputing a stored blob
+gets them computed from its history when read, as does one recorded before
+numbers were (its stored lines and sinces are kept), and recomputing a stored blob
 from history gives back the same blob.
 
 ## History model
