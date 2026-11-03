@@ -24,7 +24,7 @@ a minimum, or a range of values.
 
 Checks a string or a list isn't empty.
 
-Applies to: `string`, `any``[]`
+Applies to: `string`, `any[]`
 
 | Assert | Message |
 |---|---|
@@ -52,7 +52,7 @@ Applies to: `string`
 
 Checks a list has at least `min` items.
 
-Applies to: `any``[]`
+Applies to: `any[]`
 
 | Parameter | Type | Description |
 |---|---|---|

@@ -249,7 +249,7 @@ left to right, parenthesising each comparison.
 |---|---|
 | 4a | **Done (core#108).** Freeze the `validate` condition as a structured expression tree (keep the text + `references` the checks use). |
 | 4b | **Done for Rust.** `rust` generator emits `validate()` (collect-all) and `validate_first()` (fail-fast); stand up the `comline_rt` support crate with `ValidationError` / `ValidationErrors`; implement the `value.*` accessor set. |
-| 4c | **Done for Rust.** `comline.toml` `validate_on_decode` knob (`off` / `collect` / `first`) — `#[serde(try_from)]` shim in the `rust` target; default `off`. [Sketch below](#auto-validation-on-decode-4c). |
+| 4c | **Done for Rust.** `comline.toml` `validate_on_decode` knob (`off` / `collect` / `first`) — `#[serde(try_from)]` shim in the `rust` target; default `off` then; `collect` since bounds step 10 ([core#98](https://github.com/ComlineProject/core/issues/98)), with off given up as `{ off = "reason" }`. [Sketch below](#auto-validation-on-decode-4c). |
 | 4d | The other generators (python / typescript / luau) once they exist; imported / cross-schema validators (needs the imported schema's IR at generate time, like multi-version `generate`). |
 
 ### Auto-validation on decode (4c)

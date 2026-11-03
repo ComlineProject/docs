@@ -54,10 +54,12 @@ reference std's own package — `comline_std` for rust, `@comline/std` for
 typescript — instead of inlining it, and `--no-external-std` inlines it;
 either overrides [`comline.toml`](congregation/comline-toml.md)'s
 `[generate] external_std`, which itself defaults to on in `lib` mode and off
-in `code` mode. `--validate-on-decode off|collect|first` overrides
+in `code` mode. `--validate-on-decode collect|first` overrides
 [`[generate] validate_on_decode`](congregation/comline-toml.md#validate_on_decode),
 whether decoding runs the schema's `@validators` (also
-`COMLINE_GENERATE_VALIDATE_ON_DECODE`).
+`COMLINE_GENERATE_VALIDATE_ON_DECODE`). The default is `collect`; turning it
+off is a give-up written in `comline.toml` with its reason
+(`{ off = "why" }`), and `generate` notes it per target.
 Each target's files are drawn as a tree. `--list` prints them one per line
 instead, with the schema each came from — and, when several package versions
 are generated at once, the version each line belongs to. `--dry-run` writes
