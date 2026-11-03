@@ -5,6 +5,15 @@ wraps a call or a reply around those bytes (`datagram@2`, `jsonrpc@1`). You
 can add either one. This page covers the whole path: declare it, profile it,
 prove it, map it, use it.
 
+```mermaid
+flowchart LR
+    D["1. declare<br/>config.idp encodings"] --> P["2. profile<br/>its facts"]
+    P --> V["3. vectors<br/>prove an implementation"]
+    D --> U["4. use<br/>wire, @framing"]
+    U --> M["5. map<br/>a type per language"]
+    M --> G["generated code<br/>names that type"]
+```
+
 ## 1. Declare it
 
 A package declares the encodings it defines under `encodings` in `config.idp`:
@@ -140,6 +149,8 @@ exits with `1`. The flags, limits and report are in the
 - `comline conformance` runs every encoding the package declares. An encoding
   with no vectors file is an error, so name the ones you mean with
   `--encoding`.
+- Official encodings are proven in the runtime's corpus. Run them with
+  `--corpus <runtime>/runtime/conformance`.
 
 ### Shipping no vectors
 
@@ -162,8 +173,6 @@ gives up encoding conformance (framing `com.acme.lines@1` ships no conformance v
 
 Adding the vectors file restores the guarantee, and the marker is then
 needless.
-- Official encodings are proven in the runtime's corpus. Run them with
-  `--corpus <runtime>/runtime/conformance`.
 
 ## 4. Use it in a schema
 

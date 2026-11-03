@@ -290,17 +290,9 @@ now. Then it adds one commit on top of the latest build:
   version, so the release gets a root tree of its own.
 - Its `version` has no pre-release part, and it carries a [release
   record](#release-record).
-- The bump is the highest the changes since the last release call for.
-  `--raise <level> --reason <text>` goes higher and never lower, and the reason
-  is required. The first release is `0.1.0`. `comline release 1.0` moves a
-  `0.x` package to `1.0.0`.
-- It refuses when there is nothing to release: the latest commit is already a
-  release, or nothing since the last release calls for a bump (a raise releases
-  anyway).
-
-Before 1.0 the minor version plays the major's part: a breaking change goes
-`0.3.2` to `0.4.0`, and anything else `0.3.2` to `0.3.3`. A `0.0.z` version
-moves to `0.1.0` on any change.
+- The bump follows the [versioning rules](../../reference/versioning.md#builds-and-releases):
+  the highest the changes since the last release call for, raised with
+  `--raise` if asked. It refuses when there is nothing to release.
 
 See `comline release` in the [CLI reference](../../reference/cli.md).
 

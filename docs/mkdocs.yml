@@ -20,6 +20,7 @@ nav:
       - Constants: 'guide/idl/const.md'
       - Imports: 'guide/idl/use.md'
       - Docstrings: 'guide/idl/docstrings.md'
+      - Annotations: 'guide/idl/annotations.md'
       - Settings: 'guide/idl/settings.md'
     
     - 'Intermediate Representation':
@@ -76,14 +77,11 @@ nav:
     - Runtime:
       - C ABI: 'reference/c-abi.md'
 
-    - Congregation:
-      - Congregation: 'reference/congregation/index.md'
-      - comline.toml: 'reference/congregation/comline-toml.md'
+    - Packages:
+      - Package files: 'reference/congregation/index.md'
       - config.idp: 'reference/congregation/config-id.md'
-      
-      - Compliance features:
-        - Compliance features: 'reference/congregation/compliance_features/index.md'
-        - Versioning rules: 'reference/versioning.md'
+      - comline.toml: 'reference/congregation/comline-toml.md'
+      - Versioning rules: 'reference/versioning.md'
 
     # std:start
     - Standard library:

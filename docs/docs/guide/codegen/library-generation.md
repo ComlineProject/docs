@@ -2,9 +2,9 @@
 
 [Code generation](index.md) turns a schema into **source text** — the type
 definitions and protocol traits. **Library generation** goes further and wraps
-that source into a **package**: a manifest (`Cargo.toml`, `pyproject.toml`, a
-`.rockspec`), the module layout, and — when the consumer is in another language
-— the FFI surface a [runtime](../runtime/index.md) loads and dispatches through.
+that source into a **package**: a manifest (`Cargo.toml`, `package.json`) and
+the module layout. A planned third mode, `dylib`, would compile it to a library
+any language's [runtime](../runtime/index.md) can load.
 
 `comline generate`'s `mode` chooses how far generation goes. It is set per target
 in [`comline.toml`](../../reference/congregation/comline-toml.md) (`[generate] mode` or
@@ -12,8 +12,8 @@ in [`comline.toml`](../../reference/congregation/comline-toml.md) (`[generate] m
 
 | `mode` | Output | Status |
 |---|---|---|
-| `code` | bare source files you place in a project yourself | built |
-| `lib` | a buildable package (manifest + module tree) | rust, typescript |
+| `code` | bare source files you place in a project yourself | Rust, TypeScript |
+| `lib` | a buildable package (manifest + module tree) | Rust, TypeScript |
 | `dylib` | a package built with a **stable ABI** and compiled to a dynamic library any language's runtime can load | planned |
 
 ## `code` — source you wire in yourself
@@ -38,7 +38,7 @@ This is the common case, and where every language generator starts.
 
 A whole buildable package: the manifest with the right dependencies, a `src/`
 module tree, and a top-level module listing every schema. The result is
-something you `cargo add` / `pip install` / `luarocks install`, or publish.
+something you `cargo add` or `npm install`, or publish.
 
 **rust**: `<out>/rust/` gets a `Cargo.toml` (package name from the
 congregation, `serde` dependency), `src/lib.rs`, and `src/<namespace>.rs` per
@@ -123,9 +123,9 @@ the object carries.
 
 ## Status
 
-`lib` is built for Rust (see [Language Guides →
-Rust](../../languages/rust/index.md) for using the result). `dylib` is
-still planned for every language, Rust included. The open questions for
+`code` and `lib` are built for Rust and TypeScript (see the
+[Language Guides](../../languages/index.md) for using the result). `dylib` is
+still planned for every language. The open questions for
 `dylib` — how the generated library is named and versioned, and what
 identity the runtime checks when it loads one — are worked through in
 [Consumer generation configuration](../../design/consumer-generation-config.md).

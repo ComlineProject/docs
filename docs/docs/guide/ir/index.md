@@ -10,18 +10,19 @@ looks at `.ids` source again.
 
 A compiled schema becomes a sequence of **frozen units** — one per declaration:
 
-- `Namespace` — the schema's namespace path
-- `Structure`, `Enum`, `Error` — the data shapes, with their fields / variants,
-  types, indices and defaults
-- `Protocol` — functions with typed parameters and results
-- `Validator`, `Settings` — rules and per-schema configuration
+- `Namespace` and `Import`: where the schema sits, and what it brings in
+- `Struct`, `Enum`, `Error`, `TypeAlias`, `Constant`: the data shapes, with
+  their fields or variants, structured types, defaults and annotations
+- `Protocol`: its functions, with typed arguments, returns and the errors each
+  raises
+- `Validator`, `Settings`: checks, and the schema's settings blocks
 
 The package manifest lowers to units too (`SpecificationVersion`, `Dependency`,
 `CodeGeneration`, `PublishRegistry`), so a frozen version carries both the schema
 API and the declarations around it.
 
 "Frozen" is literal: a unit is immutable once written, and it is addressed by the
-hash of its content.
+hash of its content. [What's stored](cas.md#objects) has the exact layout.
 
 ## Where it goes
 

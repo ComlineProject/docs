@@ -64,9 +64,20 @@ struct Payment {
 
 ## How the layers compose
 
-For any one declaration, three layers merge in order — package default →
-schema's own unnamed block → named preset (if `@settings` is used) — each one
-overriding what came before it, recursively, key by key.
+For any one declaration, the layers merge in order, each one overriding what
+came before it, recursively, key by key:
+
+```mermaid
+flowchart LR
+    B["built-in default<br/>@framing, @unverified off"] --> P["package<br/>config.idp settings"]
+    P --> S["schema<br/>settings { }"]
+    S --> N["preset<br/>@settings = Name"]
+    N --> D["what applies<br/>to the declaration"]
+```
+
+The [built-in default](#the-built-in-default) is the base; a package's
+`settings` in `config.idp` goes on top of it, then the schema's own unnamed
+block, then a named preset if the declaration uses `@settings`.
 
 **Merge is the default**; a subtree can opt out with the reserved bare
 keyword `mode = replace`, which drops the layer below entirely instead of
@@ -160,9 +171,7 @@ peers rely on is the same kind of decision.
 
 It is the base layer every package starts from, whether or not the package
 writes a `settings` block of its own: writing an unrelated setting does not
-drop it. (It used to — the default was installed only when a package wrote
-no `settings` key at all, so writing any setting silently removed the
-protection entirely.) A package that genuinely wants no built-in policy can
+drop it. A package that genuinely wants no built-in policy can
 drop the layer with `mode = replace` at the root, the same escape hatch any
 other layer has.
 

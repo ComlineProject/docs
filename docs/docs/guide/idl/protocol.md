@@ -53,6 +53,17 @@ protocol Sensors {
 }
 ```
 
+```mermaid
+sequenceDiagram
+    participant C as Caller
+    participant P as Provider
+    C->>P: report(21.5)
+    Note over C: carries on at once
+    C->>P: calibrate()
+    Note over C: waits
+    P-->>C: () or an error
+```
+
 | | `function report(…);` | `function calibrate() -> ();` |
 |---|---|---|
 | Reply | none: a one-way call | an empty reply |
@@ -79,8 +90,9 @@ protocol Mail {
 }
 ```
 
-- **`@framing`** picks the wire framing the generated code uses. Without it,
-  the protocol takes the package's `wire.framing` from `config.idp`
+- **`@framing`** picks the wire framing the generated code uses (what a
+  framing is: [Call systems](../runtime/call-system.md#the-layers)). Without
+  it, the protocol takes the package's `wire.framing` from `config.idp`
   ([Wire defaults](../packages/index.md#wire-defaults)), else `"datagram@2"`,
   which puts it on a [connection](#calls-in-both-directions).
   `"jsonrpc"` (`json-rpc`, `jsonrpc-2.0`) emits a
@@ -126,6 +138,12 @@ protocol Events {
     function message(text: string) -> bool;
     function ping();
 }
+```
+
+```mermaid
+flowchart LR
+    C["client<br/>(dialled)"] -->|"Chat.send"| S["server<br/>(accepted)"]
+    S -->|"Events.message, Events.ping"| C
 ```
 
 - **`@provider = Client`**: the client implements it and the server calls it.

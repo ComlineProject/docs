@@ -1,9 +1,15 @@
 # Sync, async & concurrency
 
-The runtime itself makes no decision here — as [the overview
-page](index.md) covers, it's plain sync Rust, no threads, no `Arc`
-anywhere inside it. Everything below is a pattern for *your* code, not a
-feature of `comline-runtime`.
+For [connections](connections.md), the default, concurrency is the runtime's
+job: generate with [`async = true`](connections.md#async) and handlers run as
+`async fn`s on your executor, with several calls in flight on one connection.
+The blocking `Connection` handles one thing at a time
+([Threads](connections.md#threads)).
+
+This page is about the lockstep `Client` and `Server` that a protocol on the
+`datagram` framing gets. They're plain sync Rust, with no threads and no `Arc`
+inside, so everything below is a pattern for *your* code, not a feature of
+`comline-runtime`.
 
 ## Plain sync — the common case
 
@@ -29,25 +35,20 @@ thread::spawn(move || {
 });
 ```
 
-This isn't just "the safe option because the borrow checker demands it" —
-it's a reasonable fit for what's actually happening underneath. [One call
-is outstanding at a time](client-and-server.md#connecting-a-client) on
-any single `Client` regardless of locking, since a call borrows the
-client until its response is consumed. The mutex isn't adding an
-artificial bottleneck on top of a runtime that could otherwise pipeline
-several calls at once — there's nothing to pipeline yet either way.
+The lock costs nothing the lockstep framing wasn't already costing: [one call
+is outstanding at a time](client-and-server.md#connecting-a-client) on any
+single `Client`, since a call borrows the client until its response is
+consumed, and the framing matches a reply to whatever request came before it.
 
-If you need actual concurrent calls in flight, that means several
-connections (several `Client`s, each with its own transport), not several
-threads contending for one.
+For several calls in flight, use a [connection](connections.md#async), which
+matches replies by request id, or several `Client`s, each with its own
+transport.
 
 ## Calling from async code
 
-There's no async client or server today — the crate's own stated
-intent (quoted on [the overview page](index.md)) is an async layer
-wrapping the sync core behind the `std` feature, later. Until that ships,
-calling a sync `Client` from inside an async task means not blocking the
-reactor:
+The lockstep `Client` has no async form. If you can, move the protocol to a
+connection (drop `@framing = "datagram"`) and generate with `async = true`.
+Otherwise, call the sync `Client` without blocking the reactor:
 
 ```rust
 let client = Arc::new(Mutex::new(client));
@@ -60,12 +61,9 @@ let body = tokio::task::spawn_blocking(move || {
 .unwrap()?;
 ```
 
-`spawn_blocking` (or your executor's equivalent — `async-std`'s
-`spawn_blocking`, a dedicated thread pool) runs the blocking call on a
-thread meant for blocking work, so it doesn't stall the async runtime's
-other tasks while it waits on the network. Treat this as the bridge until
-an async layer exists, not a permanent design — don't build deep
-abstractions on top of `spawn_blocking` that you'll need to unwind later.
+`spawn_blocking` (or your executor's equivalent) runs the blocking call on a
+thread meant for blocking work, so it doesn't stall the async runtime's other
+tasks while it waits on the network.
 
 ## Serving several connections concurrently
 

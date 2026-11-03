@@ -2,50 +2,59 @@
 
 !!! warning "Early days"
     Comline is in heavy development and changes constantly. Much of this
-    documentation is working design material rather than a polished reference —
-    parts are dense and read closer to notes than prose. It will be rewritten
-    for people, end to end, once the design settles.
+    documentation is working design material rather than a polished reference:
+    parts are dense and read closer to notes than prose.
 
-Comline is an agnostic schema, RPC/IPC (or any other similar terminologies)
-library, similar to ones like:
+Comline is a schema language and RPC toolkit. You describe your data and the
+calls between programs once, in a schema, and Comline checks it, versions it,
+and generates typed code for each language that talks over it. It sits in the
+same family as [Protocol Buffers](https://protobuf.dev/),
+[Cap'n Proto](https://capnproto.org/),
+[FIDL](https://fuchsia.dev/fuchsia-src/get-started/sdk/learn/fidl),
+[Apache Avro](https://avro.apache.org/) and
+[Apache Thrift](https://thrift.apache.org/docs/idl).
 
- - [Protobuf](https://protobuf.dev/), [Capn'Proto](https://capnproto.org/), [Fuchsia IDL (FIDL)](https://fuchsia.dev/fuchsia-src/get-started/sdk/learn/fidl)
- - [Apache Avro](https://avro.apache.org/), [Apache Thrift](https://thrift.apache.org/docs/idl)
+```mermaid
+flowchart LR
+    S["schema<br/>.ids files"] --> C["comline build<br/>check and freeze"]
+    C --> V[("version history<br/>.comline/")]
+    C --> G["comline generate"]
+    G --> R["Rust code"]
+    G --> T["TypeScript code"]
+    R <-->|"calls over a<br/>transport"| T
+```
 
+## What makes up Comline
 
-## What constitutes Comline?
+### [The schema language](./guide/idl/index.md)
+Structs, enums, errors, constants and protocols, written in `.ids` files.
+Beyond the shapes, a schema says how values are checked
+([validators](./guide/idl/validator.md)), how calls travel
+([framing and format](./guide/runtime/call-system.md)), and which rules a
+package enforces on itself ([settings](./guide/idl/settings.md)).
 
-### [Interface Definition Language (IDL or also named Schema)](./guide/idl/index.md)
-Some of the distinct differences to other libraries is that this
-[IDL/Schema](./guide/idl/index.md) allows to be more flexible, optional or robust, 
-detailed and specific when setting options, rules, message structures,
-protocols (named services in protobuf, interfaces in capn'proto) and so on...
+### [Versions you don't write by hand](./reference/versioning.md)
+`comline build` compiles the schemas into a frozen
+[intermediate representation](./guide/ir/index.md) and stores it in
+`.comline/`, an append-only history. The version number follows from what
+changed since the last release, so a breaking change can't ship as a patch.
 
+### [Generated code](./guide/codegen/index.md)
+`comline generate` writes idiomatic code for each target language: types, a
+trait or interface per protocol, clients, servers and connections. Rust and
+TypeScript are supported today, each in two forms: source files to drop into a
+project, or a buildable package.
 
-### [Intermediate Representation (IR)](./guide/ir/index.md)
-Schemas compile into an Intermiate Representation that solidifies the structure as a sort of "mini-spec",
-which then can output to other formats like a rpc schema such as
-[OpenRPC](https://open-rpc.org/), a custom text format, or better a binary
-compact format like [msgpack](https://msgpack.org/) which is ideal to reduce wire load
+### [A runtime per language](./guide/runtime/index.md)
+Generated code links against a small runtime that runs the handshake, frames
+calls and encodes values. The pieces are pluggable: the
+[wire format](./reference/wire/official-encodings.md), the framing, the
+handshake and the transport, including [your own](./guide/extending/index.md).
 
+## Where to start
 
-### [Code Generation (Codegen)](./guide/codegen/index.md)
-Codegen is a common feature that similar libraries have, however
-some of them lack details at development time and might make the experience
-more indicated towards "try-it-out" and not provide so much detail,
-
-Comline tries to provide more language specific generation that fits as best,
-detailed and information specific to them as possible, be it for compiled
-or dynamic languages, it's believed to be important to have as much information
-detail as possible at development type.
-
-
-### [Runtime & call system](./guide/runtime/index.md)
-A runtime handles transport, message parsing and routing a call to its
-implementation. The **call system** part of it is pluggable: specs like
-[json-rpc](https://www.jsonrpc.org/) can be used, or a custom format that is
-binary compact like msgpack, or any custom call format you need to implement.
-
-The message serialization is likewise specifiable, so you can use any data
-format, from JSON to other schema libraries' formats, or once again binary
-minimalist formats like msgpack.
+- [Getting started](getting-started.md): install the CLI and build a first
+  package.
+- [Guide overview](guide/index.md): the whole pipeline, stage by stage.
+- [Language guides](languages/index.md): using the generated code in Rust or
+  TypeScript.

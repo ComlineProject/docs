@@ -102,16 +102,7 @@ schema, so they get the same `Format`.
 
 ## Shipped combinations
 
-What the runtime is proven to speak, feature by feature, is on the
-[Rust reference page](../../reference/languages/rust.md#runtime).
-
-| Framing | `packed@1` | `json@1` | `msgpack@1` |
-|---|---|---|---|
-| `datagram@2` | ✅ | ✅ | ✅ |
-| `datagram` | ✅ | ✅ | ✅ |
-| `jsonrpc` | — | ✅ | — |
-
-JSON-RPC's own spec is JSON text, so a package with a JSON-RPC protocol can't
-declare another `wire.format`: that's a build error naming the protocol.
-Leaving `wire.format` out is fine — the default then applies only to the
-package's other protocols.
+Every framing works with every format the runtime has, except JSON-RPC, which
+carries JSON only: a package with a JSON-RPC protocol can't declare another
+`wire.format`. What the runtime is proven to speak, feature by feature, is on
+the [Rust reference page](../../reference/languages/rust.md#runtime).

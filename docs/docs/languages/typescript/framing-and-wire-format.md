@@ -62,16 +62,11 @@ dependency. Whoever encodes the types has the runtime already.
 
 ## Shipped combinations
 
-What the runtime is proven to speak, feature by feature, is on the
-[TypeScript reference page](../../reference/languages/typescript.md#runtime).
+Every framing works with every format the runtime has, except JSON-RPC, which
+carries JSON only: a package with a JSON-RPC protocol can't declare another
+`wire.format`. What the runtime is proven to speak, feature by feature, is on
+the [TypeScript reference page](../../reference/languages/typescript.md#runtime).
 
-| Framing | `packed@1` | `json@1` | `msgpack@1` |
-|---|---|---|---|
-| `datagram@2` | ✅ | ✅ | — no codec yet |
-| `datagram` | ✅ | ✅ | — no codec yet |
-| `jsonrpc` | — | ✅ | — |
-
-A TypeScript client and a Rust server (or vice versa) interoperate on any
-row both sides support — the handshake, framings and codecs are
-byte-compatible with the Rust runtime by design, cross-checked against
-its reference vectors.
+A TypeScript peer and a Rust peer interoperate on anything both support: the
+handshake, framings and codecs are byte-compatible, checked against the same
+conformance vectors.

@@ -12,29 +12,21 @@ Each language gets its own tree. Pick one from the tabs on the left.
 
 | Language | Generator | Modes | Runtime |
 |---|---|---|---|
-| [Rust](rust/index.md) | shipped | `code`, `lib` | `comline-runtime`, sync, `no_std`-first |
-| [TypeScript](typescript/index.md) | shipped | `code` | `@comline/runtime`, async/Promise-based |
+| [Rust](rust/index.md) | shipped | `code`, `lib` | `comline-runtime`, `no_std`-first; sync, or async with `async = true` |
+| [TypeScript](typescript/index.md) | shipped | `code`, `lib` | `@comline/runtime`, async/Promise-based |
 | Python, Lua, Luau, C | none yet | — | — |
 
 Python, Lua, Luau and C appear in example `config.idp` manifests and design
 sketches, but no `comline-codegen-*` crate exists for them today — there is
 nothing to generate and no runtime to link against.
 
-## Capability matrix
+## What each runtime speaks
 
-What each shipped runtime actually supports, independent of what the call
-system [could in principle](../guide/runtime/call-system.md) support:
-
-| | Transports | Wire formats | Framings |
-|---|---|---|---|
-| Rust | in-memory, TCP | packed, JSON, MessagePack | datagram@2, datagram, JSON-RPC |
-| TypeScript | in-memory only | packed, JSON | datagram@2, datagram, JSON-RPC |
-
-Not every combination of wire format and framing ships — JSON-RPC's own spec
-is JSON text, so a `jsonrpc` + `msgpack`/`packed` pairing doesn't exist on
-either side. MessagePack is Rust only, until TypeScript gets a codec for it.
-`packed@1` and `datagram@2` are the built-in defaults; see
-[Wire defaults](../guide/packages/index.md#wire-defaults).
+Both runtimes speak every built-in framing, `packed@1` and `json@1`, and are
+byte-compatible with each other. MessagePack is Rust only for now, and so is
+TCP: TypeScript ships an in-memory transport and you bring your own for
+anything else. The full matrix, proven against the conformance corpus, is in
+the [language reference](../reference/languages/index.md#runtimes-side-by-side).
 
 ## Who maintains this
 

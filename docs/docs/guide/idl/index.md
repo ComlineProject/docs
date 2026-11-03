@@ -38,9 +38,16 @@ A schema is a flat list of declarations, in any order:
 | [`protocol`](protocol.md) | a set of callable [`function`s](protocol.md) |
 | [`error`](error.md) | a named failure with an interpolated `message` and fields, raised by functions with `!` |
 | [`const`](const.md) | a compile-time constant: `const NAME: type = value` |
+| [`type`](types.md#type-aliases) | a second name for a type: `type UserId = u64` |
 | [`settings`](settings.md) | package/schema-wide authoring policy (`key = value`) — enforced at build time |
-| [`validator`](validator.md) | a named, parameterised field check — recorded, not yet enforced |
+| [`validator`](validator.md) | a named, parameterised check on a field's value, run by generated code |
 | [`use`](use.md) | pull declarations in from another schema or package |
+
+## Annotations
+
+A line `@key = value` above a declaration, field or function configures it:
+`@validators`, `@framing`, `@deprecated` and others. See
+[Annotations](annotations.md).
 
 ## Comments and docs
 

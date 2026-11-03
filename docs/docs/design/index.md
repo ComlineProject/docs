@@ -18,10 +18,11 @@ Each page carries a status and links the issues / PRs that carry it out.
   across Rust, Python, TypeScript, Luau. *Sketch.*
 - [Bounds on types](type-bounds.md) — a maximum in the type, `T[max N]`, with
   strings as `char[]`: what's checked where, the wire, generated code, and the
-  rollout. *Accepted, not implemented.*
+  rollout. *Accepted; core's checks and generation's feature are in, the
+  runtime and generators' checks are next.*
 - [Validators](validators.md) — `validator` declarations and the `@validators`
   field annotation: the intended shape and what has to change to get there.
-  *Not implemented.*
+  *Checked at build time and run in Rust; TypeScript next.*
 - [Generation](generation.md) — what codegen / libgen / runtime each mean, moving
   the generators out of `core`, and the `generation` repo de-rot plan.
   *Partly built.*
