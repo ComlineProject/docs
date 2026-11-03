@@ -22,10 +22,43 @@ protocol Events {
 ## Serving every protocol
 
 The package gets one `serve`, taking a `Services` object with a field per
-protocol the server provides. Leaving one out doesn't type-check:
+protocol the server provides. Leaving one out doesn't type-check.
+
+### When they're generated
+
+`Services`, `ClientServices`, `accept`, `serve` and `connect` are generated
+when the package has one connection to serve, and left out otherwise. They're
+left out when:
+
+- **No protocol is on a connection.** That includes a package with no
+  protocols at all. A protocol is on a connection when it uses `datagram@2`
+  (the default), or when the client provides it (`@provider = Client` or
+  `Multiple`). A server-only protocol on `datagram@1` isn't, so a package of
+  only those has no `serve`. The same goes for JSON-RPC protocols, which count
+  only once one JSON-RPC protocol in the package is client-provided; then they
+  all do.
+- **The protocols on connections disagree** on the framing or the handshake.
+  No one connection carries them all, and `comline generate` warns, naming
+  both protocols. Each protocol still gets its own dispatcher and sender.
+- **Only protocols from an external `std` are on a connection.** Only what
+  the package emits counts.
+
+When a package declares protocols but none is on a connection,
+`comline generate` says so, and why.
+
+### Using them
+
+They're in `connection.ts`. In `lib` mode the package's `index.ts`
+re-exports it, so import from the package; in `code` mode import from the
+file, wherever you placed it.
 
 ```ts
+// `lib` mode
 import { connect, serve, chat } from "my-package";
+
+// `code` mode
+// import { connect, serve } from "./generated/connection";
+// import * as chat from "./generated/chat";
 
 // The side that accepts: handshake, provide every protocol, serve until
 // the peer leaves.
@@ -50,9 +83,6 @@ const sent = await new chat.ChatSender(conn).send({ text: "hi" });
   handshake are the protocols'. When the protocols on connections disagree on
   either, no one connection carries them all, so these functions aren't
   generated and `comline generate` warns why.
-
-They're in `connection.ts`, which a `lib`-mode package's `index.ts`
-re-exports.
 
 ## What codegen emits
 
