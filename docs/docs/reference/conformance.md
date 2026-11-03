@@ -13,7 +13,7 @@ differ, they win.
 
 ## Version
 
-**Spec version: `0.2`** (`runner::SPEC_VERSION`). It covers the case format
+**Spec version: `0.3`** (`runner::SPEC_VERSION`). It covers the case format
 (`vectors/*.json`, `profiles/*.json`), the ops, and the value and type
 encodings.
 
@@ -23,8 +23,19 @@ encodings.
   Under it, ops and reply fields are only ever added.
 
 Changes, newest first (the full changelog is in the
-[runtime README](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/README.md#the-spec-version-02)):
+[runtime README](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/README.md#the-spec-version-03)):
 
+- **0.3:** bounds and `char`
+  ([core#98](https://github.com/ComlineProject/core/issues/98)).
+  - New type descriptions:
+    - `"char"`;
+    - `{"bounded_string": {"max": N}}` for `char[max N]`;
+    - `{"bounded_array": {"of": T, "max": N}}` for `T[max N]`;
+    - `{"recursive": {"max_depth": D, "of": T}}`, with `"self"` inside `T` for the recursive type.
+  - A new value, `{"char": "é"}`.
+  - An `encode` case may carry a `type`. An `encode` rejection is a value
+    over its type's bounds: it asks only to encode, and encoding must fail.
+  - No profile facts change, and the ops protocol stays at 1.
 - **0.2:** handshake profiles state `schema_agreement` and
   `encoding_agreement` as JSON booleans (`"value": true`). A fact stated
   `false` names no cases, and a handshake profile may leave a fact out, which
@@ -67,7 +78,7 @@ A case is one operation and the bytes it must produce:
 | `op` | the operation, below |
 | `input` | the operation's input |
 | `bytes` | the encoded form, lowercase hex |
-| `expect` | optional: `"reject"` means decoding `bytes` must fail; the input then names only what selects the decoder (the framing) |
+| `expect` | optional: `"reject"` means decoding `bytes` must fail; the input then names only what selects the decoder (the framing). An `encode` rejection is a value over its `type`'s bounds, which encoding must refuse; its `bytes` are empty |
 | `compare` | optional: `"json"` compares JSON text as JSON (RFC 8259) instead of byte for byte; see [Comparing as JSON](#comparing-as-json) |
 
 - **Bytes** are lowercase hex.
@@ -86,7 +97,7 @@ A case is one operation and the bytes it must produce:
 | `envelope` | `kind`: `ok` with `payload`, `err` with `id` and `body`, or `fault` | encode and decode |
 | `request` | `framing`, `call_id`, `method`, `request_id`, `format`, `params`, and `one_way` when `true` | encode and decode |
 | `response` | `framing`, `request_id`, and an envelope's fields | encode and decode |
-| `encode` | `format`, `value` | encode |
+| `encode` | `format`, `value`, and `type` when its bounds matter | encode; a rejection's encode must fail |
 | `decode` | `format`, `type`, `value` | decode: `bytes` read as `type` give `value` |
 | `handshake_check` | one end's `ir_hash`, `wire_format`, `framing`, `capabilities` | decode only: `bytes`, the peer's `comline@1` frame, is accepted (giving the input back) when the IR hash, format and framing agree, and refused when one differs. Capability bits may differ |
 | `stream_prefix` | `len`, `max` | encode and decode the 4-byte length prefix of a `len`-byte frame under the limit `max` |
@@ -110,7 +121,11 @@ or a JSON-RPC frame). An encode passes when its output equals `bytes` as JSON:
   data.
 
 Values and types are written in a typed encoding (`{"u8": 255}`,
-`{"struct": {"name": "Point", "fields": [...]}}`, and so on). The full list is
+`{"struct": {"name": "Point", "fields": [...]}}`, and so on). Bounds have
+their own type descriptions: `{"bounded_string": {"max": N}}`,
+`{"bounded_array": {"of": T, "max": N}}`, and
+`{"recursive": {"max_depth": D, "of": T}}`, where the outermost value is
+level 1 and level D + 1 is refused. The full list is
 in the
 [runtime README](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/README.md#the-corpus).
 
@@ -125,7 +140,7 @@ no prefix. See [Transports](../guide/extending/transports.md).
 
 - **A rejection** (`expect: "reject"`) asks to decode its `bytes`, which must
   fail. A `stream_prefix` rejection also asks to encode its input, which must
-  fail.
+  fail. An `encode` rejection asks only to encode its input, which must fail.
 - **Any other case** asks to encode its input (unless it is a `decode` or a
   `handshake_check`) and to decode its `bytes` (unless it is a `name_hash` or an
   `encode`).
