@@ -27,8 +27,11 @@ hash of its content.
 
 `comline build` writes the frozen units into the project's
 [content-addressable store](cas.md) under `.comline/`, as one commit in an
-append-only chain. Each commit records its tree of units, its parent, an author,
-a timestamp and the package version.
+append-only chain. Each commit records a root tree (the schemas' units plus the
+package's `config`, `docs` and `facts`), its parent (two after a
+[reconciled merge](cas.md#branches)), an author, a timestamp, a generated
+message and the package version, and a release adds its release record. The
+[CAS guide](cas.md) has every field.
 
 Because the store is content-addressed and never rewritten, any past version
 stays reproducible, and two versions can be compared unit-by-unit at any time —
