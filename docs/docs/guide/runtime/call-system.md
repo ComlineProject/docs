@@ -65,6 +65,13 @@ a different framing) is refused at once, rather than surfacing later as a
 confusing decode error partway through a real call. Capability bits are
 exchanged too, but a difference there is advisory.
 
+`comline@2` checks compatibility instead of identity. It compares each
+protocol's line, shape hash and wire numbers, so a newer consumer can still
+call an older provider. It's in the runtime but not yet the default:
+see [Handshakes](../../reference/wire/handshakes.md). Its companion framing,
+`datagram@3`, addresses calls by wire number
+([Datagram framings](../../reference/wire/datagram.md)).
+
 A protocol talking to a peer that can't take part (a legacy service, say)
 declares `@handshake = "none"` and says why with `@unverified`; see
 [Giving up a guarantee](../idl/protocol.md#giving-up-a-guarantee). In the

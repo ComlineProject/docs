@@ -72,6 +72,8 @@ nav:
 
     - Wire formats:
       - packed@1: 'reference/wire/packed.md'
+      - Datagram framings: 'reference/wire/datagram.md'
+      - Handshakes: 'reference/wire/handshakes.md'
       - Official encodings: 'reference/wire/official-encodings.md'
 
     - Runtime:
