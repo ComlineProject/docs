@@ -55,5 +55,31 @@ struct Person {
 }
 ```
 
-Array sizes currently take an integer literal only (`Article[10]`), not a
-constant name.
+## Sizes from constants
+
+An array's size can be a constant, in a maximum or an exact length:
+
+```ids
+const NAME_MAX: u8 = 32
+const LIMIT: u32 = 500
+
+struct Customer {
+    name: char[max NAME_MAX]
+    code: char[NAME_MAX]
+    orders: Order[max LIMIT]
+    chunk: u8[max u16::MAX]
+}
+```
+
+- **It names an unsigned integer constant:** declared `u8`, `u16`, `u32` or
+  `u64`, in this schema or another (`pkg::mod::NAME_MAX`), or an unsigned type's bound such as `u16::MAX`. A signed
+  or non-integer constant, or a name that isn't a constant, is a build error
+  saying so.
+- **It is stored resolved.** The stored schema holds the number, so the
+  maximum is the same wherever the constant came from, and changing the
+  constant changes the type, which is a breaking change like any other bound
+  change.
+- **The same limits apply:** at least 1 and at most `u32::MAX`, so a constant of
+  `0` is an error where it is used as a size.
+
+See [Bounds](types.md#bounds) for what a maximum means.

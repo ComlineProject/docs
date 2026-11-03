@@ -19,7 +19,7 @@ A **validator** is a named, parameterised check you attach to a
 /// @max_chars: maximum length
 validator StringBounds for string {
     min_chars: u32 = 0
-    max_chars: u32 = 1024
+    max_chars: u32 = u32::MAX
 
     validate {
         assert(value.length >= params.min_chars,
@@ -48,7 +48,15 @@ validator Range for u8, u16, u32 { … }
 - On an array field, a validator checks the **array**, not each element: a
   `for string` validator doesn't go on a `string[]` field.
 - Targets are primitives, arrays of them, or aliases. There are no generic
-  targets; list each type instead.
+  targets; list each type instead, with one exception: `any[]`.
+- **Bounds are ignored when matching.** `for string` applies to every string,
+  whatever its maximum (`char[max 32]`, `char[8]`), and `for u32[]` to every
+  `u32[max N]`.
+- **`any[]`** is a dynamic array of any element type, so one validator can check
+  a list's length without naming what it holds. `any` is a keyword only as an
+  array's element in a `for`: `any[][]` is a list of lists, and a bare `any`
+  is an error. `any[]` doesn't match a string, which is why std's `NonEmpty`
+  lists both: `for string, any[]`.
 
 ## Properties
 
@@ -97,7 +105,7 @@ that bind the validator's properties by name.
 ```ids linenums="1"
 struct Message {
     @validators = [StringBounds(min_chars = 3, max_chars = 12)]
-    recipient: string
+    recipient: char[max 64]
 }
 ```
 
@@ -115,6 +123,41 @@ local one: its `for` targets and its arguments, against its declaration.
 `@validators` goes on a field or a `type` alias. On a struct, error, protocol or
 function there's no single value for it to check, so it's a build error.
 
+## The standard validators
+
+[`std::validators`](../../std/validators.md) ships these. A **maximum** belongs
+in the type ([`char[max 32]`](types.md#bounds)), where a decoder checks it before
+allocating; validators check what a type can't say, a minimum or a range.
+
+| Validator | For | Checks |
+|---|---|---|
+| `NonEmpty` | `string`, `any[]` | not empty |
+| `MinChars(min)` | `string` | at least `min` characters |
+| `MinItems(min)` | `any[]` | at least `min` items |
+| `IntRange(min, max)` | `u8` `u16` `u32` `u64` `s8` `s16` `s32` `s64` | the value is within `min` and `max`, both included; each defaults to the type's widest bound |
+| `StringBounds(min_chars, max_chars)` | `string` | the length is within both; `max_chars` defaults to no limit. Prefer the type's maximum and `MinChars` |
+
+```ids linenums="1"
+use std::validators::{NonEmpty, MinItems, IntRange}
+
+struct Customer {
+    @validators = [NonEmpty]
+    name: char[max 32]
+
+    @validators = [MinItems(min = 1)]
+    orders: Order[max 100]
+
+    @validators = [IntRange(min = 1, max = 12)]
+    month: u8
+}
+```
+
+A std validator's size is checked against the type's maximum at build. A
+minimum above it refuses every value, so it is an error: `MinChars(min = 40)`
+on a `char[max 32]` (`bounds::validator-minimum-above-maximum`). A cap below it
+refuses values the type allows, so it is a warning that suggests moving the cap
+into the type (`bounds::validator-caps-below-type`).
+
 ## On a type alias
 
 Put `@validators` on a `type` alias to check every value of that alias,
@@ -124,7 +167,7 @@ wherever it's used:
 use std::validators::StringBounds
 
 @validators = [StringBounds(min_chars = 2, max_chars = 8)]
-type Handle = string
+type Handle = char[max 32]
 
 struct Account {
     handle: Handle

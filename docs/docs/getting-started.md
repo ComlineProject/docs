@@ -51,10 +51,16 @@ enum Language {
 }
 
 struct Greeting {
-    message: string
+    message: char[max 256]
     language: Language
 }
 ```
+
+Every string and list needs a maximum, so a decoder can refuse an oversized
+value before allocating it. `char[max 256]` is a string of at most 256
+characters. To set one for the whole package instead, see
+[default maximums](guide/idl/settings.md#default-maximums); the rules are in
+[Types](guide/idl/types.md#bounds).
 
 ## Build
 

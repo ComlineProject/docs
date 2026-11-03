@@ -133,9 +133,11 @@ bound.
 
 [How bounds work](model.md) has the full model: each type and why, every position a bound can be written in, where a bound comes from (written, through an alias, a constant, a default), and what the build, version comparison, generated code, decoders and the language server each do with it. This section is the short version.
 
-Not settled. core#98 names arrays and strings, and its reason, refusing an
-oversized value before allocating, only covers types whose size varies. A
-bound could mean two different things:
+**Decided 2026-11-02: size bounds only, on strings and dynamic arrays** (rule 1
+below); integer ranges stay with validators (`IntRange`). What follows is the
+comparison that led there. core#98 names arrays and strings, and its reason,
+refusing an oversized value before allocating, only covers types whose size
+varies. A bound could mean two different things:
 
 - **A size bound:** how big a value may be (characters, items). It protects
   decoders and can change the generated type (a fixed-capacity string).
@@ -261,13 +263,13 @@ encoded differently from `string`.
   ([issue 3](max-only.md#issues-and-resolutions)).
 - **An exact length:** `8..8` only, or a shorthand. A shorthand like
   `string(8)` reads too much like the fixed array `f32[3]`.
-- **Which types take a bound:** size bounds only (strings, arrays), or range
-  bounds on scalars too. See [Which types take a bound](#which-types-take-a-bound).
-  Under D, only maximums on strings and arrays.
+- ~~**Which types take a bound**~~: decided, size bounds only: maximums on
+  strings and dynamic arrays. See [Which types take a bound](#which-types-take-a-bound).
 - **Under D, the cost of minimums as validators:** an extra pass per string,
   and checks that run only when the receiver opts in
   ([weighed here](max-only.md#what-a-validator-minimum-costs)). Unmeasured.
 - ~~**Under D, a string's own maximum**~~: decided, `char[max 64]`, replacing
   the earlier `string(max 64)` ([why](char-strings.md)).
-- **Under D, minimum validators std would need:** `NonEmpty`, and `IntRange` for
-  integer value ranges.
+- ~~**Under D, minimum validators std would need**~~: shipped in std,
+  `NonEmpty`, `MinChars`, `MinItems` and `IntRange`
+  ([the guide](../../guide/idl/validator.md#the-standard-validators)).

@@ -107,11 +107,12 @@ are permission toggles taking a boolean (`true` / `false`):
 - `<name>` optionally narrows to one member of that category — an
   annotation's name, or a validator's name.
 
-Two keys are not permission toggles, so not every key ends in `.allowed`
+Three keys are not permission toggles, so not every key ends in `.allowed`
 and not every value is a boolean:
 
 | Key | Value |
 |---|---|
+| `bounds.<name>.max` | a positive integer; see [Default maximums](#default-maximums) |
 | `diagnostics."<code>".level` | one of `allow`, `hint`, `info`, `warn`, `error` |
 | `mode` | the bare keyword `replace` |
 
@@ -146,6 +147,64 @@ Examples:
 | `diagnostics."validation::deprecated-type-usage".level` | silence or escalate one diagnostic |
 
 No key at any level means **allowed**, with one named exception — see below.
+
+## Default maximums
+
+Every string and dynamic array needs a [maximum](types.md#bounds). Where a type
+writes none, the `bounds.<name>.max` settings supply one:
+
+| Key | Default for | Unit | Range |
+|---|---|---|---|
+| `bounds.string.max` | a `string`, or `char[]` | characters (Unicode scalar values) | 1 to 4294967295 |
+| `bounds.array.max` | a dynamic array, `T[]` | items | 1 to 4294967295 |
+| `bounds.depth.max` | a struct that can contain itself, with no [`@max_depth`](annotations.md#max_depth) | levels of nesting | at least 1 |
+
+```idp linenums="1"
+settings = {
+    bounds = {
+        string = { max = 256 }
+        array = { max = 1024 }
+        depth = { max = 16 }
+    }
+}
+```
+
+In a `.ids` file the same is `bounds.string.max = 256`.
+
+- **There is no built-in default.** A package that sets none must write a maximum
+  at every string and list, or give bounded size up with
+  [`@unverified`](protocol.md#giving-up-a-guarantee). Any other name under
+  `bounds.` (`bounds.bytes.max`) is an unrecognised key, and `0` or a
+  non-integer is a build error.
+- **A maximum written in the type wins.** `char[max 8]` stays 8 under any default.
+- **It layers like any setting:** package, then schema, then a `@settings`
+  preset. A key scoped to a position goes before the global one:
+  `struct.field.bounds.string.max`, `error.field.bounds.array.max`,
+  `protocol.function.bounds.string.max` (arguments and returns), and
+  `struct.bounds.depth.max`.
+  Aliases and validator properties take the global key only.
+- **A default is stored resolved** at each position it reaches, so the frozen
+  schema says what every position holds, and changing a default changes the
+  type wherever it lands, a breaking change for the package.
+- **It reaches only this package's positions.** A dependency's types keep the
+  maxima resolved in the dependency; a consumer's default doesn't loosen or
+  tighten them.
+
+```ids linenums="1"
+settings {
+    bounds.string.max = 64
+}
+
+settings Long {
+    bounds.string.max = 4096
+}
+
+struct Post {
+    title: string           // 64
+    @settings = Long
+    body: string            // 4096
+}
+```
 
 ## Enforcement
 

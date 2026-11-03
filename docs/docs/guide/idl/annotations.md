@@ -34,6 +34,7 @@ build.
 | Annotation | On | What it does | Details |
 |---|---|---|---|
 | `@validators` | a field, a `type` alias | runs named checks on the value | [Validators](validator.md#using-one-validators) |
+| `@max_depth` | a struct | how deeply a struct that can contain itself nests | [`@max_depth`](#max_depth) |
 | `@deprecated` | a struct, a `type` alias | warns wherever it's used; the value is `true` or a message | [Types](types.md#type-aliases) |
 | `@settings` | any declaration | applies a named settings preset | [Settings](settings.md#named-presets-settings) |
 | `@framing` | a protocol | how calls are framed on the wire | [Protocols](protocol.md#annotations) |
@@ -50,6 +51,32 @@ can rely on.
 
 Any other `@key` is allowed and kept in the frozen schema, so a tool of your
 own can read it. Comline doesn't check it.
+
+## `@max_depth`
+
+```ids
+@max_depth = 8
+struct Comment {
+    text: char[max 500]
+    replies: Comment[max 20]
+}
+```
+
+A struct that can contain itself, directly or through other structs, fields,
+arrays, unions, optionals or aliases, has no natural end to its size. `@max_depth`
+says how many levels deep a value may nest, and a decoder refuses one nested
+deeper.
+
+- **The value is an integer.**
+- **Every such struct needs one,** or a default from the
+  [`bounds.depth.max`](settings.md#default-maximums) setting, which `@max_depth`
+  overrides. Without either, the build fails naming the struct:
+  `struct `Comment` can contain itself, and has no depth limit`.
+- **It is the third way to bound a message:** together with the maxima on
+  strings and arrays ([Bounds](types.md#bounds)) it gives every message a
+  worst-case size. A protocol that gives up bounded size with
+  [`@unverified`](protocol.md#giving-up-a-guarantee) covers a struct it reaches.
+- **The limit is stored resolved,** so changing it changes the type.
 
 ## In the editor
 
