@@ -339,28 +339,46 @@ generated code lands is set in
 
 ## Branches
 
-!!! note "Planned, not built yet"
-    Everything in this section describes a design, not the current behaviour.
-    It may change before it ships.
+The chain is linear: one ref, and every history walk follows first parents
+only. If two Git branches each build, they each move `refs/heads/main`. The
+object files merge without conflict, since they are named by hash, but the ref
+is one file, and Git leaves conflict markers in it with one head from each
+side.
 
-Today the chain is linear. There is one ref, each commit has at most one
-parent, and nothing in the tools follows a second parent. If two Git branches
-each build, they each move `refs/heads/main`. The object files merge without
-conflict, since they are named by hash, but the ref is one file and Git reports
-a conflict on it. Resolving it by hand picks one head and orphans the other
-branch's commits.
+The next build after such a merge joins the two heads back into one line:
 
-The planned reconcile handles that after a Git merge leaves two heads:
+- If one head already contains the other, the ref just moves to the newer one.
+- Otherwise the line continues from one head: the side that released since the
+  two split, or, if neither did, the head built first (the earlier timestamp,
+  then the lower hash). The merged working tree is built on top of it as one
+  build. That build counts as the other side's changes, not a replay of its
+  builds one by one, and it records the other head as a second parent.
+- That build's version, `-dev.N` count and facts (each protocol's line and
+  each function's "since") are computed the normal way, against the last
+  release on the line. So anything unreleased is renumbered to fit, and
+  released versions keep theirs, since peers may already depend on them.
+- The ref is written back as one hash. Nothing is deleted. The other side's
+  commits stay in `.comline/objects` and stay reachable through the second
+  parent.
 
-- The next build rebuilds a single line of history from the two.
-- Anything not yet released is renumbered to fit the one line: the `-dev.N`
-  counts, and the wire numbers of protocols and functions added since the last
-  release. Released versions and released numbers keep theirs, since peers may
-  already depend on them.
-- It refuses only if both branches made releases, since two releases cannot
-  both keep their version.
+Wire numbers for protocols and functions arrive with `comline@2`. They will be
+assigned against the last release the same way, so the build that reconciles
+renumbers the ones added since that release too.
 
-What the user does after such a refusal is not decided yet.
+If both branches released since they split, the build refuses and writes
+nothing. The error names the shared version, both releases and both heads.
+Two releases cannot both keep their version, so you pick the one to keep:
+write that branch's head hash into `.comline/refs/heads/main` (for example
+with `git checkout --ours` or `--theirs` on that file), then build again. The
+other branch's changes then build on top of the kept release, unreleased until
+the next release. Its own release stays in the store but leaves the line.
+
+A ref that was already resolved by picking one side does not reconcile on its
+own: the build sees one head, and the other side's commits are simply not on
+the line. Its changes are still built from the merged working tree. To record
+the dropped head as well, core's `cas::reconcile::mark_diverged` puts it back
+beside the current one, and the next build reconciles the two. The CLI does
+not expose this yet.
 
 ## Compared with Git
 
@@ -373,7 +391,7 @@ What the user does after such a refusal is not decided yet.
 | Tree | Directories and files, sorted | `schema_<n>` per schema file, `dep_<name>` per dependency, plus `config`, `docs` and `facts` |
 | Commit | Author, committer, message | Author name and timestamp, a generated message, a `version`, and for releases a `release` record |
 | Refs | Many branches, tags, `HEAD` | One: `refs/heads/main` |
-| History | Branches, merges, rewrites | One chain, never rewritten. Objects are never deleted. Merge handling is [planned](#branches). |
+| History | Branches, merges, rewrites | One chain, never rewritten. Objects are never deleted. The build after a Git merge [joins two heads back into one line](#branches). |
 | Packing | Packfiles, garbage collection | None. Every object is its own file. |
 | Version names | Hashes and tags you choose | `version` set by the diff, not typed in |
 
