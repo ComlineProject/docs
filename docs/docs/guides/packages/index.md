@@ -43,13 +43,13 @@ Both ends of a connection have to frame and encode calls alike, so the
 package says how, once:
 
 ```idp
-wire = { format = "packed@1" framing = "datagram@2" }
+wire = { format = "packed@1" framing = "datagram@3" }
 ```
 
 | Key | Values | Default |
 |---|---|---|
 | `format` | `"packed@1"`, `"json@1"`, `"msgpack@1"` | `"packed@1"`: fixed-width fields with no tags or names — see [`packed@1`](../../reference/wire/formats/packed@1.md) |
-| `framing` | `"datagram@2"`, `"datagram"` (`"datagram@1"`), `"jsonrpc"` | `"datagram@2"`: every protocol on a [connection](../idl/protocol.md#calls-in-both-directions) |
+| `framing` | `"datagram@3"`, `"datagram@2"`, `"datagram"` (`"datagram@1"`), `"jsonrpc"` | `"datagram@3"`: every protocol on a [connection](../idl/protocol.md#calls-in-both-directions), calls addressed by [wire number](../../reference/versioning.md#number) |
 
 Either key can be left out, and so can `wire`: the defaults are what a package
 that says nothing gets. The values are strings, quoted.
@@ -57,6 +57,12 @@ that says nothing gets. The values are strings, quoted.
 - **`framing`** applies to every protocol with no `@framing` of its own. The
   build writes it into each one, so it's part of the schema, and changing it
   is a major change.
+- **Before `datagram@3` and `comline@2` were the defaults,** a package that
+  said nothing got `datagram@2` and `comline@1`. Such a package's first build
+  after the change is a wire change, and its next release a breaking one (a
+  minor bump in 0.x). To keep the old wire, state it:
+  `wire = { framing = "datagram@2" }` and `handshake = "comline@1"`. See
+  [Defaults before `comline@2`](../../reference/wire/handshakes/index.md#defaults-before-comline2).
 - **`format`** is what the generated code encodes with: Rust's and
   TypeScript's `Format`. Changing it is a major change too.
 - **JSON-RPC carries JSON.** A package with a JSON-RPC protocol (through its

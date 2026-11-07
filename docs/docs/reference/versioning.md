@@ -64,7 +64,8 @@ conformance vectors) and applies the **strictest** among the encodings in
 play.
 
 - **In play:** each protocol's framing (its `@framing`, else the package's
-  `wire.framing`, else `datagram@2`) and the package's format (`wire.format`,
+  `wire.framing`, else `datagram@3`; `datagram@2` for a version built before
+  that was the default) and the package's format (`wire.format`,
   else `json@1` under JSON-RPC, else `packed@1`), in both versions compared.
   A package without protocols has its defaults in play.
 - **Unknown encodings:** one whose profile the comparison can't read (any
@@ -255,6 +256,12 @@ version's facts, never in the schema.
   whatever neither released.
 - **Never reused.** When an item is removed, its number is retired. A
   re-added item gets a new number. A renamed protocol keeps its number.
+- **Generated without a build.** `comline generate` takes the numbers from
+  the last build when the schemas haven't changed since. Otherwise it works
+  them out as the next `comline build` would, against the last release and
+  every retired number, and writes nothing. A package that was never built
+  generates too. Like a build's, those numbers are provisional until
+  `comline release`.
 
 **`@id = N`** (decimal, 0 to 65535) on a protocol or a function writes its
 number out. It's optional: Comline numbers everything anyway.
@@ -337,7 +344,10 @@ in `encodings`, its profile's hash.
 Lines, sinces and numbers need history, so each build records them in its commit as a
 `facts` blob beside `config` and `docs`. The blob also records the format, framing and
 handshake each protocol used, resolved at that build, so a later change to core's
-defaults can't change how the version reads. The schema blobs, `schema_ir_hash`
+defaults can't change how the version reads. A version that recorded none was
+built before `datagram@3` and `comline@2` were the defaults, and reads as
+`datagram@2` and `comline@1` wherever it stated nothing: see
+[Defaults before `comline@2`](wire/handshakes/index.md#defaults-before-comline2). The schema blobs, `schema_ir_hash`
 and generated code don't change. A version built before facts were recorded
 gets them computed from its history when read, as does one recorded before
 numbers were (its stored lines and sinces are kept), and recomputing a stored blob

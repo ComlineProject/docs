@@ -28,12 +28,15 @@ protocol Mail {
 }
 ```
 
-Three framings exist:
+Four framings exist:
 
-- **`Datagram2Framing`** (`datagram@2`, the default): every frame says whether
+- **`Datagram3Framing`** (`datagram@3`, the default): every frame says whether
   it's a request or a reply, and which protocol it's for, so protocols run on
   a [connection](connections.md), where either end can call and one transport
-  carries them all.
+  carries them all. Calls are addressed by
+  [wire number](../../reference/versioning.md#number).
+- **`Datagram2Framing`** (`datagram@2`): the same, with calls addressed by
+  position. The default before `datagram@3`.
 - **`DatagramFraming`** (`datagram`, also spelled `datagram@1`): the lockstep
   framing. A client sends a request and reads the next frame as its reply, one
   protocol per transport. A protocol on it gets a `<Proto>Client` and a

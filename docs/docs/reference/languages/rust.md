@@ -36,7 +36,7 @@ Generator `rust#1.85.0`.
 | `validate_on_decode` <br><sub>`validate-on-decode`</sub> | `[generate] validate_on_decode`: decoding runs the checks | ✅ supported | `validators_on_decode` |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | `@framing = "jsonrpc"` (or as the package default) | ✅ supported | `framing_jsonrpc`, `connections_jsonrpc` |
 | no handshake <br><sub>`handshake-none`</sub> | `@handshake = "none"` (or as the package default) | ✅ supported | `handshake_none` |
-| connections <br><sub>`connections`</sub> | protocols on a connection, with calls in both directions: `datagram@2` (the default), or `@provider = Client` / `Multiple` | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `handshake_none`, `connections`, `connections_async`, `connections_jsonrpc`, `format_json`, `format_msgpack` |
+| connections <br><sub>`connections`</sub> | protocols on a connection, with calls in both directions: `datagram@3` (the default) or `datagram@2`, or `@provider = Client` / `Multiple` | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `handshake_none`, `connections`, `connections_async`, `connections_jsonrpc`, `format_json`, `format_msgpack` |
 | `async` <br><sub>`async`</sub> | `[generate] async`: connection protocols get async handlers and senders | ✅ supported | `connections_async` |
 | the `packed@1` format <br><sub>`format-packed`</sub> | `wire.format = "packed@1"`, the default: fixed-width fields, no tags | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `handshake_none`, `connections`, `connections_async` |
 | the `json@1` format <br><sub>`format-json`</sub> | `wire.format = "json@1"` | ✅ supported | `format_json` |
