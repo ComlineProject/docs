@@ -1,11 +1,11 @@
 # C ABI
 
 The C ABI of `comline-runtime-ffi`: what a language other than Rust binds to
-for the `comline@1` handshake, the connection framings (`datagram@2`,
-`jsonrpc@1`), envelopes, connection state and frame limits. Codecs,
+for the `comline@1` and `comline@2` handshakes, the connection framings
+(`datagram@2`, `datagram@3`, `jsonrpc@1`), envelopes, connection state and frame limits. Codecs,
 transports, async and dispatch stay in each host.
 
-- **ABI version 0.1.** It is not frozen; it freezes when the project announces
+- **ABI version 0.2.** It is not frozen; it freezes when the project announces
   1.0 ([phases](../conduct/phases.md)). See [Version](#version).
 - **Source:** [`runtime/ffi`](https://github.com/ComlineProject/runtime/tree/main/runtime/ffi)
   in the runtime repository.
@@ -19,7 +19,7 @@ header disagree, the header is right.
 
 ## Version
 
-- The header defines `COMLINE_ABI_MAJOR` (0) and `COMLINE_ABI_MINOR` (1).
+- The header defines `COMLINE_ABI_MAJOR` (0) and `COMLINE_ABI_MINOR` (2).
 - `comline_abi_version()` returns the library's, as `(major << 16) | minor`.
 - **A host checks it at load, before any other call.**
 
@@ -29,8 +29,8 @@ header disagree, the header is right.
   }
   ```
 
-- **Before 1.0, a minor counts as a major.** A host built against `0.1` accepts
-  only `0.1`. The JS glue does exactly this.
+- **Before 1.0, a minor counts as a major.** A host built against `0.2` accepts
+  only `0.2`. The JS glue does exactly this.
 - **The freeze comes with the project's 1.0 announcement,** not with an ABI
   milestone of its own ([phases](../conduct/phases.md)).
 - The major changes when a signature, a struct layout or the meaning of a code
@@ -59,6 +59,26 @@ header disagree, the header is right.
 With `COMLINE_HANDSHAKE_NONE` there is nothing to send or check: the
 connection is open from the start, and `start` writes nothing.
 
+### `comline@2`
+
+[`comline@2`](wire/handshakes/index.md#comline2) has several messages, so its
+life differs in steps 1 to 3:
+
+1. `comline_connection_new_comline2`, with `handshake` set to
+   `COMLINE_HANDSHAKE_COMLINE2` and a [`comline_comline2_config`](#comline_comline2_config).
+2. `comline_connection_start` writes the next message, or nothing (`*written`
+   0): under `exchange = offer` the responder has nothing to send until it has
+   read the hello. Call it once at first, and again whenever an event or a
+   refusal has `COMLINE_EVENT_SEND`.
+3. `comline_connection_feed` gives `COMLINE_EVENT_HANDSHAKE_CONTINUE` while it
+   goes on and `COMLINE_EVENT_HANDSHAKE_OK` when it's done, or
+   `COMLINE_ERR_REFUSED`. Requests and replies need every message written and
+   the handshake done.
+
+Before each request, `comline_connection_check_call` says whether the peer can
+take it. `COMLINE_ERR_UNAVAILABLE` fails the call locally, so it never reaches
+the wire.
+
 ## Status codes
 
 `comline_status` is an `int32_t`. Below 16 is an outcome, 16 and up is an error.
@@ -76,6 +96,8 @@ connection is open from the start, and `start` writes nothing.
 | `COMLINE_ERR_STATE` | 21 | The call doesn't fit the connection's state: a request or reply before the handshake completed, a second `start`, or any call on a closed connection. |
 | `COMLINE_ERR_POISONED` | 22 | An earlier call on this handle panicked. Drop the handle. On wasm32 it is the whole instance, see [below](#wasm32-and-the-js-glue). |
 | `COMLINE_ERR_BUSY` | 23 | The request wasn't made: `max_waiting` calls already wait. Nothing written, no request id spent. Queueing is the host's choice. |
+| `COMLINE_ERR_REFUSED` | 25 | `comline@2` refused the connection, this side or the peer: `comline_connection_refusal` says why. It can leave a last message to send (`COMLINE_EVENT_SEND`); after that the connection is closed. |
+| `COMLINE_ERR_UNAVAILABLE` | 26 | `comline_connection_check_call`: the peer lacks the function, or the protocol was refused. |
 
 Every call that takes a handle can also return `COMLINE_ERR_INVALID_ARGUMENT`
 (a null handle or pointer), `COMLINE_ERR_POISONED`, and `COMLINE_ERR_STATE` on a
@@ -150,16 +172,18 @@ Event kinds:
 | `COMLINE_EVENT_REQUEST` | 1 | The peer calls this side. |
 | `COMLINE_EVENT_REPLY` | 2 | The reply to a call this side waits on, which no longer waits. |
 | `COMLINE_EVENT_STALE` | 3 | A reply to a call nobody waits on any more (it was abandoned). Drop it. |
+| `COMLINE_EVENT_HANDSHAKE_CONTINUE` | 4 | A `comline@2` message was taken in, and the handshake goes on. |
 
 Flags:
 
 | Flag | Bit | Meaning |
 |---|---|---|
-| `COMLINE_EVENT_HAS_PROTOCOL` | `1 << 0` | `protocol` holds the protocol the request is for. Set on `datagram@2` requests. A `jsonrpc@1` request names only its method. |
-| `COMLINE_EVENT_ONE_WAY` | `1 << 1` | The request wants no reply. Set whenever the frame says so (a `jsonrpc@1` notification), never inferred from a request id of 0. `datagram@2` can't say it, so there the schema tells one-way calls apart. |
+| `COMLINE_EVENT_HAS_PROTOCOL` | `1 << 0` | `protocol` holds the protocol the request is for. Set on `datagram@2` and `datagram@3` requests. A `jsonrpc@1` request names only its method. |
+| `COMLINE_EVENT_ONE_WAY` | `1 << 1` | The request wants no reply. Set whenever the frame says so (a `jsonrpc@1` notification), never inferred from a request id of 0. `datagram@2` and `datagram@3` can't say it, so there the schema tells one-way calls apart. |
 | `COMLINE_EVENT_CALL_BY_NAME` | `1 << 2` | The request names its call by `call_name`, not `call_id`. |
 | `COMLINE_EVENT_BODY_ABSENT` | `1 << 3` | The frame has no body: JSON-RPC `params`, `result` or `error.data` absent or `null`. `body` is empty, and a JSON codec reads it as `null`. |
 | `COMLINE_EVENT_NAME_ESCAPED` | `1 << 4` | `call_name` is JSON string text with escapes in it, as the frame spelled it (`app.Chat\/count`). Read it with `comline_method_name_unescape`, or compare it as JSON text. |
+| `COMLINE_EVENT_SEND` | `1 << 5` | `comline@2` has a message for the peer: call `comline_connection_start`. Also set beside `COMLINE_ERR_REFUSED`. |
 
 ### `comline_handshake`
 
@@ -173,6 +197,51 @@ A decoded `comline@1` frame, written by `comline_handshake_check`. 32 bytes.
 | `capabilities` | `uint32_t` | The peer's capability bits. |
 | `_reserved` | `uint32_t` | 0. |
 
+### `comline_comline2_config`
+
+A `comline@2` connection's facts and parameters, read once by
+`comline_connection_new_comline2`. Each parameter's default is 0, and
+[the handshake's reference](wire/handshakes/index.md#parameters) says what it means.
+24 bytes on a 64-bit target and 16 on wasm32.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `hello`, `hello_len` | `const uint8_t *`, `size_t` | This end's facts, as [an encoded hello message](wire/handshakes/index.md#messages). A generator can write them out as a constant. They're put in canonical order, and the `exchange` byte is replaced by `exchange` below. |
+| `side` | `uint8_t` | `COMLINE_SIDE_INITIATOR` (0) or `COMLINE_SIDE_RESPONDER` (1). |
+| `scope` | `uint8_t` | `COMLINE_SCOPE_PROTOCOL` (0) or `COMLINE_SCOPE_PACKAGE` (1). |
+| `newer_consumer` | `uint8_t` | `COMLINE_NEWER_CONSUMER_DEGRADE` (0) or `COMLINE_NEWER_CONSUMER_REFUSE` (1). |
+| `same_version_differs` | `uint8_t` | `COMLINE_SAME_VERSION_DIFFERS_REFUSE` (0) or `COMLINE_SAME_VERSION_DIFFERS_WARN` (1). |
+| `exchange` | `uint8_t` | `COMLINE_EXCHANGE_OFFER` (0) or `COMLINE_EXCHANGE_SYMMETRIC` (1). |
+| `_reserved` | `uint8_t[3]` | Must be 0. |
+
+### `comline_refusal`
+
+Why `comline@2` refused a connection. 8 bytes.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `reason` | `uint8_t` | `COMLINE_REASON_*`, the [reason codes](wire/handshakes/index.md#reason-codes). |
+| `side` | `uint8_t` | Which end refused: `COMLINE_SIDE_*`. |
+| `has_protocol` | `uint8_t` | 1 when the refusal is about one protocol. |
+| `_reserved` | `uint8_t` | 0. |
+| `protocol` | `uint16_t` | That protocol's wire number. |
+| `_reserved2` | `uint16_t` | 0. |
+
+### `comline_protocol_outcome`
+
+What one protocol of this end's came to. 4 bytes.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `number` | `uint16_t` | Its wire number. |
+| `reason` | `uint8_t` | 0 when it's usable, otherwise why it was refused: `COMLINE_REASON_*`. |
+| `_reserved` | `uint8_t` | 0. |
+
+### `comline_version`
+
+The release part of a package version: `major`, `minor` and `patch`, each a
+`uint32_t`. 12 bytes.
+
 ## Functions
 
 ### Connection
@@ -180,13 +249,20 @@ A decoded `comline@1` frame, written by `comline_handshake_check`. 32 bytes.
 | Function | Purpose | Errors |
 |---|---|---|
 | `comline_connection_new(cfg, &out)` | Make a connection into `*out`. The one allocation the library makes: the handle, with room for `max_waiting` waiting calls. | `INVALID_ARGUMENT` (a null pointer, a name that isn't UTF-8, a field outside its values, `max_frame` above the ceiling, `*out` overlapping the config or its names), `UNKNOWN_FRAMING`. `*out` is null on any error, or left as it was if it overlaps an input. |
+| `comline_connection_new_comline2(cfg, comline2, &out)` | The same for a `comline@2` connection. `cfg->handshake` must be `COMLINE_HANDSHAKE_COMLINE2`, which `comline_connection_new` refuses. `ir_hash` and `capabilities` aren't read. | As above, and `INVALID_ARGUMENT` for a `hello` that isn't an encoded hello or a field outside its values. |
 | `comline_connection_free(conn)` | Free it. Null is a no-op. Works on a poisoned or closed handle. | none |
-| `comline_connection_start(conn, out, cap, &written)` | Write this side's handshake frame, with its prefix in stream mode. Without a handshake it writes nothing. | `BUFFER_TOO_SMALL` (`*written` is 31, or 35 in stream mode), `FRAME_TOO_LARGE` (`max_frame` below 31), `STATE` (already written). |
-| `comline_connection_feed(conn, in, in_len, &consumed, &ev)` | Feed received bytes and get the event for the next frame. One frame per call. | `NEED_MORE`, `FRAMING`, `HANDSHAKE` (closes the connection), `FRAME_TOO_LARGE`. |
+| `comline_connection_start(conn, out, cap, &written)` | Write this side's handshake frame, with its prefix in stream mode. Without a handshake it writes nothing. On `comline@2`, the next message, or nothing. | `BUFFER_TOO_SMALL` (`*written` is 31, or 35 in stream mode; on `comline@2`, the message's size), `FRAME_TOO_LARGE` (`max_frame` below 31, or that message), `STATE` (already written; never on `comline@2` until it closes). |
+| `comline_connection_feed(conn, in, in_len, &consumed, &ev)` | Feed received bytes and get the event for the next frame. One frame per call. | `NEED_MORE`, `FRAMING`, `HANDSHAKE` (closes the connection), `FRAME_TOO_LARGE`, `REFUSED`, `STATE` with nothing consumed (on `comline@2`, before its offer is written or after a refusal). |
 | `comline_connection_encode_request(conn, protocol, call_id, name, name_len, expects_reply, body, body_len, out, cap, &written, &request_id)` | Frame a request around a body the host's codec already wrote. `*request_id` is the id it was given. `expects_reply` is 1 for a call that waits, 0 for a one-way call. | `BUFFER_TOO_SMALL`, `FRAME_TOO_LARGE`, `BUSY`, `INVALID_ARGUMENT` (a name that isn't UTF-8, `expects_reply` not 0 or 1), `STATE` (handshake not complete). None of them spends a request id or leaves a call waiting. |
 | `comline_connection_encode_reply(conn, protocol, request_id, envelope, error_id, body, body_len, out, cap, &written)` | Frame the reply to a request this side was given. | `BUFFER_TOO_SMALL`, `FRAME_TOO_LARGE`, `INVALID_ARGUMENT` (a `FAULT` with a body, an unknown envelope), `STATE` (handshake not complete). |
 | `comline_connection_abandon(conn, request_id)` | Stop waiting on a call that timed out. A late reply to it is `STALE`. An id nobody waits on is a no-op. | none |
 | `comline_connection_is_waiting(conn, &waiting)` | `*waiting` is 1 if any call waits for a reply, else 0. | none |
+| `comline_connection_check_call(conn, protocol, function)` | Whether the peer can take this call, by wire numbers. Always `OK` without `comline@2`. | `UNAVAILABLE`, `STATE` (not concluded yet, or refused). |
+| `comline_connection_refusal(conn, &refusal)` | Why `comline@2` refused. Works on the closed handle a refusal leaves. | `STATE` (nothing was refused). |
+| `comline_connection_warnings(conn, out, cap, &written)` | The protocols that connected although a shape differs at the same version (`same_version_differs = warn`). `cap` and `*written` count numbers. | `BUFFER_TOO_SMALL` (`*written` is how many there are), `STATE` (not concluded, refused, or not `comline@2`). |
+| `comline_connection_protocols(conn, out, cap, &written)` | What each of this end's protocols came to, ascending. `cap` and `*written` count outcomes. The peer's verdict can still refuse one until `HANDSHAKE_OK`. | As `warnings`. |
+| `comline_connection_peer_lacks(conn, protocol, out, cap, &written)` | The functions of `protocol` the peer lacks. | As `warnings`. |
+| `comline_connection_peer_version(conn, &version, pre, cap, &written)` | The peer's release, and its pre-release as UTF-8 (`dev.2`, empty for a release). | As `warnings`. |
 
 ### Without a handle
 
@@ -195,10 +271,11 @@ These are pure and re-entrant.
 | Function | Purpose | Errors |
 |---|---|---|
 | `comline_abi_version()` | The ABI version: the major in the high 16 bits, the minor in the low 16. | none |
-| `comline_supports(name, len)` | 1 if this build carries the named framing or handshake: `datagram@2`, `jsonrpc@1`, `comline@1`, `none`. 0 otherwise, `datagram@1` and wire formats included. | none |
+| `comline_supports(name, len)` | 1 if this build carries the named framing or handshake: `datagram@2`, `datagram@3`, `jsonrpc@1`, `comline@1`, `comline@2`, `none`. 0 otherwise, `datagram@1` and wire formats included. | none |
 | `comline_name_hash(name, len, &hash)` | The FNV-1a-64 hash of an encoding name, as the handshake carries it. | `INVALID_ARGUMENT` |
 | `comline_handshake_encode(ir_hash, wire_format, wire_format_len, framing, framing_len, capabilities, out, cap, &written)` | Write a 31-byte `comline@1` frame with no prefix, for a host that runs the handshake itself. Any UTF-8 name is taken. | `BUFFER_TOO_SMALL` (`*written` is 31), `INVALID_ARGUMENT` |
 | `comline_handshake_check(ours, ours_len, peer, peer_len, peer_out)` | Check a peer's frame against ours. They must agree on schema, wire format and framing; capability bits may differ. `*peer_out`, unless null, gets the peer's frame whenever it parses, so a host can say what the peer declared. Bytes after the 31-byte frame are ignored ([runtime#33](https://github.com/ComlineProject/runtime/issues/33)). | `HANDSHAKE` (they disagree, or `peer` doesn't parse), `INVALID_ARGUMENT` (`ours` doesn't parse) |
+| `comline_comline2_message_check(in, len, &kind, &reason)` | Read one `comline@2` message: its type in `*kind` (`COMLINE_COMLINE2_HELLO`, `_ANSWER`, `_VERDICT`), or why it can't be read in `*reason`. The other is 0. For a tool or a test: a connection reads its messages itself. | `HANDSHAKE`, `INVALID_ARGUMENT` |
 | `comline_method_name_unescape(in, len, out, cap, &written)` | Turn a `call_name` span with `NAME_ESCAPED` into UTF-8. Text with no escapes is copied as it is. | `BUFFER_TOO_SMALL` (`*written` is the exact size, nothing written), `INVALID_ARGUMENT` (not a valid JSON string's text) |
 
 ## What each framing reads
@@ -217,7 +294,10 @@ are a request or a reply. `datagram@1` is lockstep and has no connection form:
 | `encode_reply` writes | `protocol` and the request id | the id; `protocol` is ignored. An error is a JSON-RPC `error` object with `code` set to `error_id`; a fault is `-32603` |
 | `BODY_ABSENT` | never | `params`, `result` or `error.data` absent or `null` |
 
-`name` is any UTF-8 text. It may be empty for `datagram@2`.
+`datagram@3` reads and gives what `datagram@2` does, `protocol` and `call_id`
+being wire numbers, each written as a shortest-form varint.
+
+`name` is any UTF-8 text. It may be empty for `datagram@2` and `datagram@3`.
 
 ## Frame limits
 
@@ -250,8 +330,12 @@ ABI leaves that to the host.
   allocates through serde_json when it refuses a frame, when a member name has
   an escape, and when a value nests brackets three deep (`"params":[[1]]`). It
   is [runtime#58](https://github.com/ComlineProject/runtime/issues/58), deferred.
-  Every `datagram@2` feed and every encode, under either framing, allocates
-  nothing.
+  Every `datagram@2` and `datagram@3` feed and every encode, under any framing,
+  allocates nothing.
+
+  A `comline@2` connection also allocates during its handshake, since the peer
+  picks the size of its lists. That's by design, and nothing allocates once it's
+  over.
 - **Null pointers.** A data pointer may be null only when its length or
   capacity is 0. A length or capacity over `isize::MAX` is
   `COMLINE_ERR_INVALID_ARGUMENT`.
@@ -382,11 +466,11 @@ cbindgen --config cbindgen.toml --output include/comline.h
   (`tests/c/vectors.c`, C11 against `comline.h`) and Node (`js/test/vectors.test.mjs`,
   against the wasm32 build). C runs against the static library, the dynamic
   library, and the static library under ASan and UBSan.
-  - The cases are every one in `name-hash` (8), `handshake` (13), `envelope`
-    (8), `framing-datagram` (9), `framing-datagram2` (12) and `framing-jsonrpc`
-    (26): 76 in all. Each harness fails on any mismatch, and on a case count
+  - The cases are every one in `name-hash`, `handshake`, `handshake-comline2`,
+    `envelope`, `framing-datagram`, `framing-datagram2`, `framing-datagram3` and
+    `framing-jsonrpc`. Each harness fails on any mismatch, and on a case count
     that differs from the vectors'.
-  - The nine `datagram@1` cases have no connection form. For them the harness
+  - The `datagram@1` cases have no connection form. For them the harness
     checks that the ABI refuses `datagram@1`.
   - C and Node have no codec, so `examples/export_vectors.rs` writes the cases
     out with their params already encoded.
@@ -397,7 +481,8 @@ cbindgen --config cbindgen.toml --output include/comline.h
   refusals. Every call is also held to the rules above. The nightly run uses
   100,000 cases.
 - **Fuzz.** `ffi_feed` checks the rules alone; `ffi_vs_core` also compares with
-  the core. Both share their driver with the proptest.
+  the core. Both share their driver with the proptest. `ffi_comline2` feeds a
+  `comline@2` connection what a peer may send.
 - **Miri.** The ABI's tests run under Miri, which checks aliasing, bounds and
   leaks at the `extern "C"` boundary.
 - **Header drift.** CI regenerates `comline.h` with the pinned cbindgen and
@@ -465,9 +550,6 @@ a 1% rise, like the core's benches. Both sides of each pair are gated.
 
 - **`comline_connection_size` and `comline_connection_init`,** for a host that
   supplies the handle's memory. A later addition.
-- **`comline@2`'s negotiation** hands protocol numbers out at the handshake and
-  may change the event struct. If it does, it lands before the 1.0
-  announcement freezes the ABI.
 - **More bindings.** TypeScript binds the ABI through the JS glue (stage 4,
   see [TypeScript on the core](../languages/typescript/index.md#on-the-shared-core)). No
   other language does yet.

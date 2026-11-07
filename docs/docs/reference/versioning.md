@@ -225,9 +225,9 @@ by the rules above. A change counts for a protocol when it changes:
 
 A break anywhere else in the package leaves the line alone. A change to the
 package's `wire.format`, `wire.framing` or `handshake` (its name or its wire
-parameters) moves every protocol's line, and giving up version honesty doesn't move
-it, since nothing on the wire changed. Renaming a namespace or a protocol doesn't move it, because
-neither name travels. Each protocol's changes come from the diff with every
+parameters) moves every protocol's line. Giving up version honesty doesn't move it, since
+nothing on the wire changed. Renaming a namespace or a protocol doesn't move it
+either, because neither name travels. Each protocol's changes come from the diff with every
 other protocol left out, so a change to a protocol of the same name in
 another schema isn't its.
 
