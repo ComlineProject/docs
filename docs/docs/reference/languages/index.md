@@ -88,13 +88,15 @@ commit. A runtime's suite runs every example against it:
 | `validate_on_decode` <br><sub>`validate-on-decode`</sub> | ✅ supported | ⚪ ignored: no checks are generated to run on decode yet ([core#96](https://github.com/ComlineProject/core/issues/96)) |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | ✅ supported | ✅ supported |
 | no handshake <br><sub>`handshake-none`</sub> | ✅ supported | ✅ supported |
+| `datagram@3` framing <br><sub>`framing-datagram3`</sub> | ✅ supported | ✅ supported |
+| `comline@2` handshake <br><sub>`handshake-comline2`</sub> | ✅ supported | ✅ supported |
 | connections <br><sub>`connections`</sub> | ✅ supported | ✅ supported |
 | `async` <br><sub>`async`</sub> | ✅ supported | ⚪ ignored: handlers and senders always return Promises: the output is async either way |
 | the `packed@1` format <br><sub>`format-packed`</sub> | ✅ supported | ✅ supported |
 | the `json@1` format <br><sub>`format-json`</sub> | ✅ supported | ✅ supported |
 | the `msgpack@1` format <br><sub>`format-msgpack`</sub> | ✅ supported | ❌ unsupported: `@comline/runtime` has no MessagePack codec yet |
-| bounds <br><sub>`bounds`</sub> | ⚪ ignored: a bounded string is a `String` and a bounded list a `Vec`; nothing checks the maximum yet ([core#98](https://github.com/ComlineProject/core/issues/98)) | ⚪ ignored: a bounded string is a `string` and a bounded list an array; nothing checks the maximum yet ([core#98](https://github.com/ComlineProject/core/issues/98)) |
-| single characters <br><sub>`chars`</sub> | ❌ unsupported: no wire format carries a single `char` yet ([core#98](https://github.com/ComlineProject/core/issues/98)) | ❌ unsupported: no wire format carries a single `char` yet ([core#98](https://github.com/ComlineProject/core/issues/98)) |
+| bounds <br><sub>`bounds`</sub> | ✅ supported | ✅ supported |
+| single characters <br><sub>`chars`</sub> | ✅ supported | ✅ supported |
 
 <!-- matrix:end -->
 
@@ -110,6 +112,8 @@ commit. A runtime's suite runs every example against it:
 | envelope <br><sub>`envelope`</sub> | ✅ supported | ✅ supported |
 | datagram framing <br><sub>`framing-datagram`</sub> | ✅ supported | ✅ supported |
 | datagram@2 framing <br><sub>`framing-datagram2`</sub> | ✅ supported | ✅ supported |
+| datagram@3 framing <br><sub>`framing-datagram3`</sub> | ✅ supported | ✅ supported |
+| comline@2 handshake <br><sub>`handshake-comline2`</sub> | ✅ supported | ❌ unsupported: Comline2Handshake runs on the Comline core (ABI 0.2), whose C and Node replays in the runtime repo prove these vectors; this harness doesn't drive the core's steps itself yet |
 | stream framing <br><sub>`stream`</sub> | ✅ supported | ❌ unsupported: no length-prefixed framing or frame limit yet: the transports are message-oriented ([comline-typescript#80](https://github.com/ComlineProject/comline-typescript/issues/80)) |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | ✅ supported | ✅ supported |
 | JSON wire format <br><sub>`format-json`</sub> | ✅ supported | 🟡 partial: decoding doesn't check enum variants or integer ranges ([comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57)) |
