@@ -4,11 +4,10 @@ How a call and its reply are framed on a connection: `datagram@2`, the
 default, and `datagram@3`, which addresses a call by wire numbers.
 
 !!! note "`datagram@3` is available, not the default"
-    The runtime ships `datagram@3`
-    ([runtime#15](https://github.com/ComlineProject/runtime/issues/15)).
-    It doesn't become the default until core switches to it, and the
-    generators then emit wire numbers for it. Until both happen, packages
-    keep `datagram@2`.
+    The runtime ships `datagram@3`, and core declares it, so a package can
+    name it ([runtime#15](https://github.com/ComlineProject/runtime/issues/15)).
+    The generators don't emit wire numbers for it yet. Core makes it the
+    default after they do. Until then, packages keep `datagram@2`.
 
 Both framings carry frames in either direction, so either end can start a
 call, and several protocols can share one connection. Every frame starts

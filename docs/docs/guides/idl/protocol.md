@@ -116,8 +116,11 @@ protocol Mail {
   need to write it, but if you do, it has to agree.
 - **`@handshake`** picks what runs on a connection before the first call:
   `"comline@1"` (the default) checks that both ends share the schema, format
-  and framing; `"none"` sends and checks nothing. Without it, the protocol takes
-  the package's `handshake = "..."` from `config.idp`, else `comline@1`.
+  and framing; `"comline@2"` checks they're compatible, and takes
+  [parameters](../../reference/wire/handshakes/index.md#parameters), as in
+  `{ name = "comline@2", scope = package }`; `"none"` sends and checks nothing.
+  Without it, the protocol takes the package's `handshake` from `config.idp`,
+  else `comline@1`.
 - **`@unverified`** says why a protocol gives up a guarantee Comline would
   otherwise give its peers. It's required where one is given up, as with
   `@handshake = "none"`; see [Giving up a guarantee](#giving-up-a-guarantee).
@@ -232,7 +235,8 @@ that out; the schema only says *that* something is unverified and *why*:
   (handshake `none`)"), each guarantee under its own diagnostic code
   (`unverified::schema-agreement`, …) so an organisation can raise or quiet
   them.
-- **Giving one up is a major change;** restoring one is minor.
+- **Giving one up is a major change;** restoring one is minor. Restoring version
+  honesty, by leaving `comline@2`'s `same_version_differs = warn`, is a patch.
 - **Every consumer accepts it,** under the dependency in its own `config.idp`,
   for exactly the set given up:
 

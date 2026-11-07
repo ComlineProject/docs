@@ -33,24 +33,26 @@ The tables below are generated from those profiles, as core embeds them.
 ### Formats
 
 | format | `struct_fields` | `unknown_field` | `missing_optional` | `enum_variants` | `unknown_variant` | `integer_width` |
-| --- | --- | --- | --- | --- | --- | --- |
+|---|---|---|---|---|---|---|
 | `packed@1` | `by_position` | `rejected` | `rejected` | `by_index` | `rejected` | `exact` |
 | `json@1` | `by_name` | `ignored` | `absent` | `by_name` | `rejected` | `by_value` |
 | `msgpack@1` | `by_position` | `rejected` | `rejected` | `by_name` | `rejected` | `by_value` |
 
 ### Framings
 
-| framing      | `calls`    | `errors`     |
-|   ---        |   ---      |    ---       |
-| `jsonrpc@1`  | `by_name`  | `by_ordinal` |
+| framing | `calls` | `errors` |
+|---|---|---|
+| `jsonrpc@1` | `by_name` | `by_ordinal` |
 | `datagram@1` | `by_index` | `by_ordinal` |
 | `datagram@2` | `by_index` | `by_ordinal` |
+| `datagram@3` | `by_id` | `by_ordinal` |
 
 ### Handshakes
 
 | handshake | `schema_agreement` | `encoding_agreement` | establishes |
-| --- | --- | --- | --- |
+|---|---|---|---|
 | `comline@1` | true | true | schema agreement, encoding agreement |
+| `comline@2` | true | true | schema agreement, encoding agreement |
 
 <!-- encodings:end -->
 
