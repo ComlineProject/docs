@@ -1,0 +1,7 @@
+kinflou-proposal-#1:
+  - author: Kinflou
+    related_issues:
+      - core#1
+      - core#2
+    state: draft
+

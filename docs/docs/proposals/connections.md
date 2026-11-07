@@ -94,7 +94,7 @@ state has a home. It splits by how much Comline has to know:
   ([Transports and dispatchers](extensibility.md#transports-and-dispatchers)).
   Only declared policies would ever reach the schema.
 - **A rejection by an interceptor is a provider fault on the wire,** and the
-  reason stays local. The [fault channel](../guide/idl/error.md) already
+  reason stays local. The [fault channel](../guides/idl/error.md) already
   exists, and a peer shouldn't learn why it was refused, just as a provider
   fault carries no message.
 

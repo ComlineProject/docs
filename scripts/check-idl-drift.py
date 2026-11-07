@@ -45,7 +45,7 @@ GRAMMARS = [
     (
         "core/src/schema/idl/grammar.rs",
         "the IDL guide",
-        ["docs/docs/guide/idl"],
+        ["docs/docs/guides/idl"],
     ),
 ]
 

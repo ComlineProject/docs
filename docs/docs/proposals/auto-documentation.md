@@ -18,10 +18,10 @@ Two sources feed it, and the first one alone is already enough to produce
 something useful:
 
 - **The declared shape**, straight out of the frozen IR: unit names, field names
-  and [types](../guide/idl/types.md), enum variants, function signatures, error
+  and [types](../guides/idl/types.md), enum variants, function signatures, error
   shapes, validator parameters, `@key=value` annotations. An entirely
   undocumented schema still yields a complete API listing.
-- **[Docstrings](../guide/idl/docstrings.md)** — `///` on a declaration or a
+- **[Docstrings](../guides/idl/docstrings.md)** — `///` on a declaration or a
   field, the `/// @name:` form for fields and arguments, and `//!` headers
   documenting a module or (in `config.idp`) the package itself. These exist
   today and, as that page notes, change nothing about a build, a version or
@@ -36,7 +36,7 @@ modules.
 
 Versioning is not hand-maintained: every `comline build` freezes an immutable
 version into `.comline/`, the bump is derived from the schema change itself, and
-[`comline diff`](../reference/cli.md) already reports what changed between two
+[`comline diff`](../reference/tools/cli.md) already reports what changed between two
 frozen versions. A documentation tool built on top of that can do what a
 conventional one cannot:
 
@@ -51,7 +51,7 @@ conventional one cannot:
 
 This is the half that distinguishes the feature from "run a generator over the
 IR", and it follows from the
-[CAS](../guide/ir/cas.md) and
+[CAS](../guides/ir/cas.md) and
 [automatic versioning](../reference/versioning.md) already being in place.
 
 ## Optional, and the project sets the rules
@@ -83,7 +83,7 @@ These were open questions until 2026-11-01. The rationale is in
     - **Renderers** are external programs on the same stdio protocol as
       [generators](../reference/generator-protocol.md), native or `.wasm`.
     - The first official renderer writes **Markdown with navigation** for
-      mkdocs/zensical sites. Rendering [`std`](../guide/idl/use.md#the-standard-library)
+      mkdocs/zensical sites. Rendering [`std`](../guides/idl/use.md#the-standard-library)
       onto this site proves it.
 - **History: any version, and a changelog.** Any frozen version can be
   documented. The changelog comes from the same analysis as `comline diff`.
@@ -112,11 +112,11 @@ These were open questions until 2026-11-01. The rationale is in
 
 It lands in the product documentation, not here: a Guide page on documenting
 your schemas, a `comline doc` entry in the
-[CLI reference](../reference/cli.md), its `comline.toml` keys in the
+[CLI reference](../reference/tools/cli.md), its `comline.toml` keys in the
 [congregation reference](../reference/congregation/index.md), and the doc
 model's JSON Schema.
 
 The obvious first demonstration is
-[the standard library](../guide/idl/use.md#the-standard-library), which already
+[the standard library](../guides/idl/use.md#the-standard-library), which already
 documents itself with `//!` and `///` throughout: run the tool over `std` and
 publish the result.

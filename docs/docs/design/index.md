@@ -2,7 +2,7 @@
 
 Design records for Comline — the *why* behind a decision and the state of its
 rollout, not a usage guide. For how to *use* a feature, see the
-[Guide](../guide/idl/index.md).
+[Guide](../guides/idl/index.md).
 
 Each page carries a status and links the issues / PRs that carry it out.
 

@@ -3,7 +3,7 @@
 A protocol on the lockstep `datagram` framing gets a client and a server: the
 client sends a request and reads the next frame as its reply, one protocol per
 transport. Every other protocol runs on a [connection](connections.md), the
-default. This page assumes a schema like [Protocols](../../guide/idl/protocol.md)'s
+default. This page assumes a schema like [Protocols](../../guides/idl/protocol.md)'s
 `Mail` example has been generated to Rust:
 
 ```ids
@@ -17,7 +17,7 @@ protocol Mail {
 
 ## What codegen emits
 
-Full details are [Code generation](../../guide/codegen/index.md)'s job, not
+Full details are [Code generation](../../guides/codegen/index.md)'s job, not
 this page's — but the shapes below are what the generated file actually
 contains, so the rest of this page can refer to them by name:
 
@@ -47,7 +47,7 @@ pub type Format = comline_runtime::format::Packed; // the package's wire format
 
 ## Transports today
 
-Two [`Transport`](../../guide/runtime/call-system.md) implementations
+Two [`Transport`](../../guides/runtime/call-system.md) implementations
 ship in `comline-runtime`:
 
 | Transport | Use | Notes |
@@ -63,7 +63,7 @@ two methods, `send` and `recv`.
 ## Connecting a client
 
 The generated `connect` always runs the
-[handshake](../../guide/runtime/call-system.md#handshake) — there's no
+[handshake](../../guides/runtime/call-system.md#handshake) — there's no
 "skip it" option from the generated stub:
 
 ```rust

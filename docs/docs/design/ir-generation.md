@@ -1,9 +1,9 @@
 # IR freezing & the version state
 
 `comline build` lowers each schema to its
-[Intermediate Representation](../guide/ir/index.md) and **freezes** it: the IR
+[Intermediate Representation](../guides/ir/index.md) and **freezes** it: the IR
 units are written into the project's
-[content-addressable store](../guide/ir/cas.md) at `.comline/`, as one immutable
+[content-addressable store](../guides/ir/cas.md) at `.comline/`, as one immutable
 commit in an append-only chain. That store *is* the version state — there is no
 separate lockfile. (An early `state.lock` idea was dropped before it was built;
 the CAS covers what it was meant to.)

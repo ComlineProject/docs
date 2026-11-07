@@ -20,7 +20,7 @@ doesn't exist. The language server never fetches anything itself.
 | Unresolved imports | ✅ rejected by `comline check` / `build` (core#59, cli#38) and reported by the editor with a "did you mean" quick fix (language-server#26) |
 | Editor: completion for `use` paths | ✅ namespaces, dependencies, declarations, `*` / `{…}` (language-server#27) |
 | `std::` | ✅ embedded in core and merged into a build when imported (core#62, cli#42); the editor resolves it too (language-server#28) |
-| [Packages guide](../guide/packages/index.md) | ✅ updated alongside this record (it still said dependencies weren't implemented) |
+| [Packages guide](../guides/packages/index.md) | ✅ updated alongside this record (it still said dependencies weren't implemented) |
 
 ## How the build resolves a dependency `use`
 
@@ -184,7 +184,7 @@ waits for a registry.
    became resolvable (core#62); it's checked like any other path now.
 2. **Whole-namespace imports bring names in bare.** After `use pkg::types`, both
    `User` and `pkg::types::User` work, as core and the editor already behave.
-   Qualified-only was never the goal: the [`use` guide](../guide/idl/use.md) is
+   Qualified-only was never the goal: the [`use` guide](../guides/idl/use.md) is
    corrected.
 3. **Direct dependencies only, for now.** A dependency's own dependencies stay
    invisible to the consumer.
@@ -196,7 +196,7 @@ waits for a registry.
    the std schemas its imports reach. The first std is `std::http` (`HttpMethod`,
    `Request`, `Response`, ported from the old placeholders as plain types) and
    `std::validators` (`StringBounds`). std and each module document themselves
-   with [module docs](../guide/idl/docstrings.md#module-docs) (`//!`, core#63),
+   with [module docs](../guides/idl/docstrings.md#module-docs) (`//!`, core#63),
    which the editor shows on hover and in completion (language-server#29).
    Its schemas stay GPL-3.0-only for now
    (see [Licensing](licensing.md)); the old `core/stdlib` placeholders became

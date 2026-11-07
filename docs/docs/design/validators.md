@@ -5,12 +5,12 @@ aliases core#109) · **run in Rust** (phase 4b–4c, comline-rust#52) ·
 TypeScript not yet (4d)
 
 A **validator** is a named, parameterised check attached to a
-[struct](../guide/idl/structure.md) or [error](../guide/idl/error.md) field, or
+[struct](../guides/idl/structure.md) or [error](../guides/idl/error.md) field, or
 to a `type` alias. The declaration, its `validate` block, and the `@validators`
 annotation parse, freeze into structured IR, and are checked at `comline build`
 time — unknown validator, bad keyword arg, undeclared `params.*` reference all
 fail the build. Generated Rust runs them; the user guide's
-[validators page](../guide/idl/validator.md#in-generated-code) describes what
+[validators page](../guides/idl/validator.md#in-generated-code) describes what
 it emits.
 
 ## Shape
@@ -47,7 +47,7 @@ validator StringBounds for string {
     being checked) and `params.*` (this validator's properties), comparisons
     (`== != >= <= > <`), and `and` / `or` chains. **No precedence** — it is
     [not evaluated](#constraint-stays-non-turing-complete), only checked.
-  - `message` — the [f-string](../guide/idl/error.md#message) rule, reused:
+  - `message` — the [f-string](../guides/idl/error.md#message) rule, reused:
     `f"..."` substitutes `{value.…}` / `{params.…}` placeholders, and a plain
     `"..."` prints as written.
   - **`assert(c, m)` holds when `c` is true**; a false `c` fails validation with
@@ -84,7 +84,7 @@ struct Message {
    `comline build`.
 2. **The actual check (run time).** `StringBounds(min_chars = 3)` on a field runs
    when a message is decoded — emitted into generated code / enforced by the
-   [runtime](../guide/runtime/index.md), the layer that does serialization.
+   [runtime](../guides/runtime/index.md), the layer that does serialization.
    **Phase 4**, drafted below, not started.
 
 ## Phasing

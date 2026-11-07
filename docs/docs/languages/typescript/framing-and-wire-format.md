@@ -1,9 +1,9 @@
 # Framing & wire format
 
-[Call systems & serialization](../../guide/runtime/call-system.md) covers
+[Call systems & serialization](../../guides/runtime/call-system.md) covers
 the concept; this is the concrete TypeScript API. Both axes are the package's
 choice, from `config.idp`'s `wire` key — see
-[Wire defaults](../../guide/packages/index.md#wire-defaults).
+[Wire defaults](../../guides/packages/index.md#wire-defaults).
 
 ## Framing
 
@@ -40,7 +40,7 @@ Two codecs ship. Every `Codec` has a `name` (used in the handshake) plus
 `encode` / `decode`.
 
 - **`PackedCodec`** (`packed@1`, the default): fixed-width fields with no tags
-  or names; see [`packed@1`](../../reference/wire/packed.md). A JS value
+  or names; see [`packed@1`](../../reference/wire/formats/packed@1.md). A JS value
   doesn't say whether a number is a `u16` or an `f64`, so the generator emits
   a `Layout` for each type (`MessageLayout`, `ChatSendParamsLayout`, ...),
   and every encode and decode in generated code passes it. Calling a codec by

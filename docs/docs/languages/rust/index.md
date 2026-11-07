@@ -2,7 +2,7 @@
 
 Status: shipped. `comline-codegen-rust` generates `code` mode (plain
 source files) and `lib` mode (a buildable crate) — see [Library
-generation](../../guide/codegen/library-generation.md) for what each mode
+generation](../../guides/codegen/library-generation.md) for what each mode
 produces. Generated code depends on the **`comline-runtime`** crate
 (MPL-2.0 — the piece that actually ships inside your program, as opposed
 to the GPL-3.0 generator that only runs at build time).

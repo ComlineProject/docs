@@ -5,7 +5,7 @@ question all three answer
 
 **The idea:** an enum's variants can carry data, as in Rust, Swift and Kotlin's
 sealed classes. This is the 2024 `enum_variant_associated_kind` proposal; the
-[enum guide](../../guide/idl/enum.md) already mentions it
+[enum guide](../../guides/idl/enum.md) already mentions it
 (`Encrypt(EncryptionAlgorithm)`).
 
 ## Shape

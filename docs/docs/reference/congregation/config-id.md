@@ -5,7 +5,7 @@ it can be generated as, and the rules and wire defaults its schemas share. It
 sits at the package root, beside `src/`. The [package author](index.md) owns
 it, and it's frozen into every built version.
 
-For a walk through it, see [Packages & dependencies](../../guide/packages/index.md).
+For a walk through it, see [Packages & dependencies](../../guides/packages/index.md).
 
 ```idp
 //! The shop's API: orders, customers and payments.
@@ -47,7 +47,7 @@ settings = {
 - **Keys don't take dots.** `.ids` settings blocks accept
   `validators.allowed = false`; here the same key is written with braces.
 - **Comments** are `//`. `//!` lines at the top
-  [document the package](../../guide/idl/docstrings.md#module-docs).
+  [document the package](../../guides/idl/docstrings.md#module-docs).
 
 ## Keys
 
@@ -56,13 +56,13 @@ settings = {
 | `congregation` | the package's name | Renaming it is fine: `id` is what identifies the package. |
 | `id` | 32 lowercase hex digits, random | The package's identity. `comline new` writes it, and `comline build` adds one to a package without it. A copy of the package must change it. Changing it is a major change. See [Compatibility facts](../versioning.md#compatibility-facts). |
 | `specification_version` | an integer, `1` | The edition of the schema language the files are written in. |
-| `code_generation` | `{ languages = { <language>#<version> = {} ... } }` | The languages the package can be generated as, each with the oldest toolchain its output must build on. `comline build` proves each one. See [Language versions](../../guide/codegen/generating-code.md#language-versions). |
-| `wire` | `{ format = "..." framing = "..." }` | The format and framing every protocol uses unless it says otherwise. Defaults: `packed@1` and `datagram@2`. See [Wire defaults](../../guide/packages/index.md#wire-defaults). |
-| `handshake` | `"comline@1"` or `"none"` | What a protocol with no `@handshake` runs before its first call. Default `comline@1`. See [Giving up a guarantee](../../guide/idl/protocol.md#giving-up-a-guarantee). |
-| `dependencies` | a dictionary of entries by name | Other packages this one imports, from a path or a git commit, each optionally pinned by `hash`, and what it accepts of their [`@unverified`](../../guide/idl/protocol.md#giving-up-a-guarantee) protocols (`accept_unverified`). See [Dependencies](../../guide/packages/index.md#dependencies). |
-| `settings` | a dictionary, or `<dependency>::settings::<Preset>` | The package-wide authoring policy every schema starts from. See [Settings](../../guide/idl/settings.md). |
-| `encodings` | a dictionary of entries by name | The formats, framings and handshakes this package defines. See [Formats and framings](../../guide/extending/encodings.md). |
-| `publish_registries` | a dictionary of registries by name | Where the package can be published. Planned; see [Publishing](../../guide/packages/index.md#publishing-planned). |
+| `code_generation` | `{ languages = { <language>#<version> = {} ... } }` | The languages the package can be generated as, each with the oldest toolchain its output must build on. `comline build` proves each one. See [Language versions](../../guides/codegen/generating-code.md#language-versions). |
+| `wire` | `{ format = "..." framing = "..." }` | The format and framing every protocol uses unless it says otherwise. Defaults: `packed@1` and `datagram@2`. See [Wire defaults](../../guides/packages/index.md#wire-defaults). |
+| `handshake` | `"comline@1"` or `"none"` | What a protocol with no `@handshake` runs before its first call. Default `comline@1`. See [Giving up a guarantee](../../guides/idl/protocol.md#giving-up-a-guarantee). |
+| `dependencies` | a dictionary of entries by name | Other packages this one imports, from a path or a git commit, each optionally pinned by `hash`, and what it accepts of their [`@unverified`](../../guides/idl/protocol.md#giving-up-a-guarantee) protocols (`accept_unverified`). See [Dependencies](../../guides/packages/index.md#dependencies). |
+| `settings` | a dictionary, or `<dependency>::settings::<Preset>` | The package-wide authoring policy every schema starts from. See [Settings](../../guides/idl/settings.md). |
+| `encodings` | a dictionary of entries by name | The formats, framings and handshakes this package defines. See [Formats and framings](../../developer/extending/encodings.md). |
+| `publish_registries` | a dictionary of registries by name | Where the package can be published. Planned; see [Publishing](../../guides/packages/index.md#publishing). |
 
 An unknown key, a value of the wrong kind, or a dependency that doesn't
 resolve fails `comline check` and `comline build`, and the editor reports it

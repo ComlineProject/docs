@@ -2,7 +2,7 @@
 
 Status: shipped. `comline-codegen-typescript` generates `code` mode (plain
 source files) and `lib` mode (an npm package); see [Library
-generation](../../guide/codegen/library-generation.md). Generated code
+generation](../../guides/codegen/library-generation.md). Generated code
 depends on **`@comline/runtime`** (MPL-2.0, ESM, Node).
 
 Not published to npm yet. Depend on it from a git checkout or workspace

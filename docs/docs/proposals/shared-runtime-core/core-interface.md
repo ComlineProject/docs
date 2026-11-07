@@ -776,7 +776,7 @@ Steps 1–3 are done ([What's built](#whats-built)).
 - **comline-typescript:** stage 4, behind the gates.
 - **Each future `comline-<lang>`:** a binding, its packaging, and the gates.
 - **Docs:**
-  - the [runtime guide](../../guide/runtime/index.md)'s "no FFI boundary";
+  - the [runtime guide](../../guides/runtime/index.md)'s "no FFI boundary";
   - [`core-target-contract.md`](../../design/core-target-contract.md) §4.7
     (answered here) and §4.6's `no_std` layering table;
   - a `comline.h` reference page: done, the [C ABI reference](../../reference/c-abi.md).

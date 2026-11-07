@@ -4,7 +4,7 @@ Status: **sketch** — worked examples of the **source** one schema should produ
 in each language ([codegen](generation.md#vocabulary), not the libgen packaging
 around it). Not normative; `rust` and `typescript` are the generators
 implemented today (see
-[Generating code](../guide/codegen/generating-code.md)).
+[Generating code](../guides/codegen/generating-code.md)).
 
 From this schema:
 

@@ -6,7 +6,7 @@ tracked in [core#8](https://github.com/ComlineProject/core/issues/8)
 
 **As built:** see [What shipped](../extensibility.md#what-shipped), the
 [generator protocol](../../reference/generator-protocol.md) and the
-[guide](../../guide/extending/generators.md). Discovery is by path; naming a
+[guide](../../developer/extending/generators.md). Discovery is by path; naming a
 generator by a registry package waits for the registry
 ([core#8](https://github.com/ComlineProject/core/issues/8)).
 

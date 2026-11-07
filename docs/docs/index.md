@@ -26,35 +26,39 @@ flowchart LR
 
 ## What makes up Comline
 
-### [The schema language](./guide/idl/index.md)
+### [The schema language](./guides/idl/index.md)
+
 Structs, enums, errors, constants and protocols, written in `.ids` files.
 Beyond the shapes, a schema says how values are checked
-([validators](./guide/idl/validator.md)), how calls travel
-([framing and format](./guide/runtime/call-system.md)), and which rules a
-package enforces on itself ([settings](./guide/idl/settings.md)).
+([validators](./guides/idl/validator.md)), how calls travel
+([framing and format](./guides/runtime/call-system.md)), and which rules a
+package enforces on itself ([settings](./guides/idl/settings.md)).
 
 ### [Versions you don't write by hand](./reference/versioning.md)
+
 `comline build` compiles the schemas into a frozen
-[intermediate representation](./guide/ir/index.md) and stores it in
+[intermediate representation](./guides/ir/index.md) and stores it in
 `.comline/`, an append-only history. The version number follows from what
 changed since the last release, so a breaking change can't ship as a patch.
 
-### [Generated code](./guide/codegen/index.md)
+### [Generated code](./guides/codegen/index.md)
+
 `comline generate` writes idiomatic code for each target language: types, a
 trait or interface per protocol, clients, servers and connections. Rust and
 TypeScript are supported today, each in two forms: source files to drop into a
 project, or a buildable package.
 
-### [A runtime per language](./guide/runtime/index.md)
+### [A runtime per language](./guides/runtime/index.md)
+
 Generated code links against a small runtime that runs the handshake, frames
 calls and encodes values. The pieces are pluggable: the
 [wire format](./reference/wire/official-encodings.md), the framing, the
-handshake and the transport, including [your own](./guide/extending/index.md).
+handshake and the transport, including [your own](developer/extending/index.md).
 
 ## Where to start
 
 - [Getting started](getting-started.md): install the CLI and build a first
   package.
-- [Guide overview](guide/index.md): the whole pipeline, stage by stage.
+- [Guide overview](guides/index.md): the whole pipeline, stage by stage.
 - [Language guides](languages/index.md): using the generated code in Rust or
   TypeScript.

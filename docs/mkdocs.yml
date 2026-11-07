@@ -6,47 +6,39 @@ nav:
     - Welcome to Comline: 'index.md'
     - Getting started: 'getting-started.md'
   
-  - Guide:
-    - Overview: 'guide/index.md'
+  - Guides:
+    - Overview: 'guides/index.md'
 
     - 'IDL / Schema':
-      - 'guide/idl/index.md'
-      - 'guide/idl/types.md'
-      - Structures: 'guide/idl/structure.md'
-      - Enums: 'guide/idl/enum.md'
-      - Protocols: 'guide/idl/protocol.md'
-      - Errors: 'guide/idl/error.md'
-      - Validators: 'guide/idl/validator.md'
-      - Constants: 'guide/idl/const.md'
-      - Imports: 'guide/idl/use.md'
-      - Docstrings: 'guide/idl/docstrings.md'
-      - Annotations: 'guide/idl/annotations.md'
-      - Settings: 'guide/idl/settings.md'
+      - 'guides/idl/index.md'
+      - 'guides/idl/types.md'
+      - Structures: 'guides/idl/structure.md'
+      - Enums: 'guides/idl/enum.md'
+      - Protocols: 'guides/idl/protocol.md'
+      - Errors: 'guides/idl/error.md'
+      - Validators: 'guides/idl/validator.md'
+      - Constants: 'guides/idl/const.md'
+      - Imports: 'guides/idl/use.md'
+      - Docstrings: 'guides/idl/docstrings.md'
+      - Annotations: 'guides/idl/annotations.md'
+      - Settings: 'guides/idl/settings.md'
     
-    - 'Intermediate Representation':
-      - 'guide/ir/index.md'
-      - Content-addressable storage: 'guide/ir/cas.md'
+    - Packages & Dependencies: 'guides/packages/index.md'
     
-    - 'Code generation':
-      - 'guide/codegen/index.md'
-      - Generating code: 'guide/codegen/generating-code.md'
-      - Library generation: 'guide/codegen/library-generation.md'
+    - Code Generation:
+      - 'guides/codegen/index.md'
+      - Generating code: 'guides/codegen/generating-code.md'
+      - Library generation: 'guides/codegen/library-generation.md'
     
-    - 'Runtime':
-      - 'guide/runtime/index.md'
-      - Call systems & serialization: 'guide/runtime/call-system.md'
+    - Runtime:
+      - 'guides/runtime/index.md'
+      - Call systems & serialization: 'guides/runtime/call-system.md'
     
-    - 'Packages & dependencies': 'guide/packages/index.md'
+    - Documenting: 'guides/documenting.md'
 
-    - Documenting your schemas: 'guide/documenting.md'
-
-    - 'Extending Comline':
-      - 'guide/extending/index.md'
-      - Formats & framings: 'guide/extending/encodings.md'
-      - Handshakes: 'guide/extending/handshakes.md'
-      - Generators: 'guide/extending/generators.md'
-      - Transports: 'guide/extending/transports.md'
-      - Dispatchers: 'guide/extending/dispatchers.md'
+    - Intermediate Representation:
+      - 'guides/ir/index.md'
+      - Content-addressable storage: 'guides/ir/cas.md'
   
   - Language Guides:
     - Overview: 'languages/index.md'
@@ -64,44 +56,90 @@ nav:
       - Framing & wire format: 'languages/typescript/framing-and-wire-format.md'
       - Connections: 'languages/typescript/connections.md'
   
+  - Developer Guides:
+    - 'developer/index.md'
+    - Extending Comline:
+      - 'developer/extending/index.md'
+      - Encodings: 'developer/extending/encodings.md'
+      - Framings: 'developer/extending/framings.md'
+      - Handshakes: 'developer/extending/handshakes.md'
+      - Generators: 'developer/extending/generators.md'
+      - Transports: 'developer/extending/transports.md'
+      - Dispatchers: 'developer/extending/dispatchers.md'
+
   - Reference:
+    - "reference/index.md"
+
     - Languages:
-      - Overview: 'reference/languages/index.md'
+      - 'reference/languages/index.md'
       - Rust: 'reference/languages/rust.md'
       - TypeScript: 'reference/languages/typescript.md'
 
-    - Wire formats:
-      - packed@1: 'reference/wire/packed.md'
-      - Datagram framings: 'reference/wire/datagram.md'
-      - Handshakes: 'reference/wire/handshakes.md'
+    - Wire:
+      - 'reference/wire/index.md'
+      - Framings:
+        - 'reference/wire/framings/index.md'
+        #- datagram@2: 'reference/wire/framings/datagram.md'
+
+      - Handshakes:
+        - 'reference/wire/handshakes/index.md'
+        #- handshake@1: ''
+
+      - Formats:
+        - 'reference/wire/formats/index.md'
+        - packed@1: 'reference/wire/formats/packed@1.md'
+        - msgpack@1: 'reference/wire/formats/msgpack@1.md'
+        - json@1: 'reference/wire/formats/json@1.md'
+
       - Official encodings: 'reference/wire/official-encodings.md'
 
     - Runtime:
       - C ABI: 'reference/c-abi.md'
 
-    - Packages:
-      - Package files: 'reference/congregation/index.md'
+    - Package:
+      - 'reference/congregation/index.md'
       - config.idp: 'reference/congregation/config-id.md'
       - comline.toml: 'reference/congregation/comline-toml.md'
-      - Versioning rules: 'reference/versioning.md'
 
-    # std:start
-    - Standard library:
-      - std: 'std/index.md'
-      - http: 'std/http.md'
-      - validators: 'std/validators.md'
-    # std:end
+    - Schema:
+      - 'reference/schema/index.md'
+      # std:start
+      - Standard library:
+        - std: 'reference/schema/std/index.md'
+        - http: 'reference/schema/std/http.md'
+        - validators: 'reference/schema/std/validators.md'
+      # std:end
 
     - Tools:
       - Tools: 'reference/tools/index.md'
-      - CLI: 'reference/cli.md'
-      - comline inspect: 'reference/tools/inspect.md'
-      - comline doc: 'reference/tools/doc.md'
+      - CLI:
+        - CLI: 'reference/tools/cli.md'
+        - comline inspect: 'reference/tools/cli/inspect.md'
+        - comline doc: 'reference/tools/cli/doc.md'
+      #- Playground:
+      #  - Playground: 'reference/tools/playground.md'
+      - Language Server:
+        - Language Server: 'reference/tools/language-server.md'
 
     - Extending:
       - Generator protocol: 'reference/generator-protocol.md'
       - Conformance spec: 'reference/conformance.md'
-    
+  
+    - Versioning rules: 'reference/versioning.md'
+
+  - Resources:
+    - 'resources.md'
+
+  - Conduct:
+    - 'conduct/index.md'
+    - Github:
+      - 'Branch rules': 'conduct/branch-rules.md'
+      - 'Phases and promises': 'conduct/phases.md'
+      - 'Labels': 'conduct/labels.md'
+    - Releases:
+      - 'Ready for 1.0': 'conduct/readiness.md'
+    - Language Implementations:
+      - 'conduct/language-implementation/index.md'
   
   - Design:
     - 'design/index.md'
@@ -178,16 +216,6 @@ nav:
       - 'Proposal B': 'proposals/guarantee-marker/assumes.md'
       - 'Proposal C': 'proposals/guarantee-marker/unverified.md'
       - 'Proposal D': 'proposals/guarantee-marker/unchecked.md'
-  
-  - Resources:
-    - 'resources.md'
-
-  - Conduct:
-    - 'conduct/index.md'
-    - 'Branch rules': 'conduct/branch-rules.md'
-    - 'Phases and promises': 'conduct/phases.md'
-    - 'Ready for 1.0': 'conduct/readiness.md'
-    - 'Labels': 'conduct/labels.md'
 
 extra_css:
   - stylesheets/nav.css?v=21   # bump on every nav.css change — it is not cache-busted otherwise
@@ -226,6 +254,11 @@ theme:
 # TODO: The social plugin is disabled due to not Cairo lib not being available on Nix
 # plugins:
 #  - social
+#  - macros:
+#      include_yaml:
+#        - _data/cli-global-flags.yaml
+#        - proposal.yaml
+#      render_by_default: true
 
 extra:
 #  social:

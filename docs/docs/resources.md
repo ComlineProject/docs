@@ -13,7 +13,7 @@
 | [`ComlineProject/distributions`](https://github.com/ComlineProject/distributions) | OS / distro packaging |
 
 Publishing tooling (`comlinepm`) lives in the package-management sources; see
-[Packages & dependencies](guide/packages/index.md#publishing-planned).
+[Packages & dependencies](guides/packages/index.md#publishing).
 
 ## Prior art
 
@@ -27,9 +27,10 @@ Systems that Comline is inspired, compares against or borrows from:
 - [Apache Avro](https://avro.apache.org/) — schema-driven serialization with dynamic typing
 - [Apache Thrift](https://thrift.apache.org/docs/idl) — cross-language services
 - [MIDL](https://learn.microsoft.com/en-us/windows/win32/midl/midl-start-page) — Microsoft's IDL for COM / RPC
-- [OpenRPC](https://open-rpc.org/) · [JSON-RPC](https://www.jsonrpc.org/) — call formats a Comline [runtime](guide/runtime/call-system.md) can speak
+- [OpenRPC](https://open-rpc.org/) · [JSON-RPC](https://www.jsonrpc.org/) — call formats a Comline [runtime](guides/runtime/call-system.md) can speak
 
 ### Data Formats / Carriers
+
 - [MessagePack](https://msgpack.org/) — a compact binary serialization Comline can target
 
 
@@ -37,4 +38,4 @@ Systems that Comline is inspired, compares against or borrows from:
 
 - [Git Internals — Git Objects](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects)
   — the content-addressable model behind the
-  [`.comline/` store](guide/ir/cas.md)
+  [`.comline/` store](guides/ir/cas.md)

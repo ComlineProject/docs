@@ -2,7 +2,7 @@
 
 How an encoding is proven: the case format, the protocol an implementation
 speaks to be tested, and where the vectors live. The guide to using it is
-[Formats and framings](../guide/extending/encodings.md); this is the reference.
+[Formats and framings](../developer/extending/encodings.md); this is the reference.
 
 The source of truth is the runtime's
 [`runtime/conformance/README.md`](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/README.md)
@@ -49,7 +49,7 @@ Changes, newest first (the full changelog is in the
 | File | Holds |
 |---|---|
 | `vectors/<feature>.json` | `{"feature": "<feature>", "cases": [...]}`: one feature's cases |
-| `profiles/<name>.json` | one encoding's [profile](../guide/extending/encodings.md#2-write-the-profile) |
+| `profiles/<name>.json` | one encoding's [profile](../developer/extending/encodings.md#2-write-the-profile) |
 | `features.json` | the official wire features and their ids (runtime corpus only) |
 
 **A package's vectors** sit beside its profile: the profile's path with `.json`
@@ -134,7 +134,7 @@ in the
 A frame on a byte stream is `[len: u32 LE][len bytes]`. A runtime refuses a
 `len` over its limit, by default 16 MiB (16,777,216 bytes) in every runtime,
 and `len == max` is accepted. A transport that carries messages natively has
-no prefix. See [Transports](../guide/extending/transports.md).
+no prefix. See [Transports](../developer/extending/transports.md).
 
 ## How a case is judged
 
@@ -234,7 +234,7 @@ comline conformance --impl "<command line>" [--encoding <name>]... [--corpus <di
 ```
 
 The flags are described in the
-[CLI reference](cli.md#commands). The implementation runs under the same rules
+[CLI reference](tools/cli.md#commands). The implementation runs under the same rules
 as an external generator: a cleared environment, a time limit (`--timeout`,
 60 seconds by default, for every case together) and a capped stdout, with its
 stderr shown. The command line is split

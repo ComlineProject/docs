@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare the documented CLI surface against the real one.
 
-`docs/docs/reference/cli.md` describes every command and flag by hand, and the
+`docs/docs/reference/tools/cli.md` describes every command and flag by hand, and the
 prose there is deliberately richer than clap's one-line help strings — so this
 does *not* generate the page. It only checks that the page mentions every
 command and flag the binary actually has, and nothing it doesn't: the failure
@@ -29,7 +29,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DOCS_PAGE = ROOT / "docs/docs/reference/cli.md"
+DOCS_PAGE = ROOT / "docs/docs/reference/tools/cli.md"
 
 # Inherited by every subcommand; documented once under "Global flags".
 GLOBAL_FLAGS = {"--path", "--verbose", "--quiet", "--plain"}

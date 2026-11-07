@@ -1,7 +1,7 @@
 # Connections
 
 Every protocol runs on a
-[connection](../../guide/idl/protocol.md#calls-in-both-directions) unless it
+[connection](../../guides/idl/protocol.md#calls-in-both-directions) unless it
 picks the lockstep `datagram` framing, in which case it gets a
 [client and server](client-and-server.md) instead. This page uses this
 schema:
@@ -161,7 +161,7 @@ protocol this side doesn't provide is answered with a fault.
 
 A JSON-RPC protocol the client provides runs on a connection too, and then so
 do the package's other JSON-RPC protocols
-([the rules](../../guide/idl/protocol.md#json-rpc-on-a-connection)). Open the
+([the rules](../../guides/idl/protocol.md#json-rpc-on-a-connection)). Open the
 connection with `JsonRpcFraming`, which the package's `serve` and `connect`
 do for you; the rest of this page is unchanged:
 

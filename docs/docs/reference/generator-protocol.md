@@ -2,8 +2,8 @@
 
 How the CLI talks to a code generator, and to a documentation renderer. For a
 walkthrough, see
-[Generators](../guide/extending/generators.md); to point a target at one, see
-the [CLI reference](cli.md#commands) and
+[Generators](../developer/extending/generators.md); to point a target at one, see
+the [CLI reference](tools/cli.md#commands) and
 [`comline.toml`](congregation/comline-toml.md#generator).
 
 The Rust definitions are in `codegen/src/protocol.rs` of the
@@ -36,7 +36,7 @@ lists and refuses others.
 ## Request
 
 | Field | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `protocol` | integer | the protocol version the sender speaks |
 | `ir_format` | integer | the IR format of every frozen unit in the body |
 | `body` | `Describe`, `Generate(GenerateRequest)` or `Render(RenderRequest)` | what is asked |
@@ -55,7 +55,7 @@ generator handles.
 Generate one target. A `GenerateRequest` holds:
 
 | Field | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `mode` | `Code` or `Lib` | emit sources only, or a whole package with its manifest |
 | `schemas` | list of (namespace, frozen units) | every schema in the package, as compiled IR |
 | `package` | `{ name, version }` | package identity, for the manifest a `Lib` build emits; unused by `Code` |
@@ -73,24 +73,24 @@ Generate one target. A `GenerateRequest` holds:
   requirement. The keys are canonical names (`jsonrpc`, `datagram`,
   `datagram@2` for the official ones, the declared name for others). The CLI
   fills the map from the package's declarations and the consumer's overrides
-  ([Map it to a type](../guide/extending/encodings.md#5-map-it-to-a-type)).
+  ([Map it to a type](../developer/extending/encodings.md#5-map-it-to-a-type)).
 - `mode` is `Code` or `Lib`. `dylib` isn't part of the protocol today.
 
 ### `Render`
 
-Render a package's documentation, for [`comline doc`](tools/doc.md). Only sent
+Render a package's documentation, for [`comline doc`](tools/cli/doc.md). Only sent
 to a program whose `Description` lists the renderer at the model version. A
 `RenderRequest` holds:
 
 | Field | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `renderer` | string | the renderer's id, from `Description.renderers`: `markdown` or `html` for the official ones |
 | `model_version` | integer | the documentation model's version (`DOC_MODEL_VERSION`, `1`), readable without parsing `model` |
 | `model` | string | the documentation model as JSON text, in the shape of [`doc-model/1.json`](../schemas/doc-model/1.json) |
 | `options` | `{ links, version, versions, notes }` | see below |
 
 | Option | Meaning |
-|---|---|
+| --- | --- |
 | `links` | a dependency's name (or `std`) to the base URL of its docs |
 | `version` | set when this render is one version of a multi-version site: the version's folder (`0.2.0`, `0.3.0-dev.2`, `unreleased`). The files land in `<site>/<version>/`, so the site's shared files are at `../`. Absent for a site of its own. |
 | `versions` | set for a site's index render: every version, oldest first, each `{ id, release, kind, model }`. `release` is the release a dev build leads to (`0.3.0` for `0.3.0-dev.2`), itself for a release, `unreleased` for the working tree; `kind` is `release`, `dev` or `unreleased`; `model` is that version's model as JSON, with its `changelog` from the version before it in the list. The files land at the site's root, and the request's own `model` is the newest version's. |
@@ -99,7 +99,7 @@ to a program whose `Description` lists the renderer at the model version. A
 A renderer accepts every option and ignores the ones it has no use for. The
 answer is `Render(Generated)`: files, checked like a generator's.
 
-**Several versions.** [`comline doc`](tools/doc.md) documents every version
+**Several versions.** [`comline doc`](tools/cli/doc.md) documents every version
 with one `Render` per version (with `version` set), then one for the site's
 index (with `versions` set). A per-version request carries one model, like a
 single-version one, so a renderer that ignores `version` still works: it
@@ -117,7 +117,7 @@ change bumps the version.
 ## Response
 
 | Variant | Carries |
-|---|---|
+| --- | --- |
 | `Describe(Description)` | the answer to `Describe` |
 | `Generate(Generated)` | the answer to `Generate` |
 | `Render(Generated)` | the answer to `Render`: the rendered files |
@@ -126,7 +126,7 @@ change bumps the version.
 ### `Description`
 
 | Field | Meaning |
-|---|---|
+| --- | --- |
 | `languages` | one entry per generator; a language with several floors has several |
 | `protocols` | `(min, max)` protocol versions it accepts, inclusive |
 | `ir_formats` | the IR formats it accepts |
@@ -135,7 +135,7 @@ change bumps the version.
 A language entry holds:
 
 | Field | Meaning |
-|---|---|
+| --- | --- |
 | `id` | the language name a package declares: `rust`, `typescript` |
 | `ext` | the source file extension: `rs`, `ts` |
 | `versions` | `floor`, `changes`, `verified_up_to` and `forward_compatible`: which versions of the language it handles |
@@ -147,7 +147,7 @@ target's version.
 ### `Generated`
 
 | Field | Meaning |
-|---|---|
+| --- | --- |
 | `files` | each `{ path, contents }`: a path relative to the target's output root, and the file's bytes |
 | `diagnostics` | strings worth telling the user that didn't stop generation; the CLI shows each as a warning |
 
@@ -179,7 +179,7 @@ A response with any bad path is refused whole, and nothing from it is written.
 ### Limits
 
 | | Limit |
-|---|---|
+| --- | --- |
 | time per call | `timeout` on the target, 60 seconds by default |
 | stdout | 256 MiB |
 | total generated file contents | 256 MiB |

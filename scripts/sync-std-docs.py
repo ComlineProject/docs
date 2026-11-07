@@ -3,14 +3,15 @@
 
 `std` is the package embedded in core, at `core_stdlib/packages/std/`. Its
 `//!` headers and `///` docstrings are the documentation; `comline doc` turns
-them into the pages under `docs/docs/std/`, and their `nav` into the block
+them into the pages under `docs/docs/reference/schema/std/`, and their `nav` into the block
 between the `std:start` and `std:end` markers in `docs/mkdocs.yml`. Nothing
-under `docs/docs/std/` is written by hand: edit std's docstrings in core and
+under `docs/docs/reference/schema/std/` is written by hand: edit std's docstrings in core and
 re-run this.
 
-Other docs link here (`https://comlineproject.github.io/docs/std/http/#httpmethod`
+Other docs link here (`https://comlineproject.github.io/docs/reference/schema/std/http/#httpmethod`
 is what `[doc] links = { std = ... }` produces), so the pages' paths are part
-of the site's contract: `std/<module>.md` publishes at `/std/<module>/`.
+of the site's contract: `reference/schema/std/<module>.md` publishes at
+`/reference/schema/std/<module>/`.
 
 Needs `comline` on PATH (or `--comline`) and `git` when no `--checkout` is
 given. The docs CI has no Rust toolchain by default, so the drift workflow
@@ -33,14 +34,14 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PAGES = ROOT / "docs/docs/std"
+PAGES = ROOT / "docs/docs/reference/schema/std"
 MKDOCS = ROOT / "docs/mkdocs.yml"
 CORE = "https://github.com/ComlineProject/core"
 PACKAGE = "core_stdlib/packages/std"
 START = "# std:start"
 END = "# std:end"
 # Where the block sits in mkdocs.yml, so its entries are indented to match.
-INDENT = "    "
+INDENT = "      "
 
 # `  - "http": http.md`
 NAV_RE = re.compile(r'^\s*-\s*"(?P<title>[^"]+)":\s*(?P<path>\S+)\s*$')
@@ -75,7 +76,7 @@ def nav_block(nav_yml: Path) -> str:
     for line in nav_yml.read_text(encoding="utf-8").splitlines():
         match = NAV_RE.match(line)
         if match:
-            lines.append(f"{INDENT}  - {match['title']}: 'std/{match['path']}'")
+            lines.append(f"{INDENT}  - {match['title']}: 'reference/schema/std/{match['path']}'")
     lines.append(f"{INDENT}{END}")
     return "\n".join(lines)
 
@@ -127,11 +128,11 @@ def main() -> int:
             problems = []
             for name in sorted(generated.keys() | current.keys()):
                 if name not in current:
-                    problems.append(f"missing: std/{name}")
+                    problems.append(f"missing: {PAGES.relative_to(ROOT)}/{name}")
                 elif name not in generated:
-                    problems.append(f"stale: std/{name} (std no longer has it)")
+                    problems.append(f"stale: {PAGES.relative_to(ROOT)}/{name} (std no longer has it)")
                 elif generated[name] != current[name]:
-                    problems.append(f"changed: std/{name}")
+                    problems.append(f"changed: {PAGES.relative_to(ROOT)}/{name}")
             if updated != mkdocs:
                 problems.append(f"changed: the std nav in {MKDOCS.relative_to(ROOT)}")
             if problems:

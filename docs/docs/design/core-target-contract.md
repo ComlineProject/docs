@@ -52,7 +52,7 @@ core#8 land.
 ## 1 — Schema IR
 
 A compiled schema is `Vec<FrozenUnit>` (`serde`, `Debug + Eq + Clone`). One unit
-per declaration; see the [IR guide](../guide/ir/index.md) for the reader's view.
+per declaration; see the [IR guide](../guides/ir/index.md) for the reader's view.
 The variants a generator will actually match on:
 
 - `Namespace(String)`, `Name(String)`
@@ -440,7 +440,7 @@ as `{{` / `}}`. A generator renders every message, error or `assert`, by one
 rule: `{path}` is a placeholder, `{{` / `}}` a literal brace.
 
 **Raise-site field values** — the schema can't yet write
-`! Foo(name = x)` ([guide](../guide/idl/error.md)); the generated Rust *impl*
+`! Foo(name = x)` ([guide](../guides/idl/error.md)); the generated Rust *impl*
 returns a fully-built `Foo { name }`, so this language gap doesn't block codegen.
 
 #### `synchronous` / one-way — **decided; IR changes built (core#46)**
@@ -483,7 +483,7 @@ nothing format-specific to generate — nothing to forward-declare.
 
 **The schema declares *requirements*, not mechanisms.** In the congregation (a
 config `FrozenUnit`, like `CodeGeneration`), or a schema `settings` block
-([guide](../guide/idl/settings.md)):
+([guide](../guides/idl/settings.md)):
 
 - **`reliable`** — no silent message loss
 - **`ordered`** — per-connection ordering (a stateful protocol, `open()` before
@@ -685,7 +685,7 @@ bytes in and takes bytes out itself. The `no_std` runtime *is* framing + dispatc
 ### 4.7 — Still open beyond the above
 
 - **The per-language-runtime ↔ core-runtime seam.** The
-  [runtime guide](../guide/runtime/index.md) says each language has a "thin
+  [runtime guide](../guides/runtime/index.md) says each language has a "thin
   runtime that speaks to the core runtime" — that trait boundary is nowhere yet.
   For Rust it's degenerate (the target repo *is* Rust); it becomes real with the
   second `lib`-mode language, and it has to respect the §4.6 budget across the

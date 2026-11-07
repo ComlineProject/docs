@@ -31,7 +31,7 @@ cd my-api
 
 You get:
 
-```
+```text
 my-api/
 ├── config.idp        # package manifest
 ├── comline.toml       # where generated code goes (all-commented by default)
@@ -59,8 +59,8 @@ struct Greeting {
 Every string and list needs a maximum, so a decoder can refuse an oversized
 value before allocating it. `char[max 256]` is a string of at most 256
 characters. To set one for the whole package instead, see
-[default maximums](guide/idl/settings.md#default-maximums); the rules are in
-[Types](guide/idl/types.md#bounds).
+[default maximums](guides/idl/settings.md#default-maximums); the rules are in
+[Types](guides/idl/types.md#bounds).
 
 ## Build
 
@@ -101,7 +101,7 @@ Today `rust` and `typescript` are the generators.
 
 ## Next
 
-- [Overview](guide/index.md) — the whole pipeline
-- [IDL guide](guide/idl/index.md) — the schema language
-- [Generating code](guide/codegen/generating-code.md) — the full `generate` surface
-- [CLI reference](reference/cli.md) — every command and flag
+- [Overview](guides/index.md) — the whole pipeline
+- [IDL guide](guides/idl/index.md) — the schema language
+- [Generating code](guides/codegen/generating-code.md) — the full `generate` surface
+- [CLI reference](reference/tools/cli.md) — every command and flag

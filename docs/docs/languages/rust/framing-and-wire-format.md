@@ -1,6 +1,6 @@
 # Framing & wire format
 
-[Call systems & serialization](../../guide/runtime/call-system.md)
+[Call systems & serialization](../../guides/runtime/call-system.md)
 introduces these as two independent axes — how a call is framed, and how
 its payload is serialized. This page is the concrete Rust API for both.
 
@@ -11,14 +11,14 @@ wire = { format = "packed@1" framing = "datagram@2" }
 ```
 
 Those two values are the defaults, so a package that writes nothing gets
-them. See [Wire defaults](../../guide/packages/index.md#wire-defaults).
+them. See [Wire defaults](../../guides/packages/index.md#wire-defaults).
 
 ## Framing is a build-time choice
 
 Which framing the generated code uses is decided when the code is generated,
 not when it runs. A protocol's own `@framing` wins; otherwise it gets the
 package's `wire.framing`, else `datagram@2` — see
-[Protocols](../../guide/idl/protocol.md#annotations). The result is baked into
+[Protocols](../../guides/idl/protocol.md#annotations). The result is baked into
 the generated code: there's no framing argument to swap it at the call site.
 
 ```ids
@@ -81,7 +81,7 @@ Three formats implement `comline_runtime::contract::WireFormat`:
 
 | Format | Type | Needs | |
 |---|---|---|---|
-| `packed@1` (default) | `format::Packed` | nothing: `no_std`, no allocator | fixed-width fields, no tags or names; see [`packed@1`](../../reference/wire/packed.md) |
+| `packed@1` (default) | `format::Packed` | nothing: `no_std`, no allocator | fixed-width fields, no tags or names; see [`packed@1`](../../reference/wire/formats/packed@1.md) |
 | `json@1` | `format::Json` | `std` | `serde_json`; readable on the wire |
 | `msgpack@1` | `format::MsgPack` | `std` | `rmp-serde`, structs encoded positionally |
 
@@ -94,7 +94,7 @@ desync two ends on different schema versions.
 
 ## Both ends must agree
 
-The [handshake](../../guide/runtime/call-system.md#handshake) checks the
+The [handshake](../../guides/runtime/call-system.md#handshake) checks the
 schema fingerprint, the wire format's name, and the framing's name — and
 refuses the connection on any mismatch, before a real call is attempted.
 There's no negotiation; both sides are expected to be built from the same

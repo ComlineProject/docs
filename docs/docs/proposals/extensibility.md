@@ -6,7 +6,7 @@ Status: **implemented** · tracked in
 [runtime#18](https://github.com/ComlineProject/runtime/issues/18)) · see
 [What shipped](#what-shipped) for the pull requests and for where it differs
 from the text below, which is kept as decided. The user guide is
-[Extending Comline](../guide/extending/index.md).
+[Extending Comline](../developer/extending/index.md).
 
 The open questions were decided on 2026-10-31.
 
@@ -20,7 +20,7 @@ guarantees is made visible.
 This is the position before the work; [What shipped](#what-shipped) says what
 changed.
 
-The [call system](../guide/runtime/call-system.md) is described as pluggable,
+The [call system](../guides/runtime/call-system.md) is described as pluggable,
 and its runtime half is. The generated half isn't, and nothing connects the two.
 
 | Extension point | Today |
@@ -519,7 +519,7 @@ None open. Both were decided on 2026-10-31:
 ## What shipped
 
 Built in October 2026. The guides are under
-[Extending Comline](../guide/extending/index.md), the
+[Extending Comline](../developer/extending/index.md), the
 [generator protocol](../reference/generator-protocol.md) and the
 [conformance spec](../reference/conformance.md) are reference pages.
 

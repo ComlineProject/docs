@@ -1,6 +1,6 @@
 name: Std drift
 
-# The pages under `docs/docs/std/` are not written by hand: they are `comline
+# The pages under `docs/docs/reference/schema/std/` are not written by hand: they are `comline
 # doc` run over the standard library package core embeds
 # (`core_stdlib/packages/std`), and the std block of `docs/mkdocs.yml` is its
 # generated nav. This regenerates both and fails on a difference, so a
@@ -19,7 +19,7 @@ on:
     - cron: '15 7 * * 1'
   pull_request:
     paths:
-      - 'docs/docs/std/**'
+      - 'docs/docs/reference/schema/std/**'
       - 'docs/mkdocs.yml'
       - 'scripts/sync-std-docs.py'
       - '.github/workflows/std-drift.yml'

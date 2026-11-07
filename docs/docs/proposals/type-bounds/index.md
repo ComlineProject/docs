@@ -272,4 +272,4 @@ encoded differently from `string`.
   the earlier `string(max 64)` ([why](char-strings.md)).
 - ~~**Under D, minimum validators std would need**~~: shipped in std,
   `NonEmpty`, `MinChars`, `MinItems` and `IntRange`
-  ([the guide](../../guide/idl/validator.md#the-standard-validators)).
+  ([the guide](../../guides/idl/validator.md#the-standard-validators)).

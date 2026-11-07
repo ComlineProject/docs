@@ -4,7 +4,7 @@ Status: **implemented** · tracked in
 [generation#76](https://github.com/ComlineProject/generation/issues/76) ·
 see [As implemented](#as-implemented) for where it differs from the text
 below, which is kept as decided. The user guide is
-[Language versions](../guide/codegen/generating-code.md#language-versions).
+[Language versions](../guides/codegen/generating-code.md#language-versions).
 
 **The question:** what the version in `rust#1.70.0` means, how it picks a
 generator, and how a generator's output and feature support depend on it.
@@ -206,7 +206,7 @@ Conformance then has to **compile** the generated code with the toolchain at
 each boundary and at the ceiling, not only compare it with goldens.
 
 **Past the ceiling, the target is unverified, not refused.** It works the way
-[`@unverified`](../guide/idl/protocol.md#giving-up-a-guarantee) does: allowed,
+[`@unverified`](../guides/idl/protocol.md#giving-up-a-guarantee) does: allowed,
 with the gap stated in build output and reported, never silently assumed. A
 hard error would break every package the day a compiler releases. For a
 language that promises forward compatibility, the generator can say so, and

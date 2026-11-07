@@ -122,7 +122,7 @@ commit. A runtime's suite runs every example against it:
 
 - `comline targets --features` prints the code generation support for the
   generators your `comline` was built with, and `--json` prints it as JSON (see
-  the [CLI](../cli.md)).
+  the [CLI](../tools/cli.md)).
 - In the editor, a schema using a feature that a language declared in
   `config.idp` can't generate gets a warning at the use. Hovering the language
   in `config.idp` shows what its generator supports.

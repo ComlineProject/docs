@@ -62,7 +62,7 @@ Semver for a user's schema package means nothing until a break is defined.
   ([cli#82](https://github.com/ComlineProject/cli/issues/82)).
 - Releases carry a changelog
   ([core#7](https://github.com/ComlineProject/core/issues/7)).
-  [`comline doc`](../reference/tools/doc.md) generates one between any two
+  [`comline doc`](../reference/tools/cli/doc.md) generates one between any two
   versions. What's left is the change kinds the diff doesn't classify yet.
 
 ## Interfaces that freeze
@@ -82,11 +82,11 @@ Semver for a user's schema package means nothing until a break is defined.
       its render request (version 0 today);
     - encoding profiles and the [conformance](../reference/conformance.md)
       corpus and ops protocol;
-    - the documentation model behind [`comline doc`](../reference/tools/doc.md)
+    - the documentation model behind [`comline doc`](../reference/tools/cli/doc.md)
       (version 1 today);
     - the [`comline.toml` schema](../reference/congregation/comline-toml.md)
       (`0.x` today);
-    - the JSON from [`comline inspect --json`](../reference/tools/inspect.md).
+    - the JSON from [`comline inspect --json`](../reference/tools/cli/inspect.md).
 - The extension API is part of 1.0, so it is designed, built and frozen
   first: third-party formats, framings, transports and dispatchers
   ([core#120](https://github.com/ComlineProject/core/issues/120)), and

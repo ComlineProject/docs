@@ -86,7 +86,7 @@ above. At ten languages it doesn't hold.
 | 2026-08-31 | [One repository per language](../repo-organization/split-by-language.md) was accepted for **repository layout** reasons: each language's codegen and runtime share one CI, and native toolchains stay out of one workspace. Whether runtimes share code was not decided. |
 | 2026-09-02 | The TypeScript runtime was written as a from-scratch port. |
 | 2026-09-03 | The playground simulator dropped its TypeScript reimplementation for the real `comline-runtime` compiled to WASM, deleting about 3,400 lines (playground#38). **This is the working precedent.** |
-| 2026-10-04 | docs#10 rewrote the [runtime guide](../../guide/runtime/index.md) to say there is "no FFI boundary". That was a docs correction of stale text, not a debated decision. This proposal reopens it. |
+| 2026-10-04 | docs#10 rewrote the [runtime guide](../../guides/runtime/index.md) to say there is "no FFI boundary". That was a docs correction of stale text, not a debated decision. This proposal reopens it. |
 | 2026-10-18 | Byte-exact conformance vectors became the only thing keeping the runtimes in agreement. |
 
 ## The proposal
@@ -154,7 +154,7 @@ The plan that was agreed:
   wasm32 today.
 - **Delete the dead code:** `runtime-langs/*`, `generation/lib-gen/*` and the
   unbuilt FFI modules in `comline-rust/codegen`.
-- **Rewrite the [runtime guide](../../guide/runtime/index.md)** for the new
+- **Rewrite the [runtime guide](../../guides/runtime/index.md)** for the new
   model.
 - **Resolve `design/core-target-contract.md`:**
   - §4.7, the open "per-language runtime ↔ core runtime seam", which this
@@ -163,7 +163,7 @@ The plan that was agreed:
 - **Keep `dylib` mode separate.** It loads a generated package compiled to a
   stable-ABI object, which is a different idea from a shared runtime core.
   Mixing the two up is part of how the original design got lost.
-  [Library generation](../../guide/codegen/library-generation.md) keeps it
+  [Library generation](../../guides/codegen/library-generation.md) keeps it
   as its own planned feature.
 
 ### How it fits earlier decisions
