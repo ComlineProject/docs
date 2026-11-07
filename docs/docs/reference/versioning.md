@@ -112,9 +112,9 @@ play.
 | respell an argument or return type through an equivalent alias | patch |
 | add an error to `!` | minor (an old client receives it as `Remote`) |
 | remove an error from `!` | major (a generated error variant disappears) |
-| `@framing` or `@handshake` changes (compared by meaning: writing out the default isn't a change) | major |
+| `@framing` or `@handshake` changes (compared by meaning: writing out the default isn't a change) | major, except a handshake's [policies](wire/handshakes/index.md#hashing-and-changing-them) |
 | a guarantee given up (`@unverified`, or one more joining the set) | major |
-| a given-up guarantee restored | minor |
+| a given-up guarantee restored | minor (a patch for version honesty, which only `comline@2`'s `same_version_differs` gives up today) |
 | the `@unverified` reason changed | patch |
 | `@id` changed so the protocol's or function's [number](#number) moves | major where the framing calls by number (`calls = by_id`); patch elsewhere |
 | `@id` written out as the number the item already has, or dropped (it keeps its number) | patch |
@@ -224,8 +224,9 @@ by the rules above. A change counts for a protocol when it changes:
   as far as the protocol reaches into the dependency.
 
 A break anywhere else in the package leaves the line alone. A change to the
-package's `wire.format`, `wire.framing` or `handshake` moves every
-protocol's line. Renaming a namespace or a protocol doesn't move it, because
+package's `wire.format`, `wire.framing` or `handshake` (its name or its wire
+parameters) moves every protocol's line, and giving up version honesty doesn't move
+it, since nothing on the wire changed. Renaming a namespace or a protocol doesn't move it, because
 neither name travels. Each protocol's changes come from the diff with every
 other protocol left out, so a change to a protocol of the same name in
 another schema isn't its.
@@ -326,13 +327,17 @@ computed when asked for, not stored.
 
 Each format, framing and handshake in play gets blake3 over the CBOR of its
 kind, canonical name and parameters. The parameters are a framing's
-`{ name = ..., ... }` entries other than `name`, plus, for an encoding the
-package declares in `encodings`, its profile's hash.
+`{ name = ..., ... }` entries other than `name`, a handshake's
+[wire parameters](wire/handshakes/index.md#hashing-and-changing-them) that aren't
+at their default (its policies never), plus, for an encoding the package declares
+in `encodings`, its profile's hash.
 
 ### Storage
 
 Lines, sinces and numbers need history, so each build records them in its commit as a
-`facts` blob beside `config` and `docs`. The schema blobs, `schema_ir_hash`
+`facts` blob beside `config` and `docs`. The blob also records the format, framing and
+handshake each protocol used, resolved at that build, so a later change to core's
+defaults can't change how the version reads. The schema blobs, `schema_ir_hash`
 and generated code don't change. A version built before facts were recorded
 gets them computed from its history when read, as does one recorded before
 numbers were (its stored lines and sinces are kept), and recomputing a stored blob

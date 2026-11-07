@@ -38,7 +38,7 @@ build.
 | `@deprecated` | a struct, a `type` alias | warns wherever it's used; the value is `true` or a message | [Types](types.md#type-aliases) |
 | `@settings` | any declaration | applies a named settings preset | [Settings](settings.md#named-presets-settings) |
 | `@framing` | a protocol | how calls are framed on the wire | [Protocols](protocol.md#annotations) |
-| `@handshake` | a protocol | what runs before the first call | [Protocols](protocol.md#annotations) |
+| `@handshake` | a protocol | what runs before the first call, with [its parameters](../../reference/wire/handshakes/index.md#parameters) if it takes any | [Protocols](protocol.md#annotations) |
 | `@provider` | a protocol | which side implements it: `Server`, `Client` or `Multiple` | [Calls in both directions](protocol.md#calls-in-both-directions) |
 | `@consumer` | a protocol | the other side; follows from `@provider` | [Protocols](protocol.md#annotations) |
 | `@unverified` | a protocol | gives up a guarantee, with the reason | [Giving up a guarantee](protocol.md#giving-up-a-guarantee) |

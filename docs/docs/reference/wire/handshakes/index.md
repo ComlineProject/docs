@@ -5,10 +5,10 @@ What two ends exchange when a connection opens, before the first call:
 instead of identity.
 
 !!! note "`comline@2` is available, not the default"
-    The runtime ships `comline@2`
-    ([runtime#15](https://github.com/ComlineProject/runtime/issues/15)).
-    Core makes it the default in a later step, as it did for `datagram@2`,
-    and the generators then embed the facts it needs. `comline@1` stays
+    The runtime ships `comline@2`, and core declares it, so a package can name
+    it ([runtime#15](https://github.com/ComlineProject/runtime/issues/15)).
+    The generators don't embed the facts it needs yet. Core makes it the
+    default after they do, as it did for `datagram@2`. `comline@1` stays
     available.
 
 ## Official handshakes
@@ -16,7 +16,7 @@ instead of identity.
 | Name | Does | Gives up |
 | --- | --- | --- |
 | `comline@1` (the default) | exchanges and checks schema, format and framing | nothing |
-| `comline@2` | - | - |
+| `comline@2` | exchanges each version's facts, and decides by each protocol's line | nothing, unless `same_version_differs = warn`: then version honesty |
 | `none` | sends and checks nothing | schema agreement and encoding agreement |
 
 `none` is the absence of a handshake, so it is not declared anywhere.
@@ -30,6 +30,22 @@ A protocol's `@handshake` is picked first, then its package's `handshake` key in
 @handshake = "com.acme.hello@1"
 protocol Gateway { /* ... */ }
 ```
+
+A handshake that takes [parameters](#parameters) is written as a dictionary
+instead, its name under `name`, as `@framing` does. The plain name is shorthand
+for a dictionary with only a name:
+
+```ids
+@handshake = { name = "comline@2", newer_consumer = refuse }
+protocol Gateway { /* ... */ }
+```
+
+```title="config.idp"
+handshake = { name = "comline@2" scope = "package" }
+```
+
+A protocol's own `@handshake` replaces the package's whole: the two aren't
+merged.
 
 ## `comline@1`
 
@@ -82,7 +98,9 @@ connecting.
 
 ### Parameters
 
-Declared like a framing's parameters, defaults first:
+Written in `@handshake` or `handshake`'s dictionary form
+([above](#usage-resolution)), each value a string or a bare word in `@handshake`,
+and a string in `config.idp`. Defaults first:
 
 | Parameter | Values | Kind | Meaning |
 | --- | --- | --- | --- |
@@ -94,6 +112,31 @@ Declared like a framing's parameters, defaults first:
 Each end applies its own policies, and either end's refusal counts. With
 `scope = protocol`, a connection whose every protocol is refused is
 refused.
+
+An unknown parameter or value is a build error, and so is any parameter on a
+handshake that takes none: `comline@1`, `none`, and for now a handshake a
+package declares, whose profile can't state parameters.
+
+#### Hashing and changing them
+
+Only `exchange` is in the handshake's parameter hash. The policies aren't, so
+two ends with different policies still agree. A parameter written as its default
+is the same as one left out, in the hash and in the comparison of two versions:
+
+| Change | Version bump | Line |
+| --- | --- | --- |
+| `exchange` | major | moves |
+| `scope` or `newer_consumer`, either way | patch | stays |
+| `same_version_differs`, `warn` to `refuse` | patch | stays |
+| `same_version_differs`, `refuse` to `warn` | major | stays |
+| writing a default out, or dropping it | none | stays |
+
+`same_version_differs = warn` gives up **version honesty**: two peers of the same
+version may turn out to have different shapes. As with
+[any guarantee given up](../../../guides/idl/protocol.md#giving-up-a-guarantee), it
+needs `@unverified` on the protocol to build, and each consumer accepts it. The
+major bump tells consumers so, but nothing on the wire changed, so the line stays
+and peers on it keep connecting.
 
 ### The exchange
 
