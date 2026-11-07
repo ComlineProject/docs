@@ -35,7 +35,7 @@ For each protocol, the package's own and then its dependencies':
 |---|---|---|
 | `from @framing`, `from @handshake` | `annotation` | The protocol's own annotation. |
 | `from config.idp ...` | `package_default` | The package's `wire.format`, `wire.framing` or `handshake` ([Wire defaults](../../../guides/packages/index.md#wire-defaults)). |
-| `core's default` | `core_default` | Nothing named one, so core's default applies: `packed@1`, `datagram@2`, `comline@1`. |
+| `core's default` | `core_default` | Nothing named one, so core's default applies: `packed@1`, `datagram@3`, `comline@2` (`comline@1` in a package whose protocols aren't all on `datagram@3`). |
 | `JSON-RPC's format` | `framing` | The framing is JSON-RPC and the package names no format, so the format is JSON. |
 
 A dependency's protocol shows its own package's defaults, not yours.

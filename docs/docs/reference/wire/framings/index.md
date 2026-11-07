@@ -1,13 +1,13 @@
 # Framings
 
-How a call and its reply are framed on a connection: `datagram@2`, the
-default, and `datagram@3`, which addresses a call by wire numbers.
+How a call and its reply are framed on a connection: `datagram@3`, the
+default, which addresses a call by wire numbers, and `datagram@2`, which
+addresses it by position.
 
-!!! note "`datagram@3` is available, not the default"
-    The runtime ships `datagram@3`, and core declares it, so a package can
-    name it ([runtime#15](https://github.com/ComlineProject/runtime/issues/15)).
-    The generators don't emit wire numbers for it yet. Core makes it the
-    default after they do. Until then, packages keep `datagram@2`.
+Before `datagram@3` became the default, a package that took the defaults ran
+on `datagram@2`. Its first build after the change is a wire change, and its
+next release a breaking one. Stating `wire = { framing = "datagram@2" }` keeps
+the old wire. See [Defaults before `comline@2`](../handshakes/index.md#defaults-before-comline2).
 
 Both framings carry frames in either direction, so either end can start a
 call, and several protocols can share one connection. Every frame starts

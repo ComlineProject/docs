@@ -1,22 +1,24 @@
 # Handshakes
 
 What two ends exchange when a connection opens, before the first call:
-`comline@1`, the default, and `comline@2`, which checks compatibility
-instead of identity.
+`comline@2`, the default, which checks compatibility, and `comline@1`, which
+checks identity.
 
-!!! note "`comline@2` is available, not the default"
-    The runtime ships `comline@2`, and core declares it, so a package can name
-    it ([runtime#15](https://github.com/ComlineProject/runtime/issues/15)).
-    The generators don't embed the facts it needs yet. Core makes it the
-    default after they do, as it did for `datagram@2`. `comline@1` stays
-    available.
+`comline@2` is the default where all of a package's protocols are on
+`datagram@3`, which is every package that takes the defaults. It runs one
+handshake per connection, so a package whose protocols can't share one
+(one on `jsonrpc`, `datagram@2` or a lockstep framing, say, or one naming
+another handshake) gets `comline@1` for every protocol that names none, as
+before. A package's `handshake` in `config.idp` overrides both. See
+[Defaults before `comline@2`](#defaults-before-comline2) for what the change
+of default means for a released package.
 
 ## Official handshakes
 
 | Name | Does | Gives up |
 | --- | --- | --- |
-| `comline@1` (the default) | exchanges and checks schema, format and framing | nothing |
-| `comline@2` | exchanges each version's facts, and decides by each protocol's line | nothing, unless `same_version_differs = warn`: then version honesty |
+| `comline@2` (the default) | exchanges each version's facts, and decides by each protocol's line | nothing, unless `same_version_differs = warn`: then version honesty |
+| `comline@1` | exchanges and checks schema, format and framing | nothing |
 | `none` | sends and checks nothing | schema agreement and encoding agreement |
 
 `none` is the absence of a handshake, so it is not declared anywhere.
@@ -24,7 +26,7 @@ instead of identity.
 ## Usage resolution
 
 A protocol's `@handshake` is picked first, then its package's `handshake` key in `config.idp`, then the official default
-(which is `comline@1`):
+(`comline@2`, or `comline@1` in a package whose protocols can't all run `comline@2`):
 
 ```ids
 @handshake = "com.acme.hello@1"
@@ -243,3 +245,27 @@ The `handshake-comline2` vectors in the runtime's corpus
 `comline@2`'s profile states `schema_agreement` and `encoding_agreement`,
 proven by an accepted peer and by peers refused for a moved line, another
 package, other encodings or another exchange.
+
+## Defaults before `comline@2`
+
+Until `comline@2` became the default, a protocol that named no handshake ran
+`comline@1`, on `datagram@2`. A version built then is read as it was built:
+its facts record the encodings it used, and one built before they were
+recorded reads as `datagram@2` and `comline@1`, never as today's defaults.
+
+So a package that takes the defaults shows a wire change on its first build
+after the change: each protocol's framing and handshake change, its line
+moves, and the next release takes a breaking bump (a minor one in 0.x). A
+peer built from an older release refuses it, as it would any wire change.
+
+To keep the old wire instead, state it in `config.idp`:
+
+```idp
+wire = { framing = "datagram@2" }
+handshake = "comline@1"
+```
+
+A package that states them sees no change: not in its IR, its facts or its
+version. Either can also be stated on its own, per protocol, with
+`@framing` and `@handshake`.
+

@@ -162,7 +162,7 @@ it up.
 
 The usual [@unverified rules](../../guides/idl/protocol.md#giving-up-a-guarantee)
 apply to any protocol that uses it, through `wire.format`, `wire.framing` or
-`@framing`, and the default `packed@1` and `datagram@2` are official so they
+`@framing`, and the defaults `packed@1` and `datagram@3` are official so they
 don't. A missing marker is a build error, a needless one is a warning, and a
 consumer accepts the set with `accept_unverified`. The diagnostic names the
 cause:

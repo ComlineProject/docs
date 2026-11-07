@@ -37,8 +37,8 @@ The reply goes back the same way. Each layer is chosen separately:
 | Layer | What it does | Built in | Chosen by |
 |  ---  |   ---        |   ---    |    ---    |
 | **Format** | turns values into bytes | **`packed@1`** (the default: fixed-width fields, no tags or names, see [`packed@1`](../../reference/wire/formats/packed@1.md)), `json@1`, `msgpack@1` (Rust only, for now) | the package's `wire.format` |
-| **Framing** | wraps a call or a reply around those bytes | **`datagram@2`** (the default, for [connections](#connections)), its lockstep first version `datagram`, and [JSON-RPC 2.0](https://www.jsonrpc.org/specification) | a protocol's `@framing`, else the package's `wire.framing` |
-| **Handshake** | checks both ends agree, before the first call | **`comline@1`** (the default), `none` | a protocol's `@handshake`, else the package's `handshake` |
+| **Framing** | wraps a call or a reply around those bytes | **`datagram@3`** (the default, for [connections](#connections), calls by wire number), `datagram@2` (calls by position), its lockstep first version `datagram`, and [JSON-RPC 2.0](https://www.jsonrpc.org/specification) | a protocol's `@framing`, else the package's `wire.framing` |
+| **Handshake** | checks both ends agree, before the first call | **`comline@2`** (the default), `comline@1`, `none` | a protocol's `@handshake`, else the package's `handshake` |
 | **Transport** | carries the frames | TCP and in-memory in Rust, in-memory in TypeScript | your code, when you connect |
 
 The format, framing and handshake are part of the schema: both ends have to
@@ -55,8 +55,9 @@ says. Which combinations each language supports is on its
 
 ## Handshake
 
-Before the first call, `connect` and `serve` run the protocol's handshake.
-`comline@1` exchanges one small fixed-size frame each way:
+Before the first call, `connect` and `serve` run the protocol's handshake:
+`comline@2` by default, which checks compatibility (below). `comline@1`
+checks identity instead, and exchanges one small fixed-size frame each way:
 
 ```mermaid
 sequenceDiagram
@@ -78,10 +79,10 @@ exchanged too, but a difference there is advisory.
 
 `comline@2` checks compatibility instead of identity. It compares each
 protocol's line, shape hash and wire numbers, so a newer consumer can still
-call an older provider. It's in the runtime but not yet the default:
-see [Handshakes](../../reference/wire/handshakes/index.md). Its companion framing,
-`datagram@3`, addresses calls by wire number
-([Datagram framings](../../reference/wire/framings/index.md)).
+call an older provider. It's the default, with its companion framing
+`datagram@3`, which addresses calls by wire number: see
+[Handshakes](../../reference/wire/handshakes/index.md) and
+[Datagram framings](../../reference/wire/framings/index.md).
 
 A protocol talking to a peer that can't take part (a legacy service, say)
 declares `@handshake = "none"` and says why with `@unverified`; see

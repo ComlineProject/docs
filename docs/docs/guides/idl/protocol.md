@@ -93,8 +93,10 @@ protocol Mail {
 - **`@framing`** picks the wire framing the generated code uses (what a
   framing is: [Call systems](../runtime/call-system.md#the-layers)). Without
   it, the protocol takes the package's `wire.framing` from `config.idp`
-  ([Wire defaults](../packages/index.md#wire-defaults)), else `"datagram@2"`,
-  which puts it on a [connection](#calls-in-both-directions).
+  ([Wire defaults](../packages/index.md#wire-defaults)), else `"datagram@3"`,
+  which puts it on a [connection](#calls-in-both-directions) and addresses its
+  calls by [wire number](../../reference/versioning.md#number). `"datagram@2"`
+  is the same connection, its calls addressed by position.
   `"jsonrpc"` (`json-rpc`, `jsonrpc-2.0`) emits a
   [JSON-RPC 2.0](https://www.jsonrpc.org/specification) stack, and
   `"datagram"` (`datagram@1`) the lockstep framing, with a client and a server
@@ -115,12 +117,13 @@ protocol Mail {
 - **`@consumer`** is the other side, which follows from `@provider`. You don't
   need to write it, but if you do, it has to agree.
 - **`@handshake`** picks what runs on a connection before the first call:
-  `"comline@1"` (the default) checks that both ends share the schema, format
-  and framing; `"comline@2"` checks they're compatible, and takes
+  `"comline@2"` (the default) checks they're compatible, and takes
   [parameters](../../reference/wire/handshakes/index.md#parameters), as in
-  `{ name = "comline@2", scope = package }`; `"none"` sends and checks nothing.
+  `{ name = "comline@2", scope = package }`; `"comline@1"` checks that both
+  ends share the schema, format and framing; `"none"` sends and checks nothing.
   Without it, the protocol takes the package's `handshake` from `config.idp`,
-  else `comline@1`.
+  else `comline@2`, or `comline@1` in a package whose protocols aren't all on
+  `datagram@3` ([Handshakes](../../reference/wire/handshakes/index.md)).
 - **`@unverified`** says why a protocol gives up a guarantee Comline would
   otherwise give its peers. It's required where one is given up, as with
   `@handshake = "none"`; see [Giving up a guarantee](#giving-up-a-guarantee).
@@ -152,15 +155,16 @@ flowchart LR
 - **`@provider = Client`**: the client implements it and the server calls it.
   **`@provider = Multiple`**: both sides implement it and either can call.
 - **The framing has to tell requests from replies,** since both ends now send
-  both. The default, `datagram@2`, does, and so does
+  both. The default, `datagram@3`, does, as do `datagram@2` and
   [JSON-RPC](#json-rpc-on-a-connection). The lockstep `datagram` can't, so a
   `Client` or `Multiple` protocol on it is a build error
   (`validation::reverse-calls-need-framing`).
 - **`@consumer` that disagrees with `@provider`** is a build error
   (`validation::provider-consumer-mismatch`).
 
-Every protocol on `datagram@2` — all of them, unless they pick another
-framing — runs on a **connection** instead of a client and a server:
+Every protocol on `datagram@3` or `datagram@2` — all of them, unless they
+pick another framing — runs on a **connection** instead of a client and a
+server:
 
 - **One connection carries all of them.** Each side provides the protocols it
   implements and calls the others. The generated package `serve` takes one
@@ -168,8 +172,10 @@ framing — runs on a **connection** instead of a client and a server:
 - **Calls can nest.** A handler receives the peer that called it, so it can
   call back before it answers. While a side waits for a reply, it keeps
   serving the peer's requests.
-- **Each protocol has a number on the wire:** its position among the
-  package's protocols, in schema order.
+- **Each protocol has a number on the wire:** on `datagram@3`, its
+  [wire number](../../reference/versioning.md#number), kept across versions;
+  on `datagram@2`, its position among the package's protocols, in schema
+  order.
 - **A connection keeps typed data of its own** (a session, a user id) that
   every handler on it can reach.
 

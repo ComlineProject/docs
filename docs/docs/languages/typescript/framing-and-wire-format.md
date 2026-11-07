@@ -7,12 +7,13 @@ choice, from `config.idp`'s `wire` key — see
 
 ## Framing
 
-All three framings are implemented and wire-compatible with the Rust runtime:
-`Datagram2Framing` (`datagram@2`, the default, for
-[connections](connections.md)), `DatagramFraming` (the lockstep `datagram`)
-and `JsonRpcFraming`. Which one generated code uses is decided at generation
-time: the protocol's `@framing` annotation, else the package's `wire.framing`,
-else `datagram@2` — exactly as on the
+All four framings are implemented and wire-compatible with the Rust runtime:
+`Datagram3Framing` (`datagram@3`, the default, for
+[connections](connections.md), calls by wire number), `Datagram2Framing`
+(`datagram@2`, calls by position), `DatagramFraming` (the lockstep
+`datagram`) and `JsonRpcFraming`. Which one generated code uses is decided at
+generation time: the protocol's `@framing` annotation, else the package's
+`wire.framing`, else `datagram@3` — exactly as on the
 [Rust page](../rust/framing-and-wire-format.md).
 
 A lockstep `<Proto>Client` / `serve<Proto>` takes an optional `framing`

@@ -16,7 +16,7 @@ Generator `rust#1.85.0`.
 
 | Feature | What it covers | State | Proven by |
 |---|---|---|---|
-| structs <br><sub>`structs`</sub> | `struct` declarations | ✅ supported | `primitives`, `optional_and_arrays`, `type_refs`, `protocol`, `shapes`, `cross_schema`, `import_alias`, `import_glob`, `nested_namespace`, `external_std`, `validators`, `validators_on_decode`, `format_json`, `format_msgpack`, `bounds` |
+| structs <br><sub>`structs`</sub> | `struct` declarations | ✅ supported | `primitives`, `optional_and_arrays`, `type_refs`, `protocol`, `shapes`, `cross_schema`, `import_alias`, `import_glob`, `nested_namespace`, `external_std`, `validators`, `validators_on_decode`, `format_json`, `format_msgpack`, `bounds`, `chars` |
 | enums <br><sub>`enums`</sub> | `enum` declarations | ✅ supported | `enum_basic` |
 | optional fields <br><sub>`optional-fields`</sub> | fields marked `optional` | ✅ supported | `optional_and_arrays`, `type_refs`, `shapes`, `cross_schema`, `validators`, `validators_on_decode`, `bounds` |
 | arrays <br><sub>`arrays`</sub> | variable-length arrays, `T[]` | ✅ supported | `optional_and_arrays`, `type_refs`, `shapes`, `cross_schema`, `validators`, `validators_on_decode`, `bounds` |
@@ -25,7 +25,7 @@ Generator `rust#1.85.0`.
 | unions <br><sub>`unions`</sub> | `union(A B ...)` types | ❌ unsupported: Rust has no anonymous sum type to render one as | `unions` |
 | type aliases <br><sub>`type-aliases`</sub> | `type Name = ...` declarations | ✅ supported | `validators`, `validators_on_decode`, `bounds` |
 | constants <br><sub>`constants`</sub> | `const` declarations | ✅ supported | `constant`, `shapes`, `validators`, `validators_on_decode` |
-| protocols <br><sub>`protocols`</sub> | `protocol` declarations and their functions | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `framing_jsonrpc`, `handshake_none`, `connections`, `connections_async`, `connections_jsonrpc`, `format_json`, `format_msgpack` |
+| protocols <br><sub>`protocols`</sub> | `protocol` declarations and their functions | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `framing_jsonrpc`, `handshake_none`, `framing_datagram3`, `handshake_comline2`, `connections`, `connections_async`, `connections_jsonrpc`, `format_json`, `format_msgpack` |
 | errors <br><sub>`errors`</sub> | `error` declarations | ✅ supported | `protocol`, `error_shapes`, `format_json`, `format_msgpack` |
 | functions that throw <br><sub>`throws`</sub> | functions declared with `! Error` | ✅ supported | `protocol`, `error_shapes`, `format_json`, `format_msgpack` |
 | validators <br><sub>`validators`</sub> | `@validators` on fields and type aliases, checked in generated code | ✅ supported | `validators`, `validators_on_decode` |
@@ -36,13 +36,15 @@ Generator `rust#1.85.0`.
 | `validate_on_decode` <br><sub>`validate-on-decode`</sub> | `[generate] validate_on_decode`: decoding runs the checks | ✅ supported | `validators_on_decode` |
 | JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | `@framing = "jsonrpc"` (or as the package default) | ✅ supported | `framing_jsonrpc`, `connections_jsonrpc` |
 | no handshake <br><sub>`handshake-none`</sub> | `@handshake = "none"` (or as the package default) | ✅ supported | `handshake_none` |
-| connections <br><sub>`connections`</sub> | protocols on a connection, with calls in both directions: `datagram@2` (the default), or `@provider = Client` / `Multiple` | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `handshake_none`, `connections`, `connections_async`, `connections_jsonrpc`, `format_json`, `format_msgpack` |
+| `datagram@3` framing <br><sub>`framing-datagram3`</sub> | `@framing = "datagram@3"` (or as the package default): calls addressed by wire numbers | ✅ supported | `framing_datagram3`, `handshake_comline2` |
+| `comline@2` handshake <br><sub>`handshake-comline2`</sub> | `@handshake = "comline@2"` (or as the package default): compatibility checked by each version's facts, calls the peer lacks failing locally | ✅ supported | `handshake_comline2` |
+| connections <br><sub>`connections`</sub> | protocols on a connection, with calls in both directions: `datagram@3` (the default) or `datagram@2`, or `@provider = Client` / `Multiple` | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `handshake_none`, `framing_datagram3`, `handshake_comline2`, `connections`, `connections_async`, `connections_jsonrpc`, `format_json`, `format_msgpack` |
 | `async` <br><sub>`async`</sub> | `[generate] async`: connection protocols get async handlers and senders | ✅ supported | `connections_async` |
-| the `packed@1` format <br><sub>`format-packed`</sub> | `wire.format = "packed@1"`, the default: fixed-width fields, no tags | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `handshake_none`, `connections`, `connections_async` |
+| the `packed@1` format <br><sub>`format-packed`</sub> | `wire.format = "packed@1"`, the default: fixed-width fields, no tags | ✅ supported | `protocol`, `error_shapes`, `validators`, `validators_on_decode`, `handshake_none`, `framing_datagram3`, `handshake_comline2`, `connections`, `connections_async` |
 | the `json@1` format <br><sub>`format-json`</sub> | `wire.format = "json@1"` | ✅ supported | `format_json` |
 | the `msgpack@1` format <br><sub>`format-msgpack`</sub> | `wire.format = "msgpack@1"` | ✅ supported | `format_msgpack` |
-| bounds <br><sub>`bounds`</sub> | a maximum or exact length on a string or list (`char[max 64]`, `char[8]`, `T[max N]`), or a depth limit (`@max_depth`): checked while decoding and encoding | ⚪ ignored: a bounded string is a `String` and a bounded list a `Vec`; nothing checks the maximum yet ([core#98](https://github.com/ComlineProject/core/issues/98)) | `bounds` |
-| single characters <br><sub>`chars`</sub> | `char`: one Unicode scalar value | ❌ unsupported: no wire format carries a single `char` yet ([core#98](https://github.com/ComlineProject/core/issues/98)) | `chars` |
+| bounds <br><sub>`bounds`</sub> | a maximum or exact length on a string or list (`char[max 64]`, `char[8]`, `T[max N]`), or a depth limit (`@max_depth`): checked while decoding and encoding | ✅ supported | `bounds` |
+| single characters <br><sub>`chars`</sub> | `char`: one Unicode scalar value | ✅ supported | `chars` |
 
 <!-- codegen:end -->
 
@@ -60,16 +62,18 @@ Runtime `rust`.
 
 | Feature | What it covers | State | Proven by |
 |---|---|---|---|
-| name hash <br><sub>`name-hash`</sub> | FNV-1a 64 of a wire format or framing name, as the handshake carries it | ✅ supported | [8 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/name-hash.json) |
-| handshake <br><sub>`handshake`</sub> | the fixed 31-byte frame each side sends first: magic, version, IR hash, wire format, framing, capabilities | ✅ supported | [13 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/handshake.json) |
+| name hash <br><sub>`name-hash`</sub> | FNV-1a 64 of a wire format or framing name, as the handshake carries it | ✅ supported | [9 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/name-hash.json) |
+| handshake <br><sub>`handshake`</sub> | the fixed 31-byte frame each side sends first: magic, version, IR hash, wire format, framing, capabilities | ✅ supported | [14 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/handshake.json) |
 | envelope <br><sub>`envelope`</sub> | a response's outcome: ok with a payload, an error ordinal with its body, or a provider fault | ✅ supported | [8 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/envelope.json) |
-| datagram framing <br><sub>`framing-datagram`</sub> | Comline's own binary framing of requests and responses | ✅ supported | [9 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram.json) |
-| datagram@2 framing <br><sub>`framing-datagram2`</sub> | the datagram framing with a request/reply kind and a protocol number, for calls in both directions and several protocols on one connection | ✅ supported | [12 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram2.json) |
+| datagram framing <br><sub>`framing-datagram`</sub> | Comline's own binary framing of requests and responses | ✅ supported | [12 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram.json) |
+| datagram@2 framing <br><sub>`framing-datagram2`</sub> | the datagram framing with a request/reply kind and a protocol number, for calls in both directions and several protocols on one connection | ✅ supported | [16 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram2.json) |
+| datagram@3 framing <br><sub>`framing-datagram3`</sub> | the datagram framing that addresses a call by its protocol's and function's wire numbers, both varints (calls = by_id); replies as datagram@2 | ✅ supported | [18 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-datagram3.json) |
+| comline@2 handshake <br><sub>`handshake-comline2`</sub> | the compatibility-checking handshake: its hello, answer and verdict messages, and its negotiation steps under every parameter, with every refusal reason | ✅ supported | [66 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/handshake-comline2.json) |
 | stream framing <br><sub>`stream`</sub> | frames on a byte stream (TCP, a pipe): each behind a u32 little-endian length prefix, refused over the limit, by default 16 MiB (16777216 bytes) in every runtime | ✅ supported | [24 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/stream.json) |
-| JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | JSON-RPC 2.0 requests and responses, a fault as -32603 | ✅ supported | [26 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-jsonrpc.json) |
-| JSON wire format <br><sub>`format-json`</sub> | values as UTF-8 JSON: a struct as an object | ✅ supported | [48 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-json.json) |
-| MessagePack wire format <br><sub>`format-msgpack`</sub> | values as MessagePack: a struct as an array | ✅ supported | [48 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-msgpack.json) |
-| packed wire format <br><sub>`format-packed`</sub> | values as packed@1: fixed-width fields back to back, varint lengths, no tags | ✅ supported | [59 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-packed.json) |
+| JSON-RPC framing <br><sub>`framing-jsonrpc`</sub> | JSON-RPC 2.0 requests and responses, a fault as -32603 | ✅ supported | [62 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/framing-jsonrpc.json) |
+| JSON wire format <br><sub>`format-json`</sub> | values as UTF-8 JSON: a struct as an object | ✅ supported | [96 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-json.json) |
+| MessagePack wire format <br><sub>`format-msgpack`</sub> | values as MessagePack: a struct as an array | ✅ supported | [98 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-msgpack.json) |
+| packed wire format <br><sub>`format-packed`</sub> | values as packed@1: fixed-width fields back to back, varint lengths, no tags | ✅ supported | [110 cases](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-packed.json) |
 
 <!-- runtime:end -->
 
