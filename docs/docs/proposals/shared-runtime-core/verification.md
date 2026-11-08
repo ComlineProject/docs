@@ -625,6 +625,9 @@ Results are published the same way as the conformance reports:
   the support tables.
 - A pull request gets its comparison against base as a comment.
 
+Watching these results over time, and comparing any published versions, is
+the [project dashboard](../project-dashboard.md) proposal's subject.
+
 ## How this enforces the constraint
 
 | Standard | Enforced by |

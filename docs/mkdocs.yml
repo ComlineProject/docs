@@ -178,6 +178,7 @@ nav:
       - 'Stage 2 — core interface': 'proposals/shared-runtime-core/core-interface.md'
       - 'Stage 3 — generated codecs': 'proposals/shared-runtime-core/generated-codecs.md'
     - Automatic documentation: 'proposals/auto-documentation.md'
+    - Project dashboard: 'proposals/project-dashboard.md'
     - Schema compatibility: 'proposals/schema-compatibility.md'
     - Language target versions: 'proposals/target-versions.md'
     - Extending the call system: 'proposals/extensibility.md'
