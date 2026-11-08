@@ -218,6 +218,10 @@ the language side is shipped and documented in the
 
 ### Tooling
 
+- [Project dashboard](project-dashboard.md): a separate static site where the
+  benchmark, fuzzing, conformance, size, coverage and CI results of every
+  repository can be watched over time, and any published versions compared;
+  each repository publishes to its own `reports` branch. *draft.*
 - [Automatic documentation](auto-documentation.md) — an optional tool that
   documents a user's own schemas and packages — their structs, enums, protocols,
   errors — from the IR and its docstrings, with the CAS supplying per-version
