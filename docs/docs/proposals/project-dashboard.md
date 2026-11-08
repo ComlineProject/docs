@@ -1,6 +1,6 @@
 # Project dashboard
 
-Status: **accepted** · decided 2026-11-08 · stage 1 being built · tracked in
+Status: **accepted** · decided 2026-11-08 · all four stages shipped 2026-11-08 at [observatory](https://comlineproject.github.io/observatory/) · tracked in
 [docs#151](https://github.com/ComlineProject/docs/issues/151) · Builds on the
 [published results](shared-runtime-core/verification.md#published-results) of
 the verification proposal
