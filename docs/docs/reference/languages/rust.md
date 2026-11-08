@@ -102,6 +102,9 @@ The latest, fetched when this site was built:
 
 --8<-- "_generated/reports/rust.fuzz.md"
 
+Every nightly run since the first, charted and comparable between any two
+runs: [Observatory → Fuzzing](https://comlineproject.github.io/observatory/fuzz/runtime-fuzz/).
+
 ### Divergences
 
 <!-- divergences:start -->
@@ -120,3 +123,6 @@ new head and publishes `rust.bench.json` on the runtime's
 The latest, fetched when this site was built:
 
 --8<-- "_generated/reports/rust.bench.md"
+
+Every published run, charted per benchmark and comparable between any
+versions: [Observatory → Benchmarks](https://comlineproject.github.io/observatory/bench/runtime-bench/).

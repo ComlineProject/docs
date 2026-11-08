@@ -124,6 +124,10 @@ commit. A runtime's suite runs every example against it:
 
 ## Elsewhere
 
+- [Observatory](https://comlineproject.github.io/observatory/) keeps every published version of these tables, as
+  [runtime](https://comlineproject.github.io/observatory/conformance/wire/) and [code generation](https://comlineproject.github.io/observatory/conformance/codegen/)
+  matrices you can open at any version or compare between two, alongside the
+  runtime's benchmarks and fuzzing over time.
 - `comline targets --features` prints the code generation support for the
   generators your `comline` was built with, and `--json` prints it as JSON (see
   the [CLI](../tools/cli.md)).
