@@ -87,8 +87,8 @@ RUNTIMES = {
 # None is `--runtime-rev`. A runtime with no entry has none to show (Rust is
 # the reference the others are compared against, so it has no divergences
 # file). A report that isn't there yet (HTTP 404) is shown as "not published
-# yet". Rust's are on the runtime repository's `reports` branch: its CI
-# commits them there from `main` (bench, every push) and the nightly fuzz run,
+# yet". Each runtime's are on its repository's `reports` branch: its CI
+# commits them there from `main` (bench, every push) and its nightly run,
 # since `main` itself only takes pull requests.
 REPORTS_BRANCH = "reports"
 DIVERGENCES = {
@@ -96,10 +96,11 @@ DIVERGENCES = {
 }
 BENCHES = {
     "rust": ("runtime", REPORTS_BRANCH, "rust.bench.json"),
-    "typescript": ("comline-typescript", None, "runtime/conformance-bench.json"),
+    "typescript": ("comline-typescript", REPORTS_BRANCH, "typescript.bench.json"),
 }
 FUZZ = {
     "rust": ("runtime", REPORTS_BRANCH, "rust.fuzz.json"),
+    "typescript": ("comline-typescript", REPORTS_BRANCH, "typescript.fuzz.json"),
 }
 REPORT_URL = "https://github.com/ComlineProject/{repo}/blob/{rev}/{path}"
 VERIFY_NOTICE = (
@@ -320,10 +321,13 @@ def fuzz_table(name: str, report: dict | None) -> str:
         f"From the run of {report['date'][:10]} at runtime commit `{report['commit'][:7]}`, "
         f"with `{report['toolchain']}` ([run]({report['run']}), "
         f"[`{path.rsplit('/', 1)[-1]}`]({source})).",
-        "",
-        "| Target | Seconds | Executions | Corpus | Findings |",
-        "|---|---:|---:|---:|---:|",
     ]
+    if report["targets"]:
+        lines += [
+            "",
+            "| Target | Seconds | Executions | Corpus | Findings |",
+            "|---|---:|---:|---:|---:|",
+        ]
     for target, t in sorted(report["targets"].items()):
         findings = "didn't run" if t.get("error") else number(t["findings"])
         lines.append(
