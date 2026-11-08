@@ -1,6 +1,6 @@
 # Project dashboard
 
-Status: **draft** · tracked in
+Status: **accepted** · decided 2026-11-08 · stage 1 being built · tracked in
 [docs#151](https://github.com/ComlineProject/docs/issues/151) · Builds on the
 [published results](shared-runtime-core/verification.md#published-results) of
 the verification proposal
@@ -17,6 +17,30 @@ Decided so far (2026-11-08):
   history is the data history;
 - all six areas are in scope, delivered in stages;
 - this proposal comes first, and the rest is decided in rounds.
+
+Decided in round 2 (2026-11-08):
+
+- **Name:** `observatory`, at `comlineproject.github.io/observatory/`.
+- **Priority:** P1.
+- **The parser benchmark** reports both instruction counts and wall time
+  ([below](#several-metrics-per-benchmark)).
+- **A dedicated runner for wall time** is out of scope for now, but the
+  reports are prepared for one
+  ([below](#several-metrics-per-benchmark)).
+- **Versions and history,** suggested in reply to the user's question:
+  releases are named by tags, every commit between them stays viewable as a
+  dev version, and no history is dropped
+  ([below](#versions-and-comparison)).
+
+Decided in round 3 (2026-11-08):
+
+- the versions and history model above, and the report schemas in
+  `observatory`;
+- **tag patterns** are listed per repository in `observatory`'s sources
+  file, so no repository has to rename its tags (core's is
+  `comline-core-v0.1.0`);
+- **gating** stays in each repository's own CI; the dashboard only shows
+  results.
 
 ## Where things stand
 
@@ -92,6 +116,43 @@ flowchart LR
 - **Schemas:** CUE, with JSON Schema generated from it, following the
   runtime's
   [`conformance/specs/`](https://github.com/ComlineProject/runtime/tree/main/runtime/conformance/specs).
+  **Suggested home: `observatory`,** with a split by role:
+
+  | Stays in the runtime's conformance spec | Moves to `observatory` |
+  |---|---|
+  | what is checked and measured: vectors, profiles, claims, the conformance report, and the language-neutral benchmark workloads (`conformance/benches/`) | how results are reported: the common envelope, and the report formats for `bench`, `fuzz`, `size` and `coverage` |
+
+  The conformance spec is on the [1.0 freeze list](../conduct/readiness.md),
+  but report formats are internal tooling. Keeping them in the runtime would
+  tie a report change to the spec's versioning, and every other repository
+  would be validating against a file in the runtime.
+  `observatory` is what reads every report, so the formats belong with it.
+  Producers validate in CI against a pinned `observatory` revision, the way
+  the TypeScript runtime pins its vectors.
+
+#### Several metrics per benchmark
+
+A benchmark result carries one value per metric, and each value records the
+runner it was measured on:
+
+```json
+"parse/large": {
+  "instructions": { "value": 1834221, "runner": "github-hosted" },
+  "wall_ns":      { "value": 412000, "spread": 0.07, "runner": "github-hosted" }
+}
+```
+
+- **Instructions** are deterministic. Every repository's gate keeps using
+  them.
+- **Wall time** shows what users feel, but it is noisy on shared runners. It
+  is published as a trend with its spread, shown with a noise band, and never
+  gates.
+- **The core parser benchmark reports both:** iai-callgrind for the gate, and
+  its existing criterion bench for wall time.
+- **A dedicated runner** later is just a new `runner` value, with no format
+  change. The dashboard never compares values from different runners: each
+  runner is its own series. Until a dedicated runner exists, wall-time charts
+  carry a "shared runner, noisy" note.
 - **Publishing:** the runtime's `publish-report.py` becomes a reusable
   composite action in the dashboard repository, so a repository adds one
   step instead of a copy of the script:
@@ -141,10 +202,41 @@ stack the tutorial already uses (Svelte 5, Kit 2, Vite 7).
 Every published version can be opened and compared, so the data is laid out
 for random access and comparisons are computed in the browser.
 
-**What a version is:** one published report, meaning one commit on a `reports`
-branch, or one change to a committed matrix on `main`. A version that falls
-in a release shows that release's name. The picker groups dev builds under
-their release, the way the HTML doc renderer's picker does.
+**What a version is: releases from tags, dev versions in between.** Tags
+alone would leave almost nothing to look at today: only core has one,
+`comline-core-v0.1.0`. They would also hide the commit where a regression
+landed, so both levels are kept:
+
+| Level | What it is | Label |
+|---|---|---|
+| **Release** | a repository's tag | the tag's version, e.g. `0.1.0` |
+| **Dev** | each published report between two releases: one commit on a `reports` branch, or one change to a committed matrix on `main` | `0.2.0-dev.4`, the same form as [Comline's own dev versions](../reference/versioning.md#builds-and-releases): the release it leads to and the count since the last one, plus the short commit |
+| **Unreleased** | dev versions after the newest tag, whose release isn't known yet | `unreleased-dev.N` until a tag exists, then relabelled |
+
+- **Labels are recomputed on every build** from tags and history. A new tag
+  regroups the dev versions before it under it, so nothing is renamed by hand.
+- **The picker shows releases by default,** with "show dev versions" to expand
+  each release into the commits that led to it. This is the same grouping as
+  the HTML doc renderer's picker. Charts always plot every version, with
+  releases marked.
+- **Pull request runs aren't versions.** They are compared against their base
+  in the pull request itself, as the runtime's gate already does.
+
+**History: nothing is dropped.** The `reports` branches are never rewritten,
+so the source keeps everything. On the site, retention is replaced by loading
+in chunks:
+
+- each series is split into one chunk per release cycle, and large series are
+  also split by benchmark group (for example `ffi/` and `comline2/`);
+- a page loads the releases-only series, which is small, plus the current
+  cycle's chunk;
+- older cycles load when a chart is zoomed or panned into them, or when one of
+  their versions is picked;
+- overview sparklines use LTTB-downsampled copies.
+
+This keeps the page's initial data inside its budget however long the
+history grows. A cap can still be added later, but it would only change the
+build, not the source.
 
 **Views:**
 
@@ -161,12 +253,14 @@ a comparison can be shared as a link.
 
 | File | Holds | Loaded |
 |---|---|---|
-| `versions.json` | the index: commit, date, release and run of each version, in order | with the page |
-| Columnar series | one array per metric, aligned to the index, with `null` where a version has no value. Large series are typed-array binaries (`.f64`, `.u32`) with a JSON manifest, loaded straight into a `Float64Array` | with the page |
+| `versions.json` | the index: commit, date, release, dev label and run of each version, in order | with the page |
+| Releases series | one value per metric per release | with the page |
+| Columnar series, per release cycle | one array per metric, aligned to the index, with `null` where a version has no value. Large series are typed-array binaries (`.f64`, `.u32`) with a JSON manifest, loaded straight into a `Float64Array` | the current cycle with the page, older ones on demand |
 | Snapshot shards | per-version detail that comparing doesn't need: per-target fuzz statistics, property verdicts, conformance case ids | when that version is opened |
 
-- **Comparing A with B** reads one array entry per metric, so its cost grows
-  with the number of metrics and not with history. Pairwise differences are
+- **Comparing A with B** reads one array entry per metric, plus at most two
+  chunk fetches when A and B are in older cycles. Its cost grows with the
+  number of metrics and not with history. Pairwise differences are
   never precomputed, because there are N² of them.
 - **Caching:** files are named by a hash of their content, so a browser caches
   them indefinitely and a rebuild changes only the files whose data changed.
@@ -233,14 +327,14 @@ The dashboard repository's workflow:
 |---|---|---|
 | **1** | none new | the collector, the site, and the version and comparison views over the runtime's bench and fuzz history and the conformance matrices' history on `main`. This proves the whole pipeline end to end |
 | **2** | TypeScript publishes `typescript.bench.json` from `runtime/bench/count.mjs`, which also fills the report the docs already expect, and `typescript.fuzz.json` from its nightly; `comline conformance --json` | the Rust↔TypeScript ratio view; per-run results from the conformance CLI |
-| **3** | a size job in runtime, simulator and cli; coverage from `cargo-llvm-cov` (Rust) and v8 coverage (TypeScript); the parser benchmark in core's CI | the Size and Coverage pages |
+| **3** | a size job in runtime, simulator and cli; coverage from `cargo-llvm-cov` (Rust) and v8 coverage (TypeScript); the parser benchmark in core's CI, with instruction counts (a new iai-callgrind bench, gated) and wall time (the existing criterion bench, a trend) | the Size and Coverage pages |
 | **4** | none, since CI health comes from the API; compile time from `cargo build --timings` | the CI health page and compile-time series |
 
 ## What it touches
 
 | Repository | Change |
 |---|---|
-| a new repository | the collector, the site, the publish action, the schemas (if they move there), the deploy workflow |
+| `observatory` (new) | the collector, the site, the publish action, the report schemas, the deploy workflow |
 | runtime | switch to the shared publish action; add a size job (stage 3) |
 | comline-typescript | bench and nightly reports (stage 2), coverage (stage 3) |
 | cli | `comline conformance --json` (stage 2) |
@@ -272,17 +366,5 @@ The dashboard repository's workflow:
 
 ## Open questions
 
-- **Name and address:** for example `observatory`, `status` or `dashboard`,
-  at `comlineproject.github.io/<name>/`.
-- **Where the schemas live:** in the dashboard repository, or kept with the
-  runtime's conformance specs.
-- **What "a version" means:** every published report, as above, or only
-  releases, or also the published std and package versions.
-- **Retention:** all history, or a cap with older versions thinned out.
-- **The parser benchmark:** move it to instruction counts so it can gate, or
-  keep criterion's wall time as a noisy trend that never gates.
-- **Gating:** the proposal keeps every gate in each repository's own CI, and
-  the dashboard only shows results. Is that right?
-- **A dedicated runner for wall time,** already raised in
-  [Judging a regression](shared-runtime-core/verification.md#judging-a-regression-without-flaky-ci):
-  is it in scope here?
+None left for stage 1. The data contract between the collector and the site
+is `DATA.md` in `observatory`.
