@@ -121,8 +121,10 @@ Where `typescript` and the reference are known to answer differently, from [`kno
 ### Benchmarks
 
 Instruction counts for the shared workloads of the runtime's conformance
-corpus, under the same ids as Rust's, measured after warm-up (the median of
-five runs). Every push to `main` publishes `typescript.bench.json` on the
+corpus, under the same ids as Rust's, each the median of five runs, in two
+tiers: with the JIT's optimizing tier off (exact, so it tracks this runtime's
+own changes) and on, after warm-up (closest to real use, and what the ratio to
+Rust compares). Every push to `main` publishes `typescript.bench.json` on the
 [`reports`](https://github.com/ComlineProject/comline-typescript/tree/reports)
 branch. The latest, fetched when this site was built:
 
