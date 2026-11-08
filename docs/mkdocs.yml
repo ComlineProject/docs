@@ -236,20 +236,21 @@ theme:
     - content.code.annotation
     - content.code.copy
   language: en
+  # Dark first: the first entry is what a new visitor sees.
   palette:
-    - scheme: default
-      toggle:
-        icon: material/weather-night
-        name: Switch to dark mode
-      primary: teal
-      accent: purple
-
     - scheme: slate
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
       primary: teal
       accent: lime
+
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+      primary: teal
+      accent: purple
 
 
 # TODO: The social plugin is disabled due to not Cairo lib not being available on Nix
