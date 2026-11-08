@@ -92,8 +92,14 @@ tracked, each with the issue that will fix it.
 - Pull requests run a short suite; a nightly run takes 20,000 cases per
   property and opens an issue on a divergence outside the known classes.
 
-The property suite doesn't write a results file, so there are no run counts to
-show here. Coverage-guided fuzzing (Jazzer.js) isn't set up yet.
+The nightly run publishes its verdicts as `typescript.fuzz.json` on the
+repository's [`reports`](https://github.com/ComlineProject/comline-typescript/tree/reports)
+branch. The latest, fetched when this site was built:
+
+--8<-- "_generated/reports/typescript.fuzz.md"
+
+Every nightly run, charted: [Observatory → Fuzzing](https://comlineproject.github.io/observatory/fuzz/typescript-fuzz/).
+Coverage-guided fuzzing (Jazzer.js) isn't set up yet.
 
 ### Divergences
 
@@ -114,4 +120,16 @@ Where `typescript` and the reference are known to answer differently, from [`kno
 
 ### Benchmarks
 
+Instruction counts for the shared workloads of the runtime's conformance
+corpus, under the same ids as Rust's, each the median of five runs, in two
+tiers: with the JIT's optimizing tier off (exact, so it tracks this runtime's
+own changes) and on, after warm-up (closest to real use, and what the ratio to
+Rust compares). Every push to `main` publishes `typescript.bench.json` on the
+[`reports`](https://github.com/ComlineProject/comline-typescript/tree/reports)
+branch. The latest, fetched when this site was built:
+
 --8<-- "_generated/reports/typescript.bench.md"
+
+Every published run, and the ratio to Rust per workload:
+[Observatory → Benchmarks](https://comlineproject.github.io/observatory/bench/typescript-bench/)
+and [ratio to Rust](https://comlineproject.github.io/observatory/ratio/).

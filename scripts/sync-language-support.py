@@ -87,8 +87,8 @@ RUNTIMES = {
 # None is `--runtime-rev`. A runtime with no entry has none to show (Rust is
 # the reference the others are compared against, so it has no divergences
 # file). A report that isn't there yet (HTTP 404) is shown as "not published
-# yet". Rust's are on the runtime repository's `reports` branch: its CI
-# commits them there from `main` (bench, every push) and the nightly fuzz run,
+# yet". Each runtime's are on its repository's `reports` branch: its CI
+# commits them there from `main` (bench, every push) and its nightly run,
 # since `main` itself only takes pull requests.
 REPORTS_BRANCH = "reports"
 DIVERGENCES = {
@@ -96,12 +96,22 @@ DIVERGENCES = {
 }
 BENCHES = {
     "rust": ("runtime", REPORTS_BRANCH, "rust.bench.json"),
-    "typescript": ("comline-typescript", None, "runtime/conformance-bench.json"),
+    "typescript": ("comline-typescript", REPORTS_BRANCH, "typescript.bench.json"),
 }
 FUZZ = {
     "rust": ("runtime", REPORTS_BRANCH, "rust.fuzz.json"),
+    "typescript": ("comline-typescript", REPORTS_BRANCH, "typescript.fuzz.json"),
 }
 REPORT_URL = "https://github.com/ComlineProject/{repo}/blob/{rev}/{path}"
+# Column titles and notes for a bench report's metrics (format 2).
+BENCH_METRICS = {
+    "instructions": "Instructions",
+    "instructions-opt": "Instructions, optimized",
+}
+BENCH_METRIC_NOTES = {
+    "instructions": "instructions executed with the JIT's optimizing tier off: exact run to run, so they track the runtime's own changes.",
+    "instructions-opt": "the same after warm-up with the optimizing tier on: closest to real use, and what the ratio to Rust compares.",
+}
 VERIFY_NOTICE = (
     "<!-- Rendered from each runtime's verification reports by "
     "scripts/sync-language-support.py - don't edit by hand. -->"
@@ -292,18 +302,35 @@ def bench_table(name: str, report: dict | None) -> str:
     source = REPORT_URL.format(repo=repo, rev=rev or "main", path=path)
     if report is None:
         return not_published("benchmark results", repo, rev, path)
-    metric = {"instructions": "instructions executed"}.get(report.get("metric"), report.get("metric", "value"))
+    file = f"[`{path.rsplit('/', 1)[-1]}`]({source})"
+    head = f"Measured at commit `{report['commit'][:7]}` with `{report['toolchain']}`"
+    if report.get("format", 1) == 1:
+        # One metric per bench: `{"ir": N}`.
+        metric = {"instructions": "instructions executed"}.get(report.get("metric"), report.get("metric", "value"))
+        columns = [("ir", "Instructions")]
+        intro = f"{head}, in {metric} (deterministic, so they compare exactly), from {file}."
+    else:
+        # Several metrics per bench: `{"<metric>": {"value", "spread"?}}`.
+        names = sorted({m for b in report["benches"].values() for m in b})
+        columns = [(m, BENCH_METRICS.get(m, f"`{m}`")) for m in names]
+        intro = f"{head}, from {file}. " + " ".join(
+            f"**{label}:** {BENCH_METRIC_NOTES[m]}" for m, label in columns if m in BENCH_METRIC_NOTES
+        )
     lines = [
-        f"Measured at runtime commit `{report['commit'][:7]}` with `{report['toolchain']}`, "
-        f"in {metric} (deterministic, so they compare exactly), from [`{path.rsplit('/', 1)[-1]}`]({source}).",
+        intro,
         "",
         f'??? note "All {len(report["benches"])} benchmarks"',
         "",
-        "    | Benchmark | Instructions |",
-        "    |---|---:|",
+        "    | Benchmark | " + " | ".join(label for _, label in columns) + " |",
+        "    |---|" + "---:|" * len(columns),
     ]
     for bench, result in sorted(report["benches"].items()):
-        lines.append(f"    | `{bench}` | {result['ir']:,} |")
+        cells = []
+        for m, _ in columns:
+            v = result.get(m)
+            v = v.get("value") if isinstance(v, dict) else v
+            cells.append("—" if v is None else f"{v:,}")
+        lines.append(f"    | `{bench}` | " + " | ".join(cells) + " |")
     return "\n".join(lines)
 
 
@@ -320,10 +347,13 @@ def fuzz_table(name: str, report: dict | None) -> str:
         f"From the run of {report['date'][:10]} at runtime commit `{report['commit'][:7]}`, "
         f"with `{report['toolchain']}` ([run]({report['run']}), "
         f"[`{path.rsplit('/', 1)[-1]}`]({source})).",
-        "",
-        "| Target | Seconds | Executions | Corpus | Findings |",
-        "|---|---:|---:|---:|---:|",
     ]
+    if report["targets"]:
+        lines += [
+            "",
+            "| Target | Seconds | Executions | Corpus | Findings |",
+            "|---|---:|---:|---:|---:|",
+        ]
     for target, t in sorted(report["targets"].items()):
         findings = "didn't run" if t.get("error") else number(t["findings"])
         lines.append(
