@@ -1,6 +1,6 @@
 # Project dashboard
 
-Status: **draft** · tracked in
+Status: **accepted** · decided 2026-11-08 · stage 1 being built · tracked in
 [docs#151](https://github.com/ComlineProject/docs/issues/151) · Builds on the
 [published results](shared-runtime-core/verification.md#published-results) of
 the verification proposal
@@ -30,7 +30,17 @@ Decided in round 2 (2026-11-08):
 - **Versions and history,** suggested in reply to the user's question:
   releases are named by tags, every commit between them stays viewable as a
   dev version, and no history is dropped
-  ([below](#versions-and-comparison)). Awaiting confirmation.
+  ([below](#versions-and-comparison)).
+
+Decided in round 3 (2026-11-08):
+
+- the versions and history model above, and the report schemas in
+  `observatory`;
+- **tag patterns** are listed per repository in `observatory`'s sources
+  file, so no repository has to rename its tags (core's is
+  `comline-core-v0.1.0`);
+- **gating** stays in each repository's own CI; the dashboard only shows
+  results.
 
 ## Where things stand
 
@@ -356,12 +366,5 @@ The dashboard repository's workflow:
 
 ## Open questions
 
-- **Versions and history:** confirm releases from tags with dev versions in
-  between, and nothing dropped, loaded in chunks per release cycle.
-- **Where the schemas live:** `observatory` is suggested for the report
-  formats, with the conformance spec staying in the runtime.
-- **Tag form:** core's tag is `comline-core-v0.1.0`. Each repository's tag
-  pattern needs listing in the sources file, or the repositories should agree
-  on one pattern.
-- **Gating:** the proposal keeps every gate in each repository's own CI, and
-  the dashboard only shows results. Is that right?
+None left for stage 1. The data contract between the collector and the site
+is `DATA.md` in `observatory`.
