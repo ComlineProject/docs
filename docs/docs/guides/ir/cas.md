@@ -12,7 +12,7 @@ with differences that suit a schema package. They are collected in
 
 ## On disk
 
-```
+```sh
 .comline/
 ├── FORMAT_VERSION          the IR format stamp, e.g. 3
 ├── objects/
@@ -35,7 +35,7 @@ flowchart LR
 ```
 
 | Path | Contents |
-|---|---|
+| --- | --- |
 | `objects/<xx>/<rest>` | One object. The 64 hex characters of its hash are split: the first two name the directory, the other 62 name the file. The file holds the object's bytes, LZ4-compressed. |
 | `refs/heads/main` | The hash of the newest commit, as 64 hex characters. Updated at the end of every build and release. It is the only ref. |
 | `FORMAT_VERSION` | The [IR format stamp](#the-ir-format-stamp) as a decimal number. |
@@ -51,7 +51,7 @@ without `.comline/` starts over with no recorded versions, at `0.1.0-dev.1`.
 `uri` and `commit` pinned in `config.idp`. The `.gitignore` that `comline new`
 writes ignores only that directory:
 
-```
+```sh
 .comline/deps-cache/
 ```
 
@@ -72,7 +72,7 @@ names below are the keys in the stored bytes.
 A blob holds raw bytes.
 
 | Field | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `content` | bytes | The payload. For a schema unit, the CBOR of one frozen unit. |
 
 Blobs hold three things: one frozen unit each (a struct, an enum, a protocol,
@@ -84,13 +84,13 @@ dependency's `manifest`.
 A tree lists named entries, like a directory.
 
 | Field | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `entries` | list of entry | In the order they were added. |
 
 Each entry:
 
 | Field | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `mode` | `Blob` or `Tree` | What `hash` points at. |
 | `name` | string | The entry's name in this tree. |
 | `hash` | 32 bytes | The object's blake3 hash. |
@@ -105,7 +105,7 @@ declaration: `namespace_<ns>`, `struct_<Name>`, `enum_<Name>`,
 A commit is one version of the package.
 
 | Field | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `tree` | hash | The version's root tree. |
 | `parents` | list of hash | The previous commit. Empty for the first commit. Today it holds at most one. |
 | `author` | string | The user name of whoever built, from the operating system. |
@@ -124,7 +124,7 @@ The `release` field of a release commit says how the version was reached. See
 [Builds and releases](#builds-and-releases) for how the bumps are chosen.
 
 | Field | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `computed` | bump | The bump the changes since the previous release call for: `None`, `Patch`, `Minor` or `Major`. |
 | `applied` | bump | The bump used. The computed one, or higher if `--raise` was given. |
 | `reason` | string, optional | Why the bump was raised or the package made stable. |
@@ -152,7 +152,7 @@ flowchart TD
 ```
 
 | Entry | Mode | Contents |
-|---|---|---|
+| --- | --- | --- |
 | `schema_<n>` | tree | One per schema file, numbered in build order, holding that schema's frozen units. |
 | `dep_<name>` | tree | A dependency vendored into the commit: its own `schema_<n>` trees and a `manifest` blob with its verified content hash. Written by builds that include dependency support. |
 | `config` | blob | The frozen `config.idp`, as a list of units. |
@@ -169,7 +169,7 @@ history (see [Compatibility facts](../../reference/versioning.md#compatibility-f
 It's CBOR like every other object, with fields by name:
 
 | Field | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `protocols` | list | One entry per protocol of the package's own, in schema and declaration order. |
 | `protocols[].path` | string | `namespace::Protocol`, the key every fact is kept by. |
 | `protocols[].line` | string | The release at which the protocol last broke. |
@@ -234,7 +234,7 @@ language edition the schemas are written in, and it is unrelated to how core
 stores its own IR.
 
 | Stamp | What changed |
-|---|---|
+| --- | --- |
 | 1 | CBOR, replacing a position-based encoding. |
 | 2 | A property's `expression` became a typed `value`. |
 | 3 | Types became structured (`TypeRef`, `Literal`) instead of text. |
@@ -316,12 +316,12 @@ now. Then it adds one commit on top of the latest build:
   the highest the changes since the last release call for, raised with
   `--raise` if asked. It refuses when there is nothing to release.
 
-See `comline release` in the [CLI reference](../../reference/tools/cli.md).
+See `comline release` in the [CLI reference](../../reference/tools/cli/index.md).
 
 ## What reads the store
 
 | Reader | What it reads |
-|---|---|
+| --- | --- |
 | `comline build`, `comline release` | The ref and the previous commits, to compare and to number the next version. |
 | `comline diff <old> <new>` | Two commits' root trees, compared with the same rules as a build: schema changes, changes within a dependency's reach, config changes and the bump they call for. |
 | `comline inspect` | The newest build's `facts`, shown beside each protocol's wire summary. It writes nothing. See [`comline inspect`](../../reference/tools/cli/inspect.md). |
@@ -347,9 +347,9 @@ hash, and each encoding's name and parameter hash (both blake3, as hex).
 
 See [Compatibility facts](../../reference/versioning.md#compatibility-facts) for
 what they mean and how they are compared. The `config.idp` keys are in the
-[config.idp reference](../../reference/congregation/config-id.md), and where
+[config.idp reference](../../reference/package/congregation/config-id.md), and where
 generated code lands is set in
-[`comline.toml`](../../reference/congregation/comline-toml.md).
+[`comline.toml`](../../reference/package/congregation/comline-toml.md).
 
 ## Branches
 
@@ -399,7 +399,7 @@ from, and which one it recorded as the second parent.
 ## Compared with Git
 
 | | Git | Comline |
-|---|---|---|
+| --- | --- | --- |
 | Hash | SHA-1 or SHA-256, over a `type size` header plus the content | blake3, over the object's serialized bytes |
 | Loose object compression | zlib | LZ4 |
 | Object encoding | Its own text and binary layouts | CBOR, with field names |

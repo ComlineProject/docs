@@ -7,7 +7,7 @@ never frozen, and never part of a published package. With no `comline.toml` (or
 an all-commented one) the defaults below apply and targets come from
 `config.idp`'s `code_generation.languages`.
 
-For the task-oriented walkthrough see [Generating code](../../guides/codegen/generating-code.md).
+For the task-oriented walkthrough see [Generating code](../../../guides/codegen/generating-code.md).
 
 ## `[generate]`
 
@@ -17,10 +17,10 @@ Defaults for every target.
 |---|---|---|---|
 | `out` | string (path) | `"generated"` | Output root, relative to `comline.toml`. |
 | `layout` | string (template) | `"{{language}}/{{namespace}}.{{ext}}"` | Path of each generated file under `out`. Handlebars, strict. |
-| `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. `code` and `lib` are implemented for `rust` and `typescript`; `dylib` is planned — see [Library generation](../../guides/codegen/library-generation.md). |
+| `mode` | `"code"` \| `"lib"` \| `"dylib"` | `"code"` | Emit form. `code` and `lib` are implemented for `rust` and `typescript`; `dylib` is planned — see [Library generation](../../../guides/codegen/library-generation.md). |
 | `package_versions` | `"latest"` \| `"all"` \| list | `"latest"` | Which package versions to emit — see [below](#package_versions). |
 | `external_std` | bool | on in `lib`, off in `code` | Reference `std` as its own package instead of inlining it — see [below](#external_std). |
-| `validate_on_decode` | `"collect"` \| `"first"` \| `{ off = "why" }` | `"collect"` | Whether decoding a value runs its [`@validators`](../../guides/idl/validator.md); off is a give-up with its reason — see [below](#validate_on_decode). |
+| `validate_on_decode` | `"collect"` \| `"first"` \| `{ off = "why" }` | `"collect"` | Whether decoding a value runs its [`@validators`](../../../guides/idl/validator.md); off is a give-up with its reason — see [below](#validate_on_decode). |
 | `async` | bool | `false` | Generate protocols on a connection for an async driver — see [below](#async). |
 | `encodings` | table | — | Which type implements each encoding (format, framing, handshake) in the generated code — see [below](#encodings). |
 | `only` | list of strings | — | Generate just these languages, out of the ones `config.idp` declares — see [below](#only). |
@@ -40,7 +40,7 @@ declare is an error. To generate *fewer* than the package declares, use
 | Key | Type | Meaning |
 |---|---|---|
 | `language` | string | **Required.** Must be one the manifest declares under `code_generation.languages`. |
-| `lang_version` | string | Optional; the toolchain version to generate for. Defaults to what `config.idp` declared, and may raise it but never lower it ([Language versions](../../guides/codegen/generating-code.md#language-versions)). |
+| `lang_version` | string | Optional; the toolchain version to generate for. Defaults to what `config.idp` declared, and may raise it but never lower it ([Language versions](../../../guides/codegen/generating-code.md#language-versions)). |
 | `out`, `layout`, `mode`, `package_versions`, `external_std`, `validate_on_decode`, `async` | — | Per-target override of the `[generate]` value. |
 | `generator` | string (path) | A generator outside the CLI, a `.wasm` or a native executable, relative to `comline.toml`'s directory. Unset, the built-in generator for `language` is used. See [below](#generator). |
 | `timeout` | integer (seconds) | With `generator` only: how long each call to it may take. At least 1; default 60. |
@@ -68,11 +68,11 @@ timeout   = 120
 ```
 
 Runs a generator that is its own program, speaking the
-[generator protocol](../generator-protocol.md). `language` picks among the
+[generator protocol](../../generator-protocol.md). `language` picks among the
 languages it offers, and may be left out if it offers one; it must still be one
 `config.idp` declares. A `.wasm` runs sandboxed; anything else runs as a native
 process, unsandboxed. The limits and path rules are in
-[Generators](../../developer/extending/generators.md#limits).
+[Generators](../../../developer/extending/generators.md#limits).
 
 ### `encodings`
 
@@ -91,7 +91,7 @@ language. A value is the type alone, or a table with `type` and optionally
 that answers wins: this table (the target's over `[generate]`'s), then the
 `map` the declaring package suggests in its `config.idp`. An encoding that is
 used and has no mapping is a generation error. See
-[Map it to a type](../../developer/extending/encodings.md#5-map-it-to-a-type).
+[Map it to a type](../../../developer/extending/encodings.md#5-map-it-to-a-type).
 
 ### `flatten`
 
@@ -141,7 +141,7 @@ already true of `@comline/runtime` for any package with a protocol.
 
 ### `validate_on_decode`
 
-Generated code always carries a schema's [`@validators`](../../guides/idl/validator.md)
+Generated code always carries a schema's [`@validators`](../../../guides/idl/validator.md)
 checks as `validate()` / `validate_first()`, for you to call. This decides
 whether **decoding** calls them too:
 
@@ -158,7 +158,7 @@ stop early want different things from the same type. A provider also refuses a
 call whose arguments fail their checks, the same way it refuses arguments that
 don't decode.
 
-Not running them is a **give-up**, like [`@unverified`](../../guides/idl/protocol.md),
+Not running them is a **give-up**, like [`@unverified`](../../../guides/idl/protocol.md),
 and it carries its reason:
 
 ```toml
@@ -177,14 +177,14 @@ its reason is kept.
 
 ### `async`
 
-A protocol on a [connection](../../guides/idl/protocol.md#calls-in-both-directions)
+A protocol on a [connection](../../../guides/idl/protocol.md#calls-in-both-directions)
 is generated for a blocking driver by default. `async = true` generates it for
 an async one instead:
 
 - **`rust`:** async handlers, `<Proto>AsyncDispatcher` and `<Proto>AsyncSender`,
   and an async package `serve` / `accept` / `connect`, for the runtime's
   `AsyncConnection` on any executor — see
-  [Rust connections](../../languages/rust/connections.md#async). A `lib`
+  [Rust connections](../../../languages/rust/connections.md#async). A `lib`
   package turns on the runtime's `async` feature.
 - **`typescript`:** nothing changes; its handlers and senders return Promises
   either way.
@@ -216,7 +216,7 @@ you want fewer.
 
 ## `[doc]`
 
-Settings for [`comline doc`](../tools/cli/doc.md). Each key but `renderer`,
+Settings for [`comline doc`](../../tools/cli/doc.md). Each key but `renderer`,
 `timeout` and `links` has a flag that overrides it.
 
 | Key | Type | Default | Meaning |
@@ -271,7 +271,7 @@ layout           = "{{language}}/{{package_version}}/{{namespace}}.{{ext}}"
 
 The framing is part of the schema, since both ends have to agree on it, so it
 moved to the package: `config.idp`'s `wire = { framing = "..." }`
-([Wire defaults](../../guides/packages/index.md#wire-defaults)). A
+([Wire defaults](../../../guides/packages/index.md#wire-defaults)). A
 `default_framing`, in `[generate]` or in a target, is an error that names the
 line to write there instead:
 

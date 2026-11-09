@@ -3,18 +3,18 @@
 A Comline **package** (historically *congregation*) is a directory with a
 manifest and one or more schema files:
 
-```
+```shell
 my-api/
-├── config.idp        # the manifest — package identity + declarations
+├── config.idp         # the manifest — package identity + declarations
 ├── comline.toml       # consumer-side: where generated code goes (see below)
 ├── src/
 │   └── *.ids          # the schemas
 └── .comline/          # content-addressable store (appears after the first build)
 ```
 
-## Manifest (`config.idp`)
+## Manifest
 
-```idp
+```idp title="config.idp"
 congregation my_api
 id = "3f2a9c41d07e4b1c8a65f2e0d91b7c34"
 specification_version = 1
@@ -28,7 +28,7 @@ code_generation = {
 ```
 
 Every key, its syntax and what it does is in the
-[`config.idp` reference](../../reference/congregation/config-id.md). The ones
+[`config.idp` reference](../../reference/package/congregation/config-id.md). The ones
 with more to them have their own sections below: [wire defaults](#wire-defaults)
 and [dependencies](#dependencies).
 
@@ -47,7 +47,7 @@ wire = { format = "packed@1" framing = "datagram@3" }
 ```
 
 | Key | Values | Default |
-|---|---|---|
+| --- | --- | --- |
 | `format` | `"packed@1"`, `"json@1"`, `"msgpack@1"` | `"packed@1"`: fixed-width fields with no tags or names — see [`packed@1`](../../reference/wire/formats/packed@1.md) |
 | `framing` | `"datagram@3"`, `"datagram@2"`, `"datagram"` (`"datagram@1"`), `"jsonrpc"` | `"datagram@3"`: every protocol on a [connection](../idl/protocol.md#calls-in-both-directions), calls addressed by [wire number](../../reference/versioning.md#number) |
 
@@ -76,20 +76,19 @@ that says nothing gets. The values are strings, quoted.
 These used to be the consumer's choice, in `comline.toml`'s `default_framing`.
 That key is now an error that hands back the `wire` line to write instead.
 
-
 ## Consumer Side (`comline.toml`)
 
 Where generated code lands, in what layout, for which versions — none of which
 belongs to the package author — is set by whoever runs `comline generate`, in a
 separate, non-frozen `comline.toml`. See
 [Generating code](../codegen/generating-code.md) and the
-[`comline.toml` reference](../../reference/congregation/comline-toml.md).
+[`comline.toml` reference](../../reference/package/congregation/comline-toml.md).
 
 ## Dependencies
 
 A package can import schemas from other packages it declares in `config.idp`:
 
-```idp
+```idp title="config.idp"
 dependencies = {
     shared_types = {
         path = "../shared-types"
@@ -108,7 +107,7 @@ The key (`shared_types`, `net`) is a name you choose. What the entry contains
 decides where the package comes from:
 
 | Source | Written as | Resolved |
-|   ---  |    ---     |    ---   |
+| --- | --- | --- |
 | Path | `path` (optional `hash`) | relative to this package's directory |
 | Git | `version`, `uri`, `commit` (optional `hash`) | cloned once per pin into `.comline/deps-cache/`, using the `git` binary |
 | Registry | `version`, `uri` (optional `hash`, `signature`) | **not supported yet** — there's no registry server, so `comline check` / `build` reject it |
@@ -166,7 +165,6 @@ comline add net --git https://github.com/acme/net --commit 4f2c9e1 --version 1.2
 The rest of `config.idp` is left as written. `--no-hash` skips the pin, say for
 a path dependency you're still working on.
 
-
 ## CAS (`.comline/`)
 
 After the first `comline build`, a `.comline/` directory holds the
@@ -182,9 +180,7 @@ recorded versions. The `comline new` scaffold's `.gitignore` ignores only
     `comline reset` deletes `.comline/` (behind a confirmation). `comline clean`
     does not — see [Versioning rules](../../reference/versioning.md#history-model).
 
-
 ## Publishing
-
 
 !!! note Planned feature
     It is yet not possible to publish a package since there is no package registry
@@ -206,7 +202,7 @@ publish_registries = {
 
 Then:
 
-```
+```shell
 comlinepm registry login <name>
 comlinepm registry publish --registries "mainstream my_registry"
 ```

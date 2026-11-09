@@ -267,7 +267,7 @@ using cross-schema references in `code` mode needs to declare matching `mod`
 statements itself.
 
 `std` is the exception, because
-[`external_std`](../../reference/congregation/comline-toml.md#external_std)
+[`external_std`](../../reference/package/congregation/comline-toml.md#external_std)
 is on by default in `lib` mode: a std type then resolves to
 `comline_std::http::Request` and the crate depends on `comline_std` rather
 than carrying a copy of it.
@@ -293,7 +293,7 @@ An alias imports the name the other module actually exports
 nothing refers to produces no import at all.
 
 `std` again resolves to its own package when
-[`external_std`](../../reference/congregation/comline-toml.md#external_std)
+[`external_std`](../../reference/package/congregation/comline-toml.md#external_std)
 is on, by subpath import — the leading `std` segment drops, since
 `@comline/std` is its own package root:
 

@@ -80,11 +80,11 @@ Semver for a user's schema package means nothing until a break is defined.
   reviewed and numbered for 1.0:
     - the [generator protocol](../reference/generator-protocol.md), including
       its render request (version 0 today);
-    - encoding profiles and the [conformance](../reference/conformance.md)
+    - encoding profiles and the [conformance](../reference/conformance/index.md)
       corpus and ops protocol;
     - the documentation model behind [`comline doc`](../reference/tools/cli/doc.md)
       (version 1 today);
-    - the [`comline.toml` schema](../reference/congregation/comline-toml.md)
+    - the [`comline.toml` schema](../reference/package/congregation/comline-toml.md)
       (`0.x` today);
     - the JSON from [`comline inspect --json`](../reference/tools/cli/inspect.md).
 - The extension API is part of 1.0, so it is designed, built and frozen

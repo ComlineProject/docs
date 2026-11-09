@@ -28,7 +28,7 @@ of default means for a released package.
 A protocol's `@handshake` is picked first, then its package's `handshake` key in `config.idp`, then the official default
 (`comline@2`, or `comline@1` in a package whose protocols can't all run `comline@2`):
 
-```ids
+```ids title="usage_resolution.ids"
 @handshake = "com.acme.hello@1"
 protocol Gateway { /* ... */ }
 ```

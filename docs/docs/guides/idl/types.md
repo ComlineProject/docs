@@ -3,7 +3,7 @@
 Primitives:
 
 | Group | Types |
-|---|---|
+| --- | --- |
 | signed integers | `s8` `s16` `s32` `s64` `s128` |
 | unsigned integers | `u8` `u16` `u32` `u64` `u128` |
 | floats | `f32` `f64` |
@@ -18,7 +18,7 @@ type or given by a [setting](settings.md#default-maximums). The examples in this
 carry maxima so they build as written; a bare `string` or `T[]` in one of your
 schemas builds only once a default is set.
 
-### Text: `string` and `char`
+## Text: `string` and `char`
 
 - **`char`** is one Unicode scalar value: a single character, not a byte or a
   UTF-16 unit. Its literal is a string of exactly one character, `"a"`; any
@@ -79,7 +79,7 @@ A schema builds only when every string and dynamic array, at every position
 There is no built-in default, so a position with none of these is an error that
 names it and the fix:
 
-```
+```sh
 struct `Greeting`, field `message`: `string` has no maximum
   Help: write `char[max N]`, or set `bounds.string.max` in settings
 ```
@@ -97,7 +97,7 @@ A [type alias](#type-aliases) carries its bound, and the limit is changed
 there. Where an alias of a string or of a dynamic array is used (a field,
 argument, return or union member), it takes **no `[…]` suffix** of its own:
 
-```ids
+```ids title="bounds.ids"
 type Name = char[max 32]
 type Names = Name[max 10]    // a list of an alias is its own alias
 
@@ -116,9 +116,9 @@ Writing an alias in a list inside another alias, as `Names` does, is allowed.
 
 ## Type aliases
 
-`type NAME = TYPE` gives a type a second name:
+Writting `#!ids type NAME = TYPE` gives a type a second name:
 
-```ids
+```ids title="type_alias.ids"
 type UserId = u64
 type Handle = char[max 32]
 
@@ -128,17 +128,17 @@ struct User {
 }
 ```
 
-An alias is transparent: `UserId` is a `u64` everywhere, in the wire format and
-in generated code (`pub type UserId = u64;`, `export type UserId = number;`).
+An alias is transparent: `#!ids UserId` is a `#!ids u64` everywhere, in the wire format and in generated code. (In Rust is: `#!rust pub type UserId = u64;`, in Typescript being: `#!typescript export type UserId = number;` etc).
+
 An alias can name another alias.
 
-An alias can carry [`@validators`](validator.md#on-a-type-alias), which then
-check every value of it, and `@deprecated`, which warns wherever it's used.
+An alias can carry [Validators](validator.md#on-a-type-alias), which then
+check every value of it.
 
 ## In generated code
 
 | Comline | Rust | TypeScript |
-|---|---|---|
+| --- | --- | --- |
 | `s8` … `s32` | `i8` … `i32` | `number` |
 | `u8` … `u32` | `u8` … `u32` | `number` |
 | `s64`, `s128` | `i64`, `i128` | `bigint` |

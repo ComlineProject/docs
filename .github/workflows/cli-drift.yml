@@ -16,7 +16,7 @@ on:
     - cron: '0 7 * * 1'
   pull_request:
     paths:
-      - 'docs/docs/reference/tools/cli.md'
+      - 'docs/docs/reference/tools/cli/index.md'
       - 'scripts/check-cli-drift.py'
       - '.github/workflows/cli-drift.yml'
   workflow_dispatch:

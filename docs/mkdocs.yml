@@ -97,9 +97,9 @@ nav:
       - C ABI: 'reference/c-abi.md'
 
     - Package:
-      - 'reference/congregation/index.md'
-      - config.idp: 'reference/congregation/config-id.md'
-      - comline.toml: 'reference/congregation/comline-toml.md'
+      - 'reference/package/congregation/index.md'
+      - config.idp: 'reference/package/congregation/config-id.md'
+      - comline.toml: 'reference/package/congregation/comline-toml.md'
 
     - Schema:
       - 'reference/schema/index.md'
@@ -113,17 +113,25 @@ nav:
     - Tools:
       - Tools: 'reference/tools/index.md'
       - CLI:
-        - CLI: 'reference/tools/cli.md'
+        - CLI: 'reference/tools/cli/index.md'
         - comline inspect: 'reference/tools/cli/inspect.md'
         - comline doc: 'reference/tools/cli/doc.md'
       #- Playground:
       #  - Playground: 'reference/tools/playground.md'
       - Language Server:
         - Language Server: 'reference/tools/language-server.md'
+      - Observatory: 'reference/tools/observatory.md'
 
-    - Extending:
-      - Generator protocol: 'reference/generator-protocol.md'
-      - Conformance spec: 'reference/conformance.md'
+    - Generator protocol: 'reference/generator-protocol.md'
+    
+    - Conformance:
+      - 'reference/conformance/index.md'
+      - Wire conformance: 'reference/conformance/wire.md'
+      - Generator conformance: 'reference/conformance/generators.md'
+      - Fuzzing: 'reference/conformance/fuzzing.md'
+      - Benchmarks: 'reference/conformance/benchmarks.md'
+      - Timings, size and coverage: 'reference/conformance/timings.md'
+      - Reports and the Observatory: 'reference/conformance/reports.md'
   
     - Versioning rules: 'reference/versioning.md'
 
@@ -219,7 +227,7 @@ nav:
       - 'Proposal D': 'proposals/guarantee-marker/unchecked.md'
 
 extra_css:
-  - stylesheets/nav.css?v=21   # bump on every nav.css change — it is not cache-busted otherwise
+  - stylesheets/nav.css?v=23   # bump on every nav.css change — it is not cache-busted otherwise
 
 theme:
   name: material

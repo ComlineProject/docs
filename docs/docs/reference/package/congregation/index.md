@@ -22,5 +22,5 @@ flowchart LR
 | Changes the version | can | never |
 
 The reasoning behind the split is in
-[Consumer generation configuration](../../design/consumer-generation-config.md).
-How the version follows from changes is in [Versioning rules](../versioning.md).
+[Consumer generation configuration](../../../design/consumer-generation-config.md).
+How the version follows from changes is in [Versioning rules](../../versioning.md).

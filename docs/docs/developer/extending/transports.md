@@ -8,7 +8,7 @@ handshake never sees which one it is.
 A transport carries **whole frames**. A medium that has message boundaries
 carries one frame per message. A byte stream has none, so it adds a `u32`
 little-endian length prefix per frame, as the runtime's own TCP transport does.
-The [conformance reference](../../reference/conformance.md#stream-framing)
+The [conformance reference](../../reference/conformance/wire.md#stream-framing)
 has the exact rules.
 
 ## Rust

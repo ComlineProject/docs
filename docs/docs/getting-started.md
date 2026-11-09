@@ -6,7 +6,7 @@
 from source. You need a Rust toolchain ([rustup](https://rustup.rs/)) and
 `git`:
 
-```bash
+```shell
 git clone https://github.com/ComlineProject/cli
 cd cli
 cargo install --path .
@@ -14,7 +14,7 @@ cargo install --path .
 
 This puts the `comline` binary in `~/.cargo/bin`. Check it's on your `PATH`:
 
-```bash
+```shell
 comline --help
 ```
 
@@ -24,14 +24,14 @@ planned; packaging is tracked in
 
 ## Create a project
 
-```bash
+```shell
 comline new my-api
 cd my-api
 ```
 
 You get:
 
-```text
+```shell
 my-api/
 ├── config.idp        # package manifest
 ├── comline.toml       # where generated code goes (all-commented by default)
@@ -40,9 +40,7 @@ my-api/
 └── .gitignore        # ignores .comline/deps-cache/
 ```
 
-`src/main.ids`:
-
-```ids
+```ids title="src/main.ids"
 /// The language a greeting is written in.
 enum Language {
     English
@@ -64,7 +62,7 @@ characters. To set one for the whole package instead, see
 
 ## Build
 
-```bash
+```shell
 comline build
 ```
 
@@ -77,21 +75,21 @@ since the last one.
 
 Validate without freezing — safe for editors and pre-commit hooks:
 
-```bash
+```shell
 comline check
 ```
 
 ## Generate code
 
-```bash
+```shell
 comline generate
 ```
 
 Targets come from `code_generation.languages` in `config.idp` (the scaffold
 declares `rust#1.85.0`, the Rust generator's floor); output lands under `generated/` by default. Change where
-and how in [`comline.toml`](reference/congregation/comline-toml.md):
+and how in [`comline.toml`](reference/package/congregation/comline-toml.md):
 
-```toml
+```toml title="comline.toml"
 [generate]
 out    = "src/generated"
 layout = "{{language}}/{{namespace}}.{{ext}}"
@@ -104,4 +102,4 @@ Today `rust` and `typescript` are the generators.
 - [Overview](guides/index.md) — the whole pipeline
 - [IDL guide](guides/idl/index.md) — the schema language
 - [Generating code](guides/codegen/generating-code.md) — the full `generate` surface
-- [CLI reference](reference/tools/cli.md) — every command and flag
+- [CLI reference](reference/tools/cli/index.md) — every command and flag

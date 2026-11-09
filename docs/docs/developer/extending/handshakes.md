@@ -164,7 +164,7 @@ A fact stated `true` is **proven by vectors**: cases of the decode-only op
 agrees, which the handshake accepts. For each thing the fact covers there is
 a peer frame that differs in only that, which it refuses: the IR hash for
 `schema_agreement`, the format and the framing for `encoding_agreement`. See
-the [`handshake_check` op](../../reference/conformance.md#ops). A fact stated
+the [`handshake_check` op](../../reference/conformance/wire.md#ops). A fact stated
 `false` claims nothing, so it names no cases.
 
 A protocol **gives up every agreement its handshake's profile doesn't
@@ -191,7 +191,7 @@ gives up schema agreement (handshake `com.acme.hello@1` doesn't establish it)
 For a handshake that states nothing, the `@unverified` marker is your word
 that something else covers both.
 
-```ids
+```ids title="giving_up_guarantee.ids"
 @handshake = "com.acme.hello@1"
 @unverified = "the gateway checks the schema itself in its HELLO reply"
 protocol Gateway { /* ... */ }

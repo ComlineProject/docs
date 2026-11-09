@@ -34,7 +34,7 @@ Versions follow [SemVer](https://semver.org/), with Cargo's convention before
 1.0: while the version is `0.x`, the minor plays the part of the major.
 
 | Change | `0.x` | `1.0` and later |
-|  ---   |  ---  |   ---           |
+| --- | --- | --- |
 | breaking | `0.3.2` → `0.4.0` | `1.3.2` → `2.0.0` |
 | new feature | `0.3.2` → `0.3.3` | `1.3.2` → `1.4.0` |
 | modification | `0.3.2` → `0.3.3` | `1.3.2` → `1.3.3` |
@@ -72,7 +72,7 @@ play.
   third-party encoding, for now) counts as the strictest.
 
 | Fact | Lenient value | Strict value |
-|  --- |  ---          |    ---       |
+| --- | --- | --- |
 | `struct_fields` | `by_name` (`json@1`) | `by_position` (`packed@1`, `msgpack@1`) |
 | `unknown_field` / `missing_optional` | `ignored` / `absent` (`json@1`) | `rejected` (`packed@1`, `msgpack@1`) |
 | `enum_variants` | `by_name` (`json@1`, `msgpack@1`) | `by_index` (`packed@1`) |
@@ -82,7 +82,7 @@ play.
 ### Fields (structs and error bodies)
 
 | Change | Bump |
-|  ---   |  --- |
+| --- | --- |
 | add an optional field | **minor** where every format keys fields by name, ignores an unknown field and accepts a missing optional one (`json@1`); **major** otherwise (`packed@1`, `msgpack@1`), reported as *added optional field* |
 | add a required field | major |
 | remove a field, optional or not | major |
@@ -96,7 +96,7 @@ play.
 ### Enums
 
 | Change | Bump |
-|   ---  | ---  |
+| --- | --- |
 | add a variant at the end | minor (an old reader can't decode it, so a peer mustn't send it to one) |
 | insert a variant before others, or reorder | none where variants travel by name; major where they travel by index (`packed@1`) |
 | remove or rename a variant | major (a rename is reported as one) |
@@ -104,7 +104,7 @@ play.
 ### Protocols and functions
 
 | Change | Bump |
-|   ---  |  --- |
+| --- | --- |
 | add a function at the end | minor |
 | insert a function before others, or reorder | major where the protocol's framing calls by index (`datagram@1`, `datagram@2`); none where it calls by name (`jsonrpc@1`) or by number (`calls = by_id`); a new function is minor |
 | remove a function | major |
@@ -126,7 +126,7 @@ play.
 ### Errors
 
 | Change | Bump |
-|  ---   |  --- |
+| --- | --- |
 | append a new error | minor |
 | insert, remove or reorder local errors so that an ordinal changes | major where errors travel by ordinal (every official framing) |
 | change the fields | as for fields |
@@ -135,7 +135,7 @@ play.
 ### Constants, aliases and validators
 
 | Change | Bump |
-|  ---   |  --- |
+| --- | --- |
 | add a constant, alias or validator | minor |
 | remove one | major |
 | change a constant's type | major |
@@ -151,7 +151,7 @@ switching a field to an alias that carries `@validators` tightens it.
 ### Annotations, documentation and the package
 
 | Change | Bump |
-|  ---   | ---  |
+| --- | --- |
 | `@deprecated` added | minor |
 | `@deprecated` removed, or its message changed | patch |
 | any docstring, on a declaration or a member | patch |
@@ -181,7 +181,7 @@ Once the frozen config is recorded in a commit, changes to it can also move the
 version — but only the parts that describe the schema API:
 
 | Unit | Change | Bump |
-|---|---|---|
+| --- | --- | --- |
 | `wire.format`, `wire.framing` | changed | **major** |
 | `id` | changed | **major**: it names another package. Adding one where there was none is no change |
 | `SpecificationVersion` | changed | **none** by itself: the compiled schema doesn't depend on the [edition](#editions), so what a move changes in it carries its own bump |
@@ -228,7 +228,7 @@ needs to compare two peers. Core computes these facts; a handshake chooses
 what to do with them. `comline inspect` shows them for the latest build.
 
 | Fact | What it is |
-|---|---|
+| --- | --- |
 | package id | `id` in `config.idp`: which package this is, whatever its name |
 | line | per protocol: the release at which it last had a breaking change |
 | since | per function: the release it first appeared in, in its protocol |

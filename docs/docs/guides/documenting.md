@@ -211,7 +211,7 @@ and every path it returns is checked before anything is written.
 
 ## Settings
 
-Every flag has a `[doc]` key in [`comline.toml`](../reference/congregation/comline-toml.md#doc),
+Every flag has a `[doc]` key in [`comline.toml`](../reference/package/congregation/comline-toml.md#doc),
 and the flag wins:
 
 | Key | Flag | Default |

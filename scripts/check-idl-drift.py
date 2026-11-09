@@ -36,7 +36,7 @@ RAW = "https://raw.githubusercontent.com/ComlineProject/core"
 # Each grammar and the docs that are expected to cover it.
 #
 # `core/src/package/config/idl/grammar.rs` (the `config.idp` grammar) is not
-# listed yet: `reference/congregation/config-id.md` is still an empty stub, so
+# listed yet: `reference/package/congregation/config-id.md` is still an empty stub, so
 # checking it would report `false` as undocumented every run for a reason that
 # has nothing to do with drift — and a check that is always red gets ignored.
 # Add it here once that page is written; it is only three keywords

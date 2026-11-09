@@ -257,7 +257,7 @@ left to right, parenthesising each comparison.
 Whether decode runs the checks is the **consumer's** call, not the schema's — it
 changes the shape and cost of generated decode (a clone per decode, no "parse
 now, validate later"), which is a codegen concern. So it's a `[generate]` key in
-the consumer's [`comline.toml`](../reference/congregation/comline-toml.md), overridable per
+the consumer's [`comline.toml`](../reference/package/congregation/comline-toml.md), overridable per
 `[[generate.target]]`, slotting into the existing
 `defaults → [generate] → [[generate.target]] → env → CLI` precedence:
 
@@ -279,7 +279,7 @@ validate_on_decode = "collect"
   in its `TryFrom`); `"off"` leaves decode untouched.
 - Matching `COMLINE_GENERATE_VALIDATE_ON_DECODE` env var and
   `--validate-on-decode` flag, like the other `[generate]` keys.
-- Folds into [`comline.toml`](../reference/congregation/comline-toml.md) when 4c ships.
+- Folds into [`comline.toml`](../reference/package/congregation/comline-toml.md) when 4c ships.
 
 ### Decided
 
