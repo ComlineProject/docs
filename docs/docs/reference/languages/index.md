@@ -67,7 +67,7 @@ commit. A runtime's suite runs every example against it:
 <!-- Rendered from ComlineProject/generation's features.json by scripts/sync-language-support.py - don't edit by hand. -->
 
 | Feature | [rust 1.85.0](rust.md) | [typescript 5.0](typescript.md) |
-| --- | --- | --- |
+|---|---|---|
 | structs <br><sub>`structs`</sub> | ✅ supported | ✅ supported |
 | enums <br><sub>`enums`</sub> | ✅ supported | ✅ supported |
 | optional fields <br><sub>`optional-fields`</sub> | ✅ supported | ✅ supported |
@@ -106,7 +106,7 @@ commit. A runtime's suite runs every example against it:
 <!-- Rendered from ComlineProject/runtime's conformance corpus and each runtime's report by scripts/sync-language-support.py - don't edit by hand. -->
 
 | Feature | [rust](rust.md#runtime) | [typescript](typescript.md#runtime) |
-| --- | --- | --- |
+|---|---|---|
 | name hash <br><sub>`name-hash`</sub> | ✅ supported | ✅ supported |
 | handshake <br><sub>`handshake`</sub> | ✅ supported | ✅ supported |
 | envelope <br><sub>`envelope`</sub> | ✅ supported | ✅ supported |

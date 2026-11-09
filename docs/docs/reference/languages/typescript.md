@@ -113,7 +113,6 @@ Where `typescript` and the reference are known to answer differently, from [`kno
 | `json-decode-unchecked-variants-and-ranges` | json@1 decoding accepts a string that isn't one of the enum's variants, and an integer outside its type's range; the reference refuses both | [comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57) |
 | `json-decode-unchecked-shape` | json@1 decoding accepts the wrong JSON kind, a missing or repeated struct field, an integer spelled 1.0, 1e0 or -0, and a float past its range; the reference refuses them | [comline-typescript#73](https://github.com/ComlineProject/comline-typescript/issues/73) |
 | `json-encode-f32-digits` | json@1 writes an f32 with the shortest digits of a double (1.401298464324817e-45), the reference with those of the f32 (1e-45): the same f32, not the same JSON number | [comline-typescript#74](https://github.com/ComlineProject/comline-typescript/issues/74) |
-| `jsonrpc-decode-lenient` | jsonrpc@1 decoding accepts a declared member twice, and an id or error code spelled 1.0, 1e0 or -0; the reference refuses both | [comline-typescript#75](https://github.com/ComlineProject/comline-typescript/issues/75) |
 | `connection-replies-in-any-order` | Connection hands a reply to the call it answers in any order; an ordered (nested, blocking) Rust State refuses a reply that skips the innermost waiting call as a framing error. TypeScript has only the async model | [comline-typescript#77](https://github.com/ComlineProject/comline-typescript/issues/77) |
 
 <!-- divergences:end -->
