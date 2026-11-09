@@ -121,6 +121,21 @@ to the same shape:
 - [Proposal D — keep `@unchecked`](guarantee-marker/unchecked.md): the original
   name. *rejected: says neither who nor what.*
 
+#### [A shared vocabulary](shared-vocabulary/index.md)
+
+One catalog of the names several programs agree on (encodings, guarantees,
+facts and their values, conformance features, annotations, diagnostic codes,
+CI targets), with sets as queries over it, read by core, the runtimes, the
+generators, the language server, the Observatory and the docs. Two parts,
+read in order:
+
+- [The catalog](shared-vocabulary/catalog.md): entries, kinds, sets,
+  relations, and where the catalog lives. *draft.*
+- [Granular `@unverified`](shared-vocabulary/granular-unverified.md): an
+  optional keyed form naming each guarantee with its own reason, at the
+  scope that guarantee has, checked against what core computes. Revisits part
+  of the guarantee-marker decision. *draft.*
+
 ### Connections
 
 - [Connections](connections.md): what a connection carries beyond one client

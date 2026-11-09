@@ -225,6 +225,10 @@ nav:
       - 'Proposal B': 'proposals/guarantee-marker/assumes.md'
       - 'Proposal C': 'proposals/guarantee-marker/unverified.md'
       - 'Proposal D': 'proposals/guarantee-marker/unchecked.md'
+    - 'A shared vocabulary':
+      - 'proposals/shared-vocabulary/index.md'
+      - 'The catalog': 'proposals/shared-vocabulary/catalog.md'
+      - 'Granular @unverified': 'proposals/shared-vocabulary/granular-unverified.md'
 
 extra_css:
   - stylesheets/nav.css?v=23   # bump on every nav.css change — it is not cache-busted otherwise
