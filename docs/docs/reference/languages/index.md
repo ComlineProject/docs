@@ -11,7 +11,7 @@ language page can't claim something that isn't true.
 ## What the states mean
 
 | State | Generating a schema that uses the feature |
-|---|---|
+| --- | --- |
 | ✅ **supported** | Works. |
 | 🟡 **partial** | Works, with the limit the note states. |
 | ⚪ **ignored** | Succeeds, but the output is what it would be without the feature: the types are right, the feature has no effect. `comline generate` warns, and so does the editor. |
@@ -20,7 +20,7 @@ language page can't claim something that isn't true.
 A runtime's claims use the same words, about the wire:
 
 | State | The runtime, for that wire feature |
-|---|---|
+| --- | --- |
 | ✅ **supported** | Reproduces every example in the wire corpus, and decodes each back. |
 | 🟡 **partial** | Does the same, except for the examples the note lists, which it's known to get wrong. |
 | ❌ **unsupported** | Doesn't implement it. A peer must agree on something else at the handshake. |
@@ -67,7 +67,7 @@ commit. A runtime's suite runs every example against it:
 <!-- Rendered from ComlineProject/generation's features.json by scripts/sync-language-support.py - don't edit by hand. -->
 
 | Feature | [rust 1.85.0](rust.md) | [typescript 5.0](typescript.md) |
-|---|---|---|
+| --- | --- | --- |
 | structs <br><sub>`structs`</sub> | ✅ supported | ✅ supported |
 | enums <br><sub>`enums`</sub> | ✅ supported | ✅ supported |
 | optional fields <br><sub>`optional-fields`</sub> | ✅ supported | ✅ supported |
@@ -106,7 +106,7 @@ commit. A runtime's suite runs every example against it:
 <!-- Rendered from ComlineProject/runtime's conformance corpus and each runtime's report by scripts/sync-language-support.py - don't edit by hand. -->
 
 | Feature | [rust](rust.md#runtime) | [typescript](typescript.md#runtime) |
-|---|---|---|
+| --- | --- | --- |
 | name hash <br><sub>`name-hash`</sub> | ✅ supported | ✅ supported |
 | handshake <br><sub>`handshake`</sub> | ✅ supported | ✅ supported |
 | envelope <br><sub>`envelope`</sub> | ✅ supported | ✅ supported |
@@ -130,7 +130,7 @@ commit. A runtime's suite runs every example against it:
   runtime's benchmarks and fuzzing over time.
 - `comline targets --features` prints the code generation support for the
   generators your `comline` was built with, and `--json` prints it as JSON (see
-  the [CLI](../tools/cli.md)).
+  the [CLI](../tools/cli/index.md)).
 - In the editor, a schema using a feature that a language declared in
   `config.idp` can't generate gets a warning at the use. Hovering the language
   in `config.idp` shows what its generator supports.

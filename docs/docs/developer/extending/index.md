@@ -1,5 +1,12 @@
 # Extending Comline
 
+In this section you will find guides that are for people <u>_that want to make implementations
+that extend Comline_</u>, either for your own specific personal use cases or to extend the
+Comline Project itself upstream.
+
+If you simply want to use Comline (writting schemas, configuring your package, implement generated
+code), then you should go to the regular [Guides](../guides/index.md) instead
+
 Comline has five places where you can bring your own code. This section is a
 guide to each. What a page describes is built and shipped; what isn't is
 listed under [What isn't built](#what-isnt-built).
@@ -29,7 +36,7 @@ listed under [What isn't built](#what-isnt-built).
   `@` and a whole number. A bare name such as `json@1` is reserved for the
   official package, and `comline build` rejects it anywhere else.
 - **Proof is optional but visible.** An encoding can ship test vectors that
-  prove an implementation, run with [`comline conformance`](../../reference/tools/cli.md#commands).
+  prove an implementation, run with [`comline conformance`](../../reference/tools/cli/index.md#commands).
   Nothing forces you to write them, but a format or framing without them, and
   a handshake whose profile doesn't state what it establishes, give up a
   guarantee that the schema must mark with `@unverified`. See

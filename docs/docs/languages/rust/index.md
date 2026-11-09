@@ -23,7 +23,7 @@ its reply arrives, and nothing inside the runtime spawns a thread or takes a
 lock, so it works the same on a bare-metal target with no allocator as in a
 normal `std` binary.
 
-Set [`async = true`](../../reference/congregation/comline-toml.md#async) in
+Set [`async = true`](../../reference/package/congregation/comline-toml.md#async) in
 `comline.toml` and connection protocols are generated for the runtime's
 **async** driver instead: handlers are `async fn`s, the connection is a future
 you spawn on any executor, and handles call the peer from any task

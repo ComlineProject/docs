@@ -40,7 +40,7 @@ reads it.
 
 `comline doc --open` is the same after a render, as `cargo doc --open` is.
 
-The `[doc]` keys are in [`comline.toml`](../../congregation/comline-toml.md#doc),
+The `[doc]` keys are in [`comline.toml`](../../package/congregation/comline-toml.md#doc),
 including `versions`, which trims the list of versions.
 
 ## Versions and paths
@@ -124,7 +124,7 @@ Each declaration has an anchor, its name in lowercase; a function has
 `<protocol>-<function>`. A type links to its declaration's anchor. A type from
 a dependency links to `<base>/<module>/#<anchor>` when `[doc] links` gives the
 dependency a base URL; `std` defaults to the hosted std docs,
-`https://comlineproject.github.io/docs/reference/schema/std/` (`std::http::HttpMethod` links to
+`https://comlineproject.github.io/docs/reference/package/schema/std/` (`std::http::HttpMethod` links to
 `.../std/http/#httpmethod`). Otherwise it links to the dependency's own pages,
 `deps/<package>/<module>.md`, and is plain text only when the package doesn't
 reach that declaration.
@@ -167,7 +167,7 @@ types
 Dependencies            (collapsed)
   localdeps
     greeting            -> deps/localdeps/greeting.html
-  std ↗                 -> https://comlineproject.github.io/docs/reference/schema/std/
+  std ↗                 -> https://comlineproject.github.io/docs/reference/package/schema/std/
     http                -> .../std/http/
 Changelog
 ```

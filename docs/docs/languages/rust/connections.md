@@ -212,7 +212,7 @@ another task while the connection serves, generate for the async driver.
 
 ## Async
 
-With `async = true` in [`comline.toml`](../../reference/congregation/comline-toml.md#async),
+With `async = true` in [`comline.toml`](../../reference/package/congregation/comline-toml.md#async),
 connection protocols are generated for the runtime's `AsyncConnection`
 instead, on any executor:
 

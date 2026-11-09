@@ -7,7 +7,7 @@ the module layout. A planned third mode, `dylib`, would compile it to a library
 any language's [runtime](../runtime/index.md) can load.
 
 `comline generate`'s `mode` chooses how far generation goes. It is set per target
-in [`comline.toml`](../../reference/congregation/comline-toml.md) (`[generate] mode` or
+in [`comline.toml`](../../reference/package/congregation/comline-toml.md) (`[generate] mode` or
 `[[generate.target]] mode`).
 
 | `mode` | Output | Status |
@@ -71,7 +71,7 @@ import { Greeting } from "my-api/types";
 Comline's standard library is implicitly part of every package, so without
 help a `lib` build would vendor `std/http` and `std/validators` into every
 generated package. It doesn't:
-[`external_std`](../../reference/congregation/comline-toml.md#external_std)
+[`external_std`](../../reference/package/congregation/comline-toml.md#external_std)
 defaults to **on** in `lib` mode, so std's schemas are left out and the
 manifest depends on std's own pre-generated package instead —
 `comline_std` for rust, `@comline/std` for typescript. Your own nested
@@ -89,7 +89,7 @@ with a message naming the pair.
 In either language, `<language>/` keeps this target's package from colliding
 with another `lib` target sharing the same `out`; a target with `out` to
 itself can set
-[`flatten = true`](../../reference/congregation/comline-toml.md#flatten) to skip that and
+[`flatten = true`](../../reference/package/congregation/comline-toml.md#flatten) to skip that and
 land the package straight into `out`. `layout` plays no part in any of this —
 it only applies to `code` mode. Multi-version `lib` output is not done yet.
 

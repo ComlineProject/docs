@@ -521,7 +521,7 @@ None open. Both were decided on 2026-10-31:
 Built in October 2026. The guides are under
 [Extending Comline](../developer/extending/index.md), the
 [generator protocol](../reference/generator-protocol.md) and the
-[conformance spec](../reference/conformance.md) are reference pages.
+[conformance spec](../reference/conformance/wire.md) are reference pages.
 
 - **Declaring encodings:** `encodings` in `config.idp`, with a kind, a profile
   and suggested mappings

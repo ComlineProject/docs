@@ -129,7 +129,7 @@ path with `.json` replaced by `.vectors.json`, so `profiles/lines.json` has
 - Every `proven_by` entry in the profile names a case in this file.
 
 The case format is a public, versioned spec: see the
-[conformance reference](../../reference/conformance.md) for the ops, the value
+[conformance reference](../../reference/conformance/wire.md) for the ops, the value
 encoding and the rules a case is judged by.
 
 To run it, write a small program that speaks the **ops protocol**: one JSON
@@ -144,7 +144,7 @@ The report gives, per encoding, how many cases pass, whether each profile fact
 is **proven** (every case it names passes and shows its value), and a byte diff
 for each failed encode. A failed or unimplemented case, or an unproven fact,
 exits with `1`. The flags, limits and report are in the
-[CLI reference](../../reference/tools/cli.md#commands).
+[CLI reference](../../reference/tools/cli/index.md#commands).
 
 - `comline conformance` runs every encoding the package declares. An encoding
   with no vectors file is an error, so name the ones you mean with

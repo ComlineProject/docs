@@ -31,7 +31,7 @@ the same and are tested the same. Codecs, generated types and transports stay
 in each language.
 
 Every runtime is checked against the same
-[conformance vectors](../../reference/conformance.md), so a Rust peer and a
+[conformance vectors](../../reference/conformance/wire.md), so a Rust peer and a
 TypeScript peer generated from one schema speak the same bytes.
 
 See [Language Guides](../../languages/index.md) for the practical,

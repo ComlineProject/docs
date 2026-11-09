@@ -101,3 +101,17 @@
 [data-md-color-scheme="slate"] .md-nav__button.md-logo img {
   content: url("../assets/comline-mark-dark.svg");
 }
+
+/* Mermaid diagrams render left-aligned by default; center them like an
+   image, since they're narrower than the text column. */
+.mermaid {
+  display: flex;
+  justify-content: center;
+}
+
+/* Opt a single diagram back out of centering (wrap its fence in
+   <div class="mermaid-left" markdown> ... </div>) when it reads better
+   flush with the surrounding text, e.g. a short sequence diagram. */
+.mermaid-left .mermaid {
+  justify-content: flex-start;
+}
