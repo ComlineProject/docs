@@ -6,7 +6,7 @@ of [Marking a given-up guarantee](../guarantee-marker/index.md)
 **The question.** `@unverified = "reason"` marks a whole protocol, with one
 reason, and core works out which guarantees it gives up. Should the author
 be able to name the guarantees, give each its own reason, and mark less than
-a whole protocol?
+a whole protocol, without making it any easier to lose a guarantee unnoticed?
 
 ## What was decided, and what it already covers
 
@@ -32,20 +32,33 @@ Those stay. This proposal doesn't reopen *whether* core computes the set.
 2. **The scope is always the protocol.** `bounded_size` comes from a type: one
    unbounded argument anywhere a protocol reaches marks the whole protocol,
    and the diagnostic says only "a string, list or nesting it reaches has no
-   maximum". Marking that one argument would say where, and would leave the
-   rest of the protocol verified.
+   maximum".
 3. **The schema text doesn't say what's given up.** This was accepted for C,
-   on the grounds that tooling shows it. With a shared vocabulary the cost of
-   writing it drops, and a reviewer reading a diff sees it without tooling.
+   on the grounds that tooling shows it. With a shared vocabulary, writing it
+   costs little, and a reviewer reading a diff sees it without tooling.
 4. **The author's acknowledgement is implicit.** The version comparison catches
    the set growing *between releases*. While a change is being developed, a
    marker written for one guarantee silently covers a second.
+5. **Chains across packages aren't explicit.** When package A's type gives up a
+   guarantee, B uses it, and C uses B, nothing requires B and C to see A's
+   cause and acknowledge it themselves.
+
+## The safety invariant
+
+Everything below serves one rule, which has to hold with no exceptions:
+
+> **If a package compiles, every guarantee given up anywhere a protocol
+> reaches, through any chain of types and packages, has been acknowledged in
+> that package and accepted by every consumer of that protocol. Every
+> acknowledgement and acceptance is pinned to the exact causes it covered,
+> so any change upstream asks again.**
 
 ## Proposal
 
-**Keep `@unverified = "reason"`, and allow a keyed form that names
-guarantees, at the scope each guarantee has.** Core still computes the set,
-and checks the author's form against it.
+### Two forms, at any scope
+
+`@unverified = "reason"` stays valid. An optional keyed form names
+guarantees. Both can be written at any scope a given-up guarantee allows:
 
 ```ids
 @framing = "com.acme.f@1"
@@ -60,63 +73,136 @@ protocol Billing {
 }
 ```
 
-- **The plain form stays valid.** It acknowledges whatever core computes,
-  exactly as today, so nothing existing breaks.
-- **The keyed form names guarantees.** Each key is a guarantee from the
-  vocabulary and each value is its reason. Core computes the set as today, and:
-    - a computed guarantee the author didn't name is an **error** ("`Billing`
-      also gives up `schema_agreement`: handshake `none`");
-    - a named guarantee core doesn't find given up is a **warning**, like a
-      needless marker today;
-    - an unknown key is an **error**, with the vocabulary's spellings suggested.
-- **Scopes come from the vocabulary.** Each guarantee lists where it can be
-  marked. `schema_agreement`, `encoding_agreement` and `version_honesty` come
-  from the handshake, so they apply to a protocol (or a package's defaults).
-  `encoding_conformance` comes from the encodings, so a protocol.
-  `bounded_size` comes from types, so a protocol, a function, an argument, a
-  field or a type. Marking at the wrong scope is an error.
-- **What's frozen** is each given-up guarantee with its scope (`Billing`,
-  `Billing.upload(data)`) and its reason. Acceptances and the version
-  comparison work on that, so narrowing a marker is visible and widening one
-  is a major change.
-- **Acceptance stays per protocol** (`accept_unverified = { Billing = [...] }`).
-  A consumer accepts the protocol's whole set, inner scopes included. Whether
-  acceptance should also name scopes is an open question below.
+- **Plain:** acknowledges whatever core computes at that scope, as today.
+- **Keyed:** each key is a guarantee from the vocabulary, each value its
+  reason. Against what core computes:
+    - a computed guarantee that isn't named is an **error**;
+    - a named guarantee that isn't given up is a **warning**, like a needless
+      marker today;
+    - an unknown key is an **error**, with spellings suggested from the vocabulary.
+
+### Scopes come from each guarantee
+
+A guarantee's scopes follow from where its cause sits, and are stated in its
+catalog entry. A new guarantee declares its own scopes, and core needs no
+special case for it.
+
+| Guarantee | Comes from | Scopes |
+|---|---|---|
+| `schema_agreement`, `encoding_agreement` | the handshake | package, protocol |
+| `version_honesty` | `comline@2` policies | package, protocol |
+| `encoding_conformance` | the format and framing | package, protocol |
+| `bounded_size` | types | protocol, function, argument, field, type |
+
+A marker at a scope its guarantee doesn't allow is an error.
+
+### Coverage: outer covers inner, strict on request
+
+By default a marker covers causes inside it: a protocol-level `bounded_size`
+covers one unbounded argument, exactly as today, so nothing existing breaks.
+Tooling suggests the narrower placement.
+
+A package can opt into **strict** (`annotations.unverified.strict = true`). The
+keyed form is then required, and each marker must sit at the innermost scope
+where its cause is. That suits packages that want every given-up guarantee
+named where it happens.
+
+### Chains: once per package, never inherited
+
+Computing stays transitive, and **a marker never subtracts** from it. Core
+walks every type a protocol reaches, into dependencies' frozen IR, and finds
+every cause. A marker only acknowledges.
+
+Acknowledgement is **per package, never inherited:**
+
+```text
+A::Blob = bytes              A marks it:  @unverified(bounded_size = "legacy gateway")
+B::Upload { data: A::Blob }  B must acknowledge it (on Upload, the field, or a protocol reaching it)
+C::Order  { blob: B::Upload } C must acknowledge it too
+```
+
+- Each package whose types or protocols reach a cause acknowledges it **once**,
+  anywhere on the path inside that package. Within one package the author
+  already sees the path; every package boundary asks again.
+- A's reason travels along as the **origin**, and is shown at every hop, but
+  A's marker satisfies only A.
+- Diagnostics, `inspect`, hover and generated docs show the whole chain:
+  *"`C::Orders` gives up `bounded_size`: `C::Order.blob` → `B::Upload.data` →
+  `A::Blob` (`bytes` without a maximum). A's reason: 'legacy gateway'."*
+
+### Pinned to the causes
+
+An acknowledgement, and a consumer's acceptance, records what it covered: each
+guarantee with the **chain to each cause**. If A adds a second unbounded field,
+or B swaps `A::Blob` for another unverified type, the record no longer
+matches, and B, C and every consumer get an error until they acknowledge
+again. A guarantee can't be lost by reuse, however many packages it passes
+through.
+
+What's frozen is therefore (guarantee, scope path, chain to the cause,
+reason). Narrowing a marker is not a major change, since nothing more is
+given up. Widening one, or adding a cause, is.
+
+### Acceptance stays per protocol
+
+`accept_unverified = { Billing = [...] }` accepts the protocol's whole frozen
+set, inner scopes and chains included. It is pinned like an acknowledgement,
+so a new inner cause still asks for re-acceptance.
+
+### Fail closed
+
+If the build can't see a dependency's declarations or IR, it counts the
+guarantee as given up and refuses. An editor's incomplete view can show a
+warning instead, but a build never judges with less than the full picture.
+Any path that does is a safety bug. Known today: `compat` and `diff` don't see
+a dependency's encoding declarations (core#206).
+
+## Testing the invariant
+
+Today there are unit tests (`core/tests/package/unverified.rs`), fuzz targets
+for parsing and compiling robustness, and runtime vectors proving that decoders
+refuse values over a bound. Nothing tests the invariant across package graphs.
+This proposal adds:
+
+1. **A property test with an independent oracle,** in core. It generates
+   random package graphs (bounded and unbounded types, chains across
+   packages, markers at random scopes, acceptances, upstream changes) and checks
+   that *the build succeeds exactly when the oracle says every hop acknowledged
+   and every consumer accepted*. It's the same differential idea as the
+   runtime's `ffi_vs_core`.
+2. **A fuzz target** running the same check over arbitrary graphs, in core's
+   nightly fuzz CI.
+3. **Compiler conformance cases** in the spec repository: schema graphs with
+   their expected given-up sets, chains and errors, as data. Any compiler, the
+   language server or another tool must reproduce them, the way runtimes must
+   reproduce bytes today.
+4. **An audit** of every place that judges guarantees (the validator,
+   `compat`, `diff`, `inspect`, the language server) for any path that can see
+   less than the full picture.
 
 ## Options considered
 
 | | A. Today, plus narrower scopes | B. Plain or keyed (proposed) | C. Keyed only |
 |---|---|---|---|
 | Existing schemas | unchanged | unchanged | all must be rewritten |
-| Says what's given up, in the text | no | when keyed | always |
+| Says what's given up, in the text | no | when keyed, always under strict | always |
 | A reason per guarantee | no | yes | yes |
-| Catches a second guarantee while developing | no | when keyed | yes |
-| Grammar work | an annotation on arguments and fields | keyed annotation values (core#124), plus A's | same as B |
+| Catches a second guarantee while developing | no | when keyed, and always under strict | yes |
 | Repeats what core computes | no | only where the author chooses | always, which was the objection to the earlier Proposal A |
-
-**B** lets a package that wants precision have it, and costs nothing to a
-package that doesn't. A `settings` switch (`annotations.unverified.keyed =
-"required"`) could let a package or an organisation require the keyed form,
-which gives C's guarantees where they're wanted.
 
 ## Depends on
 
-- **The vocabulary**, for guarantee names, descriptions and scopes, so
-  core, the language server, diagnostics and generated docs agree.
+- **The vocabulary**, for guarantee names, descriptions and scopes.
 - **Keyed annotation values** (core#124). Today an annotation's value is a
   scalar, and a list is parsed as validator calls.
-- **Annotations on arguments and fields.** `bounded_size` at argument scope
-  needs a marker there. Check this against how bounds attach today (core#98).
+- **Markers on arguments and fields.** Check this against how bounds attach
+  today (core#98).
 
 ## Open questions
 
-- **Acceptance by scope:** should `accept_unverified` be able to accept
-  `Billing.upload` alone, or is accepting the protocol's whole set enough?
-- **Package-level defaults:** whether `config.idp` can carry a keyed marker for
-  every protocol in the package (for example, a package-wide `handshake =
-  "none"`).
-- **Inheritance:** whether a function-scope marker covers every argument, and
-  whether a type-scope marker covers every use of the type.
+- **Package-level markers:** how `config.idp` carries a marker for every
+  protocol in a package (for example, a package-wide `handshake = "none"`), and
+  how it counts toward per-package acknowledgement.
 - **The word.** The keyed form is close to the earlier Proposal A
   (`@waives(…)`). Keeping `@unverified` for both forms means one marker to
   learn, and that is the assumption here.

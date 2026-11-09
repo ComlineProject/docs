@@ -74,25 +74,37 @@ gives each fact its value domain and how it is proven. Core's
 
 In stages, each useful on its own, in the order the encoding-facts work used:
 
-1. **Catalog format and home** decided ([catalog → where it lives](catalog.md#where-it-lives)).
-   Seed it from `profile.cue`, core's `Guarantee` and the official encodings.
+1. **The spec repository** ([catalog → where it lives](catalog.md#where-it-lives)):
+   the catalog in CUE, seeded from `profile.cue`, core's `Guarantee` and the
+   official encodings, with the conformance specs and vectors moved in from
+   `runtime/conformance`.
 2. **Core reads it:** guarantees, facts, value domains, aliases and official
    encodings come from the catalog. Unknown annotation names, settings keys
    and diagnostic codes are refused (core#171, core#178).
 3. **The runtime and conformance read it:** fact names, conformance
    features, and the fuzz and bench target sets. The CI matrices and the
    Observatory's expected reports are generated from it.
-4. **Granular `@unverified`** in core: grammar, check and freezing. This
-   needs keyed annotation values (core#124).
+4. **Granular `@unverified`** in core: grammar, scopes, per-package
+   acknowledgement pinned to each cause's chain, and freezing. It needs
+   keyed annotation values (core#124). It lands with its safety tests: a
+   property test against an oracle, a fuzz target, compiler conformance cases
+   in the spec repository, and an audit of every path that judges guarantees.
 5. **Tooling reads it:** language server completion and hover, generated
    `@unverified` docs (generation#93), and the docs tables.
 
+## Leanings so far
+
+- **Home:** a spec repository holding the catalog, the conformance specs and
+  vectors, and compiler conformance cases, versioned as the spec.
+- **Format:** CUE as the source, with generated Rust, TypeScript and JSON.
+- **Relations:** plain references only (establishes, keeps, gives up, applies
+  to, scopes); logic that compares values stays in code.
+- **`@unverified`:** plain or keyed, at any scope a guarantee allows. Outer
+  covers inner, with a strict opt-in. Acknowledged once per package along a
+  chain, pinned to the chain, accepted per protocol, failing closed.
+
 ## Open questions
 
-- Where the catalog lives, and in what format (see [the catalog](catalog.md#where-it-lives)).
-- How far relations go: whether the catalog states only *what exists*, or also
-  rules such as *handshake H establishes guarantee G* and *framing payload
-  must fit format output*, so `causes()` and `misfit()` stop being written per
-  repository.
-- How catalog versions relate to conformance spec versions and to the IR
-  format (core#146).
+- How spec versions relate to the IR format's version (core#146).
+- Package-level `@unverified` markers in `config.idp` (see [granular
+  `@unverified`](granular-unverified.md#open-questions)).

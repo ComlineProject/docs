@@ -90,8 +90,8 @@ needs as constants: a `&[&str]`, an enum, a TypeScript union.
 
 ## Relations
 
-This is the open question with the most at stake. The catalog could stop at
-*what exists*, or it could also state the rules that connect entries:
+**Leaning: plain references.** The catalog could stop at *what exists*, or it
+could also state the rules that connect entries:
 
 - a handshake **establishes** guarantees (`comline@1` → schema and encoding agreement);
 - an encoding with vectors **keeps** `encoding_conformance`;
@@ -102,26 +102,41 @@ Today each of these is code in core (`unverified::causes`, `misfit`), and
 some are repeated in the generators. Stating them as data means the compiler,
 the conformance engine, the language server and the docs all apply one set of
 rules, and a third party's declarations get the same rules. The cost is that
-the rule language has to stay small. **Suggested:** state the relations that are
-plain references (establishes, keeps, gives up, applies to), and keep logic
-that compares values (`fit`) in code that reads the catalog.
+the rule language has to stay small. So the catalog states the relations that
+are plain references (establishes, keeps, gives up, applies to, scopes), and
+logic that compares values (`fit`) stays in code that reads the catalog.
 
 ## Where it lives
 
-Undecided. The options:
+**Leaning: a spec repository.** Third parties never edit the catalog: they
+declare their own entries (`com.acme.f@1`) in `config.idp`, in the same shape.
+What they need from it is what they implement against: the names, the facts
+and their domains, and the conformance cases that prove them. That is the
+spec, and today its other half, the conformance specs and vectors, sits in
+`runtime/conformance`, although a Go or Swift runtime implements against those
+and not against the Rust runtime.
 
-| | A. Its own repository (`comline-vocabulary`) | B. In `core` | C. In `docs` |
+So the vocabulary lives in **one spec repository** with:
+
+- the catalog (CUE);
+- the conformance specs (`profile.cue`, `features.json`) and vectors, moved out
+  of `runtime/conformance`;
+- compiler conformance cases (see [granular `@unverified`](granular-unverified.md#testing-the-invariant));
+- generated outputs: a `no_std` Rust crate, a TypeScript module, and JSON for
+  everything else.
+
+It is versioned as the spec ("spec 0.10" is already how the conformance
+corpus is versioned). Everyone, this project's own core, runtime and
+generators included, pins the spec the way a third party would. The Rust
+conformance engine and reference stay in `runtime`.
+
+The options that were weighed:
+
+| | Spec repository | Vocabulary-only repository | In `core` |
 |---|---|---|---|
-| Who depends on it | everyone, and it depends on nothing | everyone already pins core | nobody pins docs today |
-| Fits the dependency order | yes: it sits below core, runtime and the generators | runtime and generators already depend on core, so no new edges, but runtime would pin core for names alone | it would need a published artifact |
-| Third-party view | clearly the vocabulary, not one program's | reads as core's internals | reads as documentation |
-| Cost | one more repository, rev and CI | lowest | low, but odd for code to depend on |
-
-**Suggested: A**, a small repository holding the CUE sources and the
-generated outputs (a `no_std` Rust crate, a TypeScript module, JSON for
-anything else), versioned on its own. Everything pins it the way the
-generators pin core today. B is the fallback if one more repository isn't
-worth it yet.
+| What a third party pins | the whole spec: names, facts, vectors and cases | the names, and the vectors separately from `runtime` | a Rust compiler's repository, and every core release |
+| Language-neutral | yes: CUE and JSON | yes | no |
+| Cost | one more repository, plus moving the conformance corpus | one more repository | lowest |
 
 **Format: CUE as the source.** It is already used for the conformance specs,
 it validates (a fact's value must be in its domain), it computes sets, and it
