@@ -27,7 +27,8 @@ doesn't have yet, as today.
   and nothing else: the step to run before a machine goes offline, or in a CI
   stage that's allowed out.
 - **The offline switch** forbids all network access: `--offline` on any
-  command, an environment variable, or machine configuration. A build that
+  command, `COMLINE_OFFLINE=1`, or `offline = true` in machine or
+  organisation configuration. A build that
   is missing something then fails with one error listing *everything*
   missing, not the first thing it tripped on, and saying how to supply it
   (`comline fetch` elsewhere, a vendored copy, a bundle).
@@ -36,9 +37,18 @@ doesn't have yet, as today.
 
 ## Package settings
 
-A package can tighten this in `config.idp`, for when its situation needs it:
-a package built for a sealed customer, say, should behave strictly on every
-developer's machine and in every CI, not only on the machines set up for it.
+A package can tighten this, for when its situation needs it: a package built
+for a sealed customer, say, should behave strictly on every developer's
+machine and in every CI, not only on the machines set up for it. The settings
+go in the project's `comline.toml`: it's committed, so they travel with the
+package; it's never frozen, so changing them is no new version; and only the
+root package's is ever read, which is the precedence rule below.
+
+```toml
+[fetch]
+mode = "explicit"        # "on-demand" (the default) or "explicit"
+require-hashes = true
+```
 
 - **Explicit fetching:** a build never fetches; only `comline fetch` does.
   Builds stay offline by construction, at the cost of one step after a clone
@@ -100,6 +110,5 @@ built.
 
 ## Open questions
 
-- The setting names, and where machine and organisation configuration live.
-- Whether `comline fetch` also takes `--for <target>` to fetch only what one
+- Whether `comline fetch` takes `--for <target>`, to fetch only what one
   target's generation needs.

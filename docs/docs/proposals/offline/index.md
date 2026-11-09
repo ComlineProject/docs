@@ -65,13 +65,18 @@ In stages, each useful on its own:
    npm, a hard requirement for 1.0. Until then, the docs say how to vendor
    them.
 
-## Open questions
+## Where settings live
 
-Collected from both parts:
+| Where | What | Frozen |
+|---|---|---|
+| `config.idp` | each dependency's identity (version or commit, and hash) and its `sources` | identity only; `sources` is never frozen |
+| the project's `comline.toml` (committed, read only for the root package) | the fetch policy, and sources the root adds for transitive dependencies | never |
+| machine and organisation config: a system file (`/etc/comline/config.toml`, `%PROGRAMDATA%`), a user file (`~/.config/comline/config.toml` and the platform's equivalents), or one named by `COMLINE_CONFIG` | `offline`, mirrors, the cache's location, trusted keys | — |
+| the environment and flags | `COMLINE_OFFLINE=1`, `--offline` | — |
 
-- The names of the settings, and where machine and organisation config live.
-- The cache's location on each OS.
-- The mirror configuration format.
-- The bundle format and its signing keys.
-- The release signing scheme (sigstore, minisign, ...).
-- The SBOM format (SPDX or CycloneDX).
+They combine, and the strictest applies.
+
+## Remaining open questions
+
+- Whether `comline fetch` takes `--for <target>`, to fetch only what one
+  target's generation needs.
