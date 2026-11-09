@@ -218,6 +218,14 @@ the language side is shipped and documented in the
 
 ### Tooling
 
+- [Offline and air-gapped use](offline/index.md): how Comline works with no
+  internet access, on an offline machine, in an isolated build network, in an
+  air-gapped deployment, and when bringing the tooling itself in. Two parts:
+  [fetching](offline/fetching.md) (on demand with a hard offline switch,
+  package settings that only tighten, when a hash is mandatory) and
+  [supplying dependencies and tooling](offline/supply.md) (several sources per
+  dependency, a shared cache, vendoring, mirrors, bundles, release artifacts).
+  *draft.*
 - [Project dashboard](project-dashboard.md): a separate static site where the
   benchmark, fuzzing, conformance, size, coverage and CI results of every
   repository can be watched over time, and any published versions compared;
