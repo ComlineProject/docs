@@ -47,6 +47,11 @@ Until the 1.0 announcement.
   available, in at least one minor release before the major that removes it.
   The changelog says so both times.
 - A wire format's bytes never change again. A change is a new `@N`.
+- A change to the schema language that would break schemas already written
+  ships in a new [edition](../reference/versioning.md#editions). A package
+  keeps its edition until it moves (`comline fix --edition N`), and a word
+  is deprecated, with a warning and a fix, in an edition before the one
+  that removes it.
 - The C ABI's structs are frozen within a major. Status codes and flags are
   append-only.
 - Packages go to registries (npm, crates.io, …) under ComlineProject-owned
