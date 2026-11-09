@@ -184,7 +184,7 @@ version — but only the parts that describe the schema API:
 |---|---|---|
 | `wire.format`, `wire.framing` | changed | **major** |
 | `id` | changed | **major**: it names another package. Adding one where there was none is no change |
-| `SpecificationVersion` | changed | **major** |
+| `SpecificationVersion` | changed | **none** by itself: the compiled schema doesn't depend on the [edition](#editions), so what a move changes in it carries its own bump |
 | `Dependency` | added, removed, or version changed | **patch** on its own: what the package uses of it is compared by reach (above) |
 | `CodeGeneration` | added / removed / `lang_version` changed | **none** — recorded, never diffed. It is a tooling-capability list, orthogonal to the wire format. |
 | `PublishRegistry` | any | **none** — publish metadata |
@@ -192,6 +192,33 @@ version — but only the parts that describe the schema API:
 
 `comline build` and `comline diff` print every change: the package's own,
 each dependency's within reach, the config's, and the bump they call for.
+
+## Editions
+
+A package's `config.idp` names the edition of the schema language its files
+are written in: `specification_version = 1`. Edition 1 is the language at
+1.0, and the only edition so far.
+
+- **Every package names one.** Leaving it out, or naming an edition this
+  Comline doesn't know, is an error (`edition::missing`, `edition::unknown`)
+  pointing at the line, with a fix. `comline new` writes the newest.
+- **A change that would break schemas already written ships in a new
+  edition:** a keyword or type renamed or removed, a default changed. A
+  package keeps its edition's behaviour until it moves.
+- **Editions mix.** Each package is compiled under its own edition, and the
+  compiled schema doesn't depend on it, so a package depends on packages
+  written in any edition, and its dependents never see which one it uses.
+- **Deprecation comes first.** A word an edition deprecates is a warning,
+  `deprecation::<word>`, on every use, with a fix when it has a replacement;
+  the editor shows it struck through. An edition that removes it makes the
+  use an error, `edition::removed`.
+- **Moving is `comline fix --edition N`:** it fixes what edition N deprecates
+  or removes, and moves `config.idp` to N. Uses with no replacement are
+  listed to change by hand, and the package stays put until they're gone.
+  `comline fix` alone applies the fixes for the package's own edition.
+- **No bump by itself.** Moving to another edition changes the version only
+  through what it changes in the compiled schema, such as a different
+  default framing.
 
 ## Compatibility facts
 

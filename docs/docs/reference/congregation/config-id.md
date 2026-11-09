@@ -55,7 +55,7 @@ settings = {
 |---|---|---|
 | `congregation` | the package's name | Renaming it is fine: `id` is what identifies the package. |
 | `id` | 32 lowercase hex digits, random | The package's identity. `comline new` writes it, and `comline build` adds one to a package without it. A copy of the package must change it. Changing it is a major change. See [Compatibility facts](../versioning.md#compatibility-facts). |
-| `specification_version` | an integer, `1` | The edition of the schema language the files are written in. |
+| `specification_version` | an integer: `1`, the only edition so far | **Required.** The [edition](../versioning.md#editions) of the schema language the files are written in. Leaving it out, or naming an edition this Comline doesn't know, is an error with a fix that `comline fix` applies. |
 | `code_generation` | `{ languages = { <language>#<version> = {} ... } }` | The languages the package can be generated as, each with the oldest toolchain its output must build on. `comline build` proves each one. See [Language versions](../../guides/codegen/generating-code.md#language-versions). |
 | `wire` | `{ format = "..." framing = "..." }` | The format and framing every protocol uses unless it says otherwise. Defaults: `packed@1` and `datagram@3`. See [Wire defaults](../../guides/packages/index.md#wire-defaults). |
 | `handshake` | `"comline@1"`, `"comline@2"` or `"none"`, or `{ name = "comline@2" scope = "package" }` to set [its parameters](../wire/handshakes/index.md#parameters) | What a protocol with no `@handshake` runs before its first call. Default `comline@2`, or `comline@1` in a package whose protocols aren't all on `datagram@3`. See [Giving up a guarantee](../../guides/idl/protocol.md#giving-up-a-guarantee). |
