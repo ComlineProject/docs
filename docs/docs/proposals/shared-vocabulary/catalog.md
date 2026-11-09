@@ -108,7 +108,7 @@ logic that compares values (`fit`) stays in code that reads the catalog.
 
 ## Where it lives
 
-**Leaning: a spec repository.** Third parties never edit the catalog: they
+**Leaning: a spec repository, `specification`.** Third parties never edit the catalog: they
 declare their own entries (`com.acme.f@1`) in `config.idp`, in the same shape.
 What they need from it is what they implement against: the names, the facts
 and their domains, and the conformance cases that prove them. That is the
@@ -142,6 +142,21 @@ The options that were weighed:
 it validates (a fact's value must be in its domain), it computes sets, and it
 exports JSON. Generated outputs are committed and checked in CI, the same way
 `comline.h` is checked against cbindgen.
+
+## Versioning
+
+The spec version and the IR format version stay **independent**:
+
+- **The spec version** (the vocabulary, the conformance corpus and the compiler
+  cases) says what implementations must agree on.
+- **The IR format version** (`CURRENT_IR_FORMAT_VERSION` in core's CAS) changes
+  only when the frozen IR's *shape* changes.
+- **Each frozen version records the spec version** it was frozen against.
+- **The spec is append-only for anything frozen.** Wire names never change.
+  Guarantees, facts and values can be added and deprecated, but never removed
+  or redefined, so an old frozen version always reads correctly under a newer
+  spec. From 1.0 this is what lets a newer release read an older one's IR
+  (core#146).
 
 ## How each consumer reads it
 

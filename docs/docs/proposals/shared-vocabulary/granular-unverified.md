@@ -143,11 +143,47 @@ What's frozen is therefore (guarantee, scope path, chain to the cause,
 reason). Narrowing a marker is not a major change, since nothing more is
 given up. Widening one, or adding a cause, is.
 
+### Package-default causes: acknowledged next to the cause
+
+A package setting can give a guarantee up for every protocol that inherits
+it, for example `handshake = "none"` in `config.idp`. Its acknowledgement sits
+beside that setting:
+
+```text
+handshake = "none"
+unverified = { schema_agreement = "the gateway pins schemas by contract",
+               encoding_agreement = "the gateway pins schemas by contract" }
+```
+
+- It covers **only the causes that come from that setting**, and only for the
+  protocols that inherit it. A protocol with its own handshake isn't
+  covered, and neither is any other cause (an unbounded type, a framing
+  without vectors).
+- Each covered protocol's frozen record says it was acknowledged at package
+  scope, with the reason.
+- It is pinned like any other marker: if the setting changes, it no longer
+  matches and the build asks again.
+- A blanket package marker covering everything in a package is ruled out.
+  That is exactly the gap this proposal closes.
+
 ### Acceptance stays per protocol
 
 `accept_unverified = { Billing = [...] }` accepts the protocol's whole frozen
 set, inner scopes and chains included. It is pinned like an acknowledgement,
 so a new inner cause still asks for re-acceptance.
+
+### A newer spec that finds an existing loss
+
+The spec can add a guarantee (say, a future "transport fit"), and an existing
+protocol may turn out to give it up although its schema didn't change.
+
+- **Safety:** markers and acceptances are pinned to a set that no longer
+  matches, so the author and every consumer are asked again. Nothing passes
+  silently.
+- **Version honesty:** `diff` recomputes both versions under the newer spec
+  before comparing, so the version comparison doesn't report a major change
+  the author didn't make. The frozen IR keeps the types and parameters this
+  needs.
 
 ### Fail closed
 
@@ -198,11 +234,11 @@ This proposal adds:
 - **Markers on arguments and fields.** Check this against how bounds attach
   today (core#98).
 
-## Open questions
+## The word
 
-- **Package-level markers:** how `config.idp` carries a marker for every
-  protocol in a package (for example, a package-wide `handshake = "none"`), and
-  how it counts toward per-package acknowledgement.
-- **The word.** The keyed form is close to the earlier Proposal A
-  (`@waives(…)`). Keeping `@unverified` for both forms means one marker to
-  learn, and that is the assumption here.
+`@unverified` for both forms. The objection to the earlier `@waives(…)` was to
+naming guarantees at all, not to the word. Now that naming is optional and
+checked, the choice is about readability. `@unverified(bounded_size = "…")`
+reads accurately: Comline doesn't verify it. And one word already runs through
+the annotation, `accept_unverified`, `annotations.unverified` and the
+`unverified::*` diagnostic codes.

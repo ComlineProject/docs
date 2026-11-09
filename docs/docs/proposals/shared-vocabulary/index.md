@@ -94,7 +94,7 @@ In stages, each useful on its own, in the order the encoding-facts work used:
 
 ## Leanings so far
 
-- **Home:** a spec repository holding the catalog, the conformance specs and
+- **Home:** a spec repository, `specification`, holding the catalog, the conformance specs and
   vectors, and compiler conformance cases, versioned as the spec.
 - **Format:** CUE as the source, with generated Rust, TypeScript and JSON.
 - **Relations:** plain references only (establishes, keeps, gives up, applies
@@ -103,8 +103,16 @@ In stages, each useful on its own, in the order the encoding-facts work used:
   covers inner, with a strict opt-in. Acknowledged once per package along a
   chain, pinned to the chain, accepted per protocol, failing closed.
 
+- **Package defaults:** acknowledged in `config.idp` next to the setting that
+  causes the loss, covering only that cause.
+- **Spec upgrades:** a loss found by a newer spec asks the author and consumers
+  again, and `diff` recomputes both versions under it, so it is never a false
+  major change.
+- **Versions:** the spec version and the IR format version are independent,
+  with each frozen version recording its spec version, and the spec
+  append-only for anything frozen.
+- **The word:** `@unverified` for both forms.
+
 ## Open questions
 
-- How spec versions relate to the IR format's version (core#146).
-- Package-level `@unverified` markers in `config.idp` (see [granular
-  `@unverified`](granular-unverified.md#open-questions)).
+None blocking. The next step is the `specification` repository (core#220).
