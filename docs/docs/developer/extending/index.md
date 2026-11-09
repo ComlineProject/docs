@@ -5,7 +5,7 @@ that extend Comline_</u>, either for your own specific personal use cases or to 
 Comline Project itself upstream.
 
 If you simply want to use Comline (writting schemas, configuring your package, implement generated
-code), then you should go to the regular [Guides](../guides/index.md) instead
+code), then you should go to the regular [Guides](../../guides/index.md) instead
 
 Comline has five places where you can bring your own code. This section is a
 guide to each. What a page describes is built and shipped; what isn't is

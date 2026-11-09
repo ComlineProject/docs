@@ -144,7 +144,7 @@ the declarations your own use, and what those use in turn, never the whole
 dependency. Each dependency gets its own pages (`deps/<package>/<module>`), and
 a type from it links there.
 
-`std` links to its hosted docs instead, `https://comlineproject.github.io/docs/reference/package/schema/std/`.
+`std` links to its hosted docs instead, `https://comlineproject.github.io/docs/reference/schema/std/`.
 To link another dependency to its published docs rather than render pages for
 it, give it a base URL in `comline.toml`:
 
@@ -226,8 +226,8 @@ and the flag wins:
 ## The standard library, rendered
 
 When rendering documentation of a package that uses any standard library types,
-the built documentation will link to [`std` pages](../reference/package/schema/std/index.md), meaning
+the built documentation will link to [`std` pages](../reference/schema/std/index.md), meaning
 that the links will always lead to online
 
 A type from `std` in your own docs links to them by default, so `std::http::Request` in a field's type links
-to `https://comlineproject.github.io/docs/reference/package/schema/std/http/#request`.
+to `https://comlineproject.github.io/docs/reference/schema/std/http/#request`.

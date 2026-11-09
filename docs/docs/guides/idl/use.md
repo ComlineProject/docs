@@ -102,9 +102,9 @@ struct Call {
 `std` and each of its modules carry [module docs](docstrings.md#module-docs):
 hover `std` or `validators` in the editor to read them, with what's in each.
 
-The full reference is on this site, [rendered from those docs](../../reference/package/schema/std/index.md)
-by [`comline doc`](../documenting.md): [`std::http`](../../reference/package/schema/std/http.md) and
-[`std::validators`](../../reference/package/schema/std/validators.md), each declaration with its fields
+The full reference is on this site, [rendered from those docs](../../reference/schema/std/index.md)
+by [`comline doc`](../documenting.md): [`std::http`](../../reference/schema/std/http.md) and
+[`std::validators`](../../reference/schema/std/validators.md), each declaration with its fields
 and variants.
 
 A build includes only the std schemas a package imports. Like a dependency's,

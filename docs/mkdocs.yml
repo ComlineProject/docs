@@ -102,12 +102,12 @@ nav:
       - comline.toml: 'reference/package/congregation/comline-toml.md'
 
     - Schema:
-      - 'reference/package/schema/index.md'
+      - 'reference/schema/index.md'
       # std:start
       - Standard library:
-        - std: 'reference/package/schema/std/index.md'
-        - http: 'reference/package/schema/std/http.md'
-        - validators: 'reference/package/schema/std/validators.md'
+        - std: 'reference/schema/std/index.md'
+        - http: 'reference/schema/std/http.md'
+        - validators: 'reference/schema/std/validators.md'
       # std:end
 
     - Tools:
@@ -120,6 +120,7 @@ nav:
       #  - Playground: 'reference/tools/playground.md'
       - Language Server:
         - Language Server: 'reference/tools/language-server.md'
+      - Observatory: 'reference/tools/observatory.md'
 
     - Generator protocol: 'reference/generator-protocol.md'
     

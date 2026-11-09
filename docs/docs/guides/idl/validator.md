@@ -125,7 +125,7 @@ function there's no single value for it to check, so it's a build error.
 
 ## The standard validators
 
-[`std::validators`](../../reference/package/schema/std/validators.md) ships these. A **maximum** belongs
+[`std::validators`](../../reference/schema/std/validators.md) ships these. A **maximum** belongs
 in the type ([`char[max 32]`](types.md#bounds)), where a decoder checks it before
 allocating; validators check what a type can't say, a minimum or a range.
 
