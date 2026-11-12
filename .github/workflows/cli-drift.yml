@@ -24,48 +24,67 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same pull request supersedes this run; scheduled and
+# manual runs queue.
 concurrency:
-  group: cli-drift-${{ github.ref }}
-  cancel-in-progress: true
+  group: cli-drift-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-python@v7
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
-          python-version: "3.14"
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: 3.14.10
 
       # Checking against the tip of the default branch, not a pinned rev: a
       # CLI that has moved ahead of the docs is what this is here to catch.
-      # The branch is resolved rather than hardcoded — ComlineProject repos are
-      # not consistent about `main` vs `master`.
+      # `HEAD` of the remote is its default branch, whatever that is called
+      # (ComlineProject repos are not consistent about `main` vs `master`);
+      # the repo is public, so this needs no token.
       - name: Resolve the CLI's current commit
         id: cli
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          branch=$(gh api repos/ComlineProject/cli --jq .default_branch)
-          echo "sha=$(gh api "repos/ComlineProject/cli/commits/$branch" --jq .sha)" >> "$GITHUB_OUTPUT"
+          sha=$(git ls-remote https://github.com/ComlineProject/cli HEAD | cut -f1)
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::no commit for the CLI's HEAD"; exit 1; }
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       # Keyed on that exact commit, so an unchanged CLI costs nothing and a
       # changed one rebuilds. Without this every run pays a full cargo build.
       - name: Cache the comline binary
         id: cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cargo/bin/comline
-          key: comline-${{ runner.os }}-${{ steps.cli.outputs.sha }}
+          key: comline-${{ runner.os }}-rust-1.99.1-${{ steps.cli.outputs.sha }}
 
-      # cargo comes preinstalled on the runner image; comline-core and the
-      # generator crates resolve from the pinned git revs in Cargo.lock.
+      # The toolchain the CLI pins (its rust-toolchain.toml), by exact version:
+      # the runner's own Rust is whatever its image has that week.
+      - name: Install the Rust toolchain
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        with:
+          toolchain: 1.99.1
+
+      # comline-core and the generator crates resolve from the pinned git revs
+      # in the CLI's Cargo.lock.
       - name: Install the CLI
         if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          CLI_SHA: ${{ steps.cli.outputs.sha }}
         run: |
           cargo install --locked --git https://github.com/ComlineProject/cli \
-            --rev ${{ steps.cli.outputs.sha }} comline
+            --rev "$CLI_SHA" comline
 
       - name: Check for drift
         # `shell: bash` for pipefail: without it the `if !` below reads tee's

@@ -1,0 +1,8 @@
+# Poetry, the one tool the docs build installs outside poetry.lock. Pinned
+# here and compiled with hashes, so CI can `pip install --require-hashes`:
+#
+#   pip-compile --allow-unsafe --generate-hashes --strip-extras \
+#     --output-file=.github/poetry-requirements.txt .github/poetry-requirements.in
+#
+# Keep the version the one poetry.lock was written with.
+poetry==2.3.1
