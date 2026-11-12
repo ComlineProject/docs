@@ -95,7 +95,7 @@ jobs:
             {
               echo '### CLI drift'
               echo
-              echo 'The docs and `comline` no longer describe the same surface.'
+              echo "The docs and \`comline\` no longer describe the same surface."
               echo
               echo '```'
               cat drift.txt

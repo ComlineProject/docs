@@ -100,7 +100,7 @@ jobs:
             {
               echo '### Std drift'
               echo
-              echo 'The std pages no longer match what `comline doc` renders from core.'
+              echo "The std pages no longer match what \`comline doc\` renders from core."
               echo
               echo '```'
               cat drift.txt
