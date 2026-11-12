@@ -229,6 +229,15 @@ nav:
       - 'proposals/shared-vocabulary/index.md'
       - 'The catalog': 'proposals/shared-vocabulary/catalog.md'
       - 'Granular @unverified': 'proposals/shared-vocabulary/granular-unverified.md'
+    - 'Migrating stored IR':
+      - 'proposals/ir-migrations/index.md'
+      - 'The formats': 'proposals/ir-migrations/formats.md'
+      - 'Steps': 'proposals/ir-migrations/steps.md'
+      - 'Running a migration': 'proposals/ir-migrations/running.md'
+      - 'Proving it': 'proposals/ir-migrations/proof.md'
+      - 'Hashes, pins and history': 'proposals/ir-migrations/hashes-and-history.md'
+      - 'Beyond the local store': 'proposals/ir-migrations/beyond-the-store.md'
+      - 'Format 4': 'proposals/ir-migrations/format-4.md'
 
 extra_css:
   - stylesheets/nav.css?v=23   # bump on every nav.css change — it is not cache-busted otherwise

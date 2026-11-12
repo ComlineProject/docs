@@ -137,6 +137,24 @@ read in order:
   scope that guarantee has, checked against what core computes. Revisits part
   of the guarantee-marker decision. *accepted 2026-11-12; not built yet.*
 
+#### [Migrating stored IR across format versions](ir-migrations/index.md)
+
+How the version history in `.comline/` survives a change of the IR format
+instead of being deleted: each format written down, a migration as a chain of
+total, deterministic steps over frozen copies of the formats that write what an
+old format never recorded as an explicit unknown, a new store verified beside
+the old one before it replaces it, and a proof (a corpus of real stores built by
+the historical cores, an equivalence against a fresh build, differential
+property tests and a CI gate) that fails a format bump without its step.
+Seven parts, read in order: [the formats](ir-migrations/formats.md),
+[steps](ir-migrations/steps.md),
+[running a migration](ir-migrations/running.md),
+[proving it](ir-migrations/proof.md),
+[hashes, pins and history](ir-migrations/hashes-and-history.md),
+[beyond the local store](ir-migrations/beyond-the-store.md) and
+[format 4 as the first client](ir-migrations/format-4.md). *accepted 2026-11-13; tracked in
+[core#268](https://github.com/ComlineProject/core/issues/268).*
+
 ### Connections
 
 - [Connections](connections.md): what a connection carries beyond one client
