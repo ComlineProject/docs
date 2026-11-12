@@ -73,9 +73,8 @@ An unknown has two possible carriers. **Proposed: both**, in this order of prefe
 `unknown` is an additive entry, a row in format 3's ledger with the absence reading *none*. A version without it
 has no unknowns.
 
-**Ordering constraint.** A shipped format-3 binary would read a store that carries unknowns in the
-entry as complete. So the readers of `unknown` ship, in a release, before any step that writes one. See
-[the rollout](index.md#rollout).
+**Ordering constraint.** A reader that doesn't know the entry would read a store that carries unknowns as complete. So
+the readers of `unknown` ship before any step that writes one. See [the rollout](index.md#rollout).
 
 ### Reading an unknown
 
@@ -89,7 +88,7 @@ no default, so an unknown can't be forgotten. Every use then has a rule, and it 
 | a bound | the maximum | unbounded |
 | a type, compared | its width or length | breaking, or "can't tell" if the rule has that |
 | a span | where it was written | no span; diagnostics name the version instead |
-| generating code or documentation | anything the output prints | refused or marked, [see format 4](format-4.md#consumers) |
+| generating code or documentation | anything the output prints | **fails closed**: the generator or `doc` stops with "unknown (migrated from format N)", [format 4](format-4.md#consumers) |
 
 A comparison that read an unknown says so: it lists the version and the path in the same `unseen` list core#262
 added, and its bump is at least a patch. See [history](hashes-and-history.md#history).
@@ -99,16 +98,15 @@ parents, and the schema units' names. A step that can't produce them fails, and 
 
 ## The witness
 
-`down(up(v)) = v` is the proof, on every real version, that a step lost nothing. It is cheap to write for the steps
-that are likely: one that wraps a value, renames a field or adds a field with an unknown has a trivial inverse, and a
-step that moves a value into the `unknown` list keeps the original there so `down` can put it back.
+`down(up(v)) = v` is the proof, on every real version, that a step lost nothing. **Decided: every step has one.** It is
+cheap to write for the steps that are likely: one that wraps a value, renames a field or adds a field with an unknown
+has a trivial inverse, and a step that moves a value into the `unknown` list keeps the original there so `down` can put
+it back. A step that can't state its inverse is exactly the one to look at.
 
-The engine runs the witness over every version of a store it migrates, before it swaps anything
-([running](running.md#verifying)). The tests run it over fixtures and random values ([proof](proof.md#laws)). The
-witness also has a second use, for [pins](hashes-and-history.md#pins).
-
-*Open:* whether every step has to provide one, or only the ones that can lose something. Leaning: every step, since
-a step that can't state its inverse is exactly the one to look at.
+It is checked in two places. The tests run it over fixtures and random values ([proof](proof.md#laws)). And the engine
+runs it over every version of **the user's own store** that it migrates, before it swaps anything
+([running](running.md#verifying)), so a store the corpus didn't predict is still checked. The witness also has a second
+use, for [pins](hashes-and-history.md#pins).
 
 ## Chains
 
@@ -123,18 +121,15 @@ catch the two disagreeing.
 ## What cannot be migrated
 
 Today's formats are out of scope ([index](index.md#scope-the-system-not-the-history)): they reset at 1.0. Until then,
-and for any store the system can't migrate, one rule holds: **it is reset into a backup, never deleted.**
+a store the system can't migrate is never touched by a command on its own. The command that finds it stops and says why;
+the user decides, and the only thing that moves it is the user's `comline store reset`, which renames it to a backup.
 
-| Store | Why | What happens |
+| Store | Why | What a command does |
 |---|---|---|
-| A store in a pre-1.0 format with no step to the current one (the unstamped bincode store, formats 1 and 2, older rows of format 3) | Nobody writes those steps. Format 0 is positional: a decode of the wrong layout can succeed and give a different variant, and nothing in the store can check a decode against. | Reset: renamed to `.comline.format-N.bak/`, a new store starts at `0.1.0-dev.1`. The command says so and names the backup. `deps-cache/` is kept |
-| An unstamped store that decodes as CBOR | The stamp was lost, so the format isn't known. | Refused, unless the user gives one: `--assume-format N`. The decode must succeed for every object |
-| A damaged store (a missing or corrupt object, [#182](https://github.com/ComlineProject/core/issues/182)) | A migration needs every object. | Refused, naming the file and how it failed. Nothing is reset: a damaged store is for the user to look at |
-| A store newer than the binary | The binary can't read it. | Refused, naming the format and the comline that reads it. Never touched |
-
-A reset needs the user's say where there is history worth asking about: on a terminal it asks (default no) and
-otherwise needs `--reset-old-store`, as `comline reset` does for deletion. The backup is what makes it safe to ask
-less.
+| A store in a pre-1.0 format with no step to the current one (the unstamped bincode store, formats 1 and 2, older rows of format 3) | Nobody writes those steps. Format 0 is positional: a decode of the wrong layout can succeed and give a different variant, and nothing in the store can check a decode against. | Stops, naming `comline store reset` ([running](running.md#reset)): the store is renamed to `.comline.format-N.bak/`, a new one starts at the next build, `deps-cache/` is kept |
+| An unstamped store that decodes as CBOR | The stamp was lost, so the format isn't known. | Stops, unless the user gives one: `comline store migrate --assume-format N`. The decode must succeed for every object |
+| A damaged store (a missing or corrupt object, [#182](https://github.com/ComlineProject/core/issues/182)) | A migration needs every object. | Stops, naming the file and how it failed |
+| A store newer than the binary | The binary can't read it. | Stops, naming the format and the comline that reads it |
 
 A history can later be rebuilt from Git with `comline store replay` *(proposed; may not be worth building)*. It builds a
 **new** history with the current core, one build per release tag or commit the user chooses, never claims to be the old
@@ -146,26 +141,27 @@ one, and numbers versions by the current rules.
 |---|---|
 | 1.0 and later | every format migrates to the next: that is the guarantee this system exists to give |
 | 3 (as it stands when the framework ships) | 3→4, the first client: it carries real stores, and exists to prove the system |
-| 0 to 2, and older rows of 3 | reset at 1.0, and before it where no step exists |
+| 0 to 2, and older rows of 3 | not migrated; the user resets them (`comline store reset`), and the 1.0 release refuses them |
 | test-only formats | in the test tree, never written by a release: [the proof](proof.md#test-only-formats) |
 
 ## Where the code lives
 
-**Proposed:** a workspace member `comline-ir-formats` (`publish = false` at first) beside `oracle/`, holding one module
+**Decided:** a workspace member `comline-ir-formats` (`publish = false` at first) beside `oracle/`, holding one module
 per format with its `SCHEMA.md`, types, codec and ledger, and the steps between them. It has no dependency on
 `comline-core`, the way the oracle has none, so that a frozen type can't reach for today's. A step `N → N+1` lives
 beside the frozen N+1 types. Those exist from the day N+1 is introduced, and are kept equal to the live types by the
 `live ≡ frozen(current)` test until N+2 seals them.
 
-Core depends on the crate to read old stores. Test-only formats live in its test tree, not in the shipped modules. The engine and the CLI commands are in core. The crate's only
-dependencies are `serde`, `ciborium`, `blake3` and `lz4_flex`, so it can be in the IR-only build, which is the one
-the `wasm32` consumers use. Whether it *should* be there, since the build's point is to be
-small, is open.
+Core depends on the crate to read old stores. Test-only formats live in its test tree, not in the shipped modules. The
+engine and the CLI commands are in core. The crate's only dependencies are `serde`, `ciborium`, `blake3` and
+`lz4_flex`, so the IR-only build, which the `wasm32` consumers use, can carry it: only for in-memory, read-only
+migration, never to write a store.
 
-## Still open here
+## Decided here
 
-- **Whether `Known<T>` is also written in formats that already exist,** that is, whether the live types of format 3
-  should gain a typed unknown in the next format instead of relying on the entry. Format 4 can, and should, for what
-  it adds.
-- **A path syntax for the `unknown` entry.** Leaning: a JSON-pointer into the model, since the frozen types already
-  derive serde and the path then reads the same in the format's document and in a test.
+- **New formats use `Known<T>`** for everything they add that a later step might have to leave unknown. The `unknown`
+  entry is for retypes that have no room.
+- **The `unknown` entry's paths are JSON pointers** into the model: the frozen types already derive serde, and a path then
+  reads the same in the format's document and in a test.
+- **The `formats` crate also carries the unknown readers and the steps for in-memory, read-only migration in the
+  IR-only build (`wasm`),** and never the engine that writes.

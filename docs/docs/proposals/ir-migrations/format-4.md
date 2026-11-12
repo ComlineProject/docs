@@ -14,7 +14,7 @@ migrated ([scope](index.md#scope-the-system-not-the-history)). One pull request 
 copy and ledger, a step with `up`, `down` and an `unknown` list, a typed unknown, the square against a fresh format-4
 build, the laws, the pin bridge, and the gate. The test-only formats of [the proof](proof.md#test-only-formats) cover
 what one step can't (composition, an untyped unknown); the two together are the system's proof. A format-3 store that
-exists when the framework ships is migrated for real, and one older than that is reset.
+exists when the framework ships is migrated for real (when the user runs `comline store migrate`), and one older than that is not migrated: the user resets it with `comline store reset`.
 
 ## What changes
 
@@ -81,8 +81,8 @@ that is a good model: when bounds on types arrived, `build` listed every positio
 defaults with maxima the author typed, never guessed
 (`bounds_migration.rs`). Here the offer is each acceptance, with what it now covers, and the author decides.
 
-*Open:* whether a transition period accepts an unpinned entry with a warning, as pins might
-([hashes](hashes-and-history.md#pins)). The safety invariant argues against it: an acceptance that isn't pinned to a
+*Open:* whether a transition period accepts an unpinned entry with a warning. Old *dependency pins* are
+[accepted with a notice](hashes-and-history.md#pins), but the safety invariant argues against doing the same here: an acceptance that isn't pinned to a
 chain is exactly what the invariant is there to remove.
 
 ## Consumers
@@ -94,8 +94,8 @@ What reads a version with unknown chains, and what each does:
 | `build`, the guarantee check | recomputes from inputs; the unknown is never what it judges on |
 | `diff`, `doc --version`, the changelog | recompute; list what is `unseen` |
 | `inspect` | shows the recomputed chain, marked "recomputed, not recorded" |
-| the generated `@unverified` docs ([generation#93](https://github.com/ComlineProject/generation/issues/93)) | the chain as recomputed. Where it can't be, "origin not recorded" |
-| a generator given an old version | *Open.* The unit it is given has the typed unknown. Refusing a version that has one is the strictest reading, and a flag could allow it. Leaning: pass it, since a generator that prints a chain must print "not recorded", and add the field to the protocol, where it can ignore it |
+| the generated `@unverified` docs ([generation#93](https://github.com/ComlineProject/generation/issues/93)) | the chain as recomputed. Where it can't be, it fails closed as below |
+| a generator, or `doc`, given an old version | **fails closed**: it stops with "unknown (migrated from format N)" for what it would print from an unknown, naming the version and the path. A generator is never handed a placeholder that looks complete |
 
 ## Fixtures and tests for 3→4
 

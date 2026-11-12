@@ -52,7 +52,7 @@ unknown machinery in [steps](steps.md#unknown) exists for, and the one the test-
 
 The doc comment on `CURRENT_IR_FORMAT_VERSION` says growing `FrozenUnit` needs no bump. Since 2026-10-18 these have
 been added without one, and so a "format 3" store can lack any of them. The 3→4 step, the first client, takes format 3
-as it stands when the framework ships (the last row), and a store from before that is reset, like any pre-1.0 store:
+as it stands when the framework ships (the last row), and a store from before that is not migrated (the user can reset it, like any pre-1.0 store):
 
 | Added | Commit | Absent reads as |
 |---|---|---|
@@ -121,11 +121,10 @@ bump. The `skip_serializing_if` condition is the one the code already follows ("
 to the same bytes as before them"), because the bytes of a frozen unit are also what a [dependency pin
 hashes](hashes-and-history.md#pins).
 
-## Still open here
+## Decided and open here
 
-- **Whether `SCHEMA.md` is the source and the [CAS guide](../../guides/ir/cas.md) links to it, or the guide stays the
-  description of the current format and `SCHEMA.md` is generated beside it.** Leaning: `SCHEMA.md` in core is the
-  source; the guide describes the current format and says so.
-- **Whether an additive change should raise a second number** (a ledger level, beside the format) so that an older
-  binary refuses to *write* into a store whose commits use additions it would drop. This would turn gap 2 into an
-  error. The cost is a second stamp to keep in step.
+- **Decided:** no second number (a ledger level) beside the format. It would only let a binary from before this proposal
+  refuse to write into a store whose additions it would drop, and those binaries are out of scope.
+- **Still open:** whether `SCHEMA.md` in core is the source and the [CAS guide](../../guides/ir/cas.md) links to it, or
+  the guide stays the description of the current format and `SCHEMA.md` is generated beside it. Leaning: `SCHEMA.md` is
+  the source, and the guide describes the current format and says so.

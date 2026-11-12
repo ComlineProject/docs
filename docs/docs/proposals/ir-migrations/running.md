@@ -5,30 +5,36 @@ Status: **draft** · part of [Migrating stored IR across format versions](index.
 **The question.** How does a store change format without any moment at which history is lost, however the process
 ends, and how does someone find out what it would do first?
 
+## The rule
+
+**Nothing is deleted or changed without the user doing so.** No command moves, rewrites, resets or deletes a store as a
+side effect. A command that finds a store it can't use as it is *stops*, says what it found and names the command that
+fixes it, and does nothing until the user runs that command. The only exception is reading: a read command may read an
+old store through an in-memory migration, because that changes nothing on disk.
+
 ## What each command does with each stamp
 
 `ensure_compatible_store` stops deleting. With the stamp *N* and a binary that writes *C*:
 
-| The store | A read command (`diff`, `doc`, `generate`, `inspect`) | A write command (`build`, `release`) |
+| The store | A read command (`diff`, `doc`, `generate`, `inspect`) | A write command (`build`, `release`, …) |
 |---|---|---|
 | N = C | proceeds | proceeds |
-| N < C, and a chain of steps reaches C | reads through an **in-memory** migration and writes nothing | migrates, then proceeds |
-| N < C, and no chain does (pre-1.0 only) | an error that says the store is old and will be reset, and the [options](steps.md#what-cannot-be-migrated) | **resets**: the store is renamed to `.comline.format-N.bak/` and a new one starts; asks first on a terminal; `deps-cache/` is kept |
-| unstamped, or damaged | an error naming the format or the file | the same error; nothing is reset or deleted |
+| N < C, and a chain of steps reaches C | reads through an **in-memory** migration and writes nothing | **stops**: "the store is format N; run `comline store migrate` (`--check` shows what it would do)". On a terminal it asks whether to run exactly that, and does nothing unless the user says yes; without a terminal (CI) it fails with that message |
+| N < C, and no chain does (pre-1.0 only) | an error naming the format and the [options](steps.md#what-cannot-be-migrated) | **stops**, naming `comline store reset`. It never offers to reset inline |
+| unstamped, or damaged | an error naming the format or the file | the same error; nothing is changed |
 | **N > C** | an error: the store is format N, this comline reads up to C, and *comline ≥ X* reads N | the same error; nothing written |
-| a stamp that isn't a number, or has conflict markers on one side | an error naming the file ([see Git](#git)) | the same |
+| stamps or refs in conflict because Git merged stores in different formats | an error ([see Git](#git)) | the same |
 
 Reading an old store needs no write because a migration is a pure function: a read command can run the chain on the
 versions it needs and drop the result. That makes `comline diff`, `doc --version` and `generate` work on a store nobody
 has migrated yet, at the cost of the memory and time of the chain, which a cache can hide.
 
-Two of today's behaviors go: deleting an older store (it is moved to a backup instead), and deleting a newer one (it
-is refused). The second is the more dangerous.
-`stored != Some(CURRENT)` is true for a store that is ahead of the binary.
+Today's behaviors of deleting an older store and of deleting a newer one are both gone. Binaries from before this
+proposal still delete a store whose stamp they don't expect; they are out of scope.
 
 ## The procedure
 
-`comline store migrate`, and the same code behind `build` and `release`:
+`comline store migrate`, which is also what `build` runs if the user confirms it:
 
 1. **Claim the store.** `mkdir .comline.migrating/` beside `.comline/`. It fails if the directory exists, which is the
    lock. If it exists from a crash, see [below](#crashes). The migrating directory is on the same filesystem as
@@ -52,12 +58,12 @@ mistaken for "never built".
 
 ### Crashes
 
-The state is in the paths and the journal alone, so every step is resumable by the next run of any command that opens
-the store:
+The state is in the paths and the journal alone, so every step is resumable. Another command that finds an interrupted
+migration stops and names `comline store migrate`, which resumes it; nothing resumes on its own.
 
-| Interrupted | What is on disk | The next run |
+| Interrupted | What is on disk | `comline store migrate` |
 |---|---|---|
-| steps 1 to 3 | `.comline/` intact, `.comline.migrating/` partial, journal `writing` | If the journal's old heads equal the store's, it resumes: writes are content-addressed, so repeating one writes the same bytes. Otherwise the store changed meanwhile, so the partial directory is deleted and it starts again. |
+| steps 1 to 3 | `.comline/` intact, `.comline.migrating/` partial, journal `writing` | If the journal's old heads equal the store's, it resumes: writes are content-addressed, so repeating one writes the same bytes. Otherwise the store changed meanwhile: it stops and names the partial directory, which the user removes, or has `--restart` remove. |
 | after verify, before the first rename | journal `ready` | completes step 5 |
 | between the two renames | no `.comline/`, a backup and a ready directory | renames the ready directory into place |
 | after both, before `deps-cache/` moved | new store in place, the cache in the backup | moves it |
@@ -87,17 +93,27 @@ later. The existing `compat` tests treat a recomputed history the same way.
 
 ## The backup
 
-The old store is renamed to `.comline.format-N.bak/` beside the new one. **Kept until someone removes it:**
-`comline store prune` removes backups, and only when the store that replaced them passes `comline store verify`.
-Nothing deletes one on its own, after a time or after a number of builds, and `build` mentions it once.
+**Decided:** the old store is renamed to `.comline.format-N.bak/` beside the new one, and **kept until the user removes
+it** with `comline store prune`, which removes a backup only when the store that replaced it passes `comline store
+verify`. Nothing deletes one on its own, after a time or a number of builds. `comline store status` lists them.
 
-It is a **sibling** and not a directory inside `.comline/` for two reasons. The shipped binaries delete `.comline/`
-on a stamp they don't expect, so a backup inside would go with it. And `.comline/` is committed to Git while a sibling
-shows in `git status` as untracked, so it is visible and nobody commits it without choosing to. `comline new` can add
-it to the `.gitignore` it already writes for `deps-cache/`; the migration itself does not edit anyone's files.
+It is a **sibling** and not a directory inside `.comline/`: `.comline/` is committed to Git, while a sibling shows in
+`git status` as untracked, so it is visible and nobody commits it without choosing to. `comline new` can add it to the
+`.gitignore` it already writes for `deps-cache/`; a migration never edits anyone's files. Objects the migration didn't
+change are hard links, so a backup costs little.
 
-*Open:* the name and place, and whether disk use warrants a default expiry. Leaning: no expiry. A store is small,
-objects the migration didn't change are hard links, and the backup is the only copy of the old format.
+## Reset
+
+`comline store reset` is the only way a store with no path to the current format is replaced, and it is the user's
+command:
+
+- It renames `.comline/` to `.comline.format-N.bak/` and starts a new store at the next build. It deletes nothing, and
+  `deps-cache/` is kept.
+- On a terminal the user is asked to confirm **that exact action** (it names the store, the backup and the format), and
+  nothing proceeds without it. Without a terminal it needs `--force`.
+- No other command resets. `build` on such a store stops and names this one.
+
+(`comline reset`, which deletes `.comline/` outright behind a typed confirmation, is today's command and unchanged.)
 
 ## Checking first
 
@@ -129,45 +145,25 @@ Only the touchpoints are named here.
 | `comline store status` | The stamp, the versions, whether a migration is needed, the unknowns per version, the backups there are. |
 | `comline store migrate [--check] [--assume-format N] [--map FILE]` | The procedure above. `--map` writes the old-to-new hashes, for anything outside the store that recorded one. |
 | `comline store verify` | The [checks](#verifying) on the current store. Also what `core#182` asks for: a damaged store says which file, and what to do. |
-| `comline store prune` | Removes verified backups. |
+| `comline store prune` | Removes verified backups, when the user runs it. |
+| `comline store reset` | [Moves a store with no path aside](#reset), on the user's confirmation. |
 | `comline store replay` | *Proposed:* [rebuild from Git](steps.md#what-cannot-be-migrated). |
-| `comline build`, `comline release` | Migrate first when the store is older, and say so. |
+| `comline build`, `comline release` | **Stop** when the store is older, and name `comline store migrate` or `reset`; on a terminal they ask whether to run the migration, and do nothing without a yes. They never change a store on their own. |
 
-`build` deleted the store without asking; migrating it without asking is strictly safer, and the plan is printed. *Open:*
-whether the default should instead be to stop and ask. A store is committed to Git, so a migration is a large diff the
-author didn't write, which is an argument for asking once. `--no-migrate`, or `COMLINE_STORE_MIGRATE=never`, makes an
-old store an error for the machine that must not write.
+There is no flag or variable that makes a command migrate or reset by itself: a machine that must migrate runs
+`comline store migrate`.
 
 ## Git
 
-`.comline/` is committed, so a migration is a change in a repository, and two people can make it. Three properties make
-that safe, and one is open.
+`.comline/` is committed, so a migration is a change in a repository, and two people can make it. Migrating is
+deterministic: a step is a pure function and the engine hashes bottom-up, so migrating the same old commit gives the
+same new hashes in every clone. Two developers who migrate separately produce the same files, and Git merges them
+without a conflict. This is why the receipt (`.comline/MIGRATIONS`, one line per migration) holds no time, no author and
+no core version: the same on every machine, so it never conflicts either. New hashes are new files, so the only files
+two sides can conflict on are `FORMAT_VERSION` and `refs/heads/main`.
 
-- **Convergence.** A step is deterministic and the engine hashes bottom-up, so migrating the same old commit gives the
-  same new hashes in every clone. Two developers who migrate separately produce the same files, and Git merges them
-  without a conflict. This is why the receipt (`.comline/MIGRATIONS`, one line per migration) holds no time, no
-  author and no core version: the same on every machine, so it never conflicts either.
-- **The objects merge by name.** New hashes are new files. The only files two sides can conflict on are
-  `FORMAT_VERSION` and `refs/heads/main`.
-- **A branch that didn't migrate** brings old-format objects and its own head. `store migrate` accepts a conflicted
-  stamp whose sides are both supported formats and a conflicted ref (`Heads::Two`), migrates the older side's chain,
-  which yields the same objects the other side already has for the commits they share, and leaves the ordinary
-  [reconcile](../../guides/ir/cas.md#branches) to join the heads, as it does today.
-
-*Open:* the conflicted stamp is parsed by hand, and what a developer sees when the two sides disagree is a conflict in
-a one-line file. The error needs to say what to do. Whether the engine should resolve it itself is not settled.
-
-### Older binaries
-
-A binary that predates this proposal deletes any store whose stamp isn't its own, a newer one included. Nothing in
-the store can stop that, so the order of releases does:
-
-1. The pull request that makes a newer store an error ships in a **release first**, and the docs and the CLI say that
-   every machine that touches a repository has to have it before format 4 lands.
-2. Even then, a binary older than the release deletes a format-4 store. Git has the history, and the backup, being a
-   sibling, survives it.
-
-*Open:* the stronger fix is to put the format-4 store somewhere an older binary doesn't look, such as `.comline/` for
-format 3 and a new directory name for 4. An older binary then finds no store and starts a new one without touching the
-new. It costs a rename across the docs, the CLI, the language server's exclusion list and `.gitignore`. It might be the
-price of making this once and for all safe, and it can only be done at a format boundary.
+**Decided:** a Git merge of stores in two formats is **refused.** A command that finds a conflicted stamp whose sides
+are different formats stops with "migrate both sides first": check out each branch, run `comline store migrate`, then
+merge. Because migration converges, the merge is then the ordinary one, and the ordinary
+[reconcile](../../guides/ir/cas.md#branches) joins the heads, as it does today. Nothing is resolved on the user's
+behalf.

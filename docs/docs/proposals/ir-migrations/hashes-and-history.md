@@ -46,7 +46,7 @@ migration that breaks the build it was meant to save. And the [offline proposal]
 makes the hash the identity of a dependency: caches and signed bundles are keyed by it, so a hash that moves with core's
 internal format would invalidate both.
 
-**Proposed:** a pin made under format N, by scheme S, **still verifies under C when the dependency's content can be
+**Decided:** a pin made under format N, by scheme S, **still verifies under C when the dependency's content can be
 expressed in N**, and a pin is never accepted otherwise.
 
 1. To check a pin that doesn't match, core takes the dependency's compiled model and applies `down` through each step
@@ -74,11 +74,11 @@ told why.
 | Proof | golden pins from the old cores | golden pins from the form | none needed, and none possible |
 | Costs | `down` must be defined on a compile, not only on a stored version | the form must also carry new information the day the IR does | the offline proposal's bundles and caches |
 
-*Open:* whether a pin that verifies through the witness is **accepted silently,** accepted with a warning that names the
-format ("re-pin to move to the current one"), or rejected with the same message as case 3 (the re-pin being a one-line
-change that is then explicit). Accepting is sound by the argument above, and rejecting is the stricter and costs
-every repository one edit per bump. Leaning: accept with a warning once the bridge has the golden pins behind it.
-Option B stays available if the bridge turns out too costly to keep through many formats.
+**Decided:** a pin that verifies through the witness is **accepted, with a one-line notice** that suggests a re-pin
+("this pin was made under IR format N and still verifies; re-pin to move to the current one: `hash = "…"`"). It is never
+silent and never a failure. Accepting is sound by the argument above: the content has nothing the pin didn't cover. The
+re-pin is the user's, by hand or with `comline add --repin`; nothing rewrites `config.idp`. Option B stays available if
+the bridge turns out too costly to keep through many formats.
 
 The pin gate in [the proof](proof.md#the-gate) makes the move visible: a change that moves the *fresh* pin of a fixture
 dependency has to say so in the pull request.
@@ -105,11 +105,12 @@ migration is not a rebuild, and a version that was released as `0.4.0` was.
   says `diff` recomputes both versions under the newer spec, so a loss the spec learned to see is in both and is no
   change. A format-3 version whose protocol never had `bounded_size` in its frozen set (the guarantee didn't exist) is
   not "narrower" than today's: it is recomputed, and gives it up like its successor does.
-- **The spec a version was frozen against** is, today, recorded nowhere: the decision in the vocabulary is that each
-  frozen version records it, and that isn't built. A version without it reads as `unknown`, and is recomputed under
-  the current spec like any older one. **Proposed:** record it as a root-tree entry, absent meaning unknown, in the
-  first release of the framework, so that every version built after it has it. *Open:* whether a commit also records the
-  core that wrote it (`produced_by`), which would tell a ledger row without guessing.
+- **The spec and core that wrote a version** are, today, recorded nowhere: the decision in the vocabulary is that each
+  frozen version records the spec it was frozen against, and that isn't built. **Decided:** each stored version records
+  **the core version and the spec version that wrote it**, as root-tree entries (absent meaning unknown), in the first
+  release of the framework, so every version built after it has them. A version without them, a migrated one included, reads as `unknown`, is
+  recomputed under the current spec like any older one, and a ledger row can be told from the record instead of
+  guessed.
 - **What can't be recomputed is `unseen`.** If a rule needs an input the version lacks (a dependency's config, a
   type's width), the comparison lists it in the same `Comparison::unseen` that [core#262](https://github.com/ComlineProject/core/pull/262)
   added: the version and the path, with the reason from the `unknown` entry. A rule that needs a fact it can't see reads
@@ -117,7 +118,8 @@ migration is not a rebuild, and a version that was released as `0.4.0` was.
   comparison that couldn't see part of what it compares doesn't say that nothing changed. It can be higher, since
   "strictest" can be a breaking change: a type of unknown width against a known one is possibly breaking.
 - **The changelog** shows the same: a change it found, and, as lines of their own, what it could not compare, in the words of
-  the reason. `comline doc --version V` for a version with unknowns says which parts are.
+  the reason. `comline doc --version V` for a version with unknowns **fails closed** on what it would print from an unknown, as `doc` does for
+  any consumer ([format 4](format-4.md#consumers)).
 
 | Case | Result |
 |---|---|
