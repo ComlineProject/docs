@@ -127,7 +127,12 @@ STATES = {
     "partial": "🟡 partial",
     "ignored": "⚪ ignored",
     "unsupported": "❌ unsupported",
+    "not_reported": "❔ not reported",
 }
+
+# A feature the corpus has and a runtime's report doesn't mention yet: its
+# report predates the feature.
+NOT_REPORTED = {"state": "not_reported"}
 
 
 def read_json(file: Path | None, repo: str, rev: str, path: str) -> dict:
@@ -242,7 +247,7 @@ def runtime_matrix(corpus: dict, reports: dict[str, dict]) -> str:
     lines.append("|---|" + "---|" * len(reports))
     for feature in corpus["features"]:
         row = [f"{feature['title']} <br><sub>`{feature['id']}`</sub>"]
-        row += [state_with_detail(report["support"][feature["id"]]) for report in reports.values()]
+        row += [state_with_detail(report["support"].get(feature["id"], NOT_REPORTED)) for report in reports.values()]
         lines.append("| " + " | ".join(row) + " |")
     return "\n".join(lines)
 
@@ -255,7 +260,7 @@ def runtime_table(corpus: dict, report: dict) -> str:
         "|---|---|---|---|",
     ]
     for feature in corpus["features"]:
-        claim = report["support"][feature["id"]]
+        claim = report["support"].get(feature["id"], NOT_REPORTED)
         lines.append(
             f"| {feature['title']} <br><sub>`{feature['id']}`</sub> | {cell(feature['description'])} "
             f"| {runtime_state(claim)} | {runtime_proof(feature['id'], claim)} |"
