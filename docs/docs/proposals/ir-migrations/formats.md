@@ -1,6 +1,6 @@
 # The formats
 
-Status: **draft** · part of [Migrating stored IR across format versions](index.md)
+Status: **accepted** · decided 2026-11-13 · tracked in [core#268](https://github.com/ComlineProject/core/issues/268) · part of [Migrating stored IR across format versions](index.md)
 
 **The question.** What exactly is in a store, which of it depends on the IR format, and what does a format
 number promise about it?
@@ -121,10 +121,9 @@ bump. The `skip_serializing_if` condition is the one the code already follows ("
 to the same bytes as before them"), because the bytes of a frozen unit are also what a [dependency pin
 hashes](hashes-and-history.md#pins).
 
-## Decided and open here
+## Decided here
 
-- **Decided:** no second number (a ledger level) beside the format. It would only let a binary from before this proposal
-  refuse to write into a store whose additions it would drop, and those binaries are out of scope.
-- **Still open:** whether `SCHEMA.md` in core is the source and the [CAS guide](../../guides/ir/cas.md) links to it, or
-  the guide stays the description of the current format and `SCHEMA.md` is generated beside it. Leaning: `SCHEMA.md` is
-  the source, and the guide describes the current format and says so.
+- **No second number** (a ledger level) beside the format. It would only let a binary from before this proposal refuse to
+  write into a store whose additions it would drop, and those binaries are out of scope.
+- **`SCHEMA.md` in core is the source for every format's document.** The [CAS guide](../../guides/ir/cas.md) describes only
+  the current format, says so, and links to the source for the others.

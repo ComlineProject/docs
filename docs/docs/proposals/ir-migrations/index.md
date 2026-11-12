@@ -1,6 +1,6 @@
 # Migrating stored IR across format versions
 
-Status: **draft** · tracked in [core#268](https://github.com/ComlineProject/core/issues/268) · feeds
+Status: **accepted** · decided 2026-11-13 · tracked in [core#268](https://github.com/ComlineProject/core/issues/268) · feeds
 [core#146](https://github.com/ComlineProject/core/issues/146) (reading older IR after 1.0) and the
 [granular `@unverified`](../shared-vocabulary/granular-unverified.md) work, which is IR format 4 · seven parts,
 read in this order: [the formats](formats.md), [steps](steps.md), [running a migration](running.md),
@@ -115,6 +115,8 @@ Settled with the user, and written into the pages:
 | 1.0 | a warning release, then a 1.0 release that refuses pre-1.0 stores, names the reset command, and stamps `1.0/0` |
 | Bridge releases | how long one is supported is decided at 1.0 |
 | First client | the 3→4 step of #222's chains, end to end, before 1.0 |
+| Format documents | `SCHEMA.md` in core is the source for every format's document; the CAS guide describes only the current format |
+| Unpinned acceptances at 3→4 | an unpinned `accept_unverified` entry is re-asked, not accepted: the build stops and names `comline accept`; `config.idp` is never rewritten automatically |
 
 Binaries from before this proposal delete a store whose stamp they don't expect. They are out of scope.
 
@@ -157,9 +159,4 @@ names `comline store reset`, and stamps `1.0/0`. From then on every format chang
 
 ## Still open
 
-Little is left:
-
-- Whether `SCHEMA.md` in core is the source for each format's document, with the CAS guide describing the current format
-  ([formats](formats.md#decided-and-open-here)). Leaning yes.
-- Whether the 3→4 transition accepts an unpinned `accept_unverified` entry with a warning
-  ([format 4](format-4.md#acknowledgements)). Leaning no: the safety invariant is there to remove such an entry.
+Nothing open.

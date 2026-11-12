@@ -1,6 +1,6 @@
 # Hashes, pins and history
 
-Status: **draft** · part of [Migrating stored IR across format versions](index.md)
+Status: **accepted** · decided 2026-11-13 · tracked in [core#268](https://github.com/ComlineProject/core/issues/268) · part of [Migrating stored IR across format versions](index.md)
 
 **The question.** A migration rewrites what hashes cover. Which hashes may change, which must not, how does a
 dependency pin keep meaning what it meant, and what do compatibility checks and the changelog say about a history

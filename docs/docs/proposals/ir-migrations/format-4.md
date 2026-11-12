@@ -1,6 +1,6 @@
 # Format 4 as the first client
 
-Status: **draft** · part of [Migrating stored IR across format versions](index.md)
+Status: **accepted** · decided 2026-11-13 · tracked in [core#268](https://github.com/ComlineProject/core/issues/268) · part of [Migrating stored IR across format versions](index.md)
 
 **The question.** [Granular `@unverified`](../shared-vocabulary/granular-unverified.md), item 3 of
 [core#222](https://github.com/ComlineProject/core/issues/222), changes what a version freezes. What does the 3→4 step
@@ -81,9 +81,11 @@ that is a good model: when bounds on types arrived, `build` listed every positio
 defaults with maxima the author typed, never guessed
 (`bounds_migration.rs`). Here the offer is each acceptance, with what it now covers, and the author decides.
 
-*Open:* whether a transition period accepts an unpinned entry with a warning. Old *dependency pins* are
-[accepted with a notice](hashes-and-history.md#pins), but the safety invariant argues against doing the same here: an acceptance that isn't pinned to a
-chain is exactly what the invariant is there to remove.
+**Decided:** at the 3→4 transition an unpinned `accept_unverified` entry is **re-asked, not accepted**. The build stops and
+names `comline accept`, which records the acceptance again with its chain. `config.idp` is never rewritten automatically.
+This differs from old dependency pins, which [verify through `down` and are accepted with a notice](hashes-and-history.md#pins):
+a pin that verifies through `down` proves the content is unchanged, but an unpinned acceptance proves nothing about which
+causes it covered.
 
 ## Consumers
 

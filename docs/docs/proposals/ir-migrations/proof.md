@@ -1,6 +1,6 @@
 # Proving a migration
 
-Status: **draft** · part of [Migrating stored IR across format versions](index.md)
+Status: **accepted** · decided 2026-11-13 · tracked in [core#268](https://github.com/ComlineProject/core/issues/268) · part of [Migrating stored IR across format versions](index.md)
 
 **The question.** "The migration is accurate" has to be a statement a test makes, for every old format and every
 future one, and a format change has to be unable to land without the tests that make it. What are they?

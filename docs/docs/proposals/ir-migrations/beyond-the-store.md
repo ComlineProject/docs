@@ -1,6 +1,6 @@
 # Beyond the local store
 
-Status: **draft** · part of [Migrating stored IR across format versions](index.md)
+Status: **accepted** · decided 2026-11-13 · tracked in [core#268](https://github.com/ComlineProject/core/issues/268) · part of [Migrating stored IR across format versions](index.md)
 
 **The question.** The local `.comline/` is not the only place frozen IR, or a hash of it, is kept or relied on. What
 does each of the others need, and what does a published package need when there are some?

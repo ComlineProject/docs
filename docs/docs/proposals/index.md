@@ -152,7 +152,7 @@ Seven parts, read in order: [the formats](ir-migrations/formats.md),
 [proving it](ir-migrations/proof.md),
 [hashes, pins and history](ir-migrations/hashes-and-history.md),
 [beyond the local store](ir-migrations/beyond-the-store.md) and
-[format 4 as the first client](ir-migrations/format-4.md). *draft; tracked in
+[format 4 as the first client](ir-migrations/format-4.md). *accepted 2026-11-13; tracked in
 [core#268](https://github.com/ComlineProject/core/issues/268).*
 
 ### Connections

@@ -1,6 +1,6 @@
 # Running a migration
 
-Status: **draft** · part of [Migrating stored IR across format versions](index.md)
+Status: **accepted** · decided 2026-11-13 · tracked in [core#268](https://github.com/ComlineProject/core/issues/268) · part of [Migrating stored IR across format versions](index.md)
 
 **The question.** How does a store change format without any moment at which history is lost, however the process
 ends, and how does someone find out what it would do first?
