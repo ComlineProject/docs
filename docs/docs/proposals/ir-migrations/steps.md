@@ -65,14 +65,16 @@ An unknown has two possible carriers. **Proposed: both**, in this order of prefe
 2. **An `unknown` entry in the root tree,** for a retype whose new type has no room: a blob listing, for each
    unknown, its `path` into the model, the `step` that wrote it, the `reason`, and the `original`, the bytes N
    recorded, where N recorded something. The field itself holds a placeholder that the entry marks as one. This is
-   what lets a 2→3 step exist at all: format 3's `TypeRef` has no "unknown" variant and can't gain one without a
-   bump, while the entry keeps the old `float` text beside a placeholder.
+   what lets a step exist where the new type has no "unknown" variant and can't gain one without a bump: the entry
+   keeps the old value (say, a `float` that N froze without a width) beside a placeholder. Format 3's `TypeRef` is an
+   example of a type with no room, and a test-only format has one on purpose
+   ([proof](proof.md#test-only-formats)).
 
 `unknown` is an additive entry, a row in format 3's ledger with the absence reading *none*. A version without it
 has no unknowns.
 
-**Ordering constraint.** A shipped format-3 binary would read a store migrated into format 3, with unknowns in the
-entry, as complete. So the readers of `unknown` ship, in a release, before any step that writes one. See
+**Ordering constraint.** A shipped format-3 binary would read a store that carries unknowns in the
+entry as complete. So the readers of `unknown` ship, in a release, before any step that writes one. See
 [the rollout](index.md#rollout).
 
 ### Reading an unknown
@@ -120,34 +122,32 @@ catch the two disagreeing.
 
 ## What cannot be migrated
 
+Today's formats are out of scope ([index](index.md#scope-the-system-not-the-history)): they reset at 1.0. Until then,
+and for any store the system can't migrate, one rule holds: **it is reset into a backup, never deleted.**
+
 | Store | Why | What happens |
 |---|---|---|
-| **Format 0**, unstamped bincode | Positional: a bincode decode of the wrong layout can succeed and give a different variant, so the data can't be told from garbage. About 20 layouts existed in nine months and none was marked. A commit's timestamp says when it was built, not which core built it. Nothing in the store, whose hashes cover bytes and not meaning, can check a decode against. | Refused. The store is kept. The error names the options below. |
-| An unstamped store that decodes as CBOR | The stamp was lost, so the format isn't known. | Refused, unless the user gives one: `--assume-format N`. It is recorded in the receipt, and the decode must succeed for every object. |
-| A damaged store (a missing or corrupt object, [#182](https://github.com/ComlineProject/core/issues/182)) | A migration needs every object. | Refused, naming the file and how it failed. |
-| A store whose stamp says N but whose objects don't decode as N | A binary that predates the stamp, or a half-finished edit. | Refused, naming the first object. |
+| A store in a pre-1.0 format with no step to the current one (the unstamped bincode store, formats 1 and 2, older rows of format 3) | Nobody writes those steps. Format 0 is positional: a decode of the wrong layout can succeed and give a different variant, and nothing in the store can check a decode against. | Reset: renamed to `.comline.format-N.bak/`, a new store starts at `0.1.0-dev.1`. The command says so and names the backup. `deps-cache/` is kept |
+| An unstamped store that decodes as CBOR | The stamp was lost, so the format isn't known. | Refused, unless the user gives one: `--assume-format N`. The decode must succeed for every object |
+| A damaged store (a missing or corrupt object, [#182](https://github.com/ComlineProject/core/issues/182)) | A migration needs every object. | Refused, naming the file and how it failed. Nothing is reset: a damaged store is for the user to look at |
+| A store newer than the binary | The binary can't read it. | Refused, naming the format and the comline that reads it. Never touched |
 
-For a store that can't be migrated, the options are the ones that exist already, plus one:
+A reset needs the user's say where there is history worth asking about: on a terminal it asks (default no) and
+otherwise needs `--reset-old-store`, as `comline reset` does for deletion. The backup is what makes it safe to ask
+less.
 
-- **Keep it and start a new history,** `comline reset`'s result without the deletion: the old store is renamed
-  aside, as a backup is.
-- **`comline store replay`** *(proposed; may not be worth building)*. Rebuilds a history from the project's Git
-  history with the current core, one build per release tag or commit chosen by the user. The result is a **new**
-  history: it never claims to be the old one, its versions are numbered by the current rules, and the command says
-  so. It is the way back for format 0 and for any store the framework refuses.
+A history can later be rebuilt from Git with `comline store replay` *(proposed; may not be worth building)*. It builds a
+**new** history with the current core, one build per release tag or commit the user chooses, never claims to be the old
+one, and numbers versions by the current rules.
 
 ## Support
 
-| Format | Migrates to | Lossy? | Fixtures |
-|---|---|---|---|
-| 3 | 4 | the chains and scopes format 4 records ([format 4](format-4.md)), and whatever a version's ledger level lacks | one per [ledger](formats.md#format-3-is-a-family) row |
-| 2 | 3 | yes: float width, array length, written form of a value | built by the CLI pinned at `00ee242` |
-| 1 | 2 | yes: the written form of an annotation's value | built from core's `d2763cd`, with a small patch |
-| 0 | nothing | n/a | one, to test that it is *refused* |
-
-Steps 2→3 and 1→2 are the only real lossy steps that exist before format 4, and so they are where the unknown
-machinery gets tested on real data. That is the reason to write them even though few stores are in these formats.
-Format 1 existed for about fifteen hours on `master` and no released CLI built it.
+| Format | Status |
+|---|---|
+| 1.0 and later | every format migrates to the next: that is the guarantee this system exists to give |
+| 3 (as it stands when the framework ships) | 3→4, the first client: it carries real stores, and exists to prove the system |
+| 0 to 2, and older rows of 3 | reset at 1.0, and before it where no step exists |
+| test-only formats | in the test tree, never written by a release: [the proof](proof.md#test-only-formats) |
 
 ## Where the code lives
 
@@ -157,7 +157,7 @@ per format with its `SCHEMA.md`, types, codec and ledger, and the steps between 
 beside the frozen N+1 types. Those exist from the day N+1 is introduced, and are kept equal to the live types by the
 `live ≡ frozen(current)` test until N+2 seals them.
 
-Core depends on the crate to read old stores. The engine and the CLI commands are in core. The crate's only
+Core depends on the crate to read old stores. Test-only formats live in its test tree, not in the shipped modules. The engine and the CLI commands are in core. The crate's only
 dependencies are `serde`, `ciborium`, `blake3` and `lz4_flex`, so it can be in the IR-only build, which is the one
 the `wasm32` consumers use. Whether it *should* be there, since the build's point is to be
 small, is open.

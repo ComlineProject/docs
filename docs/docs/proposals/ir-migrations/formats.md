@@ -20,7 +20,7 @@ A version's root tree has one `schema_<n>` tree per schema file, a `dep_<name>` 
 [CAS guide](../../guides/ir/cas.md) describes this for format 3.
 
 **Proposed: the container is not a format.** The object layout (CBOR, LZ4, blake3, `Blob`, `Tree`, `Commit`, the
-ref file) is the same in formats 1 to 3, and a format version covers the payloads inside it. Three things follow:
+ref file) is the same in every CBOR format so far, and a format version covers the payloads inside it. Three things follow:
 
 - A reader of the container needs no format knowledge. The CLI and core can list versions, read each commit's
   `version` and `release`, and walk parents in any store they can find the container of. Today
@@ -33,30 +33,26 @@ ref file) is the same in formats 1 to 3, and a format version covers the payload
 
 ## History of the formats
 
+Background only: these formats will be reset at 1.0 ([scope](index.md#scope-the-system-not-the-history)), and are
+listed because they are why a migration system is needed.
+
 | Format | Stamp | On `master` | What it is |
 |---|---|---|---|
-| **0** | none | 2026-01-10 (`534da82`, the CAS), config blob 2026-08-30, dependencies vendored 2026-09-30, until 2026-10-11 | bincode, which tags struct fields and enum variants by position, no names on the wire. About 20 commits reshaped the persisted types in this period, none of them marked. |
-| **1** | `1` | 2026-10-11 (`f71ef96`, PR #84) | Name-tagged CBOR. `ensure_compatible_store` and the stamp are introduced. `FrozenUnit::Parameter` removed. |
-| **2** | `2` | 2026-10-12 (`dbdb13f`, PR #87) | `Property`'s `expression: Option<String>`, the written value with its quotes stripped, becomes `value: ConfigValue`, which keeps the written form. A field renamed and retyped. |
-| **3** | `3` | 2026-10-18 (`eda0684`, PR #108) | Types stop being `KindValue` text: `TypeRef` (`Primitive`, `Named`, `Array { element, length }`, `Union`, `Unit`), `Literal` and `Condition`. `Field`/`Constant` `kind_value` becomes `ty` and a literal; `EnumVariant` holds its name; `Assert` gains `expr`. |
+| **0** | none | 2026-01-10 to 2026-10-11 | bincode, which tags fields and variants by position. About 20 commits reshaped the persisted types, none marked. |
+| **1** | `1` | 2026-10-11 (`f71ef96`) | Name-tagged CBOR. The stamp and `ensure_compatible_store` are introduced. About 15 hours on `master`. |
+| **2** | `2` | 2026-10-12 (`dbdb13f`) | `Property.expression: Option<String>` becomes `value: ConfigValue`: a field renamed and retyped. |
+| **3** | `3` | 2026-10-18 (`eda0684`) | `KindValue` text becomes `TypeRef`, `Literal` and `Condition`. |
 
-Notes that matter to migration:
-
-- **Format 1 lived about 15 hours on `master`.** Core's CI was green at its first merge (`d2763cd`, 2026-10-11) and at
-  format 2's (`59587ba`, 2026-10-12). No CLI revision pinned core in format 1.
-- **Format 2's lossiness is real.** `KindValue` text froze `T[8]` and `T[]` both as `T[]`, and `f32` and `f64` both
-  as `float`. A 2→3 step cannot recover either. Format 1's `expression` had no quotes: `@framing = "datagram"` and
-  `@framing = datagram` read the same, so a 1→2 step cannot say which form was written.
-- **The CLI pinned format 0 until 2026-10-11 (`f934a66`, core `f035379`), format 2 from 2026-10-12 (`086cd32`) to
-  2026-10-18 (`00ee242`), and format 3 from 2026-10-18 (`1455192`).** Those revisions have a committed
-  `Cargo.lock`, and the git revisions their `Cargo.toml` names (core, generation, comline-rust, comline-typescript)
-  all still exist. [The proof](proof.md#building-the-old-revs) uses
-  them.
+Two of these bumps lost information that the next format needed: format 2's text froze `f32` and `f64` as `float` and
+`T[8]` as `T[]`, and format 1's `expression` had no quotes. Nothing could have recovered them, which is the case the
+unknown machinery in [steps](steps.md#unknown) exists for, and the one the test-only formats in
+[the proof](proof.md#test-only-formats) imitate.
 
 ## Format 3 is a family
 
 The doc comment on `CURRENT_IR_FORMAT_VERSION` says growing `FrozenUnit` needs no bump. Since 2026-10-18 these have
-been added without one, and so a "format 3" store can lack any of them:
+been added without one, and so a "format 3" store can lack any of them. The 3→4 step, the first client, takes format 3
+as it stands when the framework ships (the last row), and a store from before that is reset, like any pre-1.0 store:
 
 | Added | Commit | Absent reads as |
 |---|---|---|

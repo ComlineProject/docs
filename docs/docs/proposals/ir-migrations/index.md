@@ -9,9 +9,26 @@ read in this order: [the formats](formats.md), [steps](steps.md), [running a mig
 
 **The question.** `.comline/` holds every version a package has had, and compatibility checks, the changelog and
 `comline doc --version` all read it. When core changes the shape of what it stores, `ensure_compatible_store`
-deletes the directory, so the version history is lost with each bump. **Can every stored format, past and future,
-be migrated to the current one, so that nobody can tell the result from a store the current core built, except
-where the old format never recorded something, and so that this is shown by tests instead of asserted?**
+deletes the directory, so the version history is lost with each bump. **Can the formats from 1.0 on be migrated, each
+to the next, so that nobody can tell the result from a store the current core built, except where the old format never
+recorded something, and so that this is shown by tests instead of asserted?**
+
+## Scope: the system, not the history
+
+**Decided (the user, 2026-11-13):** the formats that exist today will all be reset when 1.0 arrives, and the numbering
+restarts at format 0. So this proposal prepares **the migration system and shows it is sound**: the model, frozen
+per-format types, steps, the unknown and fail-closed machinery, atomic and idempotent running, the laws, the proof
+harness and the CI gate. It does not promise to migrate today's formats (the unstamped bincode store, formats 1 and 2,
+or the family that is format 3), and it is fine if one of them can't be migrated reliably. The 1.0 format is the first
+with a guaranteed path forward.
+
+- **Before 1.0,** a store in an older format may be **reset**, but safely: moved to a backup and never deleted, a
+  store *newer* than the binary refused and never touched, and `deps-cache/` kept. See
+  [running](running.md#what-each-command-does-with-each-stamp).
+- **The system is proven before 1.0,** because 1.0 must not be its first test. The 3→4 step for the chains of
+  [core#222](https://github.com/ComlineProject/core/issues/222) is the first real client, and test-only formats prove
+  composition and lossy steps. See [format 4](format-4.md) and [proof](proof.md).
+- **The 1.0 reset** is one release. See [beyond the store](beyond-the-store.md#the-10-reset).
 
 ## What it looks like today
 
@@ -19,14 +36,13 @@ where the old format never recorded something, and so that this is shown by test
 |---|---|
 | **The stamp** | `.comline/FORMAT_VERSION` holds `CURRENT_IR_FORMAT_VERSION` (3). `ensure_compatible_store` compares with `!=`: anything else, a missing stamp included, deletes all of `.comline/`, `deps-cache/` too. |
 | **Who deletes** | `comline build` does it with a warning in the log. The read commands (`diff`, `doc`, `generate`, `inspect`, `release`) refuse, and say that `build` "starts the version history over". An older binary deletes a store that is *newer* than it, because the check is `!=`. |
-| **What a number means** | Four on-disk shapes have existed: an unstamped bincode store and formats 1, 2 and 3. Format 3 is not one shape: [twenty additions](formats.md#format-3-is-a-family) have landed in it without a bump. |
+| **What a number means** | Four on-disk shapes have existed: an unstamped bincode store and formats 1, 2 and 3. Format 3 is not one shape: [twenty additions](formats.md#format-3-is-a-family) have landed in it without a bump, which is why the rule needs a check. |
 | **What the rule is** | Bump only for a rename, a removal or a retype; anything else is "additive". The rule is in a doc comment. Nothing checks it: the commit that introduced the stamp deferred a golden-hash check "if it becomes a real recurring problem". |
 | **Hashes that cover IR bytes** | Every object's address, a dependency pin (`hash = "blake3:…"`, scheme v2, [core#261](https://github.com/ComlineProject/core/pull/261)) and `schema_ir_hash`. A format change moves them. |
 | **Proof** | Round-trip tests over real packages, an oracle property test and fuzz targets for the guarantee check, differential tests in the runtime. None says anything about an old store. |
 
-Format 3 is the first format with a population of stores worth saving, and the next change, format 4
-([core#222](https://github.com/ComlineProject/core/issues/222)), would wipe all of them. This proposal comes first
-so that it doesn't.
+The next change, format 4 ([core#222](https://github.com/ComlineProject/core/issues/222)), would wipe every store.
+This proposal comes first so that it doesn't, and so that by 1.0 the machinery has already carried a real change.
 
 ## What this proposes
 
@@ -40,15 +56,16 @@ so that it doesn't.
 3. **[Running a migration](running.md).** The new store is written beside the old one, verified, and swapped in;
    the old one is kept. A migration can be checked without writing (`comline store migrate --check`), resumed, and
    repeated. A store newer than the binary is an error, never a deletion.
-4. **[Proof](proof.md).** A corpus of real stores built by the real historical cores, an equivalence stated field by
-   field, differential property tests against an old core, laws (totality, determinism, idempotence, composition,
-   hash stability), and a CI gate that fails a format bump without its step, fixtures and document.
+4. **[Proof](proof.md).** A corpus of real stores built by the real core of each format, an equivalence stated field by
+   field, differential property tests against the previous format's core, test-only formats for composition and lossy
+   steps, laws (totality, determinism, idempotence, composition, hash stability), and a CI gate that fails a format bump
+   without its step, fixtures and document.
 5. **[Hashes, pins and history](hashes-and-history.md).** What may and may not change in a hash, how a dependency
    pin survives a format bump without being weakened, and how compatibility and the changelog read a migrated
    history.
-6. **[Beyond the local store](beyond-the-store.md).** Every other place stored IR or its hashes appear, and the
-   policy for very old formats after 1.0.
-7. **[Format 4 as the first client](format-4.md).**
+6. **[Beyond the local store](beyond-the-store.md).** Every other place stored IR or its hashes appear, the 1.0 reset,
+   and the policy for old formats after 1.0.
+7. **[Format 4 as the first client](format-4.md),** which proves the system end to end before 1.0.
 
 ## Rules that hold whatever the details
 
@@ -59,7 +76,8 @@ so that it doesn't.
 - **What a version recorded is kept.** What its format never recorded is unknown, and unknown fails closed
   everywhere it is read: [#251](https://github.com/ComlineProject/core/issues/251)'s rule for a dependency's config,
   and the fail-closed rule of the [shared vocabulary](../shared-vocabulary/granular-unverified.md#fail-closed).
-- **Nothing is replaced until it is verified,** and what is replaced is kept until someone removes it.
+- **Nothing is replaced until it is verified,** and what is replaced is kept until someone removes it. A store that
+  can't be migrated is reset into a backup, never deleted.
 - **Accurate means tested against a fresh build.** A migrated version equals what the current core would have built
   from the same source, field for field, except for the fields the step declared unknown.
 - **A format change brings its step, its fixtures and its document in the same pull request,** or CI fails.
@@ -78,33 +96,38 @@ so that it doesn't.
 | Pins | verified through the witness: a pin made under format N still verifies if the dependency's content is representable in N |
 | History | comparisons recompute derived facts from stored inputs under the current spec; what can't be recomputed is `unseen` |
 | Gate | `formats/MANIFEST`, `live ≡ frozen(current)`, fixtures, and a bump check; see [the gate](proof.md#the-gate) |
-| Support | formats 1 to 3 migrate; the unstamped bincode store does not, and is refused with options |
+| Today's formats | not migrated; reset to a backup at 1.0, and before it where a step doesn't exist |
+| First client | the 3→4 step of #222's chains, end to end, before 1.0 |
 
 ## Rollout
 
-Staged pull requests, in the agreed order: the framework, then format 4, then cross-package chains, then tooling.
-Each stage is useful on its own, and each is a checklist in [core#268](https://github.com/ComlineProject/core/issues/268).
+Staged pull requests: the framework, then format 4 as its first client, then the 1.0 reset. Each is a checklist in
+[core#268](https://github.com/ComlineProject/core/issues/268).
 
 **1. The framework** (core, format stays 3):
 
-1. *A newer store is an error, not a wipe.* Core and the CLI message. A small pull request, released **before**
-   anything ships format 4, so that no binary in circulation deletes a format-4 store.
-2. *Format documents and the gate, with no migration yet.* A `formats` crate with the frozen format-3 types, the
-   ledger, the seal, the `live ≡ frozen(3)` test, and golden hashes for the fixture packages. This stops further
-   no-bump drift before it grows. It also adds, as ledger rows, the two entries nothing writes yet, `unknown` and the
-   spec version a version was frozen against, with readers that fail closed, and it ships in a release with step 1
-   **before** any step or format that writes either one.
-3. *The fixture corpus and its generator,* with format-3 stores built by the historical revs at each ledger row, a
-   format-2 and a format-0 store, and the weekly job that proves the old revs still build.
-4. *The engine and `comline store`:* container reader, plan, journal, verification, swap, backup, `--check`, with
-   the laws proved on a test-only toy format before any real step exists.
-5. *Steps 2→3 and 1→2,* each with its fixtures: the first real lossy steps, exercising the unknown machinery.
+1. *A newer store is an error, not a wipe, and an older one is reset into a backup, not deleted.* Core and CLI message.
+   A small pull request, released **before** anything ships format 4, so that no binary in circulation deletes a
+   format-4 store.
+2. *Format documents and the gate.* A `formats` crate with the frozen format-3 types, the ledger, the seal, the
+   `live ≡ frozen(3)` test, and golden hashes for the fixture packages. This stops further no-bump drift before it
+   grows. It also adds, as ledger rows, the two entries nothing writes yet, `unknown` and the spec version a version was
+   frozen against, with readers that fail closed. It ships in a release with step 1 **before** any step or format that
+   writes either one.
+3. *The engine and `comline store`:* container reader, plan, journal, verification, swap, backup, `--check`.
+4. *The proof harness,* proved on **test-only formats** before any real step exists: composition (N→N+2), a lossy step
+   with unknowns, the witness, crash injection, the laws. And the fixture generator.
 
-**2. Format 4** (core): the new frozen shape of [core#222](https://github.com/ComlineProject/core/issues/222) item 3,
-step 3→4, its fixtures and format document, and the pin bridge, all in one pull request because the gate requires it.
+**2. Format 4, the first client** (core): the new frozen shape of
+[core#222](https://github.com/ComlineProject/core/issues/222) item 3, step 3→4, its fixtures (stores built by format
+3's closing core) and format document, the pin bridge, and acknowledgements re-asked, all in one pull request because
+the gate requires it. It runs the square, the laws and the gate on a real change. Then cross-package chains:
+recomputation over stored dependency IR, `unseen` extended to chains, and the oracle and fuzz target over migrated
+stores.
 
-**3. Cross-package chains** (core): the recomputation of chains over stored dependency IR, `unseen` extended to
-chains, and the oracle and the fuzz target run over migrated stores.
+**3. The 1.0 reset** (core, CLI): one release resets every pre-1.0 store into a backup and stamps format 0 of the
+1.0 numbering. From then on every format change is a step. See
+[the 1.0 reset](beyond-the-store.md#the-10-reset).
 
 **4. Tooling** (CLI, language server, generators, docs):
 
@@ -113,7 +136,6 @@ chains, and the oracle and the fuzz target run over migrated stores.
 - The language server and `inspect` show `unseen`.
 - The guide on [the CAS](../../guides/ir/cas.md) loses its warning about deletion.
 - Generators learn what a version with unknowns means.
-- `comline store replay` for stores that can't be migrated.
 
 ## Still open
 
@@ -129,12 +151,11 @@ Collected from the pages; each is where it is discussed.
   ([running](running.md#git)).
 - Whether a pin that verifies through the witness is accepted silently, with a warning, or only by an explicit
   re-pin ([hashes and history](hashes-and-history.md#pins)).
-- Whether to spend the effort on formats 1 and 2, and where the support floor is before and after 1.0
-  ([beyond the store](beyond-the-store.md#after-10)).
+- **How the 1.0 reset is carried out:** one release that resets with a backup and stamps the 1.0 format 0, and how
+  that stamp can't be confused with a pre-1.0 `0` to `4`
+  ([beyond the store](beyond-the-store.md#the-10-reset)).
 - Where the frozen formats live: a crate, a module, and whether the IR-only (`wasm`) build carries them
   ([steps](steps.md#where-the-code-lives)).
 - Whether a commit should record the core and spec versions that wrote it
   ([hashes and history](hashes-and-history.md#history)).
 - What generators and `doc` do with a version that has unknowns ([format 4](format-4.md#consumers)).
-- Whether `comline store replay` (rebuilding a history from Git) is worth building for the stores that can't be
-  migrated ([steps](steps.md#what-cannot-be-migrated)).

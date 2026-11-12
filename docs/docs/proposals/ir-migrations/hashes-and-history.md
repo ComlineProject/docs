@@ -59,8 +59,7 @@ expressed in N**, and a pin is never accepted otherwise.
    dependency now records chains that it couldn't have covered. Review it and re-pin: `hash = "…"`". The command that
    writes a re-pin exists already as a request (`comline add --repin`, or the future `update`, core#261).
 4. **`config.idp` is never rewritten** by a migration or by this check.
-5. Cost is only on a mismatch, as `mismatch_message` is today, and only through the formats at or above the support
-   floor.
+5. Cost is only on a mismatch, as `mismatch_message` is today, and only through the formats that still have steps.
 
 A package that doesn't use what format 4 added therefore keeps every pin through the bump, with no action, and the
 tests show it ([proof](proof.md#laws)): `golden-pins.json` holds each fixture dependency's pin as the *historical* core
@@ -125,7 +124,7 @@ migration is not a rebuild, and a version that was released as `0.4.0` was.
 | A package migrated from format 3, source unchanged | Nothing found; see [the first build](#the-first-build-after-a-migration) |
 | The spec has since added a guarantee an old protocol gives up | Recomputed on both sides: no change, no false major |
 | A version from before dependency configs were kept (core#262) | `unseen: Dependency("acme")`, at least a patch: as now |
-| A format-2 version with an array of unknown length, compared to today's | the path listed as unseen; possibly breaking |
+| A version that went through a lossy step, with an array whose length was lost, compared to today's | the path listed as unseen; possibly breaking |
 | A version whose `release` says `0.4.0` | `0.4.0`, whatever the current rules would number it |
 
 ### The first build after a migration

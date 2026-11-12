@@ -9,6 +9,13 @@ do with every format-3 version already stored, and what is the package author as
 Format 4 is not designed here. It is the shape that proposal accepted, and this page is what the step does with it.
 Anything that depends on the final shape is marked.
 
+**It is the first real client of the system,** and exists to prove it before 1.0, because today's formats won't be
+migrated ([scope](index.md#scope-the-system-not-the-history)). One pull request exercises, on a real change: the frozen
+copy and ledger, a step with `up`, `down` and an `unknown` list, a typed unknown, the square against a fresh format-4
+build, the laws, the pin bridge, and the gate. The test-only formats of [the proof](proof.md#test-only-formats) cover
+what one step can't (composition, an untyped unknown); the two together are the system's proof. A format-3 store that
+exists when the framework ships is migrated for real, and one older than that is reset.
+
 ## What changes
 
 Format 3 freezes what core worked out as a **set**, and where it was written:
@@ -51,7 +58,7 @@ the current spec ([history](hashes-and-history.md#history)). So:
 - `diff` and the changelog **recompute chains for both versions** and compare those. A migrated version compared with an
   unchanged successor shows no change, even though its stored chain is unknown.
 - The chains stay unknown only where an input is missing: a dependency's config in a version older than #262, a type
-  whose width format 2 lost. Those are `unseen`, as everything else that can't be seen is
+  whose information an older format never kept. Those are `unseen`, as everything else that can't be seen is
   ([history](hashes-and-history.md#what-a-comparison-does)).
 - "Narrowing a marker isn't a major change; widening one or adding a cause is" is a rule over *recomputed* causes for
   these versions, so it needs no stored chain to hold.
@@ -92,9 +99,8 @@ What reads a version with unknown chains, and what each does:
 
 ## Fixtures and tests for 3→4
 
-The corpus ([proof](proof.md#the-fixture-corpus)) needs, for this step: the chain graphs of the oracle built by the cores
-of each format-3 ledger row from `bd9d9f4` on, with the inner scopes (`66feecb`) and the package-scope `unverified`
-(`9ea142e`) in the later rows. The square is then: the format-3 store of a graph, migrated, against the format-4 build of
+The corpus ([proof](proof.md#the-fixture-corpus)) needs, for this step: the chain graphs of the oracle, with the inner scopes
+(`66feecb`) and the package-scope `unverified` (`9ea142e`), built by format 3's closing core. The square is then: the format-3 store of a graph, migrated, against the format-4 build of
 the same graph with chains and package pins forgotten. The differential test draws random graphs and histories from
 the oracle's generators, the same ones that test the invariant, so the property that no guarantee goes
-unacknowledged is checked over migrated stores too (stage 3 of the rollout).
+unacknowledged is checked over migrated stores too (the cross-package chains part of stage 2 of the rollout).

@@ -9,7 +9,7 @@ does each of the others need, and what does a published package need when there 
 
 | Artifact | Holds | Migration story |
 |---|---|---|
-| **`.comline/` store** (`objects/`, `refs/`, `FORMAT_VERSION`) | every version, as frozen IR | [Migrated](running.md), whole, with the old one kept |
+| **`.comline/` store** (`objects/`, `refs/`, `FORMAT_VERSION`) | every version, as frozen IR | [Migrated](running.md), whole, with the old one kept; before 1.0, [reset into a backup](#the-10-reset) where no step exists |
 | **`.comline/deps-cache/`** | git checkouts of dependencies: source, not IR | Not migrated, not part of the store. **Carried across the swap**: today's wipe deletes it, and an offline machine can't fetch it again |
 | **A dependency's own committed `.comline/`** | its version history; the only thing core reads of it is the newest commit's `version` (`resolved_version`) | Read with the format-independent [container reader](formats.md#what-a-store-holds). Today any failure reads as `0.0.0-unbuilt`; it should say the store couldn't be read |
 | **Dependency pins** in `config.idp` | scheme v2 hash over IR bytes | Never rewritten. [Bridged](hashes-and-history.md#pins) |
@@ -44,6 +44,29 @@ keyed by it. The rules for IR follow from that.
 - **A pin never depends on which format an archive's store is in.** That is the requirement the
   [pin bridge](hashes-and-history.md#pins) meets.
 
+## The 1.0 reset
+
+**Decided:** the formats that exist today are all reset when 1.0 arrives, and the numbering restarts: the 1.0 format is
+**format 0** of a new numbering, and the first with a guaranteed path forward. Nothing before it is migrated.
+
+**Proposed:** it is one release, so that there is one moment and one rule.
+
+1. The release finds a pre-1.0 store, in any format, and **resets it into a backup**: `.comline.format-N.bak/`, the
+   same mechanism as [any reset](running.md#what-each-command-does-with-each-stamp), never a deletion. `deps-cache/` is
+   kept. A new store starts, and stamps the 1.0 format 0.
+2. It is told apart from the old numbers: pre-1.0 stamps are the integers 0 to 4, and a 1.0 `0` or `3` must not be read
+   as one of them. So the 1.0 stamp carries an **epoch** (`FORMAT_VERSION` reads, say, `1.0/0`), and a bare integer
+   is by definition pre-1.0. The new directory name that [running](running.md#older-binaries) floats would do the
+   same job. *Open.*
+3. The frozen types of the pre-1.0 formats are **not** kept: the reset is the only thing that touches them, and it
+   needs the stamp and the container, which are format-independent ([formats](formats.md#what-a-store-holds)).
+4. Every format change after it is a step, with a document, fixtures and a seal, as the gate requires. The system is
+   already in use by then: format 4's step is its first run.
+
+*Open:* the release's shape. One release that only resets, so that its behaviour is easy to state and to find, or the
+1.0 release itself. Leaning: the 1.0 release resets, and the release before it warns, once, that a reset is coming and
+names the backup.
+
 ## After 1.0
 
 [core#146](https://github.com/ComlineProject/core/issues/146) asks that from 1.0 a newer comline reads what an older one
@@ -52,19 +75,17 @@ framework *is* the readers, and its fixtures and laws are the tests.
 
 | | Before 1.0 | From 1.0 |
 |---|---|---|
-| **Formats that migrate** | the supported ones: 3, and 1 and 2 if they get built | every format released at or after 1.0, for ever. A released format's frozen types, steps, fixtures and seal are never removed |
-| **A format below the floor** | refused, the store kept, with the options of [what cannot be migrated](steps.md#what-cannot-be-migrated) | the same, and the error names the **bridge release**: the last comline that still migrates it |
-| **Moving the floor** | any minor release | a major one, announced one minor earlier; the bridge release stays installable |
+| **Formats that migrate** | none promised: format 3 for the first client, the rest reset | every format released at or after 1.0, for ever. A released format's frozen types, steps, fixtures and seal are never removed |
+| **A store with no path** | reset into a backup | refused, never reset, and the error names the **bridge release**: the last comline that still migrates it |
+| **Dropping a format** | any minor release | a major one, announced one minor earlier; the bridge release stays installable |
 | **Cost of a bump** | a step and its fixtures | the same, **and permanent**: it is carried for ever |
 | **Additive changes** | a [ledger](formats.md#format-3-is-a-family) row each | a ledger row each, a fixture, and the same lines in the frozen copy |
 
 Because each bump is permanent from 1.0, bumps are worth batching: the policy proposed is that a format bump is
 planned, not incidental. Cheap changes are additive ones, and the gate makes those cheap.
 
-A *version* is not a format. Package version 0.3.0, built long ago in a format still on the support list, is migrated
-like every version of its store: nothing is dropped, and it can be compared at the precision it recorded, nothing
-finer. A version in a store below the floor is one the store still has, in the backup, and one `comline store replay`
-can rebuild from Git.
+A *version* is not a format. Package version 0.3.0, built long ago in a format that still migrates, is migrated like
+every version of its store: nothing is dropped, and it can be compared at the precision it recorded, nothing finer.
 
 The spec side needs nothing of this: the spec is append-only for anything frozen
 ([the vocabulary](../shared-vocabulary/catalog.md#versioning)), so an old version reads under a newer spec without a step.
@@ -72,7 +93,4 @@ Only the IR format does.
 
 ## Still open here
 
-- **The floor now.** Whether formats 1 and 2 are worth building: they are the only lossy steps that exist before format
-  4, and they exercise the unknown machinery on real data, but format 1 existed fifteen hours and no CLI built it.
-  Leaning: build 2→3, which a released CLI did build for six days, and decide 1→2 when the engine exists.
 - **How long a bridge release stays supported,** after 1.0.

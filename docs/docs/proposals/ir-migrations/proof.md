@@ -68,17 +68,16 @@ Each is a **scripted history**: snapshots of the sources and the actions between
 `build --reconcile`), with at least a breaking change, a release, a rebuild that changes nothing (so makes no
 commit), and, for one package, two heads left by a Git merge. They live in `core/tests/migrations/corpus/`.
 
-**The stores.** For each format and each [ledger row](formats.md#format-3-is-a-family) of it, the real
-`.comline/` that the real core of that era built from each script, committed under
-`core/tests/migrations/stores/format-<N>/<row>/<package>/`, with a `PRODUCED_BY` file (the revision, the digest of
-the lockfile, the toolchain, the command). A store is a few objects per version, so the corpus stays small.
+**The stores.** For each format that has a step out of it, the real `.comline/` that the real core of that format built
+from each script, committed under `core/tests/migrations/stores/format-<N>/<package>/`, with a `PRODUCED_BY` file (the
+revision, the digest of the lockfile, the toolchain, the command). A store is a few objects per version, so the corpus
+stays small. A format that gains a [ledger row](formats.md#format-3-is-a-family) while it is current gets a second set
+for the row, so a store of each level is covered.
 
-| Format | Built by | Notes |
-|---|---|---|
-| 0 | the CLI at `f934a66` (core `f035379`), lockfile committed | a store to be **refused**; the test is that nothing misreads it |
-| 1 | core at `d2763cd`, plus a small patch that adds a build example | no CLI pinned it |
-| 2 | the CLI at `086cd32` (core `6101ef8`), and at `00ee242` (core `30dc8ed`) | first and last of the seven pins in this format |
-| 3 | one revision per ledger row, the CLI where it pinned one (`1455192` for `b04836d`, `102a476` for `bd9d9f4`), core with a patch where it didn't | `HEAD` at the time of the format-4 pull request is the last row |
+Before 1.0 the only format with a step out of it is 3, for the 3→4 client: its fixtures are built by the core at the
+closing revision of format 3, the one the framework ships on. The CLI revision that pins it is the easy route,
+because the CLI keeps a committed `Cargo.lock`. From 1.0 on, **every released format** gets its fixtures when it
+is released, built by that release's core, and keeps them for ever ([after 1.0](beyond-the-store.md#after-10)).
 
 ### Regenerating
 
@@ -86,28 +85,27 @@ the lockfile, the toolchain, the command). A store is a few objects per version,
 it with its lockfile and `--locked`, and runs each script. Core's only non-determinism is the author (`USER`, or
 `whoami`) and the timestamp (`SystemTime`), so the generator sets the first and runs under a fake clock
 (`faketime`, on Linux). A store regenerated that way is **byte for byte** the committed one, and `--check` says so.
-The committed bytes are the fixtures; regeneration is what shows they are what that core made.
+The committed bytes are the fixtures; regeneration is what shows they are what that core made. A weekly job runs
+`--check` for every recorded format, so a yanked crate or a vanished revision shows within a week and not when a
+fixture is needed. The committed stores don't depend on it.
 
-### Building the old revs
+Producing a format's fixtures is therefore part of releasing a format, and the [gate](#the-gate) requires them.
 
-I haven't built anything for this proposal. What can be read from Git:
+### Test-only formats
 
-- **Core's CI was green at the first merge of each format:** `d2763cd` on 2026-10-11 (format 1), `59587ba` on
-  2026-10-12 (format 2), `b04836d` on 2026-10-18 (format 3). The commits inside them have no runs of their own.
-- **Core had no `Cargo.lock` at any of them** (it is a library; the file is ignored), and `rust-toolchain.toml` says
-  `stable`. A build today resolves every caret dependency to its newest release. It will probably build, and its
-  bytes depend on `ciborium`, `lz4_flex` and `blake3`, so a fixture needs a lockfile. Core-only revisions (format 1,
-  and the ledger rows no CLI pinned) get one generated once and committed in `PRODUCED_BY`.
-- **The CLI revisions have a committed `Cargo.lock`,** no `rust-toolchain.toml`, and name four git dependencies (core,
-  generation, comline-rust, comline-typescript) at revisions that **all still exist** (checked for `f934a66`,
-  `086cd32`, `00ee242` and `1455192`). With `--locked` they are the best-reproducible route, on the stable toolchain
-  from that revision's date.
-- **What can still go wrong:** a yanked crate, a rewritten history, a newer toolchain rejecting old code. None is
-  known.
+Format 4 alone can't prove everything: it has one step, and its unknowns are typed. The harness also has formats that
+exist only in the test tree, `T0 → T1 → T2`, with real frozen types, codecs and steps, never written by a release:
 
-So the first thing that stage 1 does is run it, once, and record the result. A weekly job (`old-revs.yml`, plus a manual
-trigger) rebuilds every `PRODUCED_BY` revision, so that a vanished revision or a yanked crate shows within a week and
-not when a fixture is needed. The committed stores don't depend on it. It protects regeneration, not the tests.
+| What | How it is built in | What it proves |
+|---|---|---|
+| a chain of two steps | `T0 → T1` and `T1 → T2`, run alone and composed | the **composition** law, N→N+2 against N→N+1→N+2 and against the square |
+| a lossy step | `T1` retypes a field so that `T0`'s value can't be recovered, and the new type has no unknown variant | the `unknown` entry, the placeholder, the original kept, and `forget` |
+| a typed unknown | `T2` adds a `Known<T>` field | the typed carrier, and that every reader has to handle it |
+| a step that is wrong on purpose | each of the three mistakes in [the square](#what-accurate-means), and a step that drops a field or uses a clock | the harness **fails**: the gate is tested by seeing it reject a bad step |
+| crashes | the engine on `T0` stores, killed after every write and rename | resume and idempotence |
+
+They need no old cores: a `T0` store is built by the `T0` writer in the test tree. They are the way the system is proven
+before there is a second real format.
 
 ## Differential property tests
 
@@ -117,7 +115,7 @@ Fixtures are fixed histories. The differential test draws random ones.
   files and has no dependency on core. Add **histories**: a sequence of edits (add a field, swap a type, add or
   remove a dependency, change a handshake or a bound, release), with proptest strategies for the property tests
   and `Arbitrary` for the fuzzer, as for the guarantee oracle.
-- **The old side runs out of process.** The CLI (or maker) built at the pinned revision of each format is run over the
+- **The old side runs out of process.** The CLI (or maker) built at the recorded revision of the previous format is run over the
   rendered package, and its `.comline/` is read back. The binary is built once per `(revision, lockfile, toolchain)`
   and cached in CI. The only exchange is the file system.
 - **The current side runs in the test:** the current core builds the same history, `migrate` runs on the old store, and
@@ -193,7 +191,7 @@ What it catches:
 | An edit to a frozen format | the seal |
 
 The seal and the bump check should be under CODEOWNERS, and a seal can be moved only by a command that names why, so that
-moving one is a deliberate edit and not a side effect. Weekly: the old revisions build and `--check` passes. Nightly:
+moving one is a deliberate edit and not a side effect. Weekly: the fixtures `--check` against their recorded revisions. Nightly:
 the differential test at a larger budget and the fuzz target.
 
 ## What this proves, and what it doesn't

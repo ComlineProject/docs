@@ -12,8 +12,9 @@ ends, and how does someone find out what it would do first?
 | The store | A read command (`diff`, `doc`, `generate`, `inspect`) | A write command (`build`, `release`) |
 |---|---|---|
 | N = C | proceeds | proceeds |
-| N < C, and N is supported | reads through an **in-memory** migration and writes nothing | migrates, then proceeds |
-| N < C, N unsupported, or unstamped | an error that names the format and the [options](steps.md#what-cannot-be-migrated) | the same error |
+| N < C, and a chain of steps reaches C | reads through an **in-memory** migration and writes nothing | migrates, then proceeds |
+| N < C, and no chain does (pre-1.0 only) | an error that says the store is old and will be reset, and the [options](steps.md#what-cannot-be-migrated) | **resets**: the store is renamed to `.comline.format-N.bak/` and a new one starts; asks first on a terminal; `deps-cache/` is kept |
+| unstamped, or damaged | an error naming the format or the file | the same error; nothing is reset or deleted |
 | **N > C** | an error: the store is format N, this comline reads up to C, and *comline ≥ X* reads N | the same error; nothing written |
 | a stamp that isn't a number, or has conflict markers on one side | an error naming the file ([see Git](#git)) | the same |
 
@@ -21,7 +22,8 @@ Reading an old store needs no write because a migration is a pure function: a re
 versions it needs and drop the result. That makes `comline diff`, `doc --version` and `generate` work on a store nobody
 has migrated yet, at the cost of the memory and time of the chain, which a cache can hide.
 
-Two of today's behaviors go: deleting an older store, and deleting a newer one. The second is the more dangerous.
+Two of today's behaviors go: deleting an older store (it is moved to a backup instead), and deleting a newer one (it
+is refused). The second is the more dangerous.
 `stored != Some(CURRENT)` is true for a store that is ahead of the binary.
 
 ## The procedure
