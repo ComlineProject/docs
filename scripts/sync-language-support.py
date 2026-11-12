@@ -37,7 +37,7 @@ of its own is an error that names the page to add.
     python3 scripts/sync-language-support.py            # rewrite the pages
     python3 scripts/sync-language-support.py --check    # exit 1 on drift
     python3 scripts/sync-language-support.py --file ../generation/features.json \\
-        --runtime-features ../runtime/runtime/conformance/features.json \\
+        --runtime-features ../runtime/runtime/conformance/spec/features.json \\
         --runtime-report rust=../runtime/runtime/conformance/reports/rust.json \\
         --divergences typescript=../comline-typescript/runtime/known-divergences.json
     python3 scripts/sync-language-support.py --render-reports   # at build time
@@ -76,8 +76,8 @@ RUNTIME_NOTICE = (
 
 # The wire corpus, and where each language's runtime writes its report:
 # (repository, path in it).
-CORPUS = ("runtime", "runtime/conformance/features.json")
-VECTORS = "https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/{id}.json"
+CORPUS = ("runtime", "runtime/conformance/spec/features.json")
+VECTORS = "https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/spec/vectors/{id}.json"
 RUNTIMES = {
     "rust": ("runtime", "runtime/conformance/reports/rust.json"),
     "typescript": ("comline-typescript", "runtime/conformance-report.json"),
