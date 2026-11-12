@@ -1,12 +1,16 @@
 # Granular `@unverified`
 
-Status: **draft** · part of [A shared vocabulary](index.md) · revisits part
+Status: **accepted** · decided 2026-11-12 · tracked in [core#219](https://github.com/ComlineProject/core/issues/219) and
+[core#222](https://github.com/ComlineProject/core/issues/222) · part of [A shared vocabulary](index.md) · revisits part
 of [Marking a given-up guarantee](../guarantee-marker/index.md)
 
 **The question.** `@unverified = "reason"` marks a whole protocol, with one
 reason, and core works out which guarantees it gives up. Should the author
 be able to name the guarantees, give each its own reason, and mark less than
 a whole protocol, without making it any easier to lose a guarantee unnoticed?
+
+**Decided: yes,** as an optional keyed form beside the plain one, under the
+rules below.
 
 ## What was decided, and what it already covers
 
@@ -84,8 +88,9 @@ protocol Billing {
 ### Scopes come from each guarantee
 
 A guarantee's scopes follow from where its cause sits, and are stated in its
-catalog entry. A new guarantee declares its own scopes, and core needs no
-special case for it.
+catalog entry (`catalog/guarantees.cue` in the specification), outermost to
+innermost. A new guarantee declares its own scopes, and core needs no special
+case for it.
 
 | Guarantee | Comes from | Scopes |
 |---|---|---|
@@ -98,12 +103,13 @@ A marker at a scope its guarantee doesn't allow is an error.
 
 ### Coverage: outer covers inner, strict on request
 
-By default a marker covers causes inside it: a protocol-level `bounded_size`
+**Decided:** by default a marker covers causes inside it: a protocol-level `bounded_size`
 covers one unbounded argument, exactly as today, so nothing existing breaks.
 Tooling suggests the narrower placement.
 
-A package can opt into **strict** (`annotations.unverified.strict = true`). The
-keyed form is then required, and each marker must sit at the innermost scope
+A package can opt into **strict** (`annotations.unverified.strict = true`; this
+is the settings switch that requires the keyed form). The keyed form is then
+required, and each marker must sit at the innermost scope
 where its cause is. That suits packages that want every given-up guarantee
 named where it happens.
 
@@ -141,7 +147,8 @@ through.
 
 What's frozen is therefore (guarantee, scope path, chain to the cause,
 reason). Narrowing a marker is not a major change, since nothing more is
-given up. Widening one, or adding a cause, is.
+given up. Widening one, or adding a cause, is. The frozen shape changes, so
+this is **IR format 4**.
 
 ### Package-default causes: acknowledged next to the cause
 
@@ -170,7 +177,8 @@ unverified = { schema_agreement = "the gateway pins schemas by contract",
 
 `accept_unverified = { Billing = [...] }` accepts the protocol's whole frozen
 set, inner scopes and chains included. It is pinned like an acknowledgement,
-so a new inner cause still asks for re-acceptance.
+so a new inner cause still asks for re-acceptance. Acceptance by narrower
+scope is not adopted: a consumer accepts a protocol as a whole.
 
 ### A newer spec that finds an existing loss
 
@@ -198,7 +206,7 @@ a dependency's encoding declarations (core#206).
 Today there are unit tests (`core/tests/package/unverified.rs`), fuzz targets
 for parsing and compiling robustness, and runtime vectors proving that decoders
 refuse values over a bound. Nothing tests the invariant across package graphs.
-This proposal adds:
+This proposal adds these, tracked as core#223, core#224 and core#225:
 
 1. **A property test with an independent oracle,** in core. It generates
    random package graphs (bounded and unbounded types, chains across
@@ -218,7 +226,7 @@ This proposal adds:
 
 ## Options considered
 
-| | A. Today, plus narrower scopes | B. Plain or keyed (proposed) | C. Keyed only |
+| | A. Today, plus narrower scopes (*rejected*) | B. Plain or keyed (**chosen**) | C. Keyed only (*rejected*) |
 |---|---|---|---|
 | Existing schemas | unchanged | unchanged | all must be rewritten |
 | Says what's given up, in the text | no | when keyed, always under strict | always |
@@ -229,14 +237,14 @@ This proposal adds:
 ## Depends on
 
 - **The vocabulary**, for guarantee names, descriptions and scopes.
-- **Keyed annotation values** (core#124). Today an annotation's value is a
+- **Keyed annotation values** (core#124), not built yet. Today an annotation's value is a
   scalar, and a list is parsed as validator calls.
 - **Markers on arguments and fields.** Check this against how bounds attach
   today (core#98).
 
 ## The word
 
-`@unverified` for both forms. The objection to the earlier `@waives(…)` was to
+**Decided:** `@unverified` for both forms. The objection to the earlier `@waives(…)` was to
 naming guarantees at all, not to the word. Now that naming is optional and
 checked, the choice is about readability. `@unverified(bounded_size = "…")`
 reads accurately: Comline doesn't verify it. And one word already runs through

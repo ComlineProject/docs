@@ -1,6 +1,7 @@
 # The catalog
 
-Status: **draft** · part of [A shared vocabulary](index.md)
+Status: **accepted** · decided 2026-11-12 · tracked in [core#219](https://github.com/ComlineProject/core/issues/219), [core#220](https://github.com/ComlineProject/core/issues/220)
+and [core#222](https://github.com/ComlineProject/core/issues/222) · part of [A shared vocabulary](index.md)
 
 **The idea:** every name that more than one program needs to agree on is an
 entry in one catalog. Code refers to an entry by its id, and each set of names
@@ -36,7 +37,8 @@ guarantees: bounded_size: {
     kind:        "guarantee"
     title:       "bounded size"
     description: "Every value has a maximum size, so a decoder refuses an oversized one before allocating it."
-    scopes: ["protocol", "function", "argument", "type"]
+    comes_from:  "type"
+    scopes:      ["protocol", "function", "argument", "field", "type"]
 }
 ```
 
@@ -66,9 +68,9 @@ Every kind where one source would remove copies. In rough order of value:
    versions, and the Observatory's expected reports.
 4. **Annotations and settings keys.** Today unknown ones are silently ignored
    (core#171, core#178). With entries they can be refused, completed in the
-   editor and documented from one place.
+   editor and documented from one place. *Not in the catalog yet.*
 5. **Diagnostic codes**, with explanations for the CLI and the language
-   server.
+   server. *Not in the catalog yet.*
 6. **Fuzz, bench and other CI targets.** The CI matrices, the Observatory's
    `expect:` lists and the READMEs are generated from a set.
 
@@ -90,7 +92,7 @@ needs as constants: a `&[&str]`, an enum, a TypeScript union.
 
 ## Relations
 
-**Leaning: plain references.** The catalog could stop at *what exists*, or it
+**Decided: plain references only.** The catalog could stop at *what exists*, or it
 could also state the rules that connect entries:
 
 - a handshake **establishes** guarantees (`comline@1` → schema and encoding agreement);
@@ -106,9 +108,11 @@ the rule language has to stay small. So the catalog states the relations that
 are plain references (establishes, keeps, gives up, applies to, scopes), and
 logic that compares values (`fit`) stays in code that reads the catalog.
 
+How far relations may go beyond plain references is **still open**.
+
 ## Where it lives
 
-**Leaning: a spec repository, `specification`.** Third parties never edit the catalog: they
+**Decided: `ComlineProject/specification`, a spec repository.** Third parties never edit the catalog: they
 declare their own entries (`com.acme.f@1`) in `config.idp`, in the same shape.
 What they need from it is what they implement against: the names, the facts
 and their domains, and the conformance cases that prove them. That is the
@@ -119,33 +123,35 @@ and not against the Rust runtime.
 So the vocabulary lives in **one spec repository** with:
 
 - the catalog (CUE);
-- the conformance specs (`profile.cue`, `features.json`) and vectors, moved out
-  of `runtime/conformance`;
+- the conformance specs and vectors, moved out of `runtime/conformance`;
+  `profile.cue` and `features.json` are now generated from the catalog;
 - compiler conformance cases (see [granular `@unverified`](granular-unverified.md#testing-the-invariant));
-- generated outputs: a `no_std` Rust crate, a TypeScript module, and JSON for
-  everything else.
+- generated outputs: the `comline-catalog` crate (`no_std` Rust) and
+  `catalog/gen/catalog.json` for everything else. The TypeScript module in the
+  first sketch isn't generated.
 
 It is versioned as the spec ("spec 0.10" is already how the conformance
 corpus is versioned). Everyone, this project's own core, runtime and
-generators included, pins the spec the way a third party would. The Rust
-conformance engine and reference stay in `runtime`.
+generators included, pins the spec the way a third party would: the runtime
+vendors it in `conformance/spec/`, pinned by `spec/REV` and checked in CI.
+The Rust conformance engine and reference stay in `runtime`.
 
 The options that were weighed:
 
-| | Spec repository | Vocabulary-only repository | In `core` |
+| | Spec repository (**chosen**) | Vocabulary-only repository (*rejected*) | In `core` (*rejected*) |
 |---|---|---|---|
 | What a third party pins | the whole spec: names, facts, vectors and cases | the names, and the vectors separately from `runtime` | a Rust compiler's repository, and every core release |
 | Language-neutral | yes: CUE and JSON | yes | no |
 | Cost | one more repository, plus moving the conformance corpus | one more repository | lowest |
 
-**Format: CUE as the source.** It is already used for the conformance specs,
+**Format: CUE as the source (decided).** It is already used for the conformance specs,
 it validates (a fact's value must be in its domain), it computes sets, and it
 exports JSON. Generated outputs are committed and checked in CI, the same way
 `comline.h` is checked against cbindgen.
 
 ## Versioning
 
-The spec version and the IR format version stay **independent**:
+**Decided:** the spec version and the IR format version stay **independent**:
 
 - **The spec version** (the vocabulary, the conformance corpus and the compiler
   cases) says what implementations must agree on.
@@ -157,6 +163,8 @@ The spec version and the IR format version stay **independent**:
   or redefined, so an old frozen version always reads correctly under a newer
   spec. From 1.0 this is what lets a newer release read an older one's IR
   (core#146).
+- **Granular `@unverified` changes the frozen shape** (scopes, chains), so it
+  is IR format 4.
 
 ## How each consumer reads it
 

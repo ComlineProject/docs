@@ -130,11 +130,12 @@ generators, the language server, the Observatory and the docs. Two parts,
 read in order:
 
 - [The catalog](shared-vocabulary/catalog.md): entries, kinds, sets,
-  relations, and where the catalog lives. *draft.*
+  relations, and where the catalog lives. *accepted 2026-11-12; the
+  `specification` repository holds it, and core and the runtime read it.*
 - [Granular `@unverified`](shared-vocabulary/granular-unverified.md): an
   optional keyed form naming each guarantee with its own reason, at the
   scope that guarantee has, checked against what core computes. Revisits part
-  of the guarantee-marker decision. *draft.*
+  of the guarantee-marker decision. *accepted 2026-11-12; not built yet.*
 
 ### Connections
 

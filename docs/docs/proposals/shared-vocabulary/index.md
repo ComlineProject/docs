@@ -1,6 +1,7 @@
 # A shared vocabulary
 
-Status: **draft** · two parts, read in order:
+Status: **accepted** · decided 2026-11-12 · tracked in [core#219](https://github.com/ComlineProject/core/issues/219), [core#220](https://github.com/ComlineProject/core/issues/220)
+and [core#222](https://github.com/ComlineProject/core/issues/222) · two parts, read in order:
 [the catalog](catalog.md), then [granular `@unverified`](granular-unverified.md)
 
 **The question.** Comline names many things that several programs have to
@@ -77,13 +78,16 @@ In stages, each useful on its own, in the order the encoding-facts work used:
 1. **The spec repository** ([catalog → where it lives](catalog.md#where-it-lives)):
    the catalog in CUE, seeded from `profile.cue`, core's `Guarantee` and the
    official encodings, with the conformance specs and vectors moved in from
-   `runtime/conformance`.
+   `runtime/conformance`. *Done.*
 2. **Core reads it:** guarantees, facts, value domains, aliases and official
    encodings come from the catalog. Unknown annotation names, settings keys
-   and diagnostic codes are refused (core#171, core#178).
+   and diagnostic codes are refused (core#171, core#178). *Done for guarantees,
+   facts, aliases and encodings. The refusal waits until the catalog holds
+   annotations, settings keys and diagnostic codes.*
 3. **The runtime and conformance read it:** fact names, conformance
    features, and the fuzz and bench target sets. The CI matrices and the
-   Observatory's expected reports are generated from it.
+   Observatory's expected reports are generated from it. *Done for the fact
+   names, the features and the fuzz targets.*
 4. **Granular `@unverified`** in core: grammar, scopes, per-package
    acknowledgement pinned to each cause's chain, and freezing. It needs
    keyed annotation values (core#124). It lands with its safety tests: a
@@ -92,17 +96,22 @@ In stages, each useful on its own, in the order the encoding-facts work used:
 5. **Tooling reads it:** language server completion and hover, generated
    `@unverified` docs (generation#93), and the docs tables.
 
-## Leanings so far
+## What was decided
 
-- **Home:** a spec repository, `specification`, holding the catalog, the conformance specs and
-  vectors, and compiler conformance cases, versioned as the spec.
-- **Format:** CUE as the source, with generated Rust, TypeScript and JSON.
+- **Home:** a spec repository, `ComlineProject/specification`, holding the
+  catalog, the conformance specs and vectors, and compiler conformance cases,
+  versioned as the spec. A vocabulary-only repository and `core` were
+  rejected.
+- **Format:** CUE as the source, with generated outputs: the `comline-catalog`
+  Rust crate and `catalog/gen/catalog.json`.
 - **Relations:** plain references only (establishes, keeps, gives up, applies
-  to, scopes); logic that compares values stays in code.
-- **`@unverified`:** plain or keyed, at any scope a guarantee allows. Outer
-  covers inner, with a strict opt-in. Acknowledged once per package along a
-  chain, pinned to the chain, accepted per protocol, failing closed.
-
+  to, scopes); logic that compares values stays in code. Going further is
+  [open](#still-open).
+- **`@unverified`:** plain or keyed, at the scopes each guarantee states in
+  the catalog. Outer covers inner, with `annotations.unverified.strict = true`
+  as the opt-in to the keyed form at the innermost scope. Acknowledged once
+  per package along a chain, never inherited, pinned to the chain, accepted
+  per protocol, failing closed.
 - **Package defaults:** acknowledged in `config.idp` next to the setting that
   causes the loss, covering only that cause.
 - **Spec upgrades:** a loss found by a newer spec asks the author and consumers
@@ -110,9 +119,16 @@ In stages, each useful on its own, in the order the encoding-facts work used:
   major change.
 - **Versions:** the spec version and the IR format version are independent,
   with each frozen version recording its spec version, and the spec
-  append-only for anything frozen.
+  append-only for anything frozen. Granular `@unverified` changes the frozen
+  shape (scopes, chains), so it is IR format 4.
 - **The word:** `@unverified` for both forms.
 
-## Open questions
+## Still open
 
-None blocking. The next step is the `specification` repository (core#220).
+- **How far relations go beyond plain references.** The catalog states
+  establishes, keeps, gives up, applies to and scopes. Whether it ever states
+  rules that compare values (`fit`) is not decided; those stay in code.
+
+Not open, but not built yet: keyed annotation values (core#124), the
+annotation, settings-key and diagnostic-code kinds in the catalog, and
+granular `@unverified` itself with its safety tests (core#222 to core#225).
