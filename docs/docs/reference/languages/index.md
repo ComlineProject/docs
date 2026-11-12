@@ -14,7 +14,7 @@ language page can't claim something that isn't true.
 | --- | --- |
 | ✅ **supported** | Works. |
 | 🟡 **partial** | Works, with the limit the note states. |
-| ⚪ **ignored** | Succeeds, but the output is what it would be without the feature: the types are right, the feature has no effect. `comline generate` warns, and so does the editor. |
+| ⚪ **ignored** | Succeeds, but the output is what it would be without the feature: the types are right, the feature has no effect. `comline generation` warns, and so does the editor. |
 | ❌ **unsupported** | Is refused, with an error naming every use. The editor warns at each use. |
 
 A runtime's claims use the same words, about the wire:

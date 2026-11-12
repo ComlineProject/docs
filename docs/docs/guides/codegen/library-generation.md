@@ -6,7 +6,7 @@ that source into a **package**: a manifest (`Cargo.toml`, `package.json`) and
 the module layout. A planned third mode, `dylib`, would compile it to a library
 any language's [runtime](../runtime/index.md) can load.
 
-`comline generate`'s `mode` chooses how far generation goes. It is set per target
+`comline generation`'s `mode` chooses how far generation goes. It is set per target
 in [`comline.toml`](../../reference/package/congregation/comline-toml.md) (`[generate] mode` or
 `[[generate.target]] mode`).
 

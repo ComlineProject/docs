@@ -9,14 +9,14 @@ flowchart LR
     A["package author"] --> IDP["config.idp<br/>identity, languages,<br/>dependencies, wire, settings"]
     IDP -->|"frozen into<br/>every version"| CAS[(".comline/")]
     C["whoever generates"] --> TOML["comline.toml<br/>output paths, layout,<br/>mode, versions"]
-    CAS --> GEN["comline generate"]
+    CAS --> GEN["comline generation"]
     IDP --> GEN
     TOML --> GEN
 ```
 
 | | [`config.idp`](config-id.md) | [`comline.toml`](comline-toml.md) |
 |---|---|---|
-| Owner | the package author | whoever runs `comline generate` |
+| Owner | the package author | whoever runs `comline generation` |
 | Says | what the package is: name, identity, languages it supports, dependencies, wire defaults, settings | where generated code goes, in what layout and mode, for which versions |
 | Frozen into versions | yes | no |
 | Changes the version | can | never |

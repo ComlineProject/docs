@@ -1,6 +1,6 @@
 # Generating code
 
-`comline generate` turns your compiled schemas into source code for a target
+`comline generation` turns your compiled schemas into source code for a target
 language. This page is the practical guide: what it produces, how to say where it
 goes, and how to generate more than one version at once.
 
@@ -15,7 +15,7 @@ Code generation is configured across two files with two different owners:
 | File | Owner | In version control | Purpose |
 |---|---|---|---|
 | `config.idp` | the **package author** | committed, frozen into every published version | declares *what languages* the package can be generated as |
-| `comline.toml` | the **consumer** (whoever runs `generate`) | committed, never frozen | says *where* generated code goes, in what layout, for which versions |
+| `comline.toml` | the **consumer** (whoever runs `comline generation`) | committed, never frozen | says *where* generated code goes, in what layout, for which versions |
 
 `config.idp` never contains an output path — where your bindings land is your
 call, not the package author's, so it lives in `comline.toml`.
@@ -39,7 +39,7 @@ toolchain** its generated code must build on. The `= {}` is required and takes
 no options. See [Language versions](#language-versions) for what the version
 promises and how it's checked.
 
-Declaring a language is what makes it generated: `comline generate` emits every
+Declaring a language is what makes it generated: `comline generation` emits every
 language listed here. The entry carries no output path — where the code lands is
 the consumer's business, below — and a consumer who wants fewer says so with
 `only`.
@@ -211,19 +211,19 @@ idiomatic output for a past schema shape.
 ## Running it
 
 ```
-comline generate [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--dry-run] [--list] [--watch]
+comline generation [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--dry-run] [--list] [--watch]
 ```
 
-`generate` validates the project and writes the code. Unlike `comline build` it
+`generation` validates the project and writes the code. Unlike `comline build` it
 does **not** freeze a version or write to `.comline/` — it is safe to run
-repeatedly and from CI.
+repeatedly and from CI. `gen` is short for `generation`.
 
 ```bash
-comline generate                              # every configured target, per comline.toml
-comline generate --target rust                # just rust
-comline generate --target rust --out ./bind   # override this target's output root
-comline generate --dry-run                    # report without writing anything
-comline generate --watch                      # regenerate on schema / config change
+comline generation                              # every configured target, per comline.toml
+comline generation --target rust                # just rust
+comline generation --target rust --out ./bind   # override this target's output root
+comline generation --dry-run                    # report without writing anything
+comline generation --watch                      # regenerate on schema / config change
 ```
 
 Each target's files are reported as a tree:
@@ -245,8 +245,8 @@ Each target's files are reported as a tree:
 generated at once. `--dry-run` and `--list` are independent: the first decides
 whether anything is written, the second how it is reported.
 
-`comline clean` removes the generated output (the whole `out` directory when it
-is a dedicated one, e.g. `generated/`). It leaves `.comline/` alone —
+`comline generation clean` removes the generated output (the whole `out` directory when it
+is a dedicated one, e.g. `generated/`); `--target <lang>` removes only that language's. It leaves `.comline/` alone —
 `comline reset` is the command that discards the version history.
 
 ## What Rust output looks like
@@ -325,7 +325,7 @@ for it.
 
 ## Gotchas
 
-- `generate` never changes the package version. Only `build` does.
+- `generation` never changes the package version. Only `build` does.
 - The default layout writes under `generated/`. Older CLI versions wrote flat
   into the project root; set `out = "."` and `layout = "{{namespace}}.{{ext}}"`
   for that.

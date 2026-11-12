@@ -5,7 +5,7 @@
 | Repo | What |
 |---|---|
 | [`ComlineProject/core`](https://github.com/ComlineProject/core) | the compiler, IR, `.comline/` store, diff & auto-versioning |
-| [`ComlineProject/cli`](https://github.com/ComlineProject/cli) | the `comline` CLI — `build`, `generate`, `diff`, `clean`, `reset` ([full guide](https://github.com/ComlineProject/cli/blob/main/docs/cli.md)) |
+| [`ComlineProject/cli`](https://github.com/ComlineProject/cli) | the `comline` CLI — `build`, `generation`, `diff`, `generation clean`, `reset` ([full guide](https://github.com/ComlineProject/cli/blob/main/docs/cli.md)) |
 | [`ComlineProject/comline`](https://github.com/ComlineProject/comline) | runtime experiments |
 | [`ComlineProject/comline-vscode`](https://github.com/ComlineProject/comline-vscode) | VS Code extension |
 | [`ComlineProject/language-server`](https://github.com/ComlineProject/language-server) | LSP server |

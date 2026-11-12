@@ -210,7 +210,7 @@ wins:
 1. **The consumer's override**, in `comline.toml`.
 2. **The declaring package's `map`** for that language.
 
-If neither answers for an encoding the package uses, `comline generate` fails
+If neither answers for an encoding the package uses, `comline generation` fails
 with one sentence per encoding:
 
 ```text

@@ -15,13 +15,13 @@ flowchart LR
     I --> V["validate"]
     V -->|"comline build"| F["freeze"]
     F --> CAS[(".comline/<br/>version history")]
-    V -->|"comline generate"| G["generate"]
+    V -->|"comline generation"| G["generate"]
     TOML["comline.toml<br/>where code goes"] --> G
     G --> OUT["generated/"]
 ```
 
 `comline check` stops after validating. `comline build` freezes a version;
-`comline generate` writes code without freezing anything.
+`comline generation` writes code without freezing anything.
 
 ## 1. Write a schema
 
@@ -53,7 +53,7 @@ last one. See [Versioning rules](../reference/versioning.md).
 
 ## 3. [Generate code](codegen/generating-code.md)
 
-`comline generate` turns the schemas into source for each target language.
+`comline generation` turns the schemas into source for each target language.
 The package declares *which* languages it supports, in `config.idp`; whoever
 generates decides *where* the code lands, in `comline.toml`
 ([the two files](codegen/generating-code.md#the-two-files)). One history can be
