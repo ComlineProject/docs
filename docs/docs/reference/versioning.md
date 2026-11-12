@@ -283,7 +283,7 @@ version's facts, never in the schema.
   whatever neither released.
 - **Never reused.** When an item is removed, its number is retired. A
   re-added item gets a new number. A renamed protocol keeps its number.
-- **Generated without a build.** `comline generate` takes the numbers from
+- **Generated without a build.** `comline generation` takes the numbers from
   the last build when the schemas haven't changed since. Otherwise it works
   them out as the next `comline build` would, against the last release and
   every retired number, and writes nothing. A package that was never built
@@ -388,7 +388,7 @@ reproducible.
 
 Nothing else holds this history — there is no `publish` yet — so losing
 `.comline/` means the next build starts over at `0.1.0-dev.1`, with no undo.
-`comline clean` leaves it alone; only **`comline reset`** deletes it, behind a
+`comline generation clean` leaves it alone; only **`comline reset`** deletes it, behind a
 typed confirmation (or `--force`). See
 [the `clean` / `reset` split](../design/ir-generation.md#the-clean-reset-split).
 

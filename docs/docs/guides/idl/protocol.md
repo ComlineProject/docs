@@ -255,14 +255,14 @@ that out; the schema only says *that* something is unverified and *why*:
   }
   ```
 
-  Nobody writes this by hand: `comline add` shows what a new dependency gives
-  up and asks before writing it, and `comline accept billing` (or
+  Nobody writes this by hand: `comline deps add` shows what a new dependency gives
+  up and asks before writing it, and `comline deps accept billing` (or
   `billing::Billing`) does the same for one already declared. In the editor,
   the dependency's entry in `config.idp` shows the error, with a quick fix
   that writes the line. Until it's accepted, the build fails, printing the
   entry. The list is a snapshot: if a
   later version of the dependency gives up more, the build stops again until
-  `comline accept` is run again.
+  `comline deps accept` is run again.
 
 How a call travels between caller and implementation is the
 [runtime](../runtime/index.md)'s job, over a pluggable

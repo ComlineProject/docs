@@ -37,7 +37,7 @@ of its own is an error that names the page to add.
     python3 scripts/sync-language-support.py            # rewrite the pages
     python3 scripts/sync-language-support.py --check    # exit 1 on drift
     python3 scripts/sync-language-support.py --file ../generation/features.json \\
-        --runtime-features ../runtime/runtime/conformance/features.json \\
+        --runtime-features ../runtime/runtime/conformance/spec/features.json \\
         --runtime-report rust=../runtime/runtime/conformance/reports/rust.json \\
         --divergences typescript=../comline-typescript/runtime/known-divergences.json
     python3 scripts/sync-language-support.py --render-reports   # at build time
@@ -76,8 +76,8 @@ RUNTIME_NOTICE = (
 
 # The wire corpus, and where each language's runtime writes its report:
 # (repository, path in it).
-CORPUS = ("runtime", "runtime/conformance/features.json")
-VECTORS = "https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/{id}.json"
+CORPUS = ("runtime", "runtime/conformance/spec/features.json")
+VECTORS = "https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/spec/vectors/{id}.json"
 RUNTIMES = {
     "rust": ("runtime", "runtime/conformance/reports/rust.json"),
     "typescript": ("comline-typescript", "runtime/conformance-report.json"),
@@ -127,7 +127,12 @@ STATES = {
     "partial": "🟡 partial",
     "ignored": "⚪ ignored",
     "unsupported": "❌ unsupported",
+    "not_reported": "❔ not reported",
 }
+
+# A feature the corpus has and a runtime's report doesn't mention yet: its
+# report predates the feature.
+NOT_REPORTED = {"state": "not_reported"}
 
 
 def read_json(file: Path | None, repo: str, rev: str, path: str) -> dict:
@@ -242,7 +247,7 @@ def runtime_matrix(corpus: dict, reports: dict[str, dict]) -> str:
     lines.append("|---|" + "---|" * len(reports))
     for feature in corpus["features"]:
         row = [f"{feature['title']} <br><sub>`{feature['id']}`</sub>"]
-        row += [state_with_detail(report["support"][feature["id"]]) for report in reports.values()]
+        row += [state_with_detail(report["support"].get(feature["id"], NOT_REPORTED)) for report in reports.values()]
         lines.append("| " + " | ".join(row) + " |")
     return "\n".join(lines)
 
@@ -255,7 +260,7 @@ def runtime_table(corpus: dict, report: dict) -> str:
         "|---|---|---|---|",
     ]
     for feature in corpus["features"]:
-        claim = report["support"][feature["id"]]
+        claim = report["support"].get(feature["id"], NOT_REPORTED)
         lines.append(
             f"| {feature['title']} <br><sub>`{feature['id']}`</sub> | {cell(feature['description'])} "
             f"| {runtime_state(claim)} | {runtime_proof(feature['id'], claim)} |"

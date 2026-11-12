@@ -19,7 +19,7 @@ detail that the generated code is pleasant to use directly rather than only as a
 
 ## Using it
 
-`comline generate` is the command; [Generating code](generating-code.md) is the
+`comline generation` is the command; [Generating code](generating-code.md) is the
 full guide, and [`comline.toml`](../../reference/package/congregation/comline-toml.md) is where a
 consumer sets the output location, layout and mode.
 

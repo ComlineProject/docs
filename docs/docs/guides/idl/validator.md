@@ -6,7 +6,7 @@
     a property or whose literal type is wrong, a missing argument for a property
     without a default, or an undeclared `params.*` reference all fail the build. Generated **Rust** code then
     [runs them](#in-generated-code). Generated TypeScript doesn't yet: it
-    generates the types without the checks, and `comline generate` warns. See
+    generates the types without the checks, and `comline generation` warns. See
     [TypeScript's language reference](../../reference/languages/typescript.md#code-generation).
 
 A **validator** is a named, parameterised check you attach to a

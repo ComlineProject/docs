@@ -79,7 +79,7 @@ That key is now an error that hands back the `wire` line to write instead.
 ## Consumer Side (`comline.toml`)
 
 Where generated code lands, in what layout, for which versions — none of which
-belongs to the package author — is set by whoever runs `comline generate`, in a
+belongs to the package author — is set by whoever runs `comline generation`, in a
 separate, non-frozen `comline.toml`. See
 [Generating code](../codegen/generating-code.md) and the
 [`comline.toml` reference](../../reference/package/congregation/comline-toml.md).
@@ -154,12 +154,12 @@ reports git's own error.
   `config.idp`, and imports from it aren't checked until it is. More in
   [Dependency packages in the editor](../../design/editor-dependency-packages.md).
 
-`comline add` writes an entry for you, after resolving the dependency (a git pin
+`comline deps add` writes an entry for you, after resolving the dependency (a git pin
 is fetched), with its `hash` pinned to what it just compiled:
 
 ```bash
-comline add shared_types ../shared-types
-comline add net --git https://github.com/acme/net --commit 4f2c9e1 --version 1.2.0
+comline deps add shared_types ../shared-types
+comline deps add net --git https://github.com/acme/net --commit 4f2c9e1 --version 1.2.0
 ```
 
 The rest of `config.idp` is left as written. `--no-hash` skips the pin, say for
@@ -177,7 +177,7 @@ recorded versions. The `comline new` scaffold's `.gitignore` ignores only
 `.comline/deps-cache/`, where [git dependencies](#dependencies) are fetched.
 
 !!! warning
-    `comline reset` deletes `.comline/` (behind a confirmation). `comline clean`
+    `comline reset` deletes `.comline/` (behind a confirmation). `comline generation clean`
     does not — see [Versioning rules](../../reference/versioning.md#history-model).
 
 ## Publishing

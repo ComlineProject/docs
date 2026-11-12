@@ -50,7 +50,7 @@ Two codecs ship. Every `Codec` has a `name` (used in the handshake) plus
 
 There's no MessagePack codec for TypeScript yet, so a TypeScript target
 can't generate a package whose `wire.format` is `msgpack@1`: `comline build`
-and `comline generate` refuse it.
+and `comline generation` refuse it.
 
 `u64` and `s64` (and `u128` / `s128`) are `bigint` in both codecs.
 

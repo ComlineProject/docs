@@ -14,7 +14,7 @@ language page can't claim something that isn't true.
 | --- | --- |
 | ✅ **supported** | Works. |
 | 🟡 **partial** | Works, with the limit the note states. |
-| ⚪ **ignored** | Succeeds, but the output is what it would be without the feature: the types are right, the feature has no effect. `comline generate` warns, and so does the editor. |
+| ⚪ **ignored** | Succeeds, but the output is what it would be without the feature: the types are right, the feature has no effect. `comline generation` warns, and so does the editor. |
 | ❌ **unsupported** | Is refused, with an error naming every use. The editor warns at each use. |
 
 A runtime's claims use the same words, about the wire:
@@ -119,6 +119,9 @@ commit. A runtime's suite runs every example against it:
 | JSON wire format <br><sub>`format-json`</sub> | ✅ supported | 🟡 partial: decoding doesn't check enum variants or integer ranges ([comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57)) |
 | MessagePack wire format <br><sub>`format-msgpack`</sub> | ✅ supported | ❌ unsupported: JSON and packed@1 ship |
 | packed wire format <br><sub>`format-packed`</sub> | ✅ supported | ✅ supported |
+| packed sizes <br><sub>`sizes-packed`</sub> | ✅ supported | ❔ not reported |
+| MessagePack sizes <br><sub>`sizes-msgpack`</sub> | ✅ supported | ❔ not reported |
+| JSON sizes <br><sub>`sizes-json`</sub> | ✅ supported | ❔ not reported |
 
 <!-- runtime-matrix:end -->
 

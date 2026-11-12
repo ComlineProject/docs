@@ -18,7 +18,7 @@ same family as [Protocol Buffers](https://protobuf.dev/),
 flowchart LR
     S["schema<br/>.ids files"] --> C["comline build<br/>check and freeze"]
     C --> V[("version history<br/>.comline/")]
-    C --> G["comline generate"]
+    C --> G["comline generation"]
     G --> R["Rust code"]
     G --> T["TypeScript code"]
     R <-->|"calls over a<br/>transport"| T
@@ -43,7 +43,7 @@ changed since the last release, so a breaking change can't ship as a patch.
 
 ### [Generated code](./guides/codegen/index.md)
 
-`comline generate` writes idiomatic code for each target language: types, a
+`comline generation` writes idiomatic code for each target language: types, a
 trait or interface per protocol, clients, servers and connections. Rust and
 TypeScript are supported today, each in two forms: source files to drop into a
 project, or a buildable package.

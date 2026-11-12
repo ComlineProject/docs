@@ -39,7 +39,7 @@ flowchart LR
 | `objects/<xx>/<rest>` | One object. The 64 hex characters of its hash are split: the first two name the directory, the other 62 name the file. The file holds the object's bytes, LZ4-compressed. |
 | `refs/heads/main` | The hash of the newest commit, as 64 hex characters. Updated at the end of every build and release. It is the only ref. |
 | `FORMAT_VERSION` | The [IR format stamp](#the-ir-format-stamp) as a decimal number. |
-| `deps-cache/` | Git dependencies fetched by `comline add` and by builds. A cache, not history. |
+| `deps-cache/` | Git dependencies fetched by `comline deps add` and by builds. A cache, not history. |
 
 ### What to commit
 
@@ -55,7 +55,7 @@ writes ignores only that directory:
 .comline/deps-cache/
 ```
 
-`comline clean` never touches `.comline/`. `comline reset` deletes the whole
+`comline generation clean` never touches `.comline/`. `comline reset` deletes the whole
 directory, history included, behind a typed confirmation or `--force`. See
 [Packages & dependencies](../packages/index.md) for the package layout.
 
@@ -326,9 +326,9 @@ See `comline release` in the [CLI reference](../../reference/tools/cli/index.md)
 | `comline diff <old> <new>` | Two commits' root trees, compared with the same rules as a build: schema changes, changes within a dependency's reach, config changes and the bump they call for. |
 | `comline inspect` | The newest build's `facts`, shown beside each protocol's wire summary. It writes nothing. See [`comline inspect`](../../reference/tools/cli/inspect.md). |
 | `comline doc --version <v>` | A built version's schema blobs, its `config` for the package name, and its `docs` headers. `--changelog-from <v>` adds the changes since an earlier version. See [`comline doc`](../../reference/tools/cli/doc.md) and [Documenting your schemas](../documenting.md). |
-| `comline generate` | With a pinned version or `"all"`, the frozen schemas of those versions. The default, `"latest"`, reads the working tree and not the store. |
+| `comline generation` | With a pinned version or `"all"`, the frozen schemas of those versions. The default, `"latest"`, reads the working tree and not the store. |
 
-`diff`, `doc --version` and `generate` find a commit by `HEAD`, a version
+`diff`, `doc --version` and `generation` find a commit by `HEAD`, a version
 string such as `0.3.0-dev.2`, or a commit hash (the full 64 characters, or a
 prefix of 4 or more that matches one commit). They walk the chain from
 `refs/heads/main` through each commit's first parent.

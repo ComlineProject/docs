@@ -1,6 +1,6 @@
 # `comline.toml`
 
-Consumer-owned configuration for `comline generate`: where generated code goes,
+Consumer-owned configuration for `comline generation`: where generated code goes,
 in what layout, in what form, and for which package versions. Its `[doc]`
 table configures `comline doc`. It is committed,
 never frozen, and never part of a published package. With no `comline.toml` (or
@@ -96,7 +96,7 @@ used and has no mapping is a generation error. See
 ### `flatten`
 
 `layout` only governs `code` mode's one-file-per-schema paths — a `lib`-mode
-target ignores it entirely (`comline generate` warns if one is set) and
+target ignores it entirely (`comline generation` warns if one is set) and
 always writes the crate's fixed internal shape (`Cargo.toml`, `src/lib.rs`, a
 file per schema under `src/`) rooted at `out/<language>/`, so two `lib`
 targets can safely share one `out` without their files colliding.
@@ -166,7 +166,7 @@ and it carries its reason:
 validate_on_decode = { off = "the gateway validates every request first" }
 ```
 
-A bare `"off"` is refused, with that fix. `comline generate` notes each target
+A bare `"off"` is refused, with that fix. `comline generation` notes each target
 that gives it up, with the reason, and `comline inspect` lists it after the
 protocols (`--json`: `validate_on_decode_given_up`).
 
@@ -191,7 +191,7 @@ an async one instead:
 
 Every protocol is on a connection unless it's lockstep (the `datagram`
 framing, or JSON-RPC with no client-provided protocol); those are the same
-either way, and `comline generate` warns when `async = true` changes nothing. Like
+either way, and `comline generation` warns when `async = true` changes nothing. Like
 `external_std`, it's a consumer's choice: the same package can be generated
 async for one application and blocking for another.
 
