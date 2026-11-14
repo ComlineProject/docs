@@ -212,7 +212,7 @@ A warning when a validator only repeats a bound
 
 A finer rule could weigh the direction a value travels: loosening a parameter
 only the server receives breaks nobody. That's open, and would ride on
-`@provider` from [packet dispatch](../packet-dispatch.md).
+`@provider` from [packet dispatch](../packet-dispatch/index.md).
 
 ### Generated code
 
