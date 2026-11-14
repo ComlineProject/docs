@@ -159,17 +159,16 @@ Seven parts, read in order: [the formats](ir-migrations/formats.md),
 
 How a `use` path says where a schema comes from, and how a package's dependencies
 are organised. A package's own schemas are reached only through `package::`,
-`parent::` or `self::` (a warning with a quick fix now, an error in the next
-edition), so an absolute first segment always means `std` or a dependency; each
+`parent::` or `self::` (an error at once, with a quick fix), so an absolute first segment always means `std` or a dependency; each
 compiled schema records its provenance (the package, a named dependency, or
 `std`) instead of tools inferring it from the namespace's spelling, which is an
 IR format change; dependencies take an optional `group` that is presentation
 only and moves no hash; and a file's imports have a default order (`std`, the
-package's own, dependencies by group) configurable in a `[format]` table. Four
+package's own, dependencies by group) configurable in `comline.toml`'s `[format]` table. Four
 parts: [relative paths](use-paths-and-groups/relative-use.md),
 [provenance](use-paths-and-groups/provenance.md),
 [dependency groups](use-paths-and-groups/dependency-groups.md) and
-[import formatting](use-paths-and-groups/import-formatting.md). *draft; related
+[import formatting](use-paths-and-groups/import-formatting.md). *accepted 2026-11-15; related
 to [core#277](https://github.com/ComlineProject/core/issues/277) and
 [core#268](https://github.com/ComlineProject/core/issues/268).*
 
