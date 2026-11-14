@@ -119,9 +119,9 @@ commit. A runtime's suite runs every example against it:
 | JSON wire format <br><sub>`format-json`</sub> | ✅ supported | 🟡 partial: decoding doesn't check enum variants or integer ranges ([comline-typescript#57](https://github.com/ComlineProject/comline-typescript/issues/57)) |
 | MessagePack wire format <br><sub>`format-msgpack`</sub> | ✅ supported | ❌ unsupported: JSON and packed@1 ship |
 | packed wire format <br><sub>`format-packed`</sub> | ✅ supported | ✅ supported |
-| packed sizes <br><sub>`sizes-packed`</sub> | ✅ supported | ❔ not reported |
-| MessagePack sizes <br><sub>`sizes-msgpack`</sub> | ✅ supported | ❔ not reported |
-| JSON sizes <br><sub>`sizes-json`</sub> | ✅ supported | ❔ not reported |
+| packed sizes <br><sub>`sizes-packed`</sub> | ✅ supported | ❌ unsupported: no exact encoded size yet: the encoders don't report how many bytes a value takes ([comline-typescript#162](https://github.com/ComlineProject/comline-typescript/issues/162)) |
+| MessagePack sizes <br><sub>`sizes-msgpack`</sub> | ✅ supported | ❌ unsupported: no exact encoded size yet, and msgpack@1 itself doesn't ship ([comline-typescript#162](https://github.com/ComlineProject/comline-typescript/issues/162)) |
+| JSON sizes <br><sub>`sizes-json`</sub> | ✅ supported | ❌ unsupported: no exact encoded size or upper bound yet: the encoder doesn't report how many bytes a value takes ([comline-typescript#162](https://github.com/ComlineProject/comline-typescript/issues/162)) |
 
 <!-- runtime-matrix:end -->
 
