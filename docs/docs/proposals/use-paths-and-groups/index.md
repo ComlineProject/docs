@@ -1,6 +1,6 @@
 # Own schemas, provenance and dependency groups
 
-Status: **draft** · written 2026-11-15 · related:
+Status: **accepted** · written and decided 2026-11-15 · related:
 [core#277](https://github.com/ComlineProject/core/issues/277) (a dependency's protocols on a connection: reach and
 numbers recorded in the facts) and [core#268](https://github.com/ComlineProject/core/issues/268) (IR migrations, which
 a change to the frozen IR has to go through) · builds on
@@ -36,8 +36,8 @@ and imported in a consistent order?**
 ## What this proposes
 
 1. **[Own schemas only through relative paths](relative-use.md).** Within a package, its own schemas are reached as
-   `package::…`, `parent::…` or `self::…`. An absolute first segment always means `std` or a dependency. Introduced
-   by a language edition: a warning with a quick fix now, an error in the next edition.
+   `package::…`, `parent::…` or `self::…`. An absolute first segment always means `std` or a dependency. A bare path
+   to an own schema is an error at once, with a quick fix: Comline is before 1.0, so there is no deprecation period.
 2. **[Provenance, not names](provenance.md).** Each compiled schema records the package it came from: the package
    itself, a named dependency, or `std`. The frozen IR, the generation request and the facts carry it, so nothing infers
    "dependency" from a namespace's spelling. This is a frozen IR change, so it goes through the
@@ -56,46 +56,35 @@ imports in a tier of their own.
 
 ## Decided
 
-Settled with the user while drafting (2026-11-15), and written into the pages as decided:
+Settled with the user (2026-11-15), while drafting and in answer to the open questions:
 
 | | Decision |
 |---|---|
 | Own schemas | reached only as `package::…`, `parent::…` or `self::…`; an absolute first segment is `std` or a dependency |
 | The word for one level up | `parent`, as it is; no `super` synonym |
-| Rollout | a language edition: a warning with a language-server quick fix (rewriting to `package::…`) in the current edition, an error in the next |
+| Rollout | an error at once, with a language-server quick fix and `comline fix` (rewriting to `package::…`); no edition and no deprecation period, since Comline is before 1.0 |
 | Reserved dependency names | `std`, `package`, `parent`, `self` |
 | Provenance | recorded per compiled schema (the package, a named dependency, or `std`) in the frozen IR, the generation request and the facts; one canonical namespace form in requests and facts |
-| IR format | a bump under the IR migrations framework |
+| IR format | a bump under the IR migrations framework; it can ride with format 4 or come after it as format 5, whichever is ready |
 | Groups | an optional `group = "<name>"` field on each dependency entry; the table stays flat and names unique; never in a `use` path |
 | Rejected group shapes | nested group tables, and a separate `dependency_groups` list |
 | Groups and hashes | excluded from the frozen config's hash, from dependency pins and from compat and config diffs |
 | CLI | `comline deps add` and `comline deps pin` take `--group` |
 | Import order | `std`, then the package's own, then dependencies: groups in first-declared order, then ungrouped dependencies; alphabetical within a tier |
-| Configuration | a `[format]` table, for example `imports.order = ["std", "package", "dependencies"]`; the project's configuration, then the defaults; read by the language server's formatter and any `comline fmt` |
+| Configuration | a `[format]` table in `comline.toml` (not `config.idp`), for example `imports.order = ["std", "package", "dependencies"]`; the project's configuration, then the defaults, with no per-user override; read by the language server's formatter and any `comline fmt` |
+| Groups and `std` | a group orders dependencies only; `std` is always a tier of its own |
+| The shadowing guard | stays as it is: a package's own schema named like a dependency, or `std`, is still refused, which also keeps two schemas from compiling to one namespace and one generated file |
 
 ## Open questions
 
-1. **Provenance's IR format.** Does provenance ride with format 4 (the first migration step, the
-   [granular `@unverified`](../shared-vocabulary/granular-unverified.md) chains of
-   [core#222](https://github.com/ComlineProject/core/issues/222)), or come right after it as format 5? See
-   [the IR format](provenance.md#which-format).
-2. **Where `[format]` lives.** The recommendation is `comline.toml`, the tooling configuration, and not `config.idp`,
-   which is frozen into every build and hashed. Left open for the user to confirm. See
-   [where it lives](import-formatting.md#where-the-configuration-lives).
-3. **A per-user override.** Whether a per-user configuration (outside the project) can override the project's
-   `[format]`, or the project's is always what formats. See
-   [precedence](import-formatting.md#precedence).
-4. **Groups and `std`.** Whether a group can also order `std`: today a group orders dependencies among themselves
-   only, and `std` is a tier of its own. See [how groups are ordered](import-formatting.md#the-default-order).
-5. **The edition for the error.** Which edition makes a bare path to a package's own schema an error: the next one,
-   2, which [dependency protocols](../dependency-protocols/index.md) also proposes for its new defaults, or a
-   later one. See [the rollout of the rule](relative-use.md#rollout-by-edition).
-6. **Equal namespaces after provenance** (raised while drafting; not one of the questions settled with the user). Once
-   provenance tells a package's schema from a dependency's, the guard on a package's own schema named like a
-   dependency has nothing left to protect, but two schemas can still have the same compiled namespace (an own
-   `greeting/hello.ids` and the dependency's `hello`, as `greeting::hello`) and write the same generated file. Does the
-   guard stay, narrowed to equal namespaces, or do a dependency's schemas get their own output prefix? See
-   [what the guard becomes](provenance.md#what-the-guard-becomes).
+None. The six left open in the draft were answered on 2026-11-15 and are in the table above:
+
+1. **Provenance's IR format:** either; it rides with format 4 or comes after it as format 5, whichever is ready.
+2. **Where `[format]` lives:** `comline.toml`.
+3. **A per-user override:** none. With `[format]` in `comline.toml`, the project's configuration is what formats.
+4. **Groups and `std`:** a group doesn't order `std`.
+5. **The edition for the error:** no edition. It is an error at once, since Comline is before 1.0.
+6. **Equal namespaces:** the shadowing guard stays.
 
 ## Rollout
 
@@ -104,14 +93,13 @@ turns the accepted proposal into issues.
 
 1. **specification: conformance cases first.** New compiler cases in `compiler/src`, regenerated into `compiler/cases`
    by `specs/check.sh`, so every implementation reproduces them: a bare path to a package's own schema (the
-   warning in the current edition, the error in the next, the `package::` form clean); a package with a dependency and
+   error, and the `package::` form clean); a package with a dependency and
    an own schema of the same first word; reserved dependency names; a `group` on an entry, and the same package regrouped
    (the same outcome). A new kind of case for formatting: a schema's text, the configuration, and the text the
    formatter must produce, for the default order, a custom `imports.order`, and groups. New catalog entries for the
    diagnostic codes, per the [shared vocabulary](../shared-vocabulary/index.md).
 2. **core: the rule.** The resolver reads an absolute first segment as `std` or a dependency only; a bare path that
-   would have reached the package's own schema is the deprecation warning, with the fix attached, in the current
-   edition, and the error in the edition chosen above; `comline fix` applies it. The reserved names stay as they are
+   would have reached the package's own schema is an error, with the fix attached; `comline fix` applies it. The reserved names stay as they are
    (`reserved_dependency_name` already refuses `std`, `package`, `parent` and `self`).
 3. **core: provenance and the IR format.** Each compiled schema records its provenance; the frozen types, the
    migration step and its fixtures, and the format document, in one pull request as the
@@ -125,13 +113,13 @@ turns the accepted proposal into issues.
    until the generators read provenance, then goes.
 6. **CLI.** `comline deps add --group` and `comline deps pin --group`; `deps list` shows groups; `comline fix` applies
    the rewrite; `comline fmt`, if and when it exists, reads `[format]`.
-7. **language server.** The deprecation warning with its quick fix to `package::…`; the formatter's import order;
+7. **language server.** The error with its quick fix to `package::…`; the formatter's import order;
    `[format]` read from `comline.toml`; completion and hover for `group`.
 8. **docs.** The [Imports](../../guides/idl/use.md) guide (own schemas, the relative forms, what an absolute path
    means), [Packages & dependencies](../../guides/packages/index.md#dependencies) (groups, `--group`), the
    [`config.idp`](../../reference/package/idp.md) and [`comline.toml`](../../reference/package/comline-toml.md)
-   references (`group`, `[format]`, and the JSON Schema `scripts/sync-comline-toml-schema.py` writes),
-   [Editions](../../reference/versioning.md#editions), the [CLI reference](../../reference/tools/cli/index.md), and this
+   references (`group`, `[format]`, and the JSON Schema `scripts/sync-comline-toml-schema.py` writes), the
+   [CLI reference](../../reference/tools/cli/index.md), and this
    proposal marked accepted.
 
 ## Related

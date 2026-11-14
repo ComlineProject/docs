@@ -1,6 +1,6 @@
 # Provenance, not names
 
-Status: **draft** · decided with the user 2026-11-15, the IR format open · part of [Own schemas, provenance and
+Status: **accepted** · decided with the user 2026-11-15 · part of [Own schemas, provenance and
 dependency groups](index.md) · needs an IR format bump under [core#268](https://github.com/ComlineProject/core/issues/268)
 
 **The question.** Whether a compiled schema is the package's own, a dependency's or `std`'s decides what is done with
@@ -77,7 +77,7 @@ and is the first real client of the system.
 | **Hashes** | moved once: every object's address, a dependency pin and `schema_ir_hash` change at the same bump | moved twice |
 | **Timing** | provenance waits for #222, or #222 waits for it | independent; provenance can ship after 4, and the rest of this proposal doesn't wait on the IR |
 
-Open: [which of the two](index.md#open-questions). Whichever is chosen, the 1.0 reset applies: stores in today's
+**Decided: either.** It rides with format 4 if both are ready together, and is format 5 otherwise. Whichever it is, the 1.0 reset applies: stores in today's
 formats aren't migrated, and only the format that exists at 1.0 carries a guaranteed path.
 
 ## What the guard becomes
@@ -88,6 +88,10 @@ tool.
 
 They can still *land on the same compiled namespace*: an own `src/greeting/hello.ids` and the dependency's `hello.ids`
 are both `greeting::hello`, and two files cannot be generated at one path
-(`{{language}}/{{namespace}}.{{ext}}`). So the guard doesn't simply go. [Open](index.md#open-questions): whether it is
-narrowed to **equal namespaces** (refused as a collision, with its own message, and no longer about classification),
-or a dependency's schemas get their own prefix in the output, so that none can collide.
+(`{{language}}/{{namespace}}.{{ext}}`). So the guard doesn't simply go.
+
+**Decided: the guard stays as it is.** A package's own schema named like a dependency, or `std`, is still refused. It
+no longer protects classification, which provenance does, but it keeps every compiled namespace, and every generated
+file, unique, with the message it has today. Narrowing it to equal namespaces, or prefixing a dependency's output, was
+considered and not taken: either lets a package's own `greeting` sit beside a dependency `greeting`, which a reader of
+the generated code would confuse as easily as the tools once did.
