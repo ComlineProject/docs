@@ -70,7 +70,6 @@ The [language guides](../languages/index.md) show it in Rust and TypeScript.
 
 - [Packages & dependencies](packages/index.md): the manifest, wire defaults,
   and importing other packages.
+
 - [Documenting your schemas](documenting.md): pages and a site from your
   docstrings.
-- [Extending Comline](../developer/extending/index.md): your own formats, framings,
-  handshakes, generators, transports and middleware.

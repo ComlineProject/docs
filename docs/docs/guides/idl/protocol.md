@@ -118,7 +118,7 @@ protocol Mail {
   need to write it, but if you do, it has to agree.
 - **`@handshake`** picks what runs on a connection before the first call:
   `"comline@2"` (the default) checks they're compatible, and takes
-  [parameters](../../reference/wire/handshakes/index.md#parameters), as in
+  [parameters](../../reference/wire/handshakes/comline@2.md#parameters), as in
   `{ name = "comline@2", scope = package }`; `"comline@1"` checks that both
   ends share the schema, format and framing; `"none"` sends and checks nothing.
   Without it, the protocol takes the package's `handshake` from `config.idp`,

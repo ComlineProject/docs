@@ -347,9 +347,9 @@ hash, and each encoding's name and parameter hash (both blake3, as hex).
 
 See [Compatibility facts](../../reference/versioning.md#compatibility-facts) for
 what they mean and how they are compared. The `config.idp` keys are in the
-[config.idp reference](../../reference/package/congregation/config-id.md), and where
+[config.idp reference](../../reference/package/idp.md), and where
 generated code lands is set in
-[`comline.toml`](../../reference/package/congregation/comline-toml.md).
+[`comline.toml`](../../reference/package/comline-toml.md).
 
 ## Branches
 

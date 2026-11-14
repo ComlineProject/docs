@@ -74,7 +74,7 @@ reference. One proposal in stages, read in order:
 - [Stage 2 — core interface](shared-runtime-core/core-interface.md): the
   handshake, framings and connection state machine behind a stable C ABI and
   WASM, built from one crate. ***accepted***, steps 1–3 built: the core
-  changes, the C ABI at 0.1 ([reference](../reference/c-abi.md)), and its
+  changes, the C ABI at 0.1 ([reference](../reference/languages/c-abi.md)), and its
   vectors, fuzzing and benchmarks. The ABI stays `0.x` until the
   [1.0 announcement](../conduct/phases.md).
 - [Stage 3 — generated codecs](shared-runtime-core/generated-codecs.md):

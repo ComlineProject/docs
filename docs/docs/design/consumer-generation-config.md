@@ -3,7 +3,7 @@
 Status: **core feature shipped** · `ComlineProject/core` + `ComlineProject/cli` · Relates to core#6, core#8, cli#1
 
 | Piece | State |
-|---|---|
+| --- | --- |
 | Drop frozen `generation_path` + core-side codegen | ✅ merged (core#25) |
 | Drop frozen `package_versions` from the congregation | ✅ merged (core#26) |
 | `comline.toml` `[generate]`, `--out`/`--layout`/`--mode`, `generate` no longer freezes, `clean`/`new`/`watch` | ✅ merged (cli#10) |
@@ -39,7 +39,7 @@ local path choice perturb the package's identity.
 ## Two files, two owners
 
 | File | Owner | Format | Frozen into CAS | Purpose |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | `config.idp` (congregation) | package **author** | `.idp` | yes (interpreted → `Vec<FrozenUnit>`) | package identity + declarations: name, `specification_version`, `dependencies`, `publish_registries`, and the codegen **capability declaration** `code_generation.languages` = "this package *can* be generated as `rust#1.70`, `python#3.11`" |
 | `comline.toml` | package **consumer** | TOML | **no** — never enters freezing or CAS | *what this checkout generates, in what mode, and where* |
 
@@ -205,7 +205,7 @@ schemas. What is *not* in a commit:
   or reordered mid-list.
 
 So the CAS store covers only **half** of a state-freezing story: version history
-+ diff-driven auto-versioning, i.e. the "track past/present state" half. It does
+- diff-driven auto-versioning, i.e. the "track past/present state" half. It does
 **not** yet cover the "make a rebuild reproducible" half — freezing configuration
 and pinning imported / dependency schemas. For that, a version's tree needs (at
 least) the frozen config committed back alongside the schema entries, and — once
@@ -228,7 +228,7 @@ units that affect that API feed the bump. The rest are *recorded* (for
 reproducibility) but *not diffed*.
 
 | Frozen config unit | Change | Version bump |
-|---|---|---|
+| --- | --- | --- |
 | `Dependency` | **removed**, or **version changed** | **major** — conservative: without dependency resolution we cannot tell a compatible dep bump from a breaking one, and a dep's schema shapes are part of this package's effective surface. Refine later (dep-major → major, dep-minor → minor) once core#6 can diff dep schemas. |
 | `Dependency` | **added** | **minor** — additive; the schema content that uses the new dep already carries its own minor/major. |
 | `Dependency` | `uri` / `hash` only, same version | **patch** — provenance, not API. |

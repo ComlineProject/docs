@@ -69,7 +69,7 @@ Semver for a user's schema package means nothing until a break is defined.
 
 - The C ABI's structs, status codes and flags are final for 1.x, including
   `comline_connection_size`/`init` and whether a `comline@2` changes the event
-  struct ([C ABI](../reference/c-abi.md)).
+  struct ([C ABI](../reference/languages/c-abi.md)).
 - The IR and `config.idp` formats are stable, or versioned with a reader for
   every older version
   ([core#146](https://github.com/ComlineProject/core/issues/146)).
@@ -84,7 +84,7 @@ Semver for a user's schema package means nothing until a break is defined.
       corpus and ops protocol;
     - the documentation model behind [`comline doc`](../reference/tools/cli/doc.md)
       (version 1 today);
-    - the [`comline.toml` schema](../reference/package/congregation/comline-toml.md)
+    - the [`comline.toml` schema](../reference/package/comline-toml.md)
       (`0.x` today);
     - the JSON from [`comline inspect --json`](../reference/tools/cli/inspect.md).
 - The extension API is part of 1.0, so it is designed, built and frozen

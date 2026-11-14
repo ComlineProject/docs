@@ -18,43 +18,6 @@ byte, low bits first, high bit set on every byte but the last. A protocol
 or function number is a `u16`, so it takes 1 to 3 bytes. Only the shortest
 form is accepted: `80 00` for 0 is refused, and so is a value above 65535.
 
-## `datagram@2`
-
-| Frame | Bytes |
-| --- | --- |
-| request | `00`, protocol (varint), call id (`u16` LE), request id (`u64` LE), arguments |
-| reply | `01`, protocol (varint), request id (`u64` LE), envelope |
-
-- The **call id** is the function's position in its protocol, and the
-  **protocol** number is the protocol's position in the package. Both ends
-  share them because `comline@1` refuses a peer whose IR differs.
-- Reordering or inserting functions therefore changes what a call
-  addresses: the profile states `calls = by_index`.
-
-## `datagram@3`
-
-| Frame    | Bytes                                                                                      |
-|  ---     |  ---                                                                                       |
-| request  | `00`, protocol number (varint), function number (varint), request id (`u64` LE), arguments |
-| reply    | `01`, protocol number (varint), request id (`u64` LE), envelope (as `datagram@2`)          |
-
-- The numbers are the **wire numbers** core gives each protocol and
-  function (core#127): unique in their scope, binding from `comline
-  release`, and never reused once retired. Reordering or inserting
-  functions doesn't move them, so the profile states `calls = by_id`.
-- A reply is byte for byte a `datagram@2` reply.
-- It's meant for [`comline@2`](../handshakes/index.md#comline2), which checks
-  compatibility by those same numbers.
-
-For example, a call to function 3 of protocol 0, request id 42, with the
-JSON arguments `[7,"x"]`:
-
-```text
-00 00 03 2a00000000000000 5b372c2278225d
-```
-
-Function 300 of protocol 300 is `00 ac02 ac02 …`, and 65535 is `ff ff 03`.
-
 ## The envelope
 
 A reply's outcome, the same in both framings:

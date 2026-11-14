@@ -55,6 +55,8 @@ nav:
       - Client & server: 'languages/typescript/client-and-server.md'
       - Framing & wire format: 'languages/typescript/framing-and-wire-format.md'
       - Connections: 'languages/typescript/connections.md'
+
+    - C: 'languages/c/index.md'
   
   - Developer Guides:
     - 'developer/index.md'
@@ -70,20 +72,40 @@ nav:
   - Reference:
     - "reference/index.md"
 
+    - Package:
+        - "reference/package/index.md"
+        - 'reference/package/idp.md'
+        - 'reference/package/comline-toml.md'
+
+        - Schema:
+          - 'reference/package/schema/index.md'
+          - Types: 'reference/package/schema/types.md'
+
+          # std:start
+          - Standard library:
+            - std: 'reference/package/schema/std/index.md'
+            - http: 'reference/package/schema/std/http.md'
+            - validators: 'reference/package/schema/std/validators.md'
+          # std:end
+
     - Languages:
       - 'reference/languages/index.md'
       - Rust: 'reference/languages/rust.md'
       - TypeScript: 'reference/languages/typescript.md'
+      - C ABI: 'reference/languages/c-abi.md'
 
     - Wire:
       - 'reference/wire/index.md'
       - Framings:
         - 'reference/wire/framings/index.md'
-        #- datagram@2: 'reference/wire/framings/datagram.md'
+        - datagram@3: 'reference/wire/framings/datagram@3.md'
+        - datagram@2: 'reference/wire/framings/datagram@2.md'
+        - datagram@1: 'reference/wire/framings/datagram@1.md'
 
       - Handshakes:
         - 'reference/wire/handshakes/index.md'
-        #- handshake@1: ''
+        - comline@2: 'reference/wire/handshakes/comline@2.md'
+        - comline@1: 'reference/wire/handshakes/comline@1.md'
 
       - Formats:
         - 'reference/wire/formats/index.md'
@@ -92,23 +114,6 @@ nav:
         - json@1: 'reference/wire/formats/json@1.md'
 
       - Official encodings: 'reference/wire/official-encodings.md'
-
-    - Runtime:
-      - C ABI: 'reference/c-abi.md'
-
-    - Package:
-      - 'reference/package/congregation/index.md'
-      - config.idp: 'reference/package/congregation/config-id.md'
-      - comline.toml: 'reference/package/congregation/comline-toml.md'
-
-    - Schema:
-      - 'reference/schema/index.md'
-      # std:start
-      - Standard library:
-        - std: 'reference/schema/std/index.md'
-        - http: 'reference/schema/std/http.md'
-        - validators: 'reference/schema/std/validators.md'
-      # std:end
 
     - Tools:
       - Tools: 'reference/tools/index.md'

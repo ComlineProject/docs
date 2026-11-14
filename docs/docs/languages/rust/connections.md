@@ -2,11 +2,10 @@
 
 Every protocol runs on a
 [connection](../../guides/idl/protocol.md#calls-in-both-directions) unless it
-picks the lockstep `datagram` framing, in which case it gets a
-[client and server](client-and-server.md) instead. This page uses this
-schema:
+picks the lockstep `datagram` framing, in which case it gets a [client and server](client-and-server.md) instead.
+ This page assumed the following schema:
 
-```ids
+```ids title="snippet.ids"
 protocol Chat {
     function send(text: string) -> u64;
     function count() -> u64;
@@ -212,7 +211,7 @@ another task while the connection serves, generate for the async driver.
 
 ## Async
 
-With `async = true` in [`comline.toml`](../../reference/package/congregation/comline-toml.md#async),
+With `async = true` in [`comline.toml`](../../reference/package/comline-toml.md#async),
 connection protocols are generated for the runtime's `AsyncConnection`
 instead, on any executor:
 

@@ -4,15 +4,14 @@ How the CLI talks to a code generator, and to a documentation renderer. For a
 walkthrough, see
 [Generators](../developer/extending/generators.md); to point a target at one, see
 the [CLI reference](tools/cli/index.md#commands) and
-[`comline.toml`](package/congregation/comline-toml.md#generator).
+[`comline.toml`](package/comline-toml.md#generator).
 
 The Rust definitions are in `codegen/src/protocol.rs` of the
 [generation](https://github.com/ComlineProject/generation) repository.
 
 ## Version
 
-**Protocol version: `0`** (`PROTOCOL_VERSION`). While Comline is in its early
-days, the protocol may change incompatibly, and the number moves when it does.
+**Protocol version: `0`** (`PROTOCOL_VERSION`).
 An additive change keeps the number: a new field with a default, or a new
 request that only goes to a program whose `Description` says it handles it
 (`Render` was added this way).
@@ -20,6 +19,10 @@ request that only goes to a program whose `Description` says it handles it
 The protocol is also pinned to an **IR format** (`IR_FORMAT`), the stamp on
 `.comline/` that `comline-core` owns. A generator accepts the IR formats it
 lists and refuses others.
+
+!!! info "Early days"
+    While Comline is in early days, the protocol may change incompatibly,
+    and the protocol version number moves when it does.
 
 ## Transport
 
