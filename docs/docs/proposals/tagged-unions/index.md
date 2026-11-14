@@ -6,7 +6,7 @@
 
 **The question.** A value that is *one of several shapes*, with a tag saying
 which, is everywhere: sub-packets picked by a sub-type byte
-([packet dispatch](../packet-dispatch.md#sub-packets-are-tagged-unions)), an
+([packet dispatch](../packet-dispatch/index.md#sub-packets-are-tagged-unions)), an
 entity action that is attack, interact or interact-at, a result that is a
 success or a failure. **Is that a feature of `enum` or of `union`?**
 

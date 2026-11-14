@@ -194,7 +194,7 @@ stack the tutorial already uses (Svelte 5, Kit 2, Vite 7).
 |---|---|---|
 | Charts | **uPlot** (MIT, about 50 KB) | It draws on canvas, so hundreds of series over thousands of versions stay smooth. SVG charting slows down at that size |
 | Tables | Svelte tables, sortable, with virtualized rows | A table of every benchmark between two versions keeps only its visible rows in the DOM |
-| Assets | self-contained, no CDN | the same rule as the [HTML doc renderer](auto-documentation.md) |
+| Assets | self-contained, no CDN | the same rule as the [HTML doc renderer](auto-documentation/index.md) |
 | Theme | light and dark, following the OS | the same as this site and the HTML doc renderer |
 
 ### Versions and comparison

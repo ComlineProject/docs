@@ -18,10 +18,10 @@ Two sources feed it, and the first one alone is already enough to produce
 something useful:
 
 - **The declared shape**, straight out of the frozen IR: unit names, field names
-  and [types](../guides/idl/types.md), enum variants, function signatures, error
+  and [types](../../guides/idl/types.md), enum variants, function signatures, error
   shapes, validator parameters, `@key=value` annotations. An entirely
   undocumented schema still yields a complete API listing.
-- **[Docstrings](../guides/idl/docstrings.md)** — `///` on a declaration or a
+- **[Docstrings](../../guides/idl/docstrings.md)** — `///` on a declaration or a
   field, the `/// @name:` form for fields and arguments, and `//!` headers
   documenting a module or (in `config.idp`) the package itself. These exist
   today and, as that page notes, change nothing about a build, a version or
@@ -36,7 +36,7 @@ modules.
 
 Versioning is not hand-maintained: every `comline build` freezes an immutable
 version into `.comline/`, the bump is derived from the schema change itself, and
-[`comline diff`](../reference/tools/cli/index.md) already reports what changed between two
+[`comline diff`](../../reference/tools/cli/index.md) already reports what changed between two
 frozen versions. A documentation tool built on top of that can do what a
 conventional one cannot:
 
@@ -51,14 +51,14 @@ conventional one cannot:
 
 This is the half that distinguishes the feature from "run a generator over the
 IR", and it follows from the
-[CAS](../guides/ir/cas.md) and
-[automatic versioning](../reference/versioning.md) already being in place.
+[CAS](../../guides/ir/cas.md) and
+[automatic versioning](../../reference/versioning.md) already being in place.
 
 ## Optional, and the project sets the rules
 
 It is a tool a project opts into, not a step in the pipeline. Nothing here
 happens unless asked for. The consumer's
-[`comline.toml`](../reference/package/congregation/comline-toml.md) owns the switches,
+[`comline.toml`](../../reference/package/congregation/comline-toml.md) owns the switches,
 the same way it already owns generation's output location, layout and mode.
 
 ## Decisions
@@ -72,7 +72,7 @@ These were open questions until 2026-11-01. The rationale is in
   are per language, and documentation is not.
 - **Config surface: `comline.toml` only.** Nothing about docs is frozen into a
   version. Whether and how docs are made is the reader's choice, as with
-  [generation config](../design/consumer-generation-config.md). The author's
+  [generation config](../../design/consumer-generation-config.md). The author's
   part is the docstrings themselves.
 - **Output: a JSON model, rendered by separate programs.**
     - A versioned JSON **doc model** is the one contract, with its JSON Schema
@@ -81,9 +81,9 @@ These were open questions until 2026-11-01. The rationale is in
       type that names another unit linked to where that unit is declared, each
       protocol's wire summary from `comline inspect`, and the changelog.
     - **Renderers** are external programs on the same stdio protocol as
-      [generators](../reference/generator-protocol.md), native or `.wasm`.
+      [generators](../../reference/generator-protocol.md), native or `.wasm`.
     - The first official renderer writes **Markdown with navigation** for
-      mkdocs/zensical sites. Rendering [`std`](../guides/idl/use.md#the-standard-library)
+      mkdocs/zensical sites. Rendering [`std`](../../guides/idl/use.md#the-standard-library)
       onto this site proves it.
 - **History: any version, and a changelog.** Any frozen version can be
   documented. The changelog comes from the same analysis as `comline diff`.
@@ -94,7 +94,10 @@ These were open questions until 2026-11-01. The rationale is in
 - **Dependencies: linked when they say where their docs are.** A unit's docs
   link to a type it imported from another package when `comline.toml` maps that
   dependency to the URL of its docs. Without a mapping, the type shows as plain
-  text.
+  text. *Being extended* in
+  [Links, the overview and highlighting](links-overview-highlighting.md): a
+  dependency can declare its own docs URL, which amends "`comline.toml`
+  only" above.
 - **Templating: the renderer's business.** Theming belongs to each renderer.
   Core keeps no template surface, and the model is the only thing it keeps
   stable.
@@ -112,11 +115,11 @@ These were open questions until 2026-11-01. The rationale is in
 
 It lands in the product documentation, not here: a Guide page on documenting
 your schemas, a `comline doc` entry in the
-[CLI reference](../reference/tools/cli/index.md), its `comline.toml` keys in the
-[congregation reference](../reference/package/congregation/index.md), and the doc
+[CLI reference](../../reference/tools/cli/index.md), its `comline.toml` keys in the
+[congregation reference](../../reference/package/congregation/index.md), and the doc
 model's JSON Schema.
 
 The obvious first demonstration is
-[the standard library](../guides/idl/use.md#the-standard-library), which already
+[the standard library](../../guides/idl/use.md#the-standard-library), which already
 documents itself with `//!` and `///` throughout: run the tool over `std` and
 publish the result.

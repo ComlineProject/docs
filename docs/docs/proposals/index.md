@@ -166,6 +166,7 @@ Seven parts, read in order: [the formats](ir-migrations/formats.md),
   built-in framing, a new packed C-struct-like format `packed@1` as the
   built-in format, and a generated `Services` struct with a package-level
   `serve`. ***implemented.***
+
 - [Return forms](return-forms.md): one-way, acknowledged (`-> ()`) and value
   returns, and quiet calls (errors only) as a future form; which each framing
   and transport supports, checked at build, and `()` only as a return.
@@ -174,6 +175,31 @@ Seven parts, read in order: [the formats](ir-migrations/formats.md),
   author and its consumer, with profiles stating each transport's largest
   message and whether it loses, reorders or duplicates; a "transport fit"
   guarantee checked only where declared. *draft.*
+
+#### [A dependency's protocols on a connection](dependency-protocols/index.md)
+
+Which numbers address a dependency's protocol on a connection, and which
+version the handshake checks it against. ***Decided*** 2026-11-14: A and C,
+with Part 1, and step 0 (a protocol the package doesn't reach isn't
+addressed):
+
+- [Part 1 — what framings and handshakes state](dependency-protocols/capabilities.md):
+  new profile facts for how a frame names its protocol, whether it marks
+  one-way calls, and how many packages a handshake covers; `limits` for the
+  caps an encoding's bytes impose; the capabilities they derive, and what
+  changing an encoding implies. ***accepted.***
+- [Proposal A — several packages on one connection](dependency-protocols/multi-package-connection.md):
+  `comline@3` lists each package with its own id, version and numbers, and
+  binds a connection number per protocol, which
+  [`datagram@4`](dependency-protocols/datagram@4.md) addresses calls by in a
+  fixed-width header. Dependency protocols join by `use`. ***accepted***, the
+  defaults from the next edition.
+- [Proposal B — the consumer's numbers](dependency-protocols/consumer-numbers.md):
+  the consumer's history numbers each dependency protocol it carries.
+  *rejected as a default: a second identity per protocol.*
+- [Proposal C — a connection per package](dependency-protocols/connection-per-package.md):
+  each package on its own connection. ***accepted***, complementary to A: for
+  differing encodings and isolation.
 
 ### Systems
 
@@ -187,7 +213,7 @@ Seven parts, read in order: [the formats](ir-migrations/formats.md),
 
 ### Packet protocols
 
-- [Packet dispatch](packet-dispatch.md): message-oriented packet protocols
+- [Packet dispatch](packet-dispatch/index.md): message-oriented packet protocols
   (families, explicit ids, phases, `@provider` for direction), with addressing
   in the schema, generated dispatch tables, and an official configurable
   framing. *under discussion, partly decided.*
@@ -257,8 +283,10 @@ the language side is shipped and documented in the
   repository can be watched over time, and any published versions compared;
   each repository publishes to its own `reports` branch. ***accepted*** —
   `observatory`, all four stages shipped.
-- [Automatic documentation](auto-documentation.md) — an optional tool that
+- [Automatic documentation](auto-documentation/index.md) — an optional tool that
   documents a user's own schemas and packages — their structs, enums, protocols,
   errors — from the IR and its docstrings, with the CAS supplying per-version
   docs and a generated changelog. ***accepted*** — a JSON doc model with
-  external renderers, configured in `comline.toml` only.
+  external renderers, configured in `comline.toml` only. A follow-up,
+  [links, the overview and highlighting](auto-documentation/links-overview-highlighting.md),
+  is a *draft*.

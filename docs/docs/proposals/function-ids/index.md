@@ -9,7 +9,7 @@
 > protocol. See
 > [its page](annotation.md#as-accepted).
 
-**The question.** [Packet dispatch](../packet-dispatch.md#explicit-ids-available-everywhere)
+**The question.** [Packet dispatch](../packet-dispatch/index.md#explicit-ids-available-everywhere)
 lets any function state an explicit, fixed id, and requires one under a packet
 framing. **How is the id written?**
 

@@ -1,7 +1,7 @@
 # Return forms
 
 Status: **accepted** 2026-11-02, not implemented · Quiet calls are a future
-form (below) · Relates to [packet dispatch](packet-dispatch.md#replies-both-one-way-and-correlated),
+form (below) · Relates to [packet dispatch](packet-dispatch/index.md#replies-both-one-way-and-correlated),
 [Transports](transports.md) and [bounds on types](type-bounds/max-only.md)
 
 **The question:** a function can return a value, return `()`, or return
@@ -85,5 +85,5 @@ Suggested diagnostic codes: `validation::one-way-cannot-raise`,
   learns earlier quiet calls succeeded (memcached sends a no-op and waits for
   its reply).
 - **Packet framings:** whether a named reply packet (`@reply`) is how `-> T`
-  is written there, designed with [packet dispatch](packet-dispatch.md).
+  is written there, designed with [packet dispatch](packet-dispatch/index.md).
 - **The facts' names and values** in the framing profiles.
