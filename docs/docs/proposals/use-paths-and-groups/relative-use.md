@@ -1,6 +1,6 @@
 # Own schemas only through relative paths
 
-Status: **draft** · decided with the user 2026-11-15 · part of [Own schemas, provenance and dependency
+Status: **accepted** · decided with the user 2026-11-15 · part of [Own schemas, provenance and dependency
 groups](index.md)
 
 **The question.** In `use greeting::hello::Greeting`, is `greeting` the package's own `src/greeting.ids`, a dependency
@@ -71,7 +71,7 @@ Rust spells it `super`. One word is kept because:
 
 ## What the editor and the fix do
 
-A bare path that reaches the package's own schema is a deprecation (below). The language server attaches a **quick fix** that
+A bare path that reaches the package's own schema is an error (below). The language server attaches a **quick fix** that
 rewrites it to the `package::…` form. `package::` is chosen over the shortest relative form because it is the same
 wherever the file sits: moving a schema to another directory doesn't change what its imports say. The qualified
 references the import brought in, written with the old spelling, are rewritten with it. `comline fix` applies the
@@ -79,21 +79,17 @@ same rewrite to every file.
 
 A path that matches nothing is the error it is today ([When nothing
 matches](../../guides/idl/use.md#when-nothing-matches)), with one addition: a bare path whose first segment is neither a
-dependency nor `std`, but the name of one of the package's own schemas, is the deprecation, not "no schema matches".
+dependency nor `std`, but the name of one of the package's own schemas, is this error, with the fix, not "no schema matches".
 
-## Rollout by edition
+## Rollout
 
-This is the kind of change [editions](../../reference/versioning.md#editions) are for: a form that was valid is no
-longer, and the package keeps the old behaviour until it moves.
+**Decided: an error at once.** Comline is before 1.0, so the change doesn't go through an
+[edition](../../reference/versioning.md#editions) or a deprecation period.
 
-1. **In the current edition: a warning.** A bare path to the package's own schema warns, in the `deprecation::` family,
-   on every use, with the fix attached, and the editor shows it struck through like any deprecated word. Builds pass.
-2. **In the next edition: an error.** The same use is `edition::removed`, and `comline fix --edition N` rewrites it
-   with the rest of what the edition moves.
-3. **Dependencies are unaffected.** A dependency's compiled schemas are frozen with their `use`s already resolved, and
-   a package compiled under any edition can depend on one compiled under another.
-
-Which edition number the error lands in is [an open question](index.md#open-questions).
+1. **A bare path to the package's own schema is an error**, with the fix attached, and `comline fix` rewrites every
+   file at once.
+2. **Dependencies are unaffected.** A dependency's compiled schemas are frozen with their `use`s already resolved,
+   so a package can depend on one written before the change.
 
 ## What stays as it is
 

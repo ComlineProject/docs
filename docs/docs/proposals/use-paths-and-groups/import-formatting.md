@@ -1,6 +1,6 @@
 # Import formatting
 
-Status: **draft** · decided with the user 2026-11-15, where the configuration lives open · part of [Own schemas,
+Status: **accepted** · decided with the user 2026-11-15 · part of [Own schemas,
 provenance and dependency groups](index.md)
 
 **The question.** A file's `use` lines have no set order, so each author orders them their own way, and a diff mixes
@@ -38,8 +38,8 @@ use net::Client
 Here `logging` and `metrics` are in the group `platform`, declared first; `shared_types` is in `team`; `net` has no
 group. A blank line separates tiers, and separates groups inside the dependencies tier, the way the example shows.
 
-Whether a group can also order `std`, so that, say, a group sorts before it or between the tiers, is
-[an open question](index.md#open-questions); today a group orders dependencies among themselves only.
+**Decided: a group orders dependencies only.** `std` is always a tier of its own, placed by `imports.order`; a group
+can't sort before it or between the tiers.
 
 The formatter doesn't change what an import means: it only reorders `use` statements.
 
@@ -59,7 +59,7 @@ an error, so a typo doesn't quietly reorder every file.
 
 ### Where the configuration lives
 
-**Recommendation, to be confirmed: [`comline.toml`](../../reference/package/comline-toml.md), not `config.idp`.**
+**Decided: [`comline.toml`](../../reference/package/comline-toml.md), not `config.idp`.**
 
 - `config.idp` is **frozen into every build and hashed**. It holds what a package *is*: its identity, what it
   depends on, how it is put on the wire. An import order is how a file is *written*; putting it there would make
@@ -71,18 +71,15 @@ an error, so a typo doesn't quietly reorder every file.
   never see it.
 
 The alternative, a `format` key in `config.idp`, would be read by the same tools and would travel with a published
-package. It is the user's to decide; this page is written as if `comline.toml` is chosen, and the cost of the other is a
-change to where the table is read from.
+package. It was not taken.
 
 ### Precedence
 
 **Decided:** the project's `comline.toml`, then the defaults. Each is applied key by key, like
 [`[generate]`](../../reference/package/comline-toml.md#precedence).
 
-**Open:** whether a per-user configuration, outside the project, can override the project's. The case for it: an
-author who reads imports in another order and doesn't want to change everyone's. The case against: a formatter's point
-is that every author's editor produces the same file, and a per-user override means a save in one editor makes a diff
-in the next. If it exists, it is the highest in the chain: defaults, the project's `[format]`, the user's.
+**Decided: no per-user override.** `comline.toml` is the project's, committed beside the package, so the project's
+`[format]` is what every author's editor formats with, and a save in one editor never makes a diff in the next.
 
 ## Who reads it
 

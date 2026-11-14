@@ -1,6 +1,6 @@
 # Dependency groups
 
-Status: **draft** · decided with the user 2026-11-15 · part of [Own schemas, provenance and dependency
+Status: **accepted** · decided with the user 2026-11-15 · part of [Own schemas, provenance and dependency
 groups](index.md)
 
 **The question.** `dependencies` in `config.idp` is a flat table, and a package with a dozen of them has no way to say
