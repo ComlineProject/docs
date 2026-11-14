@@ -198,22 +198,29 @@ work on the analysis layer benefits both.
   validators → imports → generate → runtime. The `tutorial` README wants each
   step to *simulate* running machines with distinct local/remote panels and live
   stats — the loopback runtime above is the engine for that.
-- **Not sharing yet, in practice.** The one lesson built so far ("two services
-  talk") is a standalone widget (`ComlineProject/tutorial`'s
-  `Simulation.svelte`) driving `comline-simulator` directly — it reuses neither
-  the playground's `comline-playground-wasm` (the editor) nor its `sim/ui/*.ts`
-  components. The "same WASM module and component library" plan below hasn't
-  materialised for the runtime piece; revisit once more lessons exist.
+- **Shared through `comline-web-kit`.** The playground's editor and simulate
+  view are a package, `comline-web-kit`: a workspace of
+  `ComlineProject/playground` that other sites install by git, the way they
+  install `comline-simulator`
+  ([playground#118](https://github.com/ComlineProject/playground/issues/118)).
+    - `comline-web-kit/sim` is the simulate view. Its **lesson layout** shows a
+      fixed scene from a session link: no palette, nothing to add, move or
+      remove, only a server's behaviours and a client's calls, stacked in one
+      column and fitted to the page. The tutorial's "Try it" lesson runs on it.
+    - `comline-web-kit/editor` is the CodeMirror editor and the compile
+      worker. No lesson uses it yet; a lesson with a live editor will.
+    - `comline-web-kit/sim.css` is scoped under `.cl-sim` and themed with
+      `--cl-*` properties, so the tutorial keeps its own palette.
 
 ## Where it lives / embedding
 
 **Reality diverged from the "SvelteKit for both" plan below.** The playground
 ended up Vite + vanilla TS + CodeMirror (see the status line above); only the
-tutorial is SvelteKit. There's no neutral TS package or shared Svelte component
-library — the tutorial's one interactive lesson so far is a standalone widget
-against `comline-simulator` directly (see
-[Playground vs tutorial](#playground-vs-tutorial)). The plan as originally
-written:
+tutorial is SvelteKit. What's shared is the plan's first half: a
+framework-neutral TS package, `comline-web-kit`, that both apps mount (see
+[Playground vs tutorial](#playground-vs-tutorial)). The second half, a Svelte
+component library, isn't needed: a Svelte page mounts the kit's views through an
+action. The plan as originally written:
 
 **SvelteKit for the apps, framework-neutral for what's shared.** The
 `playground` and `tutorial` stay SvelteKit (the existing scaffold). Below them:
@@ -242,9 +249,9 @@ subdomains.
 - **Target** — everything: compile + diagnostics + codegen + a runtime demo. No
   cut-down first release; the runtime demo simply fills in per language.
 - **Framework** — *superseded in practice*: the playground shipped Vite +
-  vanilla TS + CodeMirror, not SvelteKit; only the tutorial is SvelteKit, and
-  its one interactive lesson is a standalone widget, not a shared component
-  library. See [Where it lives / embedding](#where-it-lives-embedding).
+  vanilla TS + CodeMirror, not SvelteKit; only the tutorial is SvelteKit. They
+  share framework-neutral TS, `comline-web-kit`, not a component library. See
+  [Where it lives / embedding](#where-it-lives-embedding).
 
 ## Findings so far
 
