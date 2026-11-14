@@ -23,7 +23,7 @@ flowchart TB
 The protocol logic that has to be byte-identical everywhere (framing, request
 ids, the handshake's frames) is written once, in Rust: `comline-runtime` is
 the [shared runtime core](../../proposals/shared-runtime-core/index.md), and
-its [C ABI](../../reference/c-abi.md) exposes it to other languages. The
+its [C ABI](../../reference/languages/c-abi.md) exposes it to other languages. The
 TypeScript runtime loads it as WebAssembly for its built-in framings, and falls
 back to its own TypeScript implementation where the core can't load (a strict
 content security policy, say) or for a framing of your own; both paths behave

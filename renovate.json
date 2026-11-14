@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>ComlineProject/.github:renovate-config"],
+  "packageRules": [
+    {
+      "description": [
+        "The docs build's Python dependencies (docs/poetry.lock, from the poetry manager that config:recommended turns on): one weekly pull request, the lockfile only, like npm and Cargo in the shared preset"
+      ],
+      "matchManagers": ["poetry"],
+      "groupName": "Python dependencies",
+      "rangeStrategy": "update-lockfile"
+    },
+    {
+      "description": [
+        "Poetry and its dependencies, pinned with hashes in .github/poetry-requirements.txt (the pip_requirements manager, also on by default): one pull request. Keep poetry at the version that wrote poetry.lock."
+      ],
+      "matchManagers": ["pip_requirements"],
+      "groupName": "Poetry tooling"
+    }
+  ]
+}

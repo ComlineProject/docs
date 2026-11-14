@@ -90,6 +90,17 @@ def parse_flags(help_text: str) -> set[str]:
     return flags - IGNORED_FLAGS
 
 
+def walk(path: list[str], commands: set[str]) -> list[list[str]]:
+    """Every command under `path`, depth first: a group (`deps`) and each of
+    its subcommands (`deps add`), whose flags are their own."""
+    found = []
+    for command in sorted(commands):
+        sub = [*path, command]
+        found.append(sub)
+        found.extend(walk(sub, parse_commands(run_help(sub))))
+    return found
+
+
 def documented(page: str) -> tuple[set[str], set[str]]:
     """Extract the commands and flags the docs mention."""
     commands = set(re.findall(r"`comline ([a-z][a-z0-9-]*)", page))
@@ -127,7 +138,8 @@ def main() -> int:
     if not DOCS_PAGE.exists():
         sys.exit(f"error: {DOCS_PAGE} not found")
 
-    doc_commands, doc_flags = documented(DOCS_PAGE.read_text(encoding="utf-8"))
+    page = DOCS_PAGE.read_text(encoding="utf-8")
+    doc_commands, doc_flags = documented(page)
 
     root_help = run_help([])
     real_commands = parse_commands(root_help)
@@ -140,15 +152,20 @@ def main() -> int:
     drift |= report("Global flags", real_globals - doc_flags, set())
 
     all_real_flags = set(real_globals) | IGNORED_FLAGS
-    for command in sorted(real_commands):
-        own = parse_flags(run_help([command])) - GLOBAL_FLAGS
+    for path in walk([], real_commands):
+        name = " ".join(path)
+        # A subcommand (`comline deps add`) is checked by its full name; the
+        # top-level ones already were, above.
+        if len(path) > 1 and not re.search(rf"`comline {re.escape(name)}\b", page):
+            drift |= report("Commands", {name}, set())
+        own = parse_flags(run_help(path)) - GLOBAL_FLAGS
         all_real_flags |= own
         # A flag absent from the whole page is undocumented. Checking
         # page-wide rather than per-row keeps prose that explains a flag in a
         # paragraph instead of the table from reading as drift.
-        drift |= report(f"`comline {command}`", own - doc_flags, set())
+        drift |= report(f"`comline {name}`", own - doc_flags, set())
         if args.verbose and own:
-            print(f"\n`comline {command}` documented: {', '.join(sorted(own & doc_flags))}")
+            print(f"\n`comline {name}` documented: {', '.join(sorted(own & doc_flags))}")
 
     # The other direction, checked once against the union: a flag the docs
     # still describe after the CLI dropped or renamed it. Per-command this

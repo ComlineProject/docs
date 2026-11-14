@@ -6,7 +6,7 @@
     a property or whose literal type is wrong, a missing argument for a property
     without a default, or an undeclared `params.*` reference all fail the build. Generated **Rust** code then
     [runs them](#in-generated-code). Generated TypeScript doesn't yet: it
-    generates the types without the checks, and `comline generate` warns. See
+    generates the types without the checks, and `comline generation` warns. See
     [TypeScript's language reference](../../reference/languages/typescript.md#code-generation).
 
 A **validator** is a named, parameterised check you attach to a
@@ -125,7 +125,7 @@ function there's no single value for it to check, so it's a build error.
 
 ## The standard validators
 
-[`std::validators`](../../reference/schema/std/validators.md) ships these. A **maximum** belongs
+[`std::validators`](../../reference/package/schema/std/validators.md) ships these. A **maximum** belongs
 in the type ([`char[max 32]`](types.md#bounds)), where a decoder checks it before
 allocating; validators check what a type can't say, a minimum or a range.
 
@@ -225,7 +225,7 @@ in `comline.toml`; `"first"` stops at the first failure), and a provider
 refuses a call whose arguments fail them. Turning that off is a give-up with
 its reason, `validate_on_decode = { off = "why" }`; then nothing runs until you
 call `validate()`. See
-[`validate_on_decode`](../../reference/package/congregation/comline-toml.md#validate_on_decode).
+[`validate_on_decode`](../../reference/package/comline-toml.md#validate_on_decode).
 
 Properties are filled in when the code is generated: the argument you wrote,
 else the property's default, with constants resolved. Nothing about the

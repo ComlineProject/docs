@@ -2,7 +2,7 @@
 
 Status: **under discussion** · tracked in
 [core#123](https://github.com/ComlineProject/core/issues/123) · partly decided,
-nothing implemented
+nothing implemented · [`comline.packet@1`](comline.packet@1.md) specified, draft
 
 **The question:** how Comline describes **message-oriented packet protocols**,
 the slim systems that typically come from C, and generates their dispatch. In
@@ -29,14 +29,14 @@ They vary along independent axes:
 
 1. **Only the client sends unprompted.** Calls go from client to server, and
    one-way functions exist only in that direction. Server push is listed as
-   undesigned in the [target contract](../design/core-target-contract.md).
+   undesigned in the [target contract](../../design/core-target-contract.md).
 2. **Function ids are implicit.** Datagram addresses a call by the function's
    position in its protocol. Packet systems need **explicit, fixed, possibly
    sparse** ids, because those ids *are* the contract.
 3. **A connection serves one protocol,** so there are no families.
 4. **There are no phases.**
 5. **A framing can't read addressing from the schema.** Under
-   [the extensibility proposal](extensibility.md#what-a-format-cant-be), a
+   [the extensibility proposal](../extensibility.md#what-a-format-cant-be), a
    framing that needs more than the generated data model is a language feature,
    and packet addressing is exactly that.
 
@@ -44,7 +44,7 @@ They vary along independent axes:
 
 **Addressing** is the family, the id, the direction and the phase. It goes in
 the schema: both ends must agree on it, so it's part of the contract and of the
-[version comparison](schema-compatibility.md). Generators turn it into
+[version comparison](../schema-compatibility.md). Generators turn it into
 **dispatch tables**, mapping (phase, direction, family, id) to a decoder and a
 handler, plus the phase transitions. **A framing only lays out the header
 bytes,** looking ids up in those tables. A legacy system's exact header is then
@@ -65,7 +65,7 @@ and already used in `runtime-std-extra`'s `reverse_proxy.ids`:
   `@consumer` follows from it. Writing both is allowed, but a mismatch is an
   error. The other reading of the 2024 file, *how many* peers provide or
   consume (a fleet behind a reverse proxy), is dropped; if that need returns,
-  it belongs with [connections](connections.md).
+  it belongs with [connections](../connections.md).
 - **Server-to-client packets** are a protocol with `@provider = Client`. The
   client gets the dispatcher and the provider trait for it, and the server
   gets the sender.
@@ -105,7 +105,7 @@ protocol LoginClientbound {
 - In the version comparison, changing an id is major, and adding a function
   with a new id is minor.
 - **The syntax is decided:** `@id = 0x2A`
-  ([Function ids](function-ids/index.md),
+  ([Function ids](../function-ids/index.md),
   [core#127](https://github.com/ComlineProject/core/issues/127)). Ids can be
   assigned on build and written into the source, and reusing a retired id is
   an error.
@@ -114,7 +114,7 @@ protocol LoginClientbound {
 
 A family is a protocol with an explicit **family id**, so several protocols
 share one connection. That's the identifier the schema states, the choice the
-[rename rules](schema-compatibility.md#renames) asked for: renaming a protocol
+[rename rules](../schema-compatibility.md#renames) asked for: renaming a protocol
 or namespace changes code, not the wire. Whether the family id uses the same
 syntax as function ids follows from that decision.
 
@@ -124,7 +124,7 @@ A phase states which protocols are active in each direction, and which packet
 moves the connection to the next phase. Both ends generate the same state
 machine. The version comparison sees phases. An out-of-phase packet is a
 decode error, never a misread under another phase's table. The syntax is
-decided in [Phase syntax](phase-syntax/index.md): phases are an ordinary enum
+decided in [Phase syntax](../phase-syntax/index.md): phases are an ordinary enum
 marked `@phases`, and protocols and packets state their own phase and
 transitions:
 
@@ -167,7 +167,7 @@ Also decided (2026-10-20):
 
 - **A transition is tied to a packet in the schema, and sending that packet
   is the transition.** It's the function marked `@transition`
-  ([phase syntax](phase-syntax/enum-and-annotations.md)). Both ends then know
+  ([phase syntax](../phase-syntax/enum-and-annotations.md)). Both ends then know
   the switch point. In Rust the connection can be typed by its phase: sending
   `success` consumes a `Conn<Login>` and returns a `Conn<Play>`, so
   sending a later-phase packet too early doesn't compile. TypeScript checks
@@ -217,7 +217,7 @@ Also decided (2026-10-20):
     read under it.
   - **A legacy transition that needs one and has none** is a build error,
     unless the protocol gives up an agreement guarantee with
-    [`@unverified`](extensibility.md#giving-up-a-guarantee): that accepts the
+    [`@unverified`](../extensibility.md#giving-up-a-guarantee): that accepts the
     race, an in-flight packet read under the wrong table.
 - **Replies still pending at a transition go first.** A transition waits until
   the replies owed to old-phase requests are sent, so they're ahead of it in
@@ -226,7 +226,7 @@ Also decided (2026-10-20):
   table, so a reply arriving after the switch still decodes correctly.
 - **A client-chosen target** is an enum field of the transition packet
   (`@transition = next`), limited by a validator
-  ([phase syntax](phase-syntax/enum-and-annotations.md#as-accepted)).
+  ([phase syntax](../phase-syntax/enum-and-annotations.md#as-accepted)).
 - **An out-of-phase packet** is a decode error that ends the connection,
   reported as a framing fault.
 
@@ -240,7 +240,7 @@ Packet protocols do both, often within one protocol and chosen per packet:
 - X11: some requests have replies and some don't, and events arrive unprompted.
 
 The return forms these map to (one-way, quiet, acknowledged, value), and which
-framings carry each, are in [Return forms](return-forms.md).
+framings carry each, are in [Return forms](../return-forms.md).
 
 Real protocols match a reply to its request in about five ways:
 
@@ -264,7 +264,7 @@ datagram and JSON-RPC:
   `->` functions mix freely in one family, as MQTT and Kafka mix them per
   packet: the function's signature decides.
 - **How a reply is matched is a fact in the encoding's
-  [profile](schema-compatibility.md#encoding-profiles):** `correlation`.
+  [profile](../schema-compatibility.md#encoding-profiles):** `correlation`.
   `comline.packet@1` offers `none` or `header_id` (an id of a configurable
   width in the header), set as a
   [framing parameter](#where-the-framings-parameters-are-written).
@@ -330,14 +330,14 @@ structs. The second level of dispatch, hand-written in most implementations,
 is generated. Unions travel untagged today, so this needs tagged unions with
 explicit tag values
 ([core#126](https://github.com/ComlineProject/core/issues/126); how they're
-written is weighed in [Tagged unions](tagged-unions/index.md)), which serve
+written is weighed in [Tagged unions](../tagged-unions/index.md)), which serve
 more than packets.
 
 ### The mechanism, plus an official framing
 
 - **For anyone:** addressing in the schema and generated dispatch tables. A
   custom framing (`com.acme.legacy@1`, mapped per target as in
-  [the extensibility proposal](extensibility.md#how-generated-code-reaches-one))
+  [the extensibility proposal](../extensibility.md#how-generated-code-reaches-one))
   reads them.
 - **Official:** `comline.packet@1`, a configurable header covering the common
   layouts:
@@ -348,12 +348,15 @@ more than packets.
   - correlation: none, or a header id of a given width, which adds the
     request/reply kind marker and the reply status.
 
-  Its [profile](schema-compatibility.md#encoding-profiles) states that calls go
-  by explicit id, so reordering never matters under it.
+  Its [profile](../schema-compatibility.md#encoding-profiles) states that calls go
+  by explicit id, so reordering never matters under it. Its bytes are
+  specified on [its own page](comline.packet@1.md). Every parameter sets
+  facts or limits of that profile: see
+  [What each parameter sets](#what-each-parameter-sets).
 
 #### Where the framing's parameters are written
 
-Leaning (recorded for discussion, not final): **named framing instances in
+Decided 2026-11-14: **named framing instances in
 `config.idp`.** These extend the declared framings list
 ([core#117](https://github.com/ComlineProject/core/issues/117)) from plain
 names to named, configured entries:
@@ -427,9 +430,92 @@ Decided 2026-10-20 ([core#117](https://github.com/ComlineProject/core/issues/117
 - **Handshake:** packet systems usually bring their own
   ([runtime#18](https://github.com/ComlineProject/runtime/issues/18)), often as
   a phase of its own. One that doesn't establish schema agreement makes the
-  protocols [`@unverified`](extensibility.md#giving-up-a-guarantee).
+  protocols [`@unverified`](../extensibility.md#giving-up-a-guarantee).
 - **Dispatch becomes phase-aware:** the active tables switch when a transition
   packet passes, on both sides at the same point.
+
+#### What each parameter sets
+
+Proposed, with
+[Dependency protocols, Part 1](../dependency-protocols/capabilities.md), which
+adds the facts and limits used here. `comline.packet@1` is one profile whose
+parameters set its facts and limits. An instance is checked against the
+profile its parameters produce, so a narrow header is caught at build, not
+at run time.
+
+| Parameter | Values | Sets |
+| --- | --- | --- |
+| `id` | `u8`, `u16`, `u32`, `varint` | the limit `functions_per_protocol`: 256, 65536, or core's 65536 for `u32` and `varint` (wire numbers are `u16`). `calls = by_id` whatever the width |
+| `family` | `none`, `u8`, `u16` | the fact `protocols`: `in_call` for `none`, `by_id` otherwise. The limit `protocols`: 256 or 65536 per package. Under `none`, `functions_per_protocol` caps every function on the connection together, per phase and direction |
+| `correlation` | `none`, or `{ header_id = "u16" \| "u32", status = "u8" \| "u16" }`, `status` defaulting to `u16` | the fact `correlation`. The limit `pending_requests`: 2¹⁶ or 2³² per direction. The limit `errors_per_schema`: 254 under a `u8` status, 65534 under `u16` (one value is ok, one is fault). Under `none`, `->` and `!` are build errors, every frame is a request, and `directions` is `both`: with no replies, nothing needs telling apart |
+| `length` | `none`, `u16`, `u32`, `varint` | the limit `frame_bytes`: 65535, 4294967295, or the transport's for `varint` and `none`. Under `none`, the transport delimits frames |
+| `endianness` | `little`, `big` | no fact and no limit. It changes the bytes, so it's in the parameter hash like every parameter |
+
+A **family id** is the protocol's wire number, and a packet id the function's,
+both written with `@id` and required. So `protocols = by_id` here means "by
+the protocol's `@id`", which is unique in its package.
+
+**`protocols = in_call`** is the flat opcode table: the frame names no
+protocol, and a packet's id alone picks it out among every protocol active in
+the phase and direction. Ids must then be unique across those protocols, not
+just within one, and the build checks that per phase and direction.
+
+**The error status** (decided 2026-11-14). A correlated reply's status
+carries an error's ordinal, so its width sets `errors_per_schema`. It's part
+of the `correlation` parameter, because it only exists when replies do, and it
+defaults to `u16`, as in the other framings. Like every parameter it's a
+framing setting, not a format: it changes the header, not how values are
+encoded, and it's in the parameter hash, so peers that differ are refused.
+
+**Build errors** name the parameter that set the limit:
+
+```text
+protocol `game::Play` has 300 packets in phase `Play`, serverbound, and the
+instance "game" (`comline.packet@1`, `id = "u8"`) addresses at most 256
+
+`@id = 0x1F4` on `game::Play.chat`: the instance "game" has `id = "u8"`,
+whose largest id is 0xFF
+
+`login` and `chat` share id 0x03 in phase `Play`, serverbound: the instance
+"game" has `family = "none"`, so ids are unique across every protocol in a
+phase and direction
+```
+
+A fixed-width header and a varint one have the trade-offs set out for
+[`datagram@4`](../dependency-protocols/datagram@4.md#why-fixed-widths). A varint
+length or id is offered because legacy systems use them (Minecraft's lengths
+and ids are varints). A system designed for Comline is better served by fixed
+widths.
+
+#### Packages on a packet connection
+
+A packet framing's ids are fixed in the schema, and a legacy system fixes
+them, so nothing is negotiated
+([Connections](../connections.md#several-protocols-on-one-connection)). The
+ids are unique in a package, and nothing binds numbers per connection
+(`protocols` is `by_id` or `in_call`, never `by_binding`).
+
+A dependency's packet protocol, such as a shared keepalive family from a
+library, can't share a connection by binding numbers. What remains is a
+static check: its ids are explicit and fixed, so the build can prove they
+don't collide with the package's own, per phase and direction.
+
+**Decided 2026-11-14: allowed, when the build proves them disjoint.** A
+dependency's packet protocol joins when every one of its ids is explicit and
+none collides with the package's, or with another joining dependency's, in any
+phase and direction. A later release of the dependency that adds a colliding
+id fails the consumer's build, never the wire. The build error names both
+packets:
+
+```text
+`keepalive::Ping.ping` (from `netlib`) and `game::Play.chat` share id 0x03 in
+phase `Play`, serverbound: a dependency's packets join a `comline.packet@1`
+connection only with ids disjoint from the package's
+```
+
+A dependency whose protocols can't be proven disjoint, because one lacks an
+explicit id, or one uses another instance, gets a
+[connection of its own](../dependency-protocols/connection-per-package.md).
 
 ## Open questions
 
@@ -437,17 +523,20 @@ Decided 2026-10-20 ([core#117](https://github.com/ComlineProject/core/issues/117
   `in_order` and `sequence` correlation, and errors as declared packets (see
   [Describing legacy protocols](#describing-legacy-protocols)), deferred until
   a real legacy schema needs them.
-- **The framing's parameters:** leaning towards named framing instances in
-  `config.idp` (see
-  [Where the framing's parameters are written](#where-the-framings-parameters-are-written)).
-  Instance names and sharing across packages are decided.
+- ~~**The framing's parameters**~~: decided, named framing instances in
+  `config.idp` ([Where the framing's parameters are written](#where-the-framings-parameters-are-written)).
+- ~~**The error status width**~~: decided, part of `correlation`, `u16` by
+  default ([What each parameter sets](#what-each-parameter-sets)).
+- ~~**A dependency's packet protocols on the package's connection**~~:
+  decided, allowed when their ids are proven disjoint
+  ([Packages on a packet connection](#packages-on-a-packet-connection)).
 
 ## Prerequisites
 
 - **Server-to-client sending:** what `@provider = Client` needs, and nothing
-  generates today. Designed in [Connections](connections.md#calls-in-both-directions).
+  generates today. Designed in [Connections](../connections.md#calls-in-both-directions).
 - **Several protocols on one connection.** Designed in
-  [Connections](connections.md#several-protocols-on-one-connection).
+  [Connections](../connections.md#several-protocols-on-one-connection).
 - **The handshake as a declared axis**
   ([runtime#18](https://github.com/ComlineProject/runtime/issues/18)),
   **`@unverified`** ([core#121](https://github.com/ComlineProject/core/issues/121)),

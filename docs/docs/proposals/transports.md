@@ -77,7 +77,7 @@ each framing's specification:
 | `datagram@1` (lockstep) | reliable delivery; one call at a time, so order follows |
 | `datagram@2` | reliable delivery; **ordered delivery for a host that waits in order:** such a host treats "a reply that skips the innermost waiting call" as a framing error, so a reordering transport breaks it. An async host, matching replies by id, doesn't need order |
 | `jsonrpc@1` | message boundaries, or a length prefix; reliable delivery |
-| Packet framings ([packet dispatch](packet-dispatch.md)) | stated per framing; a packet framing may provide its own reliability |
+| Packet framings ([packet dispatch](packet-dispatch/index.md)) | stated per framing; a packet framing may provide its own reliability |
 
 ### Who declares, and why both
 

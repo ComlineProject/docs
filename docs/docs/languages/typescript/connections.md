@@ -38,13 +38,13 @@ left out when:
   only once one JSON-RPC protocol in the package is client-provided; then they
   all do.
 - **The protocols on connections disagree** on the framing or the handshake.
-  No one connection carries them all, and `comline generate` warns, naming
+  No one connection carries them all, and `comline generation` warns, naming
   both protocols. Each protocol still gets its own dispatcher and sender.
 - **Only protocols from an external `std` are on a connection.** Only what
   the package emits counts.
 
 When a package declares protocols but none is on a connection,
-`comline generate` says so, and why.
+`comline generation` says so, and why.
 
 ### Using them
 
@@ -82,7 +82,7 @@ const sent = await new chat.ChatSender(conn).send({ text: "hi" });
   ([Framing & wire format](framing-and-wire-format.md)); the framing and
   handshake are the protocols'. When the protocols on connections disagree on
   either, no one connection carries them all, so these functions aren't
-  generated and `comline generate` warns why.
+  generated and `comline generation` warns why.
 
 ## What codegen emits
 

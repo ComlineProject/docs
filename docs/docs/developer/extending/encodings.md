@@ -94,9 +94,9 @@ still a [proposal](../../proposals/schema-compatibility.md#encoding-profiles).
 For the official profiles, see the
 [runtime's `profiles/`](https://github.com/ComlineProject/runtime/tree/main/runtime/conformance/profiles).
 
-## 3. Write vectors, and prove an implementation
+## 3. Writing vectors
 
-**Vectors** are byte-exact cases. They sit beside the profile: the profile's
+**Vectors** are byte-exact cases that prove an implementation. They sit beside the profile: the profile's
 path with `.json` replaced by `.vectors.json`, so `profiles/lines.json` has
 `profiles/lines.vectors.json`.
 
@@ -210,7 +210,7 @@ wins:
 1. **The consumer's override**, in `comline.toml`.
 2. **The declaring package's `map`** for that language.
 
-If neither answers for an encoding the package uses, `comline generate` fails
+If neither answers for an encoding the package uses, `comline generation` fails
 with one sentence per encoding:
 
 ```text

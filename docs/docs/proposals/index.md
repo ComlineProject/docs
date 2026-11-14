@@ -74,7 +74,7 @@ reference. One proposal in stages, read in order:
 - [Stage 2 — core interface](shared-runtime-core/core-interface.md): the
   handshake, framings and connection state machine behind a stable C ABI and
   WASM, built from one crate. ***accepted***, steps 1–3 built: the core
-  changes, the C ABI at 0.1 ([reference](../reference/c-abi.md)), and its
+  changes, the C ABI at 0.1 ([reference](../reference/languages/c-abi.md)), and its
   vectors, fuzzing and benchmarks. The ABI stays `0.x` until the
   [1.0 announcement](../conduct/phases.md).
 - [Stage 3 — generated codecs](shared-runtime-core/generated-codecs.md):
@@ -121,6 +121,58 @@ to the same shape:
 - [Proposal D — keep `@unchecked`](guarantee-marker/unchecked.md): the original
   name. *rejected: says neither who nor what.*
 
+#### [A shared vocabulary](shared-vocabulary/index.md)
+
+One catalog of the names several programs agree on (encodings, guarantees,
+facts and their values, conformance features, annotations, diagnostic codes,
+CI targets), with sets as queries over it, read by core, the runtimes, the
+generators, the language server, the Observatory and the docs. Two parts,
+read in order:
+
+- [The catalog](shared-vocabulary/catalog.md): entries, kinds, sets,
+  relations, and where the catalog lives. *accepted 2026-11-12; the
+  `specification` repository holds it, and core and the runtime read it.*
+- [Granular `@unverified`](shared-vocabulary/granular-unverified.md): an
+  optional keyed form naming each guarantee with its own reason, at the
+  scope that guarantee has, checked against what core computes. Revisits part
+  of the guarantee-marker decision. *accepted 2026-11-12; not built yet.*
+
+#### [Migrating stored IR across format versions](ir-migrations/index.md)
+
+How the version history in `.comline/` survives a change of the IR format
+instead of being deleted: each format written down, a migration as a chain of
+total, deterministic steps over frozen copies of the formats that write what an
+old format never recorded as an explicit unknown, a new store verified beside
+the old one before it replaces it, and a proof (a corpus of real stores built by
+the historical cores, an equivalence against a fresh build, differential
+property tests and a CI gate) that fails a format bump without its step.
+Seven parts, read in order: [the formats](ir-migrations/formats.md),
+[steps](ir-migrations/steps.md),
+[running a migration](ir-migrations/running.md),
+[proving it](ir-migrations/proof.md),
+[hashes, pins and history](ir-migrations/hashes-and-history.md),
+[beyond the local store](ir-migrations/beyond-the-store.md) and
+[format 4 as the first client](ir-migrations/format-4.md). *accepted 2026-11-13; tracked in
+[core#268](https://github.com/ComlineProject/core/issues/268).*
+
+#### [Own schemas, provenance and dependency groups](use-paths-and-groups/index.md)
+
+How a `use` path says where a schema comes from, and how a package's dependencies
+are organised. A package's own schemas are reached only through `package::`,
+`parent::` or `self::` (a warning with a quick fix now, an error in the next
+edition), so an absolute first segment always means `std` or a dependency; each
+compiled schema records its provenance (the package, a named dependency, or
+`std`) instead of tools inferring it from the namespace's spelling, which is an
+IR format change; dependencies take an optional `group` that is presentation
+only and moves no hash; and a file's imports have a default order (`std`, the
+package's own, dependencies by group) configurable in a `[format]` table. Four
+parts: [relative paths](use-paths-and-groups/relative-use.md),
+[provenance](use-paths-and-groups/provenance.md),
+[dependency groups](use-paths-and-groups/dependency-groups.md) and
+[import formatting](use-paths-and-groups/import-formatting.md). *draft; related
+to [core#277](https://github.com/ComlineProject/core/issues/277) and
+[core#268](https://github.com/ComlineProject/core/issues/268).*
+
 ### Connections
 
 - [Connections](connections.md): what a connection carries beyond one client
@@ -132,6 +184,7 @@ to the same shape:
   built-in framing, a new packed C-struct-like format `packed@1` as the
   built-in format, and a generated `Services` struct with a package-level
   `serve`. ***implemented.***
+
 - [Return forms](return-forms.md): one-way, acknowledged (`-> ()`) and value
   returns, and quiet calls (errors only) as a future form; which each framing
   and transport supports, checked at build, and `()` only as a return.
@@ -140,6 +193,31 @@ to the same shape:
   author and its consumer, with profiles stating each transport's largest
   message and whether it loses, reorders or duplicates; a "transport fit"
   guarantee checked only where declared. *draft.*
+
+#### [A dependency's protocols on a connection](dependency-protocols/index.md)
+
+Which numbers address a dependency's protocol on a connection, and which
+version the handshake checks it against. ***Decided*** 2026-11-14: A and C,
+with Part 1, and step 0 (a protocol the package doesn't reach isn't
+addressed):
+
+- [Part 1 — what framings and handshakes state](dependency-protocols/capabilities.md):
+  new profile facts for how a frame names its protocol, whether it marks
+  one-way calls, and how many packages a handshake covers; `limits` for the
+  caps an encoding's bytes impose; the capabilities they derive, and what
+  changing an encoding implies. ***accepted.***
+- [Proposal A — several packages on one connection](dependency-protocols/multi-package-connection.md):
+  `comline@3` lists each package with its own id, version and numbers, and
+  binds a connection number per protocol, which
+  [`datagram@4`](dependency-protocols/datagram@4.md) addresses calls by in a
+  fixed-width header. Dependency protocols join by `use`. ***accepted***, the
+  defaults from the next edition.
+- [Proposal B — the consumer's numbers](dependency-protocols/consumer-numbers.md):
+  the consumer's history numbers each dependency protocol it carries.
+  *rejected as a default: a second identity per protocol.*
+- [Proposal C — a connection per package](dependency-protocols/connection-per-package.md):
+  each package on its own connection. ***accepted***, complementary to A: for
+  differing encodings and isolation.
 
 ### Systems
 
@@ -153,7 +231,7 @@ to the same shape:
 
 ### Packet protocols
 
-- [Packet dispatch](packet-dispatch.md): message-oriented packet protocols
+- [Packet dispatch](packet-dispatch/index.md): message-oriented packet protocols
   (families, explicit ids, phases, `@provider` for direction), with addressing
   in the schema, generated dispatch tables, and an official configurable
   framing. *under discussion, partly decided.*
@@ -231,8 +309,10 @@ the language side is shipped and documented in the
   repository can be watched over time, and any published versions compared;
   each repository publishes to its own `reports` branch. ***accepted*** —
   `observatory`, all four stages shipped.
-- [Automatic documentation](auto-documentation.md) — an optional tool that
+- [Automatic documentation](auto-documentation/index.md) — an optional tool that
   documents a user's own schemas and packages — their structs, enums, protocols,
   errors — from the IR and its docstrings, with the CAS supplying per-version
   docs and a generated changelog. ***accepted*** — a JSON doc model with
-  external renderers, configured in `comline.toml` only.
+  external renderers, configured in `comline.toml` only. A follow-up,
+  [links, the overview and highlighting](auto-documentation/links-overview-highlighting.md),
+  is a *draft*.

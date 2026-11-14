@@ -188,7 +188,7 @@ the schema. It's needed for 4, and useful for 2.
 
 Bit fields, byte order per field and fixed offsets are a different kind of
 format from what Comline has. When 3 is taken up, it likely starts from
-[packet dispatch](packet-dispatch.md)'s legacy framings.
+[packet dispatch](packet-dispatch/index.md)'s legacy framings.
 
 ## Prior art
 

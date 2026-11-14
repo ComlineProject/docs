@@ -2,11 +2,10 @@
 
 Every protocol runs on a
 [connection](../../guides/idl/protocol.md#calls-in-both-directions) unless it
-picks the lockstep `datagram` framing, in which case it gets a
-[client and server](client-and-server.md) instead. This page uses this
-schema:
+picks the lockstep `datagram` framing, in which case it gets a [client and server](client-and-server.md) instead.
+ This page assumed the following schema:
 
-```ids
+```ids title="snippet.ids"
 protocol Chat {
     function send(text: string) -> u64;
     function count() -> u64;
@@ -38,13 +37,13 @@ left out when:
   only once one JSON-RPC protocol in the package is client-provided; then they
   all do.
 - **The protocols on connections disagree** on the framing or the handshake.
-  No one connection carries them all, and `comline generate` warns, naming
+  No one connection carries them all, and `comline generation` warns, naming
   both protocols. Each protocol still gets its own dispatcher and sender.
 - **Only protocols from an external `std` are on a connection.** Only what
   the crate emits counts.
 
 When a package declares protocols but none is on a connection,
-`comline generate` says so, and why.
+`comline generation` says so, and why.
 
 ### Using them
 
@@ -85,7 +84,7 @@ let sent = ChatSender::new(&mut conn).send("hi")?;
   ([Framing & wire format](framing-and-wire-format.md)), and the framing and
   handshake are the protocols'. When the protocols on connections disagree
   on either, no one connection carries them all, so these functions aren't
-  generated and `comline generate` warns why.
+  generated and `comline generation` warns why.
 - **A schema named `connection`** can't be used in `code` mode, since the
   file would overwrite it.
 
@@ -212,7 +211,7 @@ another task while the connection serves, generate for the async driver.
 
 ## Async
 
-With `async = true` in [`comline.toml`](../../reference/package/congregation/comline-toml.md#async),
+With `async = true` in [`comline.toml`](../../reference/package/comline-toml.md#async),
 connection protocols are generated for the runtime's `AsyncConnection`
 instead, on any executor:
 

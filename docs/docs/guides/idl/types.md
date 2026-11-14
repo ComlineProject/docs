@@ -8,7 +8,7 @@ Primitives:
 | unsigned integers | `u8` `u16` `u32` `u64` `u128` |
 | floats | `f32` `f64` |
 | boolean | `bool` |
-| text | `string`, `char` (see below) |
+| text | `string`, `char` (see the [reference](../../reference/package/schema/types.md#text-string-and-char)) |
 
 Plus any `struct` / `enum` name (scoped: `pkg::module::Type`), arrays (`Type[]`,
 `Type[max 100]` or fixed `Type[10]`), and unions (`union(TypeA TypeB)`).
@@ -17,20 +17,6 @@ Every string and every dynamic array needs a [maximum](#bounds), written in its
 type or given by a [setting](settings.md#default-maximums). The examples in this guide
 carry maxima so they build as written; a bare `string` or `T[]` in one of your
 schemas builds only once a default is set.
-
-## Text: `string` and `char`
-
-- **`char`** is one Unicode scalar value: a single character, not a byte or a
-  UTF-16 unit. Its literal is a string of exactly one character, `"a"`; any
-  other length is a build error.
-- **`string`** is the text type: UTF-8, the built-in name for `char[]`. An
-  array of `char` is always text, so `char[max 64]` is a string of at most 64
-  characters, not a list of 64 `char` values.
-- **`str`** was an accepted spelling until it was removed. Writing it is now a
-  build error that tells you to use `string`.
-- **`String`** (capitalised) is **not** Comline syntax. It is the Rust type that
-  `string` generates into, so you see it in generated Rust, never in a `.ids`
-  file. Writing it gets the same hint.
 
 ## Bounds
 
@@ -50,17 +36,22 @@ struct Customer {
 
 - **`T[N]`** is exactly `N`. **`T[max N]`** is at most `N`. `T[]` writes no
   maximum, and needs one from a setting.
+
 - **Only a maximum.** A minimum ("not empty", "at least one") is a
   [validator](validator.md#the-standard-validators): `NonEmpty`, `MinChars`,
   `MinItems`. So is a range of values, `IntRange`.
+
 - **`N` is an integer or a [constant](const.md#sizes-from-constants):**
   `char[max NAME_MAX]`. It is at least 1 and at most `u32::MAX` (4294967295);
   `max 0`, an exact length of 0 and a negative size are build errors.
+
 - **`max` is a keyword only right after `[`.** Anywhere else it is an ordinary
   name, so a field called `max` is fine.
+
 - **Only strings and dynamic arrays take one.** Integers, floats, `bool`, enums,
   structs, unions and `()` don't. `string[max 10]` is ten strings, each at the
   package default; for a bounded string write `char[max N]`.
+
 - **Any change to a maximum is breaking**: tightening breaks old senders and
   loosening breaks old receivers.
 

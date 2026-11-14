@@ -55,6 +55,8 @@ nav:
       - Client & server: 'languages/typescript/client-and-server.md'
       - Framing & wire format: 'languages/typescript/framing-and-wire-format.md'
       - Connections: 'languages/typescript/connections.md'
+
+    - C: 'languages/c/index.md'
   
   - Developer Guides:
     - 'developer/index.md'
@@ -70,20 +72,40 @@ nav:
   - Reference:
     - "reference/index.md"
 
+    - Package:
+        - "reference/package/index.md"
+        - 'reference/package/idp.md'
+        - 'reference/package/comline-toml.md'
+
+        - Schema:
+          - 'reference/package/schema/index.md'
+          - Types: 'reference/package/schema/types.md'
+
+          # std:start
+          - Standard library:
+            - std: 'reference/package/schema/std/index.md'
+            - http: 'reference/package/schema/std/http.md'
+            - validators: 'reference/package/schema/std/validators.md'
+          # std:end
+
     - Languages:
       - 'reference/languages/index.md'
       - Rust: 'reference/languages/rust.md'
       - TypeScript: 'reference/languages/typescript.md'
+      - C ABI: 'reference/languages/c-abi.md'
 
     - Wire:
       - 'reference/wire/index.md'
       - Framings:
         - 'reference/wire/framings/index.md'
-        #- datagram@2: 'reference/wire/framings/datagram.md'
+        - datagram@3: 'reference/wire/framings/datagram@3.md'
+        - datagram@2: 'reference/wire/framings/datagram@2.md'
+        - datagram@1: 'reference/wire/framings/datagram@1.md'
 
       - Handshakes:
         - 'reference/wire/handshakes/index.md'
-        #- handshake@1: ''
+        - comline@2: 'reference/wire/handshakes/comline@2.md'
+        - comline@1: 'reference/wire/handshakes/comline@1.md'
 
       - Formats:
         - 'reference/wire/formats/index.md'
@@ -92,23 +114,6 @@ nav:
         - json@1: 'reference/wire/formats/json@1.md'
 
       - Official encodings: 'reference/wire/official-encodings.md'
-
-    - Runtime:
-      - C ABI: 'reference/c-abi.md'
-
-    - Package:
-      - 'reference/package/congregation/index.md'
-      - config.idp: 'reference/package/congregation/config-id.md'
-      - comline.toml: 'reference/package/congregation/comline-toml.md'
-
-    - Schema:
-      - 'reference/schema/index.md'
-      # std:start
-      - Standard library:
-        - std: 'reference/schema/std/index.md'
-        - http: 'reference/schema/std/http.md'
-        - validators: 'reference/schema/std/validators.md'
-      # std:end
 
     - Tools:
       - Tools: 'reference/tools/index.md'
@@ -185,18 +190,29 @@ nav:
       - 'Stage 1 — verification': 'proposals/shared-runtime-core/verification.md'
       - 'Stage 2 — core interface': 'proposals/shared-runtime-core/core-interface.md'
       - 'Stage 3 — generated codecs': 'proposals/shared-runtime-core/generated-codecs.md'
-    - Automatic documentation: 'proposals/auto-documentation.md'
+    - 'Automatic documentation':
+      - 'proposals/auto-documentation/index.md'
+      - 'Links, overview, highlighting': 'proposals/auto-documentation/links-overview-highlighting.md'
     - Project dashboard: 'proposals/project-dashboard.md'
     - Schema compatibility: 'proposals/schema-compatibility.md'
     - Language target versions: 'proposals/target-versions.md'
     - Extending the call system: 'proposals/extensibility.md'
     - Connections: 'proposals/connections.md'
+    - Dependency protocols:
+      - 'proposals/dependency-protocols/index.md'
+      - 'Part 1 — capabilities': 'proposals/dependency-protocols/capabilities.md'
+      - 'Proposal A': 'proposals/dependency-protocols/multi-package-connection.md'
+      - 'datagram@4': 'proposals/dependency-protocols/datagram@4.md'
+      - 'Proposal B': 'proposals/dependency-protocols/consumer-numbers.md'
+      - 'Proposal C': 'proposals/dependency-protocols/connection-per-package.md'
     - Package wire defaults: 'proposals/package-wire-defaults.md'
     - Return forms: 'proposals/return-forms.md'
     - Transports: 'proposals/transports.md'
     - IPC: 'proposals/ipc.md'
     - Systems software: 'proposals/systems-software.md'
-    - Packet dispatch: 'proposals/packet-dispatch.md'
+    - 'Packet dispatch':
+      - 'proposals/packet-dispatch/index.md'
+      - 'comline.packet@1': 'proposals/packet-dispatch/comline.packet@1.md'
     - 'Function ids':
       - 'proposals/function-ids/index.md'
       - 'Proposal A': 'proposals/function-ids/annotation.md'
@@ -229,6 +245,25 @@ nav:
       - 'proposals/offline/index.md'
       - 'Fetching': 'proposals/offline/fetching.md'
       - 'Supplying dependencies and tooling': 'proposals/offline/supply.md'
+    - 'A shared vocabulary':
+      - 'proposals/shared-vocabulary/index.md'
+      - 'The catalog': 'proposals/shared-vocabulary/catalog.md'
+      - 'Granular @unverified': 'proposals/shared-vocabulary/granular-unverified.md'
+    - 'Migrating stored IR':
+      - 'proposals/ir-migrations/index.md'
+      - 'The formats': 'proposals/ir-migrations/formats.md'
+      - 'Steps': 'proposals/ir-migrations/steps.md'
+      - 'Running a migration': 'proposals/ir-migrations/running.md'
+      - 'Proving it': 'proposals/ir-migrations/proof.md'
+      - 'Hashes, pins and history': 'proposals/ir-migrations/hashes-and-history.md'
+      - 'Beyond the local store': 'proposals/ir-migrations/beyond-the-store.md'
+      - 'Format 4': 'proposals/ir-migrations/format-4.md'
+    - 'Own schemas, provenance and groups':
+      - 'proposals/use-paths-and-groups/index.md'
+      - 'Relative paths': 'proposals/use-paths-and-groups/relative-use.md'
+      - 'Provenance': 'proposals/use-paths-and-groups/provenance.md'
+      - 'Dependency groups': 'proposals/use-paths-and-groups/dependency-groups.md'
+      - 'Import formatting': 'proposals/use-paths-and-groups/import-formatting.md'
 
 extra_css:
   - stylesheets/nav.css?v=23   # bump on every nav.css change — it is not cache-busted otherwise

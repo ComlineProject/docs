@@ -9,7 +9,7 @@ stdout.
 
 The two official generators, Rust and TypeScript, speak the same
 protocol. The CLI links them in for speed, but calls them through the same
-request and response types, so every `comline generate` exercises it.
+request and response types, so every `comline generation` exercises it.
 
 The protocol's every field is in the
 [generator protocol reference](../../reference/generator-protocol.md). This page

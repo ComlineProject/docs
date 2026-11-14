@@ -22,7 +22,7 @@ directions, per-connection state, and several protocols on one connection.
   starts with a `u16` call id and a reply with a `u64` request id, so an
   unprompted frame from the server would be misread as a reply.
 - **Nothing generates server-to-client protocols.** `@provider = Client`
-  ([packet dispatch](packet-dispatch.md#direction-provider-and-consumer)) has
+  ([packet dispatch](packet-dispatch/index.md#direction-provider-and-consumer)) has
   no runtime to run on.
 
 So server push is three gaps: a frame kind, something reading the connection
@@ -66,7 +66,7 @@ Decided with the user (2026-10-20):
    - **Broadcasting** to many connections stays application code: a loop over
      connections.
 5. **What the wire needs:** a request/reply kind marker, as decided for
-   [request ids in both directions](packet-dispatch.md#request-ids-in-both-directions).
+   [request ids in both directions](packet-dispatch/index.md#request-ids-in-both-directions).
    - `jsonrpc@1` works unchanged: a message with `method` is a request.
    - Datagram needs a new version, `datagram@2`, with the marker. Reverse calls
      under `datagram@1` are a build error.
@@ -104,7 +104,7 @@ Today a `Server` serves one `Dispatch`. A request names only its function, by
 position (datagram) or bare name (JSON-RPC), and the handshake covers one
 schema. Error ids are positions across a whole schema, so two schemas sharing a
 connection could give two different errors the same number.
-[Packet dispatch](packet-dispatch.md) already assumes several protocols per
+[Packet dispatch](packet-dispatch/index.md) already assumes several protocols per
 connection: its families are protocols with an id, and its phases are per
 connection.
 
@@ -231,6 +231,6 @@ Not built yet:
   senders, the connection handle in handlers, `@provider = Client`, error ids
   scoped by protocol.
 - **Core:** `@provider` as a known annotation (from
-  [packet dispatch](packet-dispatch.md)), the build error for reverse calls
+  [packet dispatch](packet-dispatch/index.md)), the build error for reverse calls
   under `datagram@1`, and the optional declared set of protocols.
 - **Docs:** the runtime guide.

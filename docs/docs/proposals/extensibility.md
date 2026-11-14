@@ -244,7 +244,7 @@ What decides a connection under `comline@2`:
   the line follows the major version; before 1.0 it follows the minor, as
   Cargo's `0.x` convention does.
 - **The rest is situational, so it's a parameter of the handshake,**
-  declared in `config.idp` like [framing instances](packet-dispatch.md#where-the-framings-parameters-are-written).
+  declared in `config.idp` like [framing instances](packet-dispatch/index.md#where-the-framings-parameters-are-written).
   The defaults are shown:
 
   ```

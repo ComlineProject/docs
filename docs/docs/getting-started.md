@@ -82,12 +82,12 @@ comline check
 ## Generate code
 
 ```shell
-comline generate
+comline generation
 ```
 
 Targets come from `code_generation.languages` in `config.idp` (the scaffold
 declares `rust#1.85.0`, the Rust generator's floor); output lands under `generated/` by default. Change where
-and how in [`comline.toml`](reference/package/congregation/comline-toml.md):
+and how in [`comline.toml`](reference/package/comline-toml.md):
 
 ```toml title="comline.toml"
 [generate]
@@ -101,5 +101,5 @@ Today `rust` and `typescript` are the generators.
 
 - [Overview](guides/index.md) — the whole pipeline
 - [IDL guide](guides/idl/index.md) — the schema language
-- [Generating code](guides/codegen/generating-code.md) — the full `generate` surface
+- [Generating code](guides/codegen/generating-code.md) — the full `generation` surface
 - [CLI reference](reference/tools/cli/index.md) — every command and flag

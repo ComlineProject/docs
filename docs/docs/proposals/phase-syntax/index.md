@@ -6,7 +6,7 @@
 > key shape (`protocol.provider`). Six follow-up points are settled on
 > [its page](enum-and-annotations.md#as-accepted).
 
-**The question.** [Packet dispatch](../packet-dispatch.md#phases-live-in-the-schema)
+**The question.** [Packet dispatch](../packet-dispatch/index.md#phases-live-in-the-schema)
 puts phases in the schema: which protocols are active in each phase, and which
 packets move a connection between phases. **How are phases written?**
 

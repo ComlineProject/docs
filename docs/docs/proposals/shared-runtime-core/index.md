@@ -113,7 +113,7 @@ Split the work by what can cross a language boundary cheaply.
 | Stage | Page | State |
 |---|---|---|
 | 1 | [Verification: differential fuzzing and benchmark gates](verification.md) | accepted, in progress |
-| 2 | [One protocol core: a C ABI and WASM from one crate](core-interface.md) | accepted; rollout steps 1–3 built, and TypeScript binds it through wasm (stage 4); see the [C ABI reference](../../reference/c-abi.md) |
+| 2 | [One protocol core: a C ABI and WASM from one crate](core-interface.md) | accepted; rollout steps 1–3 built, and TypeScript binds it through wasm (stage 4); see the [C ABI reference](../../reference/languages/c-abi.md) |
 | 3 | [Codecs and protocol glue generated from one plan](generated-codecs.md) | proposal |
 | 4 | [Move TypeScript onto the core where the counts allow](#stage-4-moving-typescript) | built: TypeScript runs on the core through wasm ([ts#87](https://github.com/ComlineProject/comline-typescript/pull/87), [ts#88](https://github.com/ComlineProject/comline-typescript/pull/88), [ts#89](https://github.com/ComlineProject/comline-typescript/pull/89)) |
 | 5 | Clean up the leftovers and the documents that contradict this | agreed |

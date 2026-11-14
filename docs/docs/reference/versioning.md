@@ -113,7 +113,7 @@ play.
 | respell an argument or return type through an equivalent alias | patch |
 | add an error to `!` | minor (an old client receives it as `Remote`) |
 | remove an error from `!` | major (a generated error variant disappears) |
-| `@framing` or `@handshake` changes (compared by meaning: writing out the default isn't a change) | major, except a handshake's [policies](wire/handshakes/index.md#hashing-and-changing-them) |
+| `@framing` or `@handshake` changes (compared by meaning: writing out the default isn't a change) | major, except a handshake's [policies](wire/handshakes/comline@2.md#hashing-and-changing-them) |
 | a guarantee given up (`@unverified`, or one more joining the set) | major |
 | a given-up guarantee restored | minor (a patch for version honesty, which only `comline@2`'s `same_version_differs` gives up today) |
 | the `@unverified` reason changed | patch |
@@ -283,7 +283,7 @@ version's facts, never in the schema.
   whatever neither released.
 - **Never reused.** When an item is removed, its number is retired. A
   re-added item gets a new number. A renamed protocol keeps its number.
-- **Generated without a build.** `comline generate` takes the numbers from
+- **Generated without a build.** `comline generation` takes the numbers from
   the last build when the schemas haven't changed since. Otherwise it works
   them out as the next `comline build` would, against the last release and
   every retired number, and writes nothing. A package that was never built
@@ -362,7 +362,7 @@ computed when asked for, not stored.
 Each format, framing and handshake in play gets blake3 over the CBOR of its
 kind, canonical name and parameters. The parameters are a framing's
 `{ name = ..., ... }` entries other than `name`, a handshake's
-[wire parameters](wire/handshakes/index.md#hashing-and-changing-them) that aren't
+[wire parameters](wire/handshakes/comline@2.md#hashing-and-changing-them) that aren't
 at their default (its policies never), plus, for an encoding the package declares
 in `encodings`, its profile's hash.
 
@@ -388,7 +388,7 @@ reproducible.
 
 Nothing else holds this history — there is no `publish` yet — so losing
 `.comline/` means the next build starts over at `0.1.0-dev.1`, with no undo.
-`comline clean` leaves it alone; only **`comline reset`** deletes it, behind a
+`comline generation clean` leaves it alone; only **`comline reset`** deletes it, behind a
 typed confirmation (or `--force`). See
 [the `clean` / `reset` split](../design/ir-generation.md#the-clean-reset-split).
 

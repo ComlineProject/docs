@@ -6,13 +6,13 @@ for the `comline@1` and `comline@2` handshakes, the connection framings
 transports, async and dispatch stay in each host.
 
 - **ABI version 0.2.** It is not frozen; it freezes when the project announces
-  1.0 ([phases](../conduct/phases.md)). See [Version](#version).
+  1.0 ([phases](../../conduct/phases.md)). See [Version](#version).
 - **Source:** [`runtime/ffi`](https://github.com/ComlineProject/runtime/tree/main/runtime/ffi)
   in the runtime repository.
 - **Header:** [`include/comline.h`](https://github.com/ComlineProject/runtime/blob/main/runtime/ffi/include/comline.h).
   cbindgen 0.29.2 generates it from `src/lib.rs`, and it is checked in. Its
   comments are the doc comments of the Rust source.
-- **Why it exists and what was decided:** [one protocol core](../proposals/shared-runtime-core/core-interface.md).
+- **Why it exists and what was decided:** [one protocol core](../../proposals/shared-runtime-core/core-interface.md).
 
 This page was checked against runtime `main` at `b101fe9`. Where it and the
 header disagree, the header is right.
@@ -32,7 +32,7 @@ header disagree, the header is right.
 - **Before 1.0, a minor counts as a major.** A host built against `0.2` accepts
   only `0.2`. The JS glue does exactly this.
 - **The freeze comes with the project's 1.0 announcement,** not with an ABI
-  milestone of its own ([phases](../conduct/phases.md)).
+  milestone of its own ([phases](../../conduct/phases.md)).
 - The major changes when a signature, a struct layout or the meaning of a code
   changes. The minor changes when functions, codes or flag bits are added.
 - Structs are frozen within a major. New data comes through new functions or new
@@ -61,7 +61,7 @@ connection is open from the start, and `start` writes nothing.
 
 ### `comline@2`
 
-[`comline@2`](wire/handshakes/index.md#comline2) has several messages, so its
+[`comline@2`](../wire/handshakes/comline@2.md) has several messages, so its
 life differs in steps 1 to 3:
 
 1. `comline_connection_new_comline2`, with `handshake` set to
@@ -201,12 +201,12 @@ A decoded `comline@1` frame, written by `comline_handshake_check`. 32 bytes.
 
 A `comline@2` connection's facts and parameters, read once by
 `comline_connection_new_comline2`. Each parameter's default is 0, and
-[the handshake's reference](wire/handshakes/index.md#parameters) says what it means.
+[the handshake's reference](../wire/handshakes/comline@2.md#parameters) says what it means.
 24 bytes on a 64-bit target and 16 on wasm32.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `hello`, `hello_len` | `const uint8_t *`, `size_t` | This end's facts, as [an encoded hello message](wire/handshakes/index.md#messages). A generator can write them out as a constant. They're put in canonical order, and the `exchange` byte is replaced by `exchange` below. |
+| `hello`, `hello_len` | `const uint8_t *`, `size_t` | This end's facts, as [an encoded hello message](../wire/handshakes/comline@2.md#messages). A generator can write them out as a constant. They're put in canonical order, and the `exchange` byte is replaced by `exchange` below. |
 | `side` | `uint8_t` | `COMLINE_SIDE_INITIATOR` (0) or `COMLINE_SIDE_RESPONDER` (1). |
 | `scope` | `uint8_t` | `COMLINE_SCOPE_PROTOCOL` (0) or `COMLINE_SCOPE_PACKAGE` (1). |
 | `newer_consumer` | `uint8_t` | `COMLINE_NEWER_CONSUMER_DEGRADE` (0) or `COMLINE_NEWER_CONSUMER_REFUSE` (1). |
@@ -220,7 +220,7 @@ Why `comline@2` refused a connection. 8 bytes.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `reason` | `uint8_t` | `COMLINE_REASON_*`, the [reason codes](wire/handshakes/index.md#reason-codes). |
+| `reason` | `uint8_t` | `COMLINE_REASON_*`, the [reason codes](../wire/handshakes/comline@2.md#reason-codes). |
 | `side` | `uint8_t` | Which end refused: `COMLINE_SIDE_*`. |
 | `has_protocol` | `uint8_t` | 1 when the refusal is about one protocol. |
 | `_reserved` | `uint8_t` | 0. |
@@ -491,8 +491,8 @@ cbindgen --config cbindgen.toml --output include/comline.h
 
 The CI jobs are `ffi`, `ffi miri`, `wasm32 core` and `fuzz (ffi_feed)`,
 `fuzz (ffi_vs_core)` and `fuzz (stream_split)`; all are required to merge. See
-[Verification](../proposals/shared-runtime-core/verification.md) for how the
-fuzz targets and the benchmark gate work, and [Branch rules](../conduct/branch-rules.md).
+[Verification](../../proposals/shared-runtime-core/verification.md) for how the
+fuzz targets and the benchmark gate work, and [Branch rules](../../conduct/branch-rules.md).
 
 ## What crossing costs
 
@@ -539,9 +539,9 @@ rustc 1.98.0. Message mode, a 16-byte payload:
   few instructions between machines, because the overlap check compares
   addresses, so the CI figures above differ slightly from the PR's.
 - **Not in these tables:** the wasm32 build and the JS glue. Their cost was
-  measured end to end for [stage 4](../proposals/shared-runtime-core/index.md#stage-4-moving-typescript),
+  measured end to end for [stage 4](../../proposals/shared-runtime-core/index.md#stage-4-moving-typescript),
   with a local tool and not a CI gate; the results are on the
-  [TypeScript page](../languages/typescript/index.md#what-it-costs).
+  [TypeScript page](../../languages/typescript/index.md#what-it-costs).
 
 The gate compares each call with its base on every pull request and fails at
 a 1% rise, like the core's benches. Both sides of each pair are gated.
@@ -551,5 +551,5 @@ a 1% rise, like the core's benches. Both sides of each pair are gated.
 - **`comline_connection_size` and `comline_connection_init`,** for a host that
   supplies the handle's memory. A later addition.
 - **More bindings.** TypeScript binds the ABI through the JS glue (stage 4,
-  see [TypeScript on the core](../languages/typescript/index.md#on-the-shared-core)). No
+  see [TypeScript on the core](../../languages/typescript/index.md#on-the-shared-core)). No
   other language does yet.
