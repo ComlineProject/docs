@@ -155,6 +155,24 @@ Seven parts, read in order: [the formats](ir-migrations/formats.md),
 [format 4 as the first client](ir-migrations/format-4.md). *accepted 2026-11-13; tracked in
 [core#268](https://github.com/ComlineProject/core/issues/268).*
 
+#### [Own schemas, provenance and dependency groups](use-paths-and-groups/index.md)
+
+How a `use` path says where a schema comes from, and how a package's dependencies
+are organised. A package's own schemas are reached only through `package::`,
+`parent::` or `self::` (a warning with a quick fix now, an error in the next
+edition), so an absolute first segment always means `std` or a dependency; each
+compiled schema records its provenance (the package, a named dependency, or
+`std`) instead of tools inferring it from the namespace's spelling, which is an
+IR format change; dependencies take an optional `group` that is presentation
+only and moves no hash; and a file's imports have a default order (`std`, the
+package's own, dependencies by group) configurable in a `[format]` table. Four
+parts: [relative paths](use-paths-and-groups/relative-use.md),
+[provenance](use-paths-and-groups/provenance.md),
+[dependency groups](use-paths-and-groups/dependency-groups.md) and
+[import formatting](use-paths-and-groups/import-formatting.md). *draft; related
+to [core#277](https://github.com/ComlineProject/core/issues/277) and
+[core#268](https://github.com/ComlineProject/core/issues/268).*
+
 ### Connections
 
 - [Connections](connections.md): what a connection carries beyond one client

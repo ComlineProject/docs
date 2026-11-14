@@ -254,6 +254,12 @@ nav:
       - 'Hashes, pins and history': 'proposals/ir-migrations/hashes-and-history.md'
       - 'Beyond the local store': 'proposals/ir-migrations/beyond-the-store.md'
       - 'Format 4': 'proposals/ir-migrations/format-4.md'
+    - 'Own schemas, provenance and groups':
+      - 'proposals/use-paths-and-groups/index.md'
+      - 'Relative paths': 'proposals/use-paths-and-groups/relative-use.md'
+      - 'Provenance': 'proposals/use-paths-and-groups/provenance.md'
+      - 'Dependency groups': 'proposals/use-paths-and-groups/dependency-groups.md'
+      - 'Import formatting': 'proposals/use-paths-and-groups/import-formatting.md'
 
 extra_css:
   - stylesheets/nav.css?v=23   # bump on every nav.css change — it is not cache-busted otherwise
