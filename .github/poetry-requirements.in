@@ -5,4 +5,4 @@
 #     --output-file=.github/poetry-requirements.txt .github/poetry-requirements.in
 #
 # Keep the version the one poetry.lock was written with.
-poetry==2.3.1
+poetry==2.5.1
