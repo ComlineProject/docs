@@ -3,8 +3,7 @@
 Status: **In use** — `ComlineProject/brand` holds the canonical files; the docs
 site vendors the mark and favicon from it. Other consumers still carry their own
 copies · Affects `ComlineProject/brand`, `ComlineProject/docs`,
-`ComlineProject/package-registry-frontend`, `ComlineProject/shared-web`,
-`ComlineProject/comline`
+`ComlineProject/package-registry-frontend`, `ComlineProject/comline`
 
 ## The problem
 
@@ -74,7 +73,6 @@ instead.
 |---|---|---|
 | `docs` | `docs/docs/assets/` | `mkdocs.yml` `theme.logo` / `theme.favicon` |
 | `package-registry-frontend` | `static/images/comline/`, `static/favicon.*` | header bar, `app.html` |
-| `shared-web` | per its own convention | shared web components |
 | `comline` (landing) | `static/` | header, hero |
 
 ## Follow-ups
@@ -83,12 +81,14 @@ instead.
   `palette.primary` to a custom tomato (`--md-primary-fg-color: #E5442E`) would
   put the header on-brand; it needs a contrast check against the header text and
   the two colour schemes before it lands.
-- **`shared-web` as the web consumers' relay.** If the playground, tutorial, and
-  landing site end up sharing a component layer (`shared-web`), that layer — not
-  each app — should carry the one vendored copy.
+- **`comline-web-kit` as the web consumers' relay.** The playground and the
+  tutorial share `comline-web-kit` (a workspace of `ComlineProject/playground`),
+  whose views take their colours from `--cl-*` custom properties. Brand colours
+  that more than one site needs belong in the kit's defaults, not in each app.
+  `shared-web`, the earlier attempt at a shared layer, was never used.
 - **`tokens.json` → build input.** Nothing consumes `tokens.json` yet. A web
   build could generate a CSS custom-property file from it so the colours are
   never retyped.
-- **Other consumers.** `package-registry-frontend`, `shared-web`, and the
-  landing site still carry their originals; each should re-copy from `brand` and
+- **Other consumers.** `package-registry-frontend` and the landing site still
+  carry their originals; each should re-copy from `brand` and
   add a provenance note the way the docs site now does.
