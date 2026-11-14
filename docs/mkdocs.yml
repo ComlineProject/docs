@@ -241,6 +241,10 @@ nav:
       - 'Proposal B': 'proposals/guarantee-marker/assumes.md'
       - 'Proposal C': 'proposals/guarantee-marker/unverified.md'
       - 'Proposal D': 'proposals/guarantee-marker/unchecked.md'
+    - 'Offline and air-gapped use':
+      - 'proposals/offline/index.md'
+      - 'Fetching': 'proposals/offline/fetching.md'
+      - 'Supplying dependencies and tooling': 'proposals/offline/supply.md'
     - 'A shared vocabulary':
       - 'proposals/shared-vocabulary/index.md'
       - 'The catalog': 'proposals/shared-vocabulary/catalog.md'
