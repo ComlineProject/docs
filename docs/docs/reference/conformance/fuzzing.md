@@ -4,6 +4,8 @@ How the reference runtime is fuzzed, and how other runtimes are tested
 against it on random inputs. The source of truth is the runtime's
 [`runtime/fuzz/README.md`](https://github.com/ComlineProject/runtime/blob/main/runtime/fuzz/README.md).
 
+For context, when **"reference runtime"** is mentioned, it is talking about the [reference runtime repository](https://github.com/ComlineProject/runtime/tree/main/runtime/reference).
+
 The Rust runtime is the reference every other runtime is checked against, so
 its decoders must be strict, canonical and panic-free. Two kinds of test
 check that:
@@ -69,12 +71,6 @@ core on random sequences).
 A runtime that isn't the reference compares itself with it through
 `comline-reference`, which answers any [ops protocol](wire.md#the-ops-protocol)
 question.
-
-comline-typescript's nightly workflow (03:17 UTC) installs `comline-reference`
-at the corpus's `VECTORS_REV` and runs its property tests
-(`runtime/test/prop/`) against it at many more runs than a pull request's.
-Connection logic is compared through the `session` op. A failure opens or
-comments on an issue. Coverage-guided fuzzing (Jazzer.js) isn't set up yet.
 
 ## Outputs
 

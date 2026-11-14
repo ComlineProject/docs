@@ -66,7 +66,7 @@ to write it.
 
 | Format | One `char` | `T[max N]` | `char[max N]` |
 | --- | --- | --- | --- |
-| [`packed@1`](formats/packed@1.md#char-and-bounds) | its UTF-8 bytes, 1 to 4, no prefix, checked by the strict UTF-8 check | a count prefix above N refused before allocating | a byte length above 4 × N refused before reading; then counted exactly during the UTF-8 check |
+| [`packed@1`](formats/packed@1.md#char) | its UTF-8 bytes, 1 to 4, no prefix, checked by the strict UTF-8 check | a count prefix above N refused before allocating | a byte length above 4 × N refused before reading; then counted exactly during the UTF-8 check |
 | `msgpack@1` | a one-character string (`fixstr`, 2 to 5 bytes) | a count prefix above N refused before allocating | a byte length above 4 × N refused; then counted exactly |
 | `json@1` | a one-character string, `"a"` | refused at item N + 1, which isn't built | counted after unescaping; the frame limit caps the allocation |
 

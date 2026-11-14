@@ -22,7 +22,7 @@ it from async code is simply using it as it's already written, with
 ## On the shared core
 
 Part of the runtime is the Rust [shared runtime core](../../proposals/shared-runtime-core/index.md),
-loaded through wasm (the [C ABI](../../reference/c-abi.md#wasm32-and-the-js-glue)),
+loaded through wasm (the [C ABI](../../reference/languages/c-abi.md#wasm32-and-the-js-glue)),
 and part is still TypeScript. The core is vendored into the package, pinned
 to a `runtime` revision by `scripts/vendor-core.sh`
 ([ts#87](https://github.com/ComlineProject/comline-typescript/pull/87)).

@@ -179,7 +179,7 @@ except where noted.
   - The job summary pairs each ABI call with its core twin, the crossing cost.
     It informs and isn't gated on its own.
   - runtime#60 cut the crossing: every ABI call is cheaper, none dearer. The
-    numbers are in the [C ABI reference](../../reference/c-abi.md#what-crossing-costs).
+    numbers are in the [C ABI reference](../../reference/languages/c-abi.md#what-crossing-costs).
 - **Required checks.** The `main` ruleset requires `ffi`, `ffi miri`,
   `wasm32 core` and the fuzz jobs `fuzz (ffi_feed)`, `fuzz (ffi_vs_core)` and
   `fuzz (stream_split)`. See [Branch rules](../../conduct/branch-rules.md).

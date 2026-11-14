@@ -94,9 +94,9 @@ still a [proposal](../../proposals/schema-compatibility.md#encoding-profiles).
 For the official profiles, see the
 [runtime's `profiles/`](https://github.com/ComlineProject/runtime/tree/main/runtime/conformance/profiles).
 
-## 3. Write vectors, and prove an implementation
+## 3. Writing vectors
 
-**Vectors** are byte-exact cases. They sit beside the profile: the profile's
+**Vectors** are byte-exact cases that prove an implementation. They sit beside the profile: the profile's
 path with `.json` replaced by `.vectors.json`, so `profiles/lines.json` has
 `profiles/lines.vectors.json`.
 

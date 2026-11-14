@@ -135,3 +135,11 @@ branch. The latest, fetched when this site was built:
 Every published run, and the ratio to Rust per workload:
 [Observatory → Benchmarks](https://comlineproject.github.io/observatory/bench/typescript-bench/)
 and [ratio to Rust](https://comlineproject.github.io/observatory/ratio/).
+
+### Conformance
+
+comline-typescript's nightly workflow (03:17 UTC) installs `comline-reference`
+at the corpus's `VECTORS_REV` and runs its property tests
+(`runtime/test/prop/`) against it at many more runs than a pull request's.
+Connection logic is compared through the `session` op. A failure opens or
+comments on an issue. Coverage-guided fuzzing (Jazzer.js) isn't set up yet.

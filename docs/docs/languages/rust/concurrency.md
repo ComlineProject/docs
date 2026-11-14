@@ -11,6 +11,20 @@ This page is about the lockstep `Client` and `Server` that a protocol on the
 inside, so everything below is a pattern for *your* code, not a feature of
 `comline-runtime`.
 
+## Sync by default, async when asked
+
+The runtime is `no_std`-first and **sync** by default: a call blocks until
+its reply arrives, and nothing inside the runtime spawns a thread or takes a
+lock, so it works the same on a bare-metal target with no allocator as in a
+normal `std` binary.
+
+Set [`async = true`](../../reference/package/comline-toml.md#async) in
+`comline.toml` and connection protocols are generated for the runtime's
+**async** driver instead: handlers are `async fn`s, the connection is a future
+you spawn on any executor, and handles call the peer from any task
+([Connections → Async](connections.md#async)). Protocols on the lockstep
+`datagram` framing keep their blocking client and server either way.
+
 ## Plain sync — the common case
 
 Most of what's shown elsewhere in this guide is already this: own a

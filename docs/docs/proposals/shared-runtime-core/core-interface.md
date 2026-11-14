@@ -23,7 +23,7 @@ cost unavoidable, the page says so, and the
 
 Built 2026-10-25 and 2026-10-26, in [`runtime`](https://github.com/ComlineProject/runtime) except where noted. These
 are [rollout](#rollout) steps 1–3. The as-built API is the
-[C ABI reference](../../reference/c-abi.md).
+[C ABI reference](../../reference/languages/c-abi.md).
 
 **Step 1: the core changes**
 
@@ -140,7 +140,7 @@ else on this page is as proposed.
   - An event sets `COMLINE_EVENT_ONE_WAY` only when the frame says so, never from
     a request id of 0.
 - **Which fields each framing reads** is stated per function and set out in
-  [the reference](../../reference/c-abi.md#what-each-framing-reads).
+  [the reference](../../reference/languages/c-abi.md#what-each-framing-reads).
   `datagram@2` reads `protocol` and `call_id`. `jsonrpc@1` reads `name`, writes
   an error's `error_id` as the JSON-RPC `code`, and writes a fault as `-32603`.
 - **JSON-RPC without `std` is confirmed.** `serde_json` with `raw_value` builds
@@ -354,7 +354,7 @@ runtime/                         ComlineProject/runtime
 
 ### The API
 
-The header and the [C ABI reference](../../reference/c-abi.md) hold the
+The header and the [C ABI reference](../../reference/languages/c-abi.md) hold the
 as-built API. The C sketch that stood here is gone. Its shape held:
 
 - a version, `comline_abi_version()`, and a header that carries it;
@@ -779,4 +779,4 @@ Steps 1–3 are done ([What's built](#whats-built)).
   - the [runtime guide](../../guides/runtime/index.md)'s "no FFI boundary";
   - [`core-target-contract.md`](../../design/core-target-contract.md) §4.7
     (answered here) and §4.6's `no_std` layering table;
-  - a `comline.h` reference page: done, the [C ABI reference](../../reference/c-abi.md).
+  - a `comline.h` reference page: done, the [C ABI reference](../../reference/languages/c-abi.md).

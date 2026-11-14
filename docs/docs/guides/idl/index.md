@@ -1,6 +1,6 @@
 # IDL / Schema
 
-The **Interface Description Language** (IDL, also called the *schema*) is what you
+The **Interface Description Language** (IDL, also called __Schema__) is what you
 write by hand. A schema file has the extension `.ids` and lives under a project's
 `src/` directory. It defines the data shapes and the protocols that carry them,
 independent of any language.

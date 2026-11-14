@@ -58,7 +58,7 @@ IR", and it follows from the
 
 It is a tool a project opts into, not a step in the pipeline. Nothing here
 happens unless asked for. The consumer's
-[`comline.toml`](../../reference/package/congregation/comline-toml.md) owns the switches,
+[`comline.toml`](../../reference/package/comline-toml.md) owns the switches,
 the same way it already owns generation's output location, layout and mode.
 
 ## Decisions
@@ -116,7 +116,7 @@ These were open questions until 2026-11-01. The rationale is in
 It lands in the product documentation, not here: a Guide page on documenting
 your schemas, a `comline doc` entry in the
 [CLI reference](../../reference/tools/cli/index.md), its `comline.toml` keys in the
-[congregation reference](../../reference/package/congregation/index.md), and the doc
+[congregation reference](../../reference/package/index.md), and the doc
 model's JSON Schema.
 
 The obvious first demonstration is

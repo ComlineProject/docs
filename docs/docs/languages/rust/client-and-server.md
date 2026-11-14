@@ -187,14 +187,14 @@ Each generated error struct, and each error enum with variants, gets a
 the sentence you wrote in the schema is what `{}` and `.to_string()`
 produce, with `{self.field}` placeholders filled in:
 
-```ids
+```ids title="errors.ids"
 error NotFound {
     message = f"no entry for {self.key}"
     key: string
 }
 ```
 
-```rust
+```rust title="user_impl.rs"
 NotFound { key: "k".into() }.to_string()   // "no entry for k"
 ```
 

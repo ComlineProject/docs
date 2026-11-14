@@ -19,7 +19,7 @@ check it against?**
   and every package numbers its protocols from 0. So `test::none::Thing` and
   `localdeps::greeting::Foo` can both be protocol 0.
 - **A frame names a protocol by that number alone.** A
-  [`datagram@3`](../../reference/wire/framings/index.md#datagram3) request carries a
+  [`datagram@3`](../../reference/wire/framings/datagram@3.md) request carries a
   protocol number and a function number, but no package.
 - **A handshake covers one package.** The
   [`comline@2`](../../reference/wire/handshakes/comline@2.md) Hello carries

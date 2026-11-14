@@ -12,13 +12,13 @@ declared, it's this one.
 ## Layout
 
 | Type | Bytes |
-|---|---|
-| `bool` | 1 byte: `00` or `01`; anything else is an error |
-| `u8` `u16` `u32` `u64` `u128` | 1, 2, 4, 8, 16 bytes, little-endian |
-| `s8` `s16` `s32` `s64` `s128` | 1, 2, 4, 8, 16 bytes, little-endian two's complement |
-| `f32` `f64` | 4, 8 bytes, IEEE 754 little-endian |
-| `string`, `char[max N]`, `char[N]` | length in bytes as a varint, then that many bytes of UTF-8 (invalid UTF-8 is an error). An array of `char` is always text, so `char[N]` sends its length too |
-| `char` | its UTF-8 bytes alone, 1 to 4, no length: the first byte says how many follow |
+| --- | --- |
+| [`#!ids bool`](../../package/schema/types.md#bool) | 1 byte: `00` or `01`; anything else is an error |
+| [`#!ids u8 u16 u32 u64 u128`](../../package/schema/types.md#unsigned) | 1, 2, 4, 8, 16 bytes, little-endian |
+| [`#!ids s8 s16 s32 s64 s128`](../../package/schema/types.md#signed) | 1, 2, 4, 8, 16 bytes, little-endian two's complement |
+| [`#!ids f32 f64`](../../package/schema/types.md#floats) | 4, 8 bytes, IEEE 754 little-endian |
+| [`#!ids char`](../../package/schema/types.md#char) | its UTF-8 bytes alone, 1 to 4, no length: the first byte says how many follow |
+| [`#!ids string` `#!ids char[max N]` `#!ids char[N]`](../../package/schema/types.md#text-string-and-char) | length in bytes as a varint, then that many bytes of UTF-8 (invalid UTF-8 is an error). An array of `char` is always text, so `char[N]` sends its length too |
 | `T[]`, `T[max N]` | element count as a varint, then the elements |
 | `T[N]` | the N elements; the length is in the schema (except `char[N]`, above) |
 | struct, error body, a call's arguments | the fields in declaration order |
@@ -36,34 +36,39 @@ bytes are an error. A length larger than the bytes left is an error before
 anything is allocated, so a hostile length can't make the decoder reserve
 memory.
 
-## `char` and bounds
+## `char`
 
 **A single `char`** is one Unicode scalar value, sent as its UTF-8 bytes
 with no prefix: `61` for `a`, `c3 a9` for `é`, `e2 82 ac` for `€`,
 `f0 9f 98 80` for `😀`. The decoder reads the first byte's width and runs
 the strict UTF-8 check. It refuses:
+
 - a continuation byte or `c0`, `c1`, `f5`..`ff` in first place;
 - an overlong form;
 - a surrogate;
 - a value past U+10FFFF;
 - a character cut short.
 
-**Bounds** (`char[max N]`, `T[max N]`, `@max_depth`) don't change the bytes,
+## Bounds
+
+On a schema, **bounds** (`#!ids char[max N]`, `#!ids T[max N]`, `#!ids @max_depth`) don't change the bytes,
 only what a decoder accepts. A value over its bound is refused like
 malformed input, and an encoder refuses to write one.
 
 | Bound | Decoding refuses |
-|---|---|
-| `T[max N]` | a count above N, before anything is allocated |
-| `char[max N]` | a byte length above 4 × N before reading the string, since N characters take at most 4 × N bytes; then, during the UTF-8 check, a string of more than N characters. Characters are counted, never bytes, and never normalized |
-| `@max_depth = D` | a value of the recursive type nested more than D deep (the outermost is level 1), before reading any deeper |
+| --- | --- |
+| `#!ids T[max N]` | a count above N, before anything is allocated |
+| `#!ids char[max N]` | a byte length above 4 × N before reading the string, since N characters take at most 4 × N bytes; then, during the UTF-8 check, a string of more than N characters. Characters are counted, never bytes, and never normalized |
+| `#!ids @max_depth = D` | a value of the recursive type nested more than D deep (the outermost is level 1), before reading any deeper |
 
-`"é€😀a"` fits `char[max 4]`: 4 characters in 10 bytes. `"ééééé"` doesn't:
+`"é€😀a"` fits `#!ids char[max 4]`: 4 characters in 10 bytes. `"ééééé"` doesn't:
 5 characters, though only 10 bytes.
 
 ## Example
 
-```ids
+Given the following snippet
+
+```ids title="snippet.ids"
 enum Class {
     Warrior
     Mage
@@ -79,7 +84,11 @@ struct Player {
 }
 ```
 
+With the following values:
+
 `Player { id: 7, hp: 100, name: "ab", guild: none, class: Mage, pos: [1.0, 2.0] }`:
+
+Is equivalent to:
 
 ```text
 07 00 00 00   id
@@ -118,9 +127,11 @@ Changing a package's `wire.format` is itself a major change.
 - **Rust:** `comline_runtime::format::Packed`, a `WireFormat` built as a serde
   serializer and deserializer. It needs neither `std` nor an allocator, so it
   works on targets the JSON and MessagePack formats don't.
+
 - **TypeScript:** `PackedCodec`. A JS value doesn't say whether a number is a
   `u16` or an `f64`, so the generator emits a `Layout` per type, which the
   codec walks. `u64`, `s64` and wider are `bigint`.
+
 - **Conformance:** byte-exact vectors in the
   [runtime's wire corpus](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/vectors/format-packed.json)
   pin each type's bytes and each decoding error, a single `char`, and each

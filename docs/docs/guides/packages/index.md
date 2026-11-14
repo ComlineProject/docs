@@ -28,7 +28,7 @@ code_generation = {
 ```
 
 Every key, its syntax and what it does is in the
-[`config.idp` reference](../../reference/package/congregation/config-id.md). The ones
+[`config.idp` reference](../../reference/package/idp.md). The ones
 with more to them have their own sections below: [wire defaults](#wire-defaults)
 and [dependencies](#dependencies).
 
@@ -82,7 +82,7 @@ Where generated code lands, in what layout, for which versions — none of which
 belongs to the package author — is set by whoever runs `comline generation`, in a
 separate, non-frozen `comline.toml`. See
 [Generating code](../codegen/generating-code.md) and the
-[`comline.toml` reference](../../reference/package/congregation/comline-toml.md).
+[`comline.toml` reference](../../reference/package/comline-toml.md).
 
 ## Dependencies
 

@@ -273,7 +273,7 @@ else `#!ids` would show as text.
   and the highlighting table above; the tokenizer's fixes.
 - **docs:** the types reference written out with an anchor per built-in; the
   guide's broken link; the [documenting guide](../../guides/documenting.md)
-  and the [`comline.toml` reference](../../reference/package/congregation/comline-toml.md)
+  and the [`comline.toml` reference](../../reference/package/comline-toml.md)
   for the new keys; `std` declaring its `documentation`; and **hosted docs
   versioned by toolchain release**, so that built-ins link to the reference of
   the toolchain that built a package. That's a site change of its own, worth
