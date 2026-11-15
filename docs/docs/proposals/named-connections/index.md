@@ -175,9 +175,10 @@ are settled.
    dictionary form keyed by the set's name (its grammar has no list values, and needs none
    for this), defaulting to the package's `wire`. A member's own `@framing` and `@handshake`
    must agree with its set's; a protocol in two sets whose framings differ can't pin
-   `@framing` itself. A format per set is new (the format is package-wide today): Rust's
-   generated types are format-independent through serde; whether TypeScript's generated
-   codecs are is still to be checked.
+   `@framing` itself. A format per set is new (the format is package-wide today), and both
+   generators already allow it: Rust's generated types are format-independent through
+   serde, and TypeScript's decode through the connection's `codec` with a format-independent
+   `Layout` (`codec.decode<RpcPingParams>(params, RpcPingParamsLayout)`).
 8. **A dependency's protocol joins a set only once `comline@3` exists** ([Proposal A](../dependency-protocols/multi-package-connection.md)),
    with its encodings matching as A decided. A's accepted rule that `use` puts a protocol on
    the connection is not changed by this proposal.
@@ -213,7 +214,9 @@ are settled.
     Raised with it, and separate from sets: Comline decides the method name that goes on the
     wire (`send`, or `namespace.Protocol/function`), so it can't yet serve or call an
     existing JSON-RPC API whose methods are named otherwise (`textDocument/hover`,
-    `eth_getBalance`). No annotation sets a function's wire name today.
+    `eth_getBalance`). No annotation sets a function's wire name today, and params and error
+    codes have the same problem. Filed on its own as
+    [core#287](https://github.com/ComlineProject/core/issues/287).
 14. **Direction stays on the protocol (`@provider`).** With the annotation, the question
     doesn't arise; a world-like declaration (Option 3) isn't taken.
 15. **The house order:** the specification's cases first, then core, generation, the two
@@ -237,11 +240,6 @@ are settled.
     step: build the Hello at runtime from the protocols actually provided, and let `Services`
     and `ClientServices` take a subset. That covers 1 to 3 with no new language concept;
     sets would then add only the named entry points and the per-set encodings (4).
-- **Per-set formats in TypeScript** (answer 7): whether its generated codecs allow one
-  package to use two formats.
-- **A function's JSON-RPC wire name** (answer 13): for interoperating with existing JSON-RPC
-  APIs. Separate from this proposal.
-
 ## Open questions
 
 The questions as first asked; the [answers](#answers-so-far) are above. The options page has
