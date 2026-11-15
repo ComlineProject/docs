@@ -48,7 +48,10 @@ A schema written for 1.0 keeps building on every 1.x.
     - tagged unions ([core#126](https://github.com/ComlineProject/core/issues/126));
     - bounds on types ([core#98](https://github.com/ComlineProject/core/issues/98)),
       **built** (2026-11-09);
-    - explicit function ids, `@id` ([core#127](https://github.com/ComlineProject/core/issues/127));
+    - explicit function ids, `@id` ([core#127](https://github.com/ComlineProject/core/issues/127)):
+      wire numbers from the package's history and the `@id` annotation are
+      **built** (core#203, 2026-11-03); ids are never written into schemas
+      automatically;
     - packet dispatch, if it ships ([core#123](https://github.com/ComlineProject/core/issues/123)).
 - Language editions exist, so later syntax changes don't need a major
   ([core#102](https://github.com/ComlineProject/core/issues/102)).
@@ -71,9 +74,9 @@ Semver for a user's schema package means nothing until a break is defined.
 - `comline release` can make 1.0 and raise or lower a bump with a reason
   ([cli#82](https://github.com/ComlineProject/cli/issues/82)).
   `comline release`, `comline release 1.0` and `--raise` with a reason are
-  **built**. What's left is `--lower`, requiring `@id` before 1.0 (it waits on
-  [core#127](https://github.com/ComlineProject/core/issues/127)), and showing
-  why a bump is what it is in `build` and `diff`.
+  **built**. What's left is `--lower`, and showing why a bump is what it is in
+  `build` and `diff`. Requiring `@id` before 1.0 was dropped: wire numbers come
+  from the package's history, so there are no ids to assign at release.
 - Releases carry a changelog
   ([core#7](https://github.com/ComlineProject/core/issues/7)).
   [`comline doc`](../reference/tools/cli/doc.md) generates one between any two
