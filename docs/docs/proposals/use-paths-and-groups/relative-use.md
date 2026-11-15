@@ -73,13 +73,62 @@ Rust spells it `super`. One word is kept because:
 
 A bare path that reaches the package's own schema is an error (below). The language server attaches a **quick fix** that
 rewrites it to the `package::…` form. `package::` is chosen over the shortest relative form because it is the same
-wherever the file sits: moving a schema to another directory doesn't change what its imports say. The qualified
-references the import brought in, written with the old spelling, are rewritten with it. `comline fix` applies the
-same rewrite to every file.
+wherever the file sits: moving a schema to another directory doesn't change what its imports say. `comline fix` applies the
+same rewrite to every file. The fix changes only the `use`: a qualified reference is written with the schema's namespace
+(`types::User`) whichever path reached it, so there is nothing else to rewrite (see [Qualified
+references](#qualified-references)).
 
 A path that matches nothing is the error it is today ([When nothing
 matches](../../guides/idl/use.md#when-nothing-matches)), with one addition: a bare path whose first segment is neither a
 dependency nor `std`, but the name of one of the package's own schemas, is this error, with the fix, not "no schema matches".
+
+## Qualified references
+
+**Decided with the user 2026-11-15: the Rust model.** Not built yet.
+
+**As built (core#285).** A `use` is frozen with its resolved path: `use package::types::User` is `Import("types::User")`.
+After it, a field can be written `User` or `types::User`, and a qualified reference has to match a `use` of the file
+exactly; `package::types::User` in a type position is not accepted. A type reference is frozen as written. So the rule
+above holds in `use` lines only: `types::User` in a field looks exactly like a path into a dependency named `types`. It
+is always traceable to a `use` in the same file, but a reader can't tell from the reference itself.
+
+**The decision.** A qualified reference starts with a name a `use` brought into scope, as in Rust:
+
+| `use` | Then write |
+|---|---|
+| `use package::types` | `types::User` |
+| `use package::types as t` | `t::User` |
+| `use package::types::User` | `User` (not `types::User`) |
+| `use package::billing::api` | `api::Invoice` |
+| `use greeting::hello` | `hello::Greeting` |
+
+`types` in `types::User` is then a name in the file's scope, not an absolute path, and the rule that a bare first
+segment means `std` or a dependency holds in `use` lines without an exception elsewhere.
+
+**Fixed with it:**
+
+- This page said the qualified references an import brought in are rewritten by the fix; there were none to rewrite,
+  and [What the editor and the fix do](#what-the-editor-and-the-fix-do) now says so.
+- `compat` and the sizer resolve a name by namespace suffix and by the first schema declaring it, not as the validator
+  does: [core#289](https://github.com/ComlineProject/core/issues/289). A resolver shared by the three is where the
+  Rust model's rule lives.
+
+**Open, for the user:**
+
+1. **What a whole-namespace `use` brings in.** Today `use package::types` brings both `types` and every bare name in
+   it (`User`). In Rust it brings only `types`. Keep both, or only `types` (bare names then need `::{...}`, `::*` or a
+   single-item `use`)?
+2. **A path from a root in a type position, without a `use`.** Rust accepts `crate::types::User` anywhere. May a field
+   be written `package::types::User`, `parent::common::Error` or `self::nested::Type` with no `use`, and likewise a
+   dependency's or `std`'s full path (`std::http::Request`)?
+3. **Going down from a name in scope.** After `use package::billing`, is `billing::api::Invoice` accepted (Rust
+   allows walking into a submodule), or must `api` itself be imported?
+4. **What is frozen.** Freezing a qualified reference as its resolved path (`billing::api::Invoice` for a field
+   written `api::Invoice`), as `use`s are frozen today, leaves the IR and the generators unchanged for existing
+   packages. Or freeze it as written, which changes the IR (with the [provenance](provenance.md) format bump)?
+5. **Rollout.** A reference the new rule refuses (`types::User` after `use package::types::User`) becomes an error at
+   once, as a bare own-schema path did, with a fix (write `User`, or add `use package::types`) in the language server
+   and `comline fix`?
 
 ## Rollout
 
