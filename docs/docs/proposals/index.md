@@ -192,6 +192,14 @@ to [core#277](https://github.com/ComlineProject/core/issues/277) and
   author and its consumer, with profiles stating each transport's largest
   message and whether it loses, reorders or duplicates; a "transport fit"
   guarantee checked only where declared. *draft.*
+- [Named connections](named-connections/index.md): letting one package declare
+  several named sets of protocols, each generating its own `Services`, `serve`
+  and `connect`, against keeping one connection per package and one package per
+  application. Four options (the status quo, sets in the manifest, sets in the
+  IDL, a world-like declaration) and prior art from protoc, gRPC, Thrift,
+  Cap'n Proto, Smithy, WIT and FIDL. Develops the declared set that
+  [Connections](connections.md#several-protocols-on-one-connection) left
+  unbuilt. *draft; nothing decided, the questions are open.*
 
 #### [A dependency's protocols on a connection](dependency-protocols/index.md)
 
