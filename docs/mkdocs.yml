@@ -208,6 +208,10 @@ nav:
     - Package wire defaults: 'proposals/package-wire-defaults.md'
     - Return forms: 'proposals/return-forms.md'
     - Transports: 'proposals/transports.md'
+    - 'Named connections':
+      - 'proposals/named-connections/index.md'
+      - 'Options': 'proposals/named-connections/options.md'
+      - 'Prior art': 'proposals/named-connections/prior-art.md'
     - IPC: 'proposals/ipc.md'
     - Systems software: 'proposals/systems-software.md'
     - 'Packet dispatch':
