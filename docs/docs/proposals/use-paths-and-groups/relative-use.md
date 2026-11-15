@@ -84,7 +84,7 @@ dependency nor `std`, but the name of one of the package's own schemas, is this 
 
 ## Qualified references
 
-**Decided with the user 2026-11-15: the Rust model.** Not built yet.
+**Decided with the user 2026-11-15: the Rust model,** with the [answers](#qualified-references) below. Not built yet.
 
 **As built (core#285).** A `use` is frozen with its resolved path: `use package::types::User` is `Import("types::User")`.
 After it, a field can be written `User` or `types::User`, and a qualified reference has to match a `use` of the file
@@ -113,22 +113,26 @@ segment means `std` or a dependency holds in `use` lines without an exception el
   does: [core#289](https://github.com/ComlineProject/core/issues/289). A resolver shared by the three is where the
   Rust model's rule lives.
 
-**Open, for the user:**
+**Answered by the user, 2026-11-15:**
 
-1. **What a whole-namespace `use` brings in.** Today `use package::types` brings both `types` and every bare name in
-   it (`User`). In Rust it brings only `types`. Keep both, or only `types` (bare names then need `::{...}`, `::*` or a
-   single-item `use`)?
-2. **A path from a root in a type position, without a `use`.** Rust accepts `crate::types::User` anywhere. May a field
-   be written `package::types::User`, `parent::common::Error` or `self::nested::Type` with no `use`, and likewise a
-   dependency's or `std`'s full path (`std::http::Request`)?
-3. **Going down from a name in scope.** After `use package::billing`, is `billing::api::Invoice` accepted (Rust
-   allows walking into a submodule), or must `api` itself be imported?
-4. **What is frozen.** Freezing a qualified reference as its resolved path (`billing::api::Invoice` for a field
-   written `api::Invoice`), as `use`s are frozen today, leaves the IR and the generators unchanged for existing
-   packages. Or freeze it as written, which changes the IR (with the [provenance](provenance.md) format bump)?
-5. **Rollout.** A reference the new rule refuses (`types::User` after `use package::types::User`) becomes an error at
-   once, as a bare own-schema path did, with a fix (write `User`, or add `use package::types`) in the language server
-   and `comline fix`?
+1. **A whole-namespace `use` brings in only its name, as in Rust.** `use package::types` puts `types` in scope, and
+   nothing in it: a bare `User` needs `use package::types::User`, `use package::types::{User, ...}` or
+   `use package::types::*`. A namespace `use` no longer works as a glob too, so a bare name always traces to a `use`
+   that names it or ends in `*`.
+2. **A full path works in a type position without a `use`, as in Rust.** `package::types::User`,
+   `parent::common::Error`, `self::nested::Type`, `std::http::Request` and a dependency's full path
+   (`greeting::hello::Greeting`) can be written in a field or parameter with no `use`. Their first segment is
+   unambiguous after the rule above: `package`, `parent` and `self` are the package's own, `std` the standard library,
+   anything else a dependency.
+3. **A path can go down from a name in scope, as in Rust.** After `use package::billing`, `billing::api::Invoice`
+   reaches the nested schema `billing::api`.
+4. **A qualified reference is frozen as its resolved path,** as a `use` is: `api::Invoice`, `billing::api::Invoice`
+   and an alias's `b::Invoice` all freeze as `billing::api::Invoice`. The frozen IR, its hashes and the generators are
+   unchanged for existing packages, and tidying a file's `use`s doesn't change them.
+5. **A reference the rule refuses is an error at once,** as a bare own-schema path is
+   ([core#285](https://github.com/ComlineProject/core/pull/285)): `types::User` after `use package::types::User`, and a
+   bare `User` after only `use package::types`. The diagnostic carries the likely rewrite (write `User`, or add the
+   `use` that brings the name in), as a quick fix in the language server and across a package with `comline fix`.
 
 ## Rollout
 
