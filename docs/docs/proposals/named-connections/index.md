@@ -240,6 +240,7 @@ are settled.
     step: build the Hello at runtime from the protocols actually provided, and let `Services`
     and `ClientServices` take a subset. That covers 1 to 3 with no new language concept;
     sets would then add only the named entry points and the per-set encodings (4).
+
 ## Open questions
 
 The questions as first asked; the [answers](#answers-so-far) are above. The options page has
