@@ -289,7 +289,7 @@ import type { Greeting } from "./types.js";
 ```
 
 An alias imports the name the other module actually exports
-(`use types::Greeting as G` → `import type { Greeting as G }`), and a `use`
+(`use package::types::Greeting as G` → `import type { Greeting as G }`), and a `use`
 nothing refers to produces no import at all.
 
 `std` again resolves to its own package when

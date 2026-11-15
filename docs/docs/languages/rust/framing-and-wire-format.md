@@ -67,8 +67,13 @@ the schema's `IR_HASH`.
 The generated code names the package's format once:
 
 ```rust
+/// The package's wire format (`wire.format`).
 pub type Format = comline_runtime::format::Packed;
 ```
+
+It's in `connection.rs` when the package has a [connection](connections.md);
+each protocol file re-exports it as `#[doc(hidden)]`. A package of lockstep
+protocols only has no `connection.rs`, and each protocol file defines it.
 
 The package's `serve` / `accept` / `connect`, and each lockstep protocol's own
 `serve` and `connect`, use it, so there's no format argument to pass:

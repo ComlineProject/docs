@@ -10,6 +10,44 @@ reference until it is; `comline-codegen-typescript`'s own pin on the
 runtime (by git rev, like the rest of this toolchain) is the pattern to
 copy.
 
+## What you use
+
+Which generated items you use depends on the protocol's framing and on who
+provides it. The names below are for protocols `Chat` (the server provides it)
+and `Events` (the client does), and `Mail` and `Rpc` for the others.
+
+| Case | You implement | To serve | To dial | To call through |
+|---|---|---|---|---|
+| **The default connection**: every protocol on one [connection](connections.md), `datagram@3` | each protocol's interface: `Chat`, and `Events` for what the client provides. Handlers take the peer first | `serve(transport, { chat })`. `accept(transport, { chat })` takes the same and hands back the connection | `connect(transport, { events })`, or `connect(transport)` when the client provides nothing | `new ChatSender(conn).send({ n })`, on what `connect` returns, what `accept` returns, or the peer a handler is given |
+| **The lockstep `datagram`**: one protocol per transport ([lockstep](client-and-server.md)) | the protocol's interface: `Mail` | `serveMail(impl, transport)` | `MailClient.connect(transport)` | `MailClient`'s methods |
+| **JSON-RPC**, a protocol the client provides | as the default connection | as the default: the package's `serve` opens the connection with `JsonCodec` and `JsonRpcConnectionFraming` ([over JSON-RPC](connections.md#over-json-rpc)) | as the default | as the default |
+| **JSON-RPC**, a server-only protocol | the protocol's interface: `Rpc` | `serveRpc(impl, transport)` | `RpcClient.connect(transport)`, encoding JSON | `RpcClient`'s methods |
+| **By hand** | the same interfaces | `Connection.accept(transport, Format, CONNECTION_IR_HASH, new Datagram3Framing(), handshake())`, then `new ChatDispatcher(chat).provideOn(conn)` ([by hand](connections.md#by-hand)). Lockstep: `new Server(new MailDispatcher(mail), codec, framing).serve(transport, IR_HASH)` | `Connection.connect(…)`, the same way. Lockstep: `Client.connect(transport, codec, IR_HASH, framing)` | the same senders and clients |
+
+A package whose protocols disagree on the framing or the handshake has no one
+connection, so no `serve` or `connect`; each protocol keeps its own dispatcher
+and sender ([when they're generated](connections.md#when-theyre-generated)).
+
+### What's in the generated files
+
+A package with a connection gets `connection.ts`. It opens with a comment
+saying which of the above to use, for this package's protocols, and holds
+`Services`, `ClientServices`, `accept`, `serve` and `connect`. In `lib` mode the
+package's `index.ts` opens with a comment of the same kind, and lists each lockstep
+protocol's `serve<Protocol>` and `<Protocol>Client.connect` too. A lockstep
+protocol's own file has no such comment.
+
+The package's `Format` (its codec) and `CONNECTION_IR_HASH` (the digest the
+handshake checks) are shared by every file of the package. When more than one
+file needs them they're in a `wire.ts` of their own, which `connection.ts`
+re-exports; a lone file keeps its own.
+
+What is marked `@internal` is wire plumbing: the `…ParamsLayout` constants, the
+`…_CALLS` tables, the dispatchers of a connection, `provideServices` and
+`provideClientServices`, and what the `comline@2` handshake is built from
+(`HELLO`, `handshake()`). It stays exported, for by-hand use, and is not what you
+call.
+
 ## The mirror fact to Rust's
 
 Where the Rust runtime is sync and blocking by design, the TypeScript
@@ -61,9 +99,10 @@ median of 5. They are not a CI gate; see
 
 ## Where to go next
 
-- [Client & server](client-and-server.md) — connecting, serving, and the
-  shape codegen actually emits.
 - [Connections](connections.md) — the default: every protocol on one
   connection, calls in both directions.
+- [Lockstep `datagram`: client & server](client-and-server.md) — the lockstep
+  framing's `<Protocol>Client`, dispatcher and `serve<Protocol>`, and the shape
+  codegen emits for them.
 - [Framing & wire format](framing-and-wire-format.md) — what's pluggable
   today and what isn't yet.

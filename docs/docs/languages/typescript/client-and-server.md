@@ -1,7 +1,9 @@
-# Client & server
+# Lockstep `datagram`: client & server
 
-A protocol on the lockstep `datagram` framing gets a client and a server; every
-other protocol runs on a [connection](connections.md), the default. This page
+A protocol on the lockstep `datagram` framing (`@framing = "datagram"`) gets a
+client and a server. This page is only that case; every other protocol runs on a
+[connection](connections.md), the default, with its own `serve` and `connect`
+([What you use](index.md#what-you-use) says which is which). This page
 follows the runtime's own test fixture — a lockstep `Chat` protocol with a
 throwing call, a plain call, a `()` return, and a one-way call:
 
@@ -27,12 +29,35 @@ protocol Chat {
 ## What codegen emits
 
 ```typescript
-export interface Message { body: string; seq: bigint; }
-export const Message: Shape = { fields: { seq: "bigint" } };
+/** Canonical digest of the frozen IR this file was generated from — the
+*  two ends of a connection must agree on it. */
+export const IR_HASH = 0x222ffe8dc03c4d62n;
+
+/** The package's wire format (`wire.format`): what this file's helpers
+*  encode with, and what the peer has to speak too. */
+export const Format: Codec = new PackedCodec();
+
+export interface Message {
+    body: string;
+    seq: bigint;
+}
+
+export const MessageLayout: Layout = { struct: [["body", "string"], ["seq", "u64"]] };
+
 export class RejectedError extends Error {
     static readonly ordinal = 0;
-    constructor(readonly data: Rejected) { … }
+    readonly data: Rejected;
+    constructor(data: Rejected) { /* … */ }
 }
+
+export interface ChatSendParams {
+    text: string;
+}
+
+/** @internal */
+export const ChatSendParamsLayout: Layout = { struct: [["text", "string"]] };
+
+// … ChatHistoryParams and ChatNoteParams, and their layouts, the same way.
 
 export interface Chat {
     /** @throws {RejectedError} */
@@ -42,19 +67,40 @@ export interface Chat {
     note(params: ChatNoteParams): Promise<void>;
 }
 
-export class ChatDispatcher implements Dispatch { constructor(private readonly impl: Chat) {} … }
-export class ChatClient { … }
-export function serveChat(impl: Chat, transport: Transport, codec: Codec, framing?: Framing): Promise<void>;
+/** @internal */
+export const CHAT_CALLS = ["send", "history", "wipe", "note"] as const;
 
-export const IR_HASH = 0x…n;  // schema fingerprint, used in the handshake
+export class ChatDispatcher implements Dispatch {
+    constructor(impl: Chat) { /* … */ }
+    // …
+}
+
+export class ChatClient {
+    constructor(client: Client) { /* … */ }
+
+    static async connect(transport: Transport, codec: Codec = Format, framing: Framing = new DatagramFraming()): Promise<ChatClient> {
+        return new ChatClient(await Client.connect(transport, codec, IR_HASH, framing));
+    }
+
+    async send(params: ChatSendParams): Promise<Message> { /* … */ }
+    async history(params: ChatHistoryParams): Promise<Message[]> { /* … */ }
+    async wipe(): Promise<void> { /* … */ }
+    async note(params: ChatNoteParams): Promise<void> { /* … */ }
+}
+
+export function serveChat(impl: Chat, transport: Transport, codec: Codec = Format, framing: Framing = new DatagramFraming()): Promise<void> {
+    return new Server(new ChatDispatcher(impl), codec, framing).serve(transport, IR_HASH);
+}
 ```
+
+A lockstep protocol's file has no entry-point comment; in `lib` mode the
+package's `index.ts` lists its `serveChat` and `ChatClient.connect`.
 
 - `seq` is a `u64`, so it's a `bigint`. `number` holds integers exactly only
   up to 2^53, so every 64- and 128-bit integer is a `bigint`, and a constant
-  of one is written `7n`. A type that holds one, anywhere inside, also gets a
-  `Shape` of the same name. The generated client and dispatcher pass it to
-  the codec, which reads those integers exactly. Types without one are just
-  interfaces.
+  of one is written `7n`. Every type gets a `Layout` of the same name plus
+  `Layout` (`MessageLayout`), which the generated client and dispatcher pass to
+  the codec: it reads a `u64` as a `bigint`, and says how wide each integer is.
 - `Chat` is the interface your implementation fills in — every method
   `async`/`Promise`-returning, a thrown `*Error` class per declared `!`
   (several, comma-separated, if the function lists several).
@@ -65,6 +111,12 @@ export const IR_HASH = 0x…n;  // schema fingerprint, used in the handshake
   `ChatDispatcher`, run the handshake, serve. There's no dispatcher
   "class method" for this — it's a standalone function alongside the
   classes.
+- `Format` and `IR_HASH` are exported by this file. A package that also has a
+  [connection](connections.md) keeps `Format` in a `wire.ts`, and this file
+  imports it from there.
+- What's marked `@internal` is wire plumbing: exported, so a `Client` and
+  `Server` can be wired by hand, and not what you call (`…ParamsLayout`,
+  `…_CALLS`).
 
 ## Transport today
 

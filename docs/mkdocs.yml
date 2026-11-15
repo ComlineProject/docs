@@ -45,16 +45,16 @@ nav:
     
     - Rust:
       - 'languages/rust/index.md'
-      - Client & server: 'languages/rust/client-and-server.md'
-      - Framing & wire format: 'languages/rust/framing-and-wire-format.md'
       - Connections: 'languages/rust/connections.md'
+      - Lockstep datagram: 'languages/rust/client-and-server.md'
+      - Framing & wire format: 'languages/rust/framing-and-wire-format.md'
       - Sync, async & concurrency: 'languages/rust/concurrency.md'
     
     - TypeScript:
       - 'languages/typescript/index.md'
-      - Client & server: 'languages/typescript/client-and-server.md'
-      - Framing & wire format: 'languages/typescript/framing-and-wire-format.md'
       - Connections: 'languages/typescript/connections.md'
+      - Lockstep datagram: 'languages/typescript/client-and-server.md'
+      - Framing & wire format: 'languages/typescript/framing-and-wire-format.md'
 
     - C: 'languages/c/index.md'
   

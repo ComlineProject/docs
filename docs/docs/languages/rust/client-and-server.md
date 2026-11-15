@@ -1,9 +1,11 @@
-# Client & server
+# Lockstep `datagram`: client & server
 
-A protocol on the lockstep `datagram` framing gets a client and a server: the
-client sends a request and reads the next frame as its reply, one protocol per
-transport. Every other protocol runs on a [connection](connections.md), the
-default. This page assumes a schema like [Protocols](../../guides/idl/protocol.md)'s
+A protocol on the lockstep `datagram` framing (`@framing = "datagram"`) gets a
+client and a server: the client sends a request and reads the next frame as its
+reply, one protocol per transport. This page is only that case. Every other
+protocol runs on a [connection](connections.md), the default, with its own
+`serve` and `connect`; [What you use](index.md#what-you-use) says which is
+which. This page assumes a schema like [Protocols](../../guides/idl/protocol.md)'s
 `Mail` example has been generated to Rust:
 
 ```ids
@@ -19,19 +21,70 @@ protocol Mail {
 
 Full details are [Code generation](../../guides/codegen/index.md)'s job, not
 this page's — but the shapes below are what the generated file actually
-contains, so the rest of this page can refer to them by name:
+contains, so the rest of this page can refer to them by name. A lockstep
+protocol's file has no entry-point header; in `lib` mode the crate root's docs list it
+with the `serve` and `connect` to use.
 
 ```rust
+/// Canonical digest of the frozen IR this file was generated from — the
+/// two ends of a connection must agree on it, and the handshake checks.
+pub const IR_HASH: u64 = 0x7ea94b595fcf4393;
+
+/// The package's wire format (`wire.format`): what this file's helpers
+/// encode with, and what the peer has to speak too.
+pub type Format = comline_runtime::format::Packed;
+
+#[doc(hidden)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MailSendMessageParams {
+    pub message: Message,
+}
+
 pub trait Mail {
     fn send_message(&self, message: Message) -> Result<String, Fault<MailSendMessageError>>;
     fn fetch_inbox(&self) -> Result<Vec<Message>, Fault<MailFetchInboxError>>;
 }
 
-pub struct MailDispatcher<S>(pub S);       // implements `comline_runtime::contract::Dispatch`
+#[doc(hidden)]
+pub const MAIL_CALLS: &[&str] = &["send_message", "fetch_inbox"];
+
+pub struct MailDispatcher<S>(pub S);
+
+impl<S: Mail> Dispatch for MailDispatcher<S> { /* … */ }
+
+impl<S: Mail> MailDispatcher<S> {
+    pub fn serve<T: Transport>(self, transport: &mut T) -> Result<(), RuntimeError> {
+        self.serve_with_format(transport, Format::default())
+    }
+
+    pub fn serve_with_format<T: Transport, W: WireFormat>(self, transport: &mut T, format: W)
+    -> Result<(), RuntimeError> {
+        Server::new(self, format).serve(transport, IR_HASH)
+    }
+}
+
 pub struct MailClient<T, W>(pub Client<T, W>);
 
-pub const IR_HASH: u64 = 0x…;              // schema fingerprint, used in the handshake
-pub type Format = comline_runtime::format::Packed; // the package's wire format
+impl<T: Transport, W: WireFormat> MailClient<T, W> {
+    pub fn new(client: Client<T, W>) -> Self { /* … */ }
+
+    pub fn connect_with_format(transport: T, format: W) -> Result<Self, RuntimeError> {
+        Ok(Self(Client::connect(transport, format, IR_HASH)?))
+    }
+
+    pub fn send_message(&mut self, message: Message) -> Result<String, CallError<MailSendMessageError>> {
+        let (reply, fmt) = self.0.call_with_timeout(Call::new(0, "send_message"), &MailSendMessageParams { message }, core::time::Duration::from_millis(1000))?;
+        // …
+    }
+
+    pub fn fetch_inbox(&mut self) -> Result<Vec<Message>, CallError<MailFetchInboxError>> { /* … */ }
+}
+
+impl<T: Transport> MailClient<T, Format> {
+    pub fn connect(transport: T) -> Result<Self, RuntimeError> {
+        Self::connect_with_format(transport, Format::default())
+    }
+}
 ```
 
 - `Mail` is the trait your implementation fills in — plain `&self`, a
@@ -41,9 +94,19 @@ pub type Format = comline_runtime::format::Packed; // the package's wire format
   thing the schema does — it cannot raise. See
   [Error handling](#error-handling-two-layers) for the `Fault` wrapper.
 - `MailDispatcher<S>` wraps any `S: Mail` and implements the runtime's
-  `Dispatch` trait — the thing a `Server` actually drives.
+  `Dispatch` trait — the thing a `Server` actually drives. Its `serve` is the
+  one call you make to serve.
 - `MailClient<T, W>` wraps a `comline_runtime::client::Client<T, W>` and
   gives you one method per function, already returning the right types.
+  `connect` is on `MailClient<T, Format>`, so it encodes with the package's
+  format; `connect_with_format` takes another.
+- `IR_HASH` and `Format` are defined in this file. A package that also has a
+  [connection](connections.md) defines `Format` once, in `connection.rs`, and
+  re-exports it here.
+- The plumbing is `pub`, so it's there if you wire a `Client` and `Server` by
+  hand, and `#[doc(hidden)]`, so it isn't in rustdoc: the `…Params` structs and
+  the `…_CALLS` table. What's left is the trait, the dispatcher, the client and
+  their error types.
 
 ## Transports today
 
