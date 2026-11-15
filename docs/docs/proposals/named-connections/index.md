@@ -1,13 +1,8 @@
 # Named connections
 
-Status: **draft** · the user's first [answers](#answers-so-far) (2026-11-15) are recorded,
-nothing is accepted yet, and [what is still open](#still-open) is listed with them; the
-[original questions](#open-questions) stay at the end · develops a point left unbuilt by
-[Connections](../connections.md#several-protocols-on-one-connection) (the declared set of
-protocols allowed together) · sits beside
-[A dependency's protocols on a connection](../dependency-protocols/index.md), whose
-Proposals A and C are accepted · three parts: this overview, [the options](options.md) and
-[prior art](prior-art.md)
+Status: **the smaller step is accepted; sets are designed and deferred** (2026-11-15) · the
+user's [answers](#answers-so-far) shape the design of sets, and [the decision](#decided)
+says what is built now · the [original questions](#open-questions) stay at the end
 
 **The question.** A package gets exactly one connection: one `Services`, one
 `ClientServices`, one `accept`, `serve` and `connect`, and one `Connection<T>`, however many
@@ -137,8 +132,7 @@ extend it later, or Option 0 could stay as the rule and nothing be added.
 ## Answers so far
 
 Given by the user on 2026-11-15, numbered as the [open questions](#open-questions). They
-shape the design; the proposal is not accepted until the points [still open](#still-open)
-are settled.
+shape the design; they are the design sets will be built to, when [they are](#decided).
 
 1. **An annotation on the protocol (Option 2):** `@connection = "admin"`, or a list
    (`@connection = ["admin", "public"]`), which annotation values already allow
@@ -223,10 +217,10 @@ are settled.
     generators, the CLI and language server, and the docs. Nothing waits on `comline@3`
     except answer 8.
 
-### Still open
+### Decided
 
 - **Whether sets are worth building, or a smaller step is enough.** Raised while answering
-  question 11. Sets solve four things today:
+  question 11, and decided by the user on 2026-11-15 (below). Sets solve four things today:
     1. `ClientServices` makes every dialler provide every client-provided protocol;
     2. a subset wired by hand loses the negotiation;
     3. every application's Hello lists the others' protocols, which is noise under
@@ -240,6 +234,20 @@ are settled.
     step: build the Hello at runtime from the protocols actually provided, and let `Services`
     and `ClientServices` take a subset. That covers 1 to 3 with no new language concept;
     sets would then add only the named entry points and the per-set encodings (4).
+
+    **Decided:**
+
+    - **The smaller step is built now, as the first part of sets.** `Services` and
+      `ClientServices` accept a subset, and the Hello is built at runtime from what this
+      side actually provides, plus the protocols it calls on the other side (all of them by
+      default: the peer refuses those it doesn't have). A connection then carries exactly
+      what its Hello lists, enforced as [answer 4](#answers-so-far) says. It is designed so
+      sets can build on it without throwing anything away.
+    - **Sets are not built now.** Their design (the answers above) stays recorded, to be
+      taken up when per-application encodings or named entry points are actually needed.
+      Until then, several applications are separate packages sharing a package they depend
+      on ([Option 0](options.md#option-0-status-quo)), which also keeps an admin package
+      private.
 
 ## Open questions
 
