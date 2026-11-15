@@ -199,7 +199,8 @@ to [core#277](https://github.com/ComlineProject/core/issues/277) and
   IDL, a world-like declaration) and prior art from protoc, gRPC, Thrift,
   Cap'n Proto, Smithy, WIT and FIDL. Develops the declared set that
   [Connections](connections.md#several-protocols-on-one-connection) left
-  unbuilt. *draft; nothing decided, the questions are open.*
+  unbuilt. *draft; answered 2026-11-15 (an `@connection` annotation, package-owned,
+  a constraint), with whether sets are worth building still open.*
 
 #### [A dependency's protocols on a connection](dependency-protocols/index.md)
 

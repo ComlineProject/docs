@@ -1,7 +1,8 @@
 # Named connections
 
-Status: **draft** · nothing here is decided: every choice is an open question at the
-[end of this page](#open-questions) · develops a point left unbuilt by
+Status: **draft** · the user's first [answers](#answers-so-far) (2026-11-15) are recorded,
+nothing is accepted yet, and [what is still open](#still-open) is listed with them; the
+[original questions](#open-questions) stay at the end · develops a point left unbuilt by
 [Connections](../connections.md#several-protocols-on-one-connection) (the declared set of
 protocols allowed together) · sits beside
 [A dependency's protocols on a connection](../dependency-protocols/index.md), whose
@@ -133,10 +134,118 @@ All four are described, with what each generates and checks, on [the options pag
 The options aren't exclusive. Option 1 or 2 could ship first, and a world-like form could
 extend it later, or Option 0 could stay as the rule and nothing be added.
 
+## Answers so far
+
+Given by the user on 2026-11-15, numbered as the [open questions](#open-questions). They
+shape the design; the proposal is not accepted until the points [still open](#still-open)
+are settled.
+
+1. **An annotation on the protocol (Option 2):** `@connection = "admin"`, or a list
+   (`@connection = ["admin", "public"]`), which annotation values already allow
+   (`@validators = [...]`). No block, no manifest table.
+2. **The name is `connection`:** the annotation, the generated module and the docs share it.
+3. **The package owns the declaration.** A set changes what its Hello lists, which is part
+   of the contract both peers build from, so it lives with the package (the `.ids` files,
+   and `config.idp` for what question 7 adds), never in `comline.toml`.
+4. **A constraint: a connection carries exactly what its Hello lists.** It is enforced in
+   two places, not in the types:
+    - **the handshake:** a set's Hello lists only its members, so the peer refuses every
+      other protocol (`unknown_protocol`);
+    - **the runtime:** a connection refuses to provide or call a protocol that the Hello it
+      ran didn't list. The senders already check the negotiated result before each call; the
+      same check is added to `provide_on`. An admin handler then can't be put on a public
+      connection by mistake.
+
+    A distinct connection type per set, whose `provide_on` takes only members, was
+    considered and not taken: it costs generated machinery for what the two checks above
+    already give.
+5. **All or nothing.**
+    - With no protocol annotated, every protocol on a connection is on the one default
+      connection, generated where it is today (`connection::serve`, not
+      `connection::default::serve`), so existing output doesn't change.
+    - Once one protocol is annotated, every protocol that runs on a connection must be: one
+      left out is an error. Nothing reaches a connection without a decision.
+    - `@connection` on a protocol that runs on no connection (lockstep `datagram`, a
+      server-only JSON-RPC protocol off the connection) is an error.
+    - **No setting to forbid sets.** Where sets can't work is derived from the encodings'
+      facts instead (answer 11); a lint for organisations that want none can come later.
+6. **A protocol may be in several sets** (a health check in every application's).
+7. **Each set's encodings are checked on their own, and a set may state its own.** The
+   framing and handshake check runs per set. `config.idp` may override `wire` per set, in its
+   dictionary form keyed by the set's name (its grammar has no list values, and needs none
+   for this), defaulting to the package's `wire`. A member's own `@framing` and `@handshake`
+   must agree with its set's; a protocol in two sets whose framings differ can't pin
+   `@framing` itself. A format per set is new (the format is package-wide today): Rust's
+   generated types are format-independent through serde; whether TypeScript's generated
+   codecs are is still to be checked.
+8. **A dependency's protocol joins a set only once `comline@3` exists** ([Proposal A](../dependency-protocols/multi-package-connection.md)),
+   with its encodings matching as A decided. A's accepted rule that `use` puts a protocol on
+   the connection is not changed by this proposal.
+9. **Fixed version rules, not configurable:** adding a set, or a protocol to a set, is a
+   minor change; removing either, or renaming a set (which renames generated code), is a
+   major change, as A treats a dependency's protocol joining the connection. A rule a
+   package could choose would make a version number mean different things to different
+   consumers.
+10. **A set's Hello lists only its members.** The handshake's guarantee is per protocol (line
+    and shape hash), and a subset keeps it. **Noted gap:** the set's name isn't on the wire.
+    A client of `admin` that reaches the `public` endpoint gets a connection carrying only
+    what the two share (the health check), with the rest `Unavailable`; under
+    `scope = package` it is refused whole. Carrying the set's name in the Hello, for a clear
+    refusal, is a `comline@3` matter, not a blocker.
+11. **Sets need a handshake that compares protocol by protocol.** `comline@1` with
+    `datagram@2` numbers protocols by position and hashes every schema, so a change in one set
+    would refuse every set: a package on them can't declare sets. The rule comes from the
+    encodings' facts ([Part 1](../dependency-protocols/capabilities.md)), not from a setting.
+12. **A module per set under `connection`:** `connection::admin::{Services, ClientServices,
+    accept, serve, connect, Connection, Framing, Format}`, and the same layout in
+    TypeScript. The default connection stays at `connection::` itself.
+13. **Rules follow the framing's facts, scoped to a set.** The page states the facts rather
+    than "JSON-RPC":
+    - **A framing that addresses calls by name** (JSON-RPC's method, not a protocol number)
+      needs those names unique among the protocols one side provides on a connection; with
+      sets, within the set. Any framing with that fact gets the rule.
+    - **"Once one JSON-RPC protocol is on a connection, all are"** is a generation policy, not
+      a fact of the framing: a JSON-RPC message looks the same on a connection and in
+      lockstep, so one side can't mix the two on a transport. With sets it applies within
+      the set.
+    - `async` stays one setting for the whole target.
+
+    Raised with it, and separate from sets: Comline decides the method name that goes on the
+    wire (`send`, or `namespace.Protocol/function`), so it can't yet serve or call an
+    existing JSON-RPC API whose methods are named otherwise (`textDocument/hover`,
+    `eth_getBalance`). No annotation sets a function's wire name today.
+14. **Direction stays on the protocol (`@provider`).** With the annotation, the question
+    doesn't arise; a world-like declaration (Option 3) isn't taken.
+15. **The house order:** the specification's cases first, then core, generation, the two
+    generators, the CLI and language server, and the docs. Nothing waits on `comline@3`
+    except answer 8.
+
+### Still open
+
+- **Whether sets are worth building, or a smaller step is enough.** Raised while answering
+  question 11. Sets solve four things today:
+    1. `ClientServices` makes every dialler provide every client-provided protocol;
+    2. a subset wired by hand loses the negotiation;
+    3. every application's Hello lists the others' protocols, which is noise under
+       `offer` and exposure under `symmetric`, where the server sends its list;
+    4. one format and framing for the whole package.
+
+    Against them: a new concept across every repo; a mono package publishes every
+    application's schemas together, where separate packages could keep an admin package
+    private; and one package version covers every application, so an admin breaking change
+    is a major bump for the public API's consumers, though not on the wire. The smaller
+    step: build the Hello at runtime from the protocols actually provided, and let `Services`
+    and `ClientServices` take a subset. That covers 1 to 3 with no new language concept;
+    sets would then add only the named entry points and the per-set encodings (4).
+- **Per-set formats in TypeScript** (answer 7): whether its generated codecs allow one
+  package to use two formats.
+- **A function's JSON-RPC wire name** (answer 13): for interoperating with existing JSON-RPC
+  APIs. Separate from this proposal.
+
 ## Open questions
 
-Nothing is decided; each of these is for the user to answer. The options page has the detail
-behind each one.
+The questions as first asked; the [answers](#answers-so-far) are above. The options page has
+the detail behind each one.
 
 1. **Which direction?** Option 0 (nothing added: one package per application, Proposal C's
    model), 1 (sets in the manifest, in either of its two places), 2 (a block or an
