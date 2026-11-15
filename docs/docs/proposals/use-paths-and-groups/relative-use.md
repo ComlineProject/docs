@@ -73,13 +73,66 @@ Rust spells it `super`. One word is kept because:
 
 A bare path that reaches the package's own schema is an error (below). The language server attaches a **quick fix** that
 rewrites it to the `package::…` form. `package::` is chosen over the shortest relative form because it is the same
-wherever the file sits: moving a schema to another directory doesn't change what its imports say. The qualified
-references the import brought in, written with the old spelling, are rewritten with it. `comline fix` applies the
-same rewrite to every file.
+wherever the file sits: moving a schema to another directory doesn't change what its imports say. `comline fix` applies the
+same rewrite to every file. The fix changes only the `use`: a qualified reference is written with the schema's namespace
+(`types::User`) whichever path reached it, so there is nothing else to rewrite (see [Qualified
+references](#qualified-references)).
 
 A path that matches nothing is the error it is today ([When nothing
 matches](../../guides/idl/use.md#when-nothing-matches)), with one addition: a bare path whose first segment is neither a
 dependency nor `std`, but the name of one of the package's own schemas, is this error, with the fix, not "no schema matches".
+
+## Qualified references
+
+**Decided with the user 2026-11-15: the Rust model,** with the [answers](#qualified-references) below. Not built yet.
+
+**As built (core#285).** A `use` is frozen with its resolved path: `use package::types::User` is `Import("types::User")`.
+After it, a field can be written `User` or `types::User`, and a qualified reference has to match a `use` of the file
+exactly; `package::types::User` in a type position is not accepted. A type reference is frozen as written. So the rule
+above holds in `use` lines only: `types::User` in a field looks exactly like a path into a dependency named `types`. It
+is always traceable to a `use` in the same file, but a reader can't tell from the reference itself.
+
+**The decision.** A qualified reference starts with a name a `use` brought into scope, as in Rust:
+
+| `use` | Then write |
+|---|---|
+| `use package::types` | `types::User` |
+| `use package::types as t` | `t::User` |
+| `use package::types::User` | `User` (not `types::User`) |
+| `use package::billing::api` | `api::Invoice` |
+| `use greeting::hello` | `hello::Greeting` |
+
+`types` in `types::User` is then a name in the file's scope, not an absolute path, and the rule that a bare first
+segment means `std` or a dependency holds in `use` lines without an exception elsewhere.
+
+**Fixed with it:**
+
+- This page said the qualified references an import brought in are rewritten by the fix; there were none to rewrite,
+  and [What the editor and the fix do](#what-the-editor-and-the-fix-do) now says so.
+- `compat` and the sizer resolve a name by namespace suffix and by the first schema declaring it, not as the validator
+  does: [core#289](https://github.com/ComlineProject/core/issues/289). A resolver shared by the three is where the
+  Rust model's rule lives.
+
+**Answered by the user, 2026-11-15:**
+
+1. **A whole-namespace `use` brings in only its name, as in Rust.** `use package::types` puts `types` in scope, and
+   nothing in it: a bare `User` needs `use package::types::User`, `use package::types::{User, ...}` or
+   `use package::types::*`. A namespace `use` no longer works as a glob too, so a bare name always traces to a `use`
+   that names it or ends in `*`.
+2. **A full path works in a type position without a `use`, as in Rust.** `package::types::User`,
+   `parent::common::Error`, `self::nested::Type`, `std::http::Request` and a dependency's full path
+   (`greeting::hello::Greeting`) can be written in a field or parameter with no `use`. Their first segment is
+   unambiguous after the rule above: `package`, `parent` and `self` are the package's own, `std` the standard library,
+   anything else a dependency.
+3. **A path can go down from a name in scope, as in Rust.** After `use package::billing`, `billing::api::Invoice`
+   reaches the nested schema `billing::api`.
+4. **A qualified reference is frozen as its resolved path,** as a `use` is: `api::Invoice`, `billing::api::Invoice`
+   and an alias's `b::Invoice` all freeze as `billing::api::Invoice`. The frozen IR, its hashes and the generators are
+   unchanged for existing packages, and tidying a file's `use`s doesn't change them.
+5. **A reference the rule refuses is an error at once,** as a bare own-schema path is
+   ([core#285](https://github.com/ComlineProject/core/pull/285)): `types::User` after `use package::types::User`, and a
+   bare `User` after only `use package::types`. The diagnostic carries the likely rewrite (write `User`, or add the
+   `use` that brings the name in), as a quick fix in the language server and across a package with `comline fix`.
 
 ## Rollout
 
