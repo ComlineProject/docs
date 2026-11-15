@@ -249,6 +249,34 @@ shape the design; they are the design sets will be built to, when [they are](#de
       on ([Option 0](options.md#option-0-status-quo)), which also keeps an admin package
       private.
 
+    **Settled with it (2026-11-15), from a review of the smaller step:**
+
+    - **A side can narrow what it calls, too.** Beside the subset it provides, a side may
+      list the protocols it calls on the other side; the default stays all of them. Without
+      it, a public server still lists every client-provided protocol it might call,
+      other applications' included, and under `symmetric` sends that list to every client,
+      so problem 3 would be solved only in part.
+    - **`provide_on` is checked against what was accepted, and direction by the generated
+      code.** The runtime refuses to provide a protocol the handshake didn't accept, not
+      merely one the Hello didn't list: providing one the peer refused is harmless on the
+      wire, but is almost certainly a mistake. A Hello entry carries no direction (number,
+      line, shape hash, functions), so the runtime can't tell a protocol listed to be called
+      from one listed to be provided; the generated code, which knows `@provider`, checks
+      that. The check applies only when a Hello ran: a connection opened with `comline@1`, or
+      by hand without one, has nothing to check against.
+    - **Noted: JSON-RPC connections get only "fewer handlers".** The generated JSON-RPC
+      connection runs `comline@1`, with `CONNECTION_IR_HASH` and no Hello per protocol, so the
+      smaller step's negotiation doesn't reach it: a subset there means fewer dispatchers
+      and nothing else. By [answer 11](#answers-so-far) sets don't reach it either. Running
+      `comline@2`, whose messages are binary, over a JSON-RPC connection is a separate
+      design, related to [core#287](https://github.com/ComlineProject/core/issues/287).
+    - **Noted: Option 0 has a gap until `comline@3`.** A protocol several applications share
+      (a health check) lives in a package they depend on, and under `comline@2` a
+      dependency's protocol doesn't join the application's connection
+      ([step 0](../dependency-protocols/index.md#step-0-whichever-is-chosen)): it needs a
+      connection of its own ([C](../dependency-protocols/connection-per-package.md)) until
+      [A](../dependency-protocols/multi-package-connection.md) is built.
+
 ## Open questions
 
 The questions as first asked; the [answers](#answers-so-far) are above. The options page has
