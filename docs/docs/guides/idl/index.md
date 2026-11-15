@@ -58,10 +58,11 @@ next declaration. `//!` lines at the top of a file are its
 
 ```ids title="imports.ids"
 use std::http::Request
-use mypackage::{User, Post}
+use package::types::{User, Post}
 use external::uuid::Uuid as UUID
 use parent::common::*
 ```
 
-`self::`, `parent::` and `package::` prefixes resolve relative to the current
-schema. See [Imports](use.md).
+A package's own schemas are reached only through `package::`, `parent::` and
+`self::`, which resolve relative to the current schema; any other path means
+`std` or a dependency. See [Imports](use.md).

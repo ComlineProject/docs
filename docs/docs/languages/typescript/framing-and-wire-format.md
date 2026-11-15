@@ -30,8 +30,12 @@ const client = await Client.connect(transport, codec, IR_HASH, new JsonRpcFramin
 The generated code exports the package's format:
 
 ```typescript
+/** The package's wire format (`wire.format`). */
 export const Format: Codec = new PackedCodec();
 ```
+
+It's in a `wire.ts` shared by the package's files when more than one needs it
+(`connection.ts` re-exports it), and in the protocol's own file otherwise.
 
 The package's `serve` / `accept` / `connect`, and each lockstep helper, use
 it by default; a lockstep helper takes another `Codec` as an optional
