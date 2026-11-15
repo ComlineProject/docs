@@ -159,8 +159,8 @@ behind each one.
    decides it". A set in `comline.toml` is then presentation, like a
    [dependency group](../use-paths-and-groups/dependency-groups.md), and each consumer could
    define its own; a set in `config.idp` or the IDL is part of the package's contract.
-   Which is meant? (The request that prompted this page put the table "next to `wire`" in
-   `comline.toml`; `wire` isn't there, so that placement can't be taken as written.)
+   Which is meant? (The idea was first put as a table "next to `wire`" in `comline.toml`; `wire` is in
+   `config.idp`, so that placement can't be taken as written.)
 4. **A grouping for code generation, or a constraint?** The Connections decision called the
    declared set "a constraint". Is a set only what a generated `serve` and `connect` take,
    or does something enforce it: a runtime refusing a request for a protocol outside the
@@ -206,8 +206,8 @@ behind each one.
     set and how the `layout` template names it; and TypeScript's form (a file per set, or a
     namespace in `connection.ts`). Which names are reserved: a set called `connection`, or
     named like a schema, as a schema named `connection` can't be used in `code` mode today.
-13. **Do JSON-RPC and `async` go per set?** For JSON-RPC, "once any JSON-RPC protocol in a
-    package is client-provided, all of them share the connection", and the bare-name
+13. **Do JSON-RPC and `async` go per set?** For JSON-RPC, once one JSON-RPC protocol in a
+    package is client-provided, all of them share the connection, and the bare-name
     collision check runs over that one connection. Per set, both would apply within the set.
     `async` is `comline.toml`'s `[generate]` key, a setting for the whole target; does it
     stay so?
