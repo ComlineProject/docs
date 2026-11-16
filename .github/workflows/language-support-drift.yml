@@ -1,9 +1,10 @@
 name: Language support drift
 
 # The Reference -> Languages pages are rendered from what the conformance
-# suites prove: generation's `features.json`, and the runtime wire corpus
-# with each runtime's report. This checks they're current. Like the IDL drift check it needs no Rust build, only a fetch,
-# so it runs per pull request. It's kept separate from the Docs workflow,
+# suites prove: each code generator's `features.json` (comline-rust's and
+# comline-typescript's), and the runtime wire corpus with each runtime's
+# report. This checks they're current. Like the IDL drift check it needs no
+# Rust build, only a fetch, so it runs per pull request. It's kept separate from the Docs workflow,
 # because a fetch from another repo shouldn't be able to block a deploy.
 
 on:

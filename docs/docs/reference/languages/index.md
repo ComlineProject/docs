@@ -64,7 +64,7 @@ commit. A runtime's suite runs every example against it:
 ## Code generation, side by side
 
 <!-- matrix:start -->
-<!-- Rendered from ComlineProject/generation's features.json by scripts/sync-language-support.py - don't edit by hand. -->
+<!-- Rendered from each code generator's features.json by scripts/sync-language-support.py - don't edit by hand. -->
 
 | Feature | [rust 1.85.0](rust.md) | [typescript 5.0](typescript.md) |
 |---|---|---|

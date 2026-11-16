@@ -3,8 +3,11 @@
 
 Two conformance suites feed the pages:
 
-- `ComlineProject/generation`'s checks every code generator's feature claims
-  and writes `features.json` at its root;
+- the code generators': generation holds the fixture corpus and a
+  generator-agnostic harness, and each generator runs it against its own
+  goldens and writes its own `features.json` at its repository root (see
+  `GENERATORS`). The two files have the same `features` list and one entry
+  each in `generators`; this joins them;
 - `ComlineProject/runtime`'s wire corpus (`runtime/conformance/`) checks every
   runtime's claims; each runtime writes a report (see `RUNTIMES`).
 
@@ -36,7 +39,9 @@ of its own is an error that names the page to add.
 
     python3 scripts/sync-language-support.py            # rewrite the pages
     python3 scripts/sync-language-support.py --check    # exit 1 on drift
-    python3 scripts/sync-language-support.py --file ../generation/features.json \\
+    python3 scripts/sync-language-support.py \\
+        --generator rust=../comline-rust/features.json \\
+        --generator typescript=../comline-typescript/features.json \\
         --runtime-features ../runtime/runtime/conformance/spec/features.json \\
         --runtime-report rust=../runtime/runtime/conformance/reports/rust.json \\
         --divergences typescript=../comline-typescript/runtime/known-divergences.json
@@ -66,13 +71,21 @@ GENERATED = ROOT / "docs/_generated/reports"
 BUILD_TIMEOUT = 10
 RAW = "https://raw.githubusercontent.com/ComlineProject/{repo}/{rev}/{path}"
 NOTICE = (
-    "<!-- Rendered from ComlineProject/generation's features.json by "
+    "<!-- Rendered from each code generator's features.json by "
     "scripts/sync-language-support.py - don't edit by hand. -->"
 )
 RUNTIME_NOTICE = (
     "<!-- Rendered from ComlineProject/runtime's conformance corpus and each runtime's report by "
     "scripts/sync-language-support.py - don't edit by hand. -->"
 )
+
+# Where each language's code generator publishes its features.json, on the
+# repository's default branch: (repository, path in it). The order is the
+# order of the columns.
+GENERATORS = {
+    "rust": ("comline-rust", "features.json"),
+    "typescript": ("comline-typescript", "features.json"),
+}
 
 # The wire corpus, and where each language's runtime writes its report:
 # (repository, path in it).
@@ -178,6 +191,27 @@ def fetch_report(repo: str, rev: str, path: str) -> dict | None:
     except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:
         print(f"::warning::fetching {url} failed ({error}); rendering it as not published")
     return None
+
+
+def join_generators(files: dict[str, dict]) -> dict:
+    """What generation's combined `features.json` used to be: the `features`
+    list every generator's file carries, and every file's `generators`, in
+    `GENERATORS` order. The files must agree on the features, or the
+    generators were proven against different corpora."""
+    first = next(iter(files))
+    for name, doc in files.items():
+        if doc["features"] != files[first]["features"]:
+            sys.exit(
+                f"error: {name}'s features.json lists different features than {first}'s: "
+                "the generators were proven against different corpora"
+            )
+        names = [g["name"] for g in doc["generators"]]
+        if names != [name]:
+            sys.exit(f"error: {name}'s features.json should hold one generator, `{name}`, not {names}")
+    return {
+        "features": files[first]["features"],
+        "generators": [g for doc in files.values() for g in doc["generators"]],
+    }
 
 
 def link_issues(text: str) -> str:
@@ -439,8 +473,18 @@ def main() -> int:
         help=f"write the bench and fuzz sections for the site build (default: {GENERATED.relative_to(ROOT)}); "
         "never fails on a fetch",
     )
-    parser.add_argument("--file", type=Path, help="read generation's features.json from here instead of fetching it")
-    parser.add_argument("--rev", default="master", help="generation revision to fetch (default: master)")
+    parser.add_argument(
+        "--generator",
+        action="append",
+        default=[],
+        metavar="NAME=FILE",
+        help="read generator NAME's features.json from FILE instead of fetching it (repeatable)",
+    )
+    parser.add_argument(
+        "--generator-rev",
+        default="main",
+        help="revision of the generator repositories to fetch (default: main)",
+    )
     parser.add_argument("--runtime-features", type=Path, help="read the wire corpus's features.json from here")
     parser.add_argument(
         "--runtime-report",
@@ -465,6 +509,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    local_generators = dict(arg.split("=", 1) for arg in args.generator)
+    for name in local_generators:
+        if name not in GENERATORS:
+            sys.exit(f"error: unknown generator `{name}` (known: {', '.join(GENERATORS)})")
+
     local_reports = dict(arg.split("=", 1) for arg in args.runtime_report)
     for name in local_reports:
         if name not in RUNTIMES:
@@ -485,7 +534,14 @@ def main() -> int:
         render_reports(args.render_reports, args.runtime_rev, local)
         return 0
 
-    report = read_json(args.file, "generation", args.rev, "features.json")
+    report = join_generators(
+        {
+            name: read_json(
+                Path(local_generators[name]) if name in local_generators else None, repo, args.generator_rev, path
+            )
+            for name, (repo, path) in GENERATORS.items()
+        }
+    )
     corpus = read_json(args.runtime_features, CORPUS[0], args.runtime_rev, CORPUS[1])
     runtimes = {
         name: read_json(Path(local_reports[name]) if name in local_reports else None, repo, args.runtime_rev, path)

@@ -71,7 +71,12 @@ Decided in round 3 (2026-11-08):
   history, no chart, no regression view and no way to open an older result.
 - **The conformance matrices are committed JSON, rendered as static tables:**
   - generation's
-    [`features.json`](https://github.com/ComlineProject/generation/blob/HEAD/features.json);
+    [`features.json`](https://github.com/ComlineProject/generation/blob/HEAD/features.json)
+    (since replaced by one per generator, in
+    [comline-rust](https://github.com/ComlineProject/comline-rust/blob/main/features.json)
+    and
+    [comline-typescript](https://github.com/ComlineProject/comline-typescript/blob/main/features.json);
+    the dashboard's `codegen` matrix reads both);
   - the runtime's
     [`reports/rust.json`](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/reports/rust.json);
   - TypeScript's `runtime/conformance-report.json`.

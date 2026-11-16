@@ -10,7 +10,7 @@ What the [`comline-typescript`](https://github.com/ComlineProject/comline-typesc
 for each language feature, and the conformance fixtures that prove it.
 
 <!-- codegen:start -->
-<!-- Rendered from ComlineProject/generation's features.json by scripts/sync-language-support.py - don't edit by hand. -->
+<!-- Rendered from each code generator's features.json by scripts/sync-language-support.py - don't edit by hand. -->
 
 Generator `typescript#5.0`.
 
