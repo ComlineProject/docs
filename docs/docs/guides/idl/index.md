@@ -65,4 +65,6 @@ use parent::common::*
 
 A package's own schemas are reached only through `package::`, `parent::` and
 `self::`, which resolve relative to the current schema; any other path means
-`std` or a dependency. See [Imports](use.md).
+`std` or a dependency. A type is then written with a name a `use` brought into
+scope, as in Rust, or with a full path from `package`, `parent`, `self`, `std`
+or a dependency's name. See [Imports](use.md).
