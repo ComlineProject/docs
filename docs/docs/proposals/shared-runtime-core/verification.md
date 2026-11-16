@@ -310,7 +310,10 @@ As of the proposal, before the work in [What's built](#whats-built).
     `unsupported`.
 - **The codegen corpus** (`generation/conformance/`) checks golden output and
   `SUPPORT` claims. It proves what a generator emits, not what the emitted code
-  does on the wire.
+  does on the wire. (Since then generation holds only the corpus and a
+  generator-agnostic harness; each generator runs it against its own goldens
+  and publishes its own `features.json`. See
+  [Generator conformance](../../reference/conformance/generators.md).)
 - **There was no fuzzing anywhere in the org.** No repository had a fuzz
   target, `proptest`, `fast-check`, Jazzer or Atheris (checked on every
   repository's default branch, 2026-10-25). Rust has them now (runtime#37);

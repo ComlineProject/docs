@@ -62,7 +62,7 @@ and the rest still build.
 
 | Kind | Page | Sources |
 | --- | --- | --- |
-| `conformance` | [Wire](wire.md), [Generators](generators.md) | `wire` matrix: Rust and TypeScript runtime reports; `codegen` matrix: generation's `features.json` |
+| `conformance` | [Wire](wire.md), [Generators](generators.md) | `wire` matrix: Rust and TypeScript runtime reports; `codegen` matrix: comline-rust's and comline-typescript's `features.json` |
 | `fuzz` | [Fuzzing](fuzzing.md) | runtime, comline-typescript |
 | `bench` | [Benchmarks](benchmarks.md) | runtime, core, comline-typescript |
 | `compile` | [Timings](timings.md#compile-time) | runtime, core, cli |

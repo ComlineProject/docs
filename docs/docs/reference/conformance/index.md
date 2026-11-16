@@ -41,7 +41,7 @@ flowchart LR
 | Page | Proves or measures | Gate on pull requests | Published as |
 | --- | --- | --- | --- |
 | [Wire conformance](wire.md) | every runtime reproduces the wire contract byte for byte | yes: vectors current, claims proven | `reports/<lang>.json` |
-| [Generator conformance](generators.md) | each generator's output, and the features it claims | yes: goldens match, claims proven | `features.json` |
+| [Generator conformance](generators.md) | each generator's output, and the features it claims | yes: goldens match, claims proven | each generator's `features.json` |
 | [Fuzzing](fuzzing.md) | the reference's decoders are strict, canonical and panic-free; other runtimes match it on random inputs | yes: 60 s per target | `<lang>.fuzz.json` (nightly) |
 | [Benchmarks](benchmarks.md) | instruction counts of shared and per-repository benchmarks | yes: 1% limit plus the ledger | `<name>.bench.json` |
 | [Timings, size and coverage](timings.md) | compile time, CI time, artifact sizes, test coverage | no | `<name>.compile.json`, `.size.json`, `.coverage.json`; CI from the API |

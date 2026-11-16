@@ -293,6 +293,11 @@ Shipped in three steps, October 2026:
 
 Where it differs from the text:
 
+- **There is no combined `FEATURES.md` or `features.json` in generation.**
+  Generation holds the fixture corpus and a generator-agnostic harness; each
+  generator runs it against its own goldens and publishes its own
+  `FEATURES.md` and `features.json`, which the docs matrix and the Observatory
+  join. The text above (the conformance and matrix lines) is kept as decided.
 - **Rust's floor is 1.85, not 1.70.** Building the generated code at 1.70
   showed the claim was never true: the runtime's dependencies (`rmp`,
   `rmp-serde`) use the 2024 edition, which cargo before 1.85 can't read. At

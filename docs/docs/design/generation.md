@@ -229,9 +229,12 @@ CLI-driven functions. G3 takes them the rest of the way, per the
    The CLI composes a `Registry` at startup via each crate's `register()`.
 2. **`comline-typescript`, `comline-rust`.** ✅ Both generators extracted to
    their own repos (`ComlineProject/comline-typescript`,
-   `ComlineProject/comline-rust`); `cli` and `generation`'s conformance corpus
-   depend on them by git rev. `generation` is now just `comline-codegen` +
-   `comline-conformance`. `comline-rust`'s FFI/dylib work is still G2c.
+   `ComlineProject/comline-rust`); `cli` depends on them by git rev.
+   `generation` is now just `comline-codegen` + `comline-conformance`, the
+   corpus and a generator-agnostic harness. The dependency runs one way: each
+   generator depends on `generation` and runs the corpus against its own
+   goldens ([generator conformance](../reference/conformance/generators.md)).
+   `comline-rust`'s FFI/dylib work is still G2c.
 3. **CLI features.** ✅ `comline-codegen-rust` / `-typescript` are optional deps
    behind `gen-rust` / `gen-typescript` (both default); `generator_registry()`
    `#[cfg]`-guards each `register()`. A build can drop a generator crate and its
