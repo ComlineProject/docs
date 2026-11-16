@@ -170,7 +170,8 @@ parts: [relative paths](use-paths-and-groups/relative-use.md),
 [dependency groups](use-paths-and-groups/dependency-groups.md) and
 [import formatting](use-paths-and-groups/import-formatting.md). *accepted 2026-11-15; related
 to [core#277](https://github.com/ComlineProject/core/issues/277) and
-[core#268](https://github.com/ComlineProject/core/issues/268).*
+[core#268](https://github.com/ComlineProject/core/issues/268). Built: a bare own-schema path as an error
+(core#285) and [qualified references](use-paths-and-groups/relative-use.md#qualified-references) (core#297).*
 
 ### Connections
 

@@ -84,13 +84,25 @@ dependency nor `std`, but the name of one of the package's own schemas, is this 
 
 ## Qualified references
 
-**Decided with the user 2026-11-15: the Rust model,** with the [answers](#qualified-references) below. Not built yet.
+**Decided with the user 2026-11-15: the Rust model,** with the [answers](#qualified-references) below.
 
-**As built (core#285).** A `use` is frozen with its resolved path: `use package::types::User` is `Import("types::User")`.
-After it, a field can be written `User` or `types::User`, and a qualified reference has to match a `use` of the file
-exactly; `package::types::User` in a type position is not accepted. A type reference is frozen as written. So the rule
-above holds in `use` lines only: `types::User` in a field looks exactly like a path into a dependency named `types`. It
-is always traceable to a `use` in the same file, but a reader can't tell from the reference itself.
+> **Built** ([core#290](https://github.com/ComlineProject/core/issues/290),
+> [core#297](https://github.com/ComlineProject/core/pull/297), 2026-11-16): `comline check` and `comline build`
+> enforce the rule, with the conformance cases in the specification
+> ([specification#17](https://github.com/ComlineProject/specification/pull/17),
+> [#18](https://github.com/ComlineProject/specification/pull/18)). The
+> [Imports guide](../../guides/idl/use.md#referring-to-what-you-imported) says how it reads, and the three
+> errors are `reference::not-in-scope`, `reference::qualifier-not-in-scope` and `reference::defined-twice`. Not yet:
+> the language server's quick fixes ([language-server#122](https://github.com/ComlineProject/language-server/issues/122))
+> and `comline fix` across a package ([cli#162](https://github.com/ComlineProject/cli/issues/162)); and validators,
+> constants and thrown errors are still looked up the old way
+> ([core#298](https://github.com/ComlineProject/core/issues/298)).
+
+**As built before it (core#285).** A `use` is frozen with its resolved path: `use package::types::User` is `Import("types::User")`.
+After it, a field could be written `User` or `types::User`, and a qualified reference had to match a `use` of the file
+exactly; `package::types::User` in a type position was not accepted. A type reference was frozen as written. So the rule
+above held in `use` lines only: `types::User` in a field looked exactly like a path into a dependency named `types`. It
+was always traceable to a `use` in the same file, but a reader couldn't tell from the reference itself.
 
 **The decision.** A qualified reference starts with a name a `use` brought into scope, as in Rust:
 
@@ -109,9 +121,9 @@ segment means `std` or a dependency holds in `use` lines without an exception el
 
 - This page said the qualified references an import brought in are rewritten by the fix; there were none to rewrite,
   and [What the editor and the fix do](#what-the-editor-and-the-fix-do) now says so.
-- `compat` and the sizer resolve a name by namespace suffix and by the first schema declaring it, not as the validator
-  does: [core#289](https://github.com/ComlineProject/core/issues/289). A resolver shared by the three is where the
-  Rust model's rule lives.
+- `compat` and the sizer resolved a name by namespace suffix and by the first schema declaring it, not as the validator
+  does: [core#289](https://github.com/ComlineProject/core/issues/289), fixed with a resolver shared by the three
+  ([core#294](https://github.com/ComlineProject/core/pull/294)), which is where the Rust model's rule lives.
 
 **Answered by the user, 2026-11-15:**
 

@@ -185,7 +185,11 @@ waits for a registry.
 2. **Whole-namespace imports bring names in bare.** After `use pkg::types`, both
    `User` and `pkg::types::User` work, as core and the editor already behave.
    Qualified-only was never the goal: the [`use` guide](../guides/idl/use.md) is
-   corrected.
+   corrected. *Superseded 2026-11-16 by
+   [qualified references](../proposals/use-paths-and-groups/relative-use.md#qualified-references)
+   ([core#297](https://github.com/ComlineProject/core/pull/297)): a whole-namespace
+   `use` brings in only its name, so after `use package::types` the type is
+   `types::User`, and a bare `User` needs `use package::types::User`.*
 3. **Direct dependencies only, for now.** A dependency's own dependencies stay
    invisible to the consumer.
 4. **The packages guide documents what shipped in core#50**, updated alongside
