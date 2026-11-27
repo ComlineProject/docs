@@ -1,7 +1,7 @@
 # Named connections
 
-Status: **the smaller step is accepted; sets are designed and deferred** (2026-11-15) · the
-user's [answers](#answers-so-far) shape the design of sets, and [the decision](#decided)
+Status: **the smaller step is built; sets are designed and deferred** (accepted 2026-11-15,
+built 2026-11-27) · the user's [answers](#answers-so-far) shape the design of sets, and [the decision](#decided)
 says what is built now · the [original questions](#open-questions) stay at the end
 
 **The question.** A package gets exactly one connection: one `Services`, one
@@ -38,7 +38,9 @@ exists today.
 
 ## Where things stand
 
-Each point below was checked against the docs and the generators' code and golden output.
+Each point below was checked against the docs and the generators' code and golden output,
+before [the smaller step](#decided) was built. What they say about wiring every protocol, wiring
+a subset by hand and the Hello the generator embeds describes what it replaced.
 
 - **One connection per package.** A package with a protocol on a connection gets one
   `Services`, one `ClientServices`, one `accept`, `serve` and `connect`, and the
@@ -237,7 +239,17 @@ shape the design; they are the design sets will be built to, when [they are](#de
 
     **Decided:**
 
-    - **The smaller step is built now, as the first part of sets.** `Services` and
+    - **The smaller step is built now, as the first part of sets.** *Built (2026-11-27):
+      [specification#19](https://github.com/ComlineProject/specification/pull/19) (spec 0.12, the
+      subset Hello cases), [runtime#126](https://github.com/ComlineProject/runtime/pull/126),
+      [comline-rust#140](https://github.com/ComlineProject/comline-rust/pull/140) and
+      [comline-typescript#179](https://github.com/ComlineProject/comline-typescript/pull/179);
+      the guides are [Rust](../../languages/rust/connections.md#serving-a-subset) and
+      [TypeScript](../../languages/typescript/connections.md#serving-a-subset), and
+      [what an end's Hello lists](../../reference/wire/handshakes/comline@2.md#what-an-ends-hello-lists)
+      is on the `comline@2` page. Narrowing what a side calls, below, is not built yet:
+      [comline-rust#141](https://github.com/ComlineProject/comline-rust/issues/141) and
+      [comline-typescript#180](https://github.com/ComlineProject/comline-typescript/issues/180).* `Services` and
       `ClientServices` accept a subset, and the Hello is built at runtime from what this
       side actually provides, plus the protocols it calls on the other side (all of them by
       default: the peer refuses those it doesn't have). A connection then carries exactly

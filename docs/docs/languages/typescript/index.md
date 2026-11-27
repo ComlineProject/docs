@@ -23,7 +23,10 @@ and `Events` (the client does), and `Mail` and `Rpc` for the others.
 | **The lockstep `datagram`**: one protocol per transport ([lockstep](client-and-server.md)) | the protocol's interface: `Mail` | `serveMail(impl, transport)` | `MailClient.connect(transport)` | `MailClient`'s methods |
 | **JSON-RPC**, a protocol the client provides | as the default connection | as the default: the package's `serve` opens the connection with `JsonCodec` and `JsonRpcConnectionFraming` ([over JSON-RPC](connections.md#over-json-rpc)) | as the default | as the default |
 | **JSON-RPC**, a server-only protocol | the protocol's interface: `Rpc` | `serveRpc(impl, transport)` | `RpcClient.connect(transport)`, encoding JSON | `RpcClient`'s methods |
-| **By hand** | the same interfaces | `Connection.accept(transport, Format, CONNECTION_IR_HASH, new Datagram3Framing(), handshake())`, then `new ChatDispatcher(chat).provideOn(conn)` ([by hand](connections.md#by-hand)). Lockstep: `new Server(new MailDispatcher(mail), codec, framing).serve(transport, IR_HASH)` | `Connection.connect(…)`, the same way. Lockstep: `Client.connect(transport, codec, IR_HASH, framing)` | the same senders and clients |
+| **By hand** | the same interfaces | `Connection.accept(transport, Format, CONNECTION_IR_HASH, new Datagram3Framing(), handshake([SERVICES_HELLO.chat], [CLIENT_SERVICES_HELLO.events]))`, then `new ChatDispatcher(chat).provideOn(conn)` ([by hand](connections.md#by-hand)). Lockstep: `new Server(new MailDispatcher(mail), codec, framing).serve(transport, IR_HASH)` | `Connection.connect(…)`, the same way. Lockstep: `Client.connect(transport, codec, IR_HASH, framing)` | the same senders and clients |
+
+A side can provide just some of its protocols ([serving a subset](connections.md#serving-a-subset)):
+`serve(transport, { chat })`, leaving the other fields out.
 
 A package whose protocols disagree on the framing or the handshake has no one
 connection, so no `serve` or `connect`; each protocol keeps its own dispatcher
@@ -46,7 +49,7 @@ re-exports; a lone file keeps its own.
 What is marked `@internal` is wire plumbing: the `…ParamsLayout` constants, the
 `…_CALLS` tables, the dispatchers of a connection, `provideServices` and
 `provideClientServices`, and what the `comline@2` handshake is built from
-(`HELLO`, `handshake()`). It stays exported, for by-hand use, and is not what you
+(`HELLO_HEADER`, `SERVICES_HELLO`, `CLIENT_SERVICES_HELLO` and `handshake(provided, called)`). It stays exported, for by-hand use, and is not what you
 call.
 
 ## The mirror fact to Rust's

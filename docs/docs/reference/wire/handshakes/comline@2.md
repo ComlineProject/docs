@@ -28,7 +28,44 @@ connecting.
      what its version claims. `same_version_differs` decides.
    - **The consumer has functions the provider lacks**, by function number:
      `newer_consumer` decides.
-4. A protocol only one end has is `unknown_protocol`, refused on its own.
+4. A protocol only one end lists is `unknown_protocol`, refused on its own.
+   A Hello lists what its end provides and calls, which can be fewer protocols
+   than the package has ([below](#what-an-ends-hello-lists)).
+
+## What an end's Hello lists
+
+An end's Hello lists the protocols it provides and every protocol of the other
+side that it calls, not necessarily every protocol of the package. The
+generated code builds it when a connection opens, from the protocols given to
+`Services` or `ClientServices`
+([Rust](../../../languages/rust/connections.md#serving-a-subset),
+[TypeScript](../../../languages/typescript/connections.md#serving-a-subset)) and
+the other side's protocols, which it calls (all of them, so the peer refuses
+those it doesn't have). A protocol both ends provide
+(`@provider = Multiple`) is listed once, and the entries stay ascending by
+number. The rest of the Hello, the package, the version and the encodings, is
+the same whichever protocols it lists. A package that provides all of them
+sends the Hello the whole connection always did, byte for byte.
+
+A connection carries exactly what its Hello lists:
+
+- **A protocol only one end lists is refused on its own** (`unknown_protocol`),
+  and neither end can call it. An end that left a protocol out of its Hello
+  doesn't have it on the connection, even if its application could serve it.
+  Under `exchange = symmetric` each end's verdict refuses the protocols the
+  other lists and it doesn't.
+- **An answer or a verdict can't add a protocol.** An answer that names a
+  protocol the offer didn't list is `malformed`, and a verdict refusing a
+  protocol this end never listed changes nothing about what it agreed.
+- **Calls to a protocol outside the result fail locally,** and nothing is sent.
+- **Providing one is refused too.** The runtime refuses to register a dispatcher
+  for a protocol the handshake didn't accept, not only one the Hello didn't
+  list: the peer's refusal is almost certainly a mistake in the application.
+  An entry carries no direction, so the runtime can't tell a protocol listed to be
+  called from one listed to be provided; the generated code, which knows
+  `@provider`, provides only what its side declares. Without a `comline@2`
+  Hello (`comline@1`, `none`, a connection opened by hand) there is no result to
+  check against.
 
 ## Parameters
 
@@ -163,7 +200,12 @@ Stable: a code is never renumbered or reused.
 In the Rust runtime, a refusal is `RuntimeError::Refused { reason, side }`
 on both ends. After a successful handshake, `Negotiated::check_call`
 returns `RuntimeError::Unavailable` for a call the peer can't take, either
-because it lacks the function or because the protocol was refused.
+because it lacks the function or because the protocol was refused or isn't in
+the result. `Negotiated::accepts` says whether a protocol is in the result and
+not refused, and `Negotiated::check_provide` returns the same error for one a
+connection mustn't provide. `Hello::build(header, provided, called)` makes a
+Hello from the header and the two lists of protocols. In the TypeScript runtime
+these are `Negotiated.accepts` and `checkProvide`, `buildHello` and `accepts`.
 
 ## Proven by
 
@@ -172,7 +214,11 @@ The `handshake-comline2` vectors in the runtime's corpus
 
 - every message type, with byte-exact encodings and malformed variants;
 - every step of both exchanges under every parameter value;
-- a case for every reason code.
+- a case for every reason code;
+- a Hello listing a subset of the package's protocols (specification 0.12):
+  its bytes, offers and answers that name fewer protocols than an end has,
+  an answer that goes beyond its offer, and a verdict refusing a protocol
+  never listed.
 
 `comline@2`'s profile states `schema_agreement` and `encoding_agreement`,
 proven by an accepted peer and by peers refused for a moved line, another
