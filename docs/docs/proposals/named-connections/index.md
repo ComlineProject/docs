@@ -264,7 +264,8 @@ Given on 2026-11-27, when sets were taken up:
       connection module's item names (answer 17);
     - `connection::unsupported-encoding`: the set's encodings can't have sets (answer 20);
     - `connection::encoding-mismatch`: a member's own `@framing` or `@handshake` disagrees with
-      its set's (answer 7);
+      its set's, or a protocol in two sets whose encodings differ pins one of its own
+      (answer 7);
     - `connection::unknown-set`: a `connections` table entry names a set no protocol is in;
     - `connection::duplicate-set`: a set name repeated in one `@connection` list;
     - `connection::empty-list`: `@connection = []` is refused; a protocol in one set is just a
