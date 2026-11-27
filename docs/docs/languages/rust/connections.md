@@ -64,11 +64,11 @@ under `mod generated;` it's `generated::connection`.
     ```rust
     // `lib` mode
     use my_package::{connect, serve, ClientServices, Services};
-    use my_package::chat::ChatSender;
+    use my_package::snippet::ChatSender;
 
     // `code` mode, with the generated files as the crate's modules
     // use crate::connection::{connect, serve, ClientServices, Services};
-    // use crate::chat::ChatSender;
+    // use crate::snippet::ChatSender;
 
     // The side that accepts: handshake, provide every protocol, serve until
     // the peer leaves.
@@ -101,9 +101,9 @@ under `mod generated;` it's `generated::connection`.
 
 ## Serving a subset
 
-A side doesn't have to provide every protocol of its direction. Say the package also
-declares `Admin`, which the server provides, and a public server wants to serve
-`Chat` and nothing else. Each field of `Services` and `ClientServices` is a
+A side doesn't have to provide every protocol of its direction. Say `snippet.ids` also
+declares `protocol Admin { function kick(user: u32); }`, which the server provides, and a
+public server wants to serve `Chat` and nothing else. Each field of `Services` and `ClientServices` is a
 protocol's implementation, or `Absent` for one left out:
 
 ```rust
@@ -159,8 +159,8 @@ this package's protocols, what to implement, serve, dial and call:
 // For Rust 1.85.0 or later; verified up to 1.99.
 //! The package's protocols share one connection: `datagram@3` framing, the `comline@2` handshake. To use it:
 //!
-//! - Implement the trait of each protocol the server provides: `conformance::Chat`.
-//! - Implement the trait of each protocol the client provides: `conformance::Events`.
+//! - Implement the trait of each protocol the server provides: `snippet::Chat`.
+//! - Implement the trait of each protocol the client provides: `snippet::Events`.
 //! - Serve with [`serve`]`(transport, Services { chat: .. })`, which serves every call until the peer leaves. [`accept`] hands the connection back first, for a server that calls the client or serves one call at a time.
 //! - Dial with [`connect`]`(transport, ClientServices { events: .. })`.
 //! - To provide only some of a side's protocols, start from `Services::new().with_chat(..)` or `ClientServices::new().with_events(..)` and add each with its `with_` method, or write [`Absent`] in the fields left out. The `comline@2` Hello then lists what is provided and every protocol of the other side this end calls, and a protocol it doesn't list isn't on the connection.
@@ -174,7 +174,7 @@ pub type Format = comline_runtime::format::Packed;
 
 /// Digest of every schema in the package — what a connection's handshake
 /// checks, so both ends agree on each protocol's number.
-pub const CONNECTION_IR_HASH: u64 = 0x1ad273c98d4e98fb;
+pub const CONNECTION_IR_HASH: u64 = 0x4d934c4e06a6f038;
 
 /// The framing the package's connection runs on (`datagram@3`).
 pub type Framing = comline_runtime::contract::Datagram3Framing;
@@ -197,23 +197,23 @@ pub struct Services<Chat> {
 impl Services<Absent> { pub fn new() -> Self { /* … */ } }
 
 impl<Chat> Services<Chat> {
-    pub fn with_chat<P: crate::conformance::Chat + 'static>(self, provider: P) -> Services<P> { /* … */ }
+    pub fn with_chat<P: crate::snippet::Chat + 'static>(self, provider: P) -> Services<P> { /* … */ }
 }
 
 // ClientServices<Events>, the same for the protocols the dialling side provides.
 
-pub fn accept<T: Transport, Chat: ProvideConformanceChat>(transport: T, services: Services<Chat>) -> Result<Connection<T>, RuntimeError> { /* … */ }
+pub fn accept<T: Transport, Chat: ProvideSnippetChat>(transport: T, services: Services<Chat>) -> Result<Connection<T>, RuntimeError> { /* … */ }
 
-pub fn serve<T: Transport, Chat: ProvideConformanceChat>(transport: T, services: Services<Chat>) -> Result<(), RuntimeError> {
+pub fn serve<T: Transport, Chat: ProvideSnippetChat>(transport: T, services: Services<Chat>) -> Result<(), RuntimeError> {
     accept(transport, services)?.serve()
 }
 
-pub fn connect<T: Transport, Events: ProvideConformanceEvents>(transport: T, services: ClientServices<Events>) -> Result<Connection<T>, RuntimeError> { /* … */ }
+pub fn connect<T: Transport, Events: ProvideSnippetEvents>(transport: T, services: ClientServices<Events>) -> Result<Connection<T>, RuntimeError> { /* … */ }
 
 // Also here, for the `comline@2` handshake: `negotiated`, `warnings` and
 // `unavailable`, which read what it agreed, and `#[doc(hidden)]` `HEADER`
 // (the Hello up to its protocols), a `P_<PATH>` entry for each protocol (here
-// `P_CONFORMANCE_CHAT`) and `handshake(provided, called)`. `ProvideConformanceChat`
+// `P_SNIPPET_CHAT`) and `handshake(provided, called)`. `ProvideSnippetChat`
 // is the hidden trait `Services` bounds a field by: implemented for `Absent`, and
 // for whatever implements `Chat`.
 ```
@@ -221,8 +221,8 @@ pub fn connect<T: Transport, Events: ProvideConformanceEvents>(transport: T, ser
 Each protocol's file has its trait, its sender, and the plumbing:
 
 ```rust
-// chat.rs (here, conformance.rs)
-pub const IR_HASH: u64 = 0x1ad273c98d4e98fb;
+// snippet.rs
+pub const IR_HASH: u64 = 0x4d934c4e06a6f038;
 
 #[doc(hidden)]
 pub use crate::connection::{CONNECTION_IR_HASH, Format};
@@ -262,7 +262,7 @@ impl<'p, P: Peer> ChatSender<'p, P> {
     pub fn new(peer: &'p mut P) -> Self { /* … */ }
 
     pub fn send(&mut self, n: u32) -> Result<u32, CallError<ChatSendError>> {
-        crate::connection::check_call(&mut *self.0, Self::PROTOCOL, 0, "conformance::Chat", "send")?;
+        crate::connection::check_call(&mut *self.0, Self::PROTOCOL, 0, "snippet::Chat", "send")?;
         let (reply, fmt) = self.0.call(Self::PROTOCOL, Call::new(0, "send"), &ChatSendParams { n })?;
         // …
     }
@@ -309,10 +309,10 @@ the framing:
 
 ```rust
 use comline_runtime::contract::Datagram3Framing;
-use my_package::connection::{handshake, Format, CONNECTION_IR_HASH, P_CONFORMANCE_CHAT, P_CONFORMANCE_EVENTS};
+use my_package::connection::{handshake, Format, CONNECTION_IR_HASH, P_SNIPPET_CHAT, P_SNIPPET_EVENTS};
 
 // This end provides `Chat` and calls `Events`: its Hello lists those two.
-let mut hs = handshake(&[P_CONFORMANCE_CHAT], &[P_CONFORMANCE_EVENTS]);
+let mut hs = handshake(&[P_SNIPPET_CHAT], &[P_SNIPPET_EVENTS]);
 let mut conn = comline_runtime::connection::Connection::accept_with(
     transport, Format::default(), Datagram3Framing, &mut hs, CONNECTION_IR_HASH,
 )?;

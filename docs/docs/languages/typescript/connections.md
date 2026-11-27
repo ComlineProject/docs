@@ -55,11 +55,11 @@ file, wherever you placed it. `Format` and `CONNECTION_IR_HASH` are in
 
 ```ts
 // `lib` mode
-import { connect, serve, chat } from "my-package";
+import { connect, serve, snippet } from "my-package";
 
 // `code` mode
 // import { connect, serve } from "./generated/connection";
-// import * as chat from "./generated/chat";
+// import * as snippet from "./generated/snippet";
 
 // The side that accepts: handshake, provide every protocol, serve until
 // the peer leaves.
@@ -68,7 +68,7 @@ await serve(transport, { chat: chatImpl });
 // The side that dials: handshake, provide the client's protocols, and call
 // the server's through their senders.
 const conn = await connect(transport, { events: eventsImpl });
-const sent = await new chat.ChatSender(conn).send({ n: 3 });
+const sent = await new snippet.ChatSender(conn).send({ n: 3 });
 ```
 
 - **`accept(transport, services)`** returns the connection, already serving,
@@ -89,9 +89,9 @@ const sent = await new chat.ChatSender(conn).send({ n: 3 });
 
 ## Serving a subset
 
-A side doesn't have to provide every protocol of its direction. Say the package also
-declares `Admin`, which the server provides, and a public server wants to serve
-`Chat` and nothing else. The fields of `Services` and `ClientServices` are optional,
+A side doesn't have to provide every protocol of its direction. Say `snippet.ids` also
+declares `protocol Admin { function kick(user: u32); }`, which the server provides, and a
+public server wants to serve `Chat` and nothing else. The fields of `Services` and `ClientServices` are optional,
 so leave out the ones you don't provide:
 
 ```ts
@@ -142,7 +142,7 @@ this package's protocols, what to implement, serve, dial and call:
 /**
  * Where to start:
  *
- * - Implement what you provide: `Chat`, `Events` (in `./conformance.js`).
+ * - Implement what you provide: `Chat`, `Events` (in `./snippet.js`).
  * - Serve with `serve(transport, { chat })`; `accept(transport, { chat })` takes the same and hands back the connection.
  * - Dial with `connect(transport, { events })`.
  * - Call the other end with `new ChatSender(conn).send(…)`, on the connection `connect` returns or the peer a handler is given.
@@ -161,18 +161,18 @@ export { CONNECTION_IR_HASH, Format } from "./wire.js";
  * The Hello lists the ones given, and the protocols the dialling side provides, which this side calls.
  */
 export interface Services {
-    chat?: ns_conformance.Chat;
+    chat?: ns_snippet.Chat;
 }
 
 /** What the dialling side provides, the same way: the Hello lists the ones given and the protocols the accepting side provides. */
 export interface ClientServices {
-    events?: ns_conformance.Events;
+    events?: ns_snippet.Events;
 }
 
 /**
  * The protocols the accepting side provides, as a Hello lists each, by their field in `Services`:
  *
- * - `chat`: 0 `conformance::Chat`, line 0.1.0: `send` 0
+ * - `chat`: 0 `snippet::Chat`, line 0.1.0: `send` 0
  *
  * @internal
  */
@@ -217,13 +217,13 @@ export const Format: Codec = new PackedCodec();
 
 /** Digest of every schema in the package — what a connection's handshake
 *  checks, so both ends agree on each protocol's number. */
-export const CONNECTION_IR_HASH = 0x1ad273c98d4e98fbn;
+export const CONNECTION_IR_HASH = 0x4d934c4e06a6f038n;
 ```
 
 Each protocol's file has its interface, its sender, and the plumbing:
 
 ```ts
-// conformance.ts
+// snippet.ts
 export interface ChatSendParams {
     n: number;
 }
@@ -252,7 +252,7 @@ export class ChatSender {
     constructor(peer: Peer) { /* … */ }
 
     async send(params: ChatSendParams): Promise<number> {
-        checkCall(this.peer, ChatSender.PROTOCOL, 0, "conformance::Chat", "send");
+        checkCall(this.peer, ChatSender.PROTOCOL, 0, "snippet::Chat", "send");
         const env = await this.peer.call(ChatSender.PROTOCOL, { id: 0, name: "send" }, params, { layout: ChatSendParamsLayout });
         // …
     }
