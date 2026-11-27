@@ -95,6 +95,12 @@ reference. One proposal in stages, read in order:
   `rust#1.70.0` means, how it picks a generator, and how feature support and
   output depend on it, proven by conformance at each version where they
   change. ***implemented***.
+- [Dependency pins in generated code](dependency-pins.md): how a build that
+  uses generated code gets exactly one copy of each Comline runtime package,
+  by construction: one Comline dependency per generated package, versions
+  instead of git revs from 1.0, the emitted version read from the build, and
+  CI checks. *under discussion*; raised by
+  [comline-rust#144](https://github.com/ComlineProject/comline-rust/issues/144).
 
 ### Extensibility
 
