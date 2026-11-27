@@ -2,8 +2,8 @@
 
 !!! warning "Early days"
     Comline is in heavy development and changes constantly. Much of this
-    documentation is working design material rather than a polished reference:
-    parts are dense and read closer to notes than prose.
+    documentation is not easy to read and understand, a lot of it is
+    working design material and dev state.
 
 Comline is a schema language and RPC toolkit. You describe your data and the
 calls between programs once, in a schema, and Comline checks it, versions it,

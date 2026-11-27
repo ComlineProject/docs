@@ -249,21 +249,24 @@ speak it.
 
 A request:
 
-| Field | Meaning |
-| --- | --- |
-| `id` | any JSON value; echoed in the reply |
-| `op` | a case op, or `check`, `version` or `session` |
+|   Field | Meaning |
+|   ---   |   ---   |
+| `id`    | any JSON value; echoed in the reply |
+| `op`    | a case op, or `check`, `version` or `session` |
 | `input` | the op's input, as a case states it |
 | `bytes` | optional, lowercase hex |
 
 - **With no `bytes`,** the reply is what `input` encodes to:
   `{"id": 1, "bytes": "0102..."}`.
+
 - **With `bytes`,** the reply says whether they decode:
   `{"id": 2, "accept": true, "input": {...}}` or `{"id": 3, "accept": false}`. A
   refusal carries no reason: what runtimes must agree on is whether bytes are
   refused.
+
 - **`{"id": ..., "not_implemented": "..."}`** means the implementation doesn't
   have a format, framing or op the request names.
+
 - **`{"id": ..., "error": "..."}`** means the request is malformed. A malformed
   line never stops the process.
 
@@ -272,13 +275,14 @@ A request:
 The first thing `comline conformance` asks. The reply says what the
 implementation supports:
 
-```json
-{"id": 6, "version": {"protocol": 1, "crate": "0.1.0",
-   "ops": ["name_hash", "handshake", "handshake_check", "envelope", "request", "response",
+```json title="vector.json"
+{
+  "id": 6, "version": {"protocol": 1, "crate": "0.1.0",
+  "ops": ["name_hash", "handshake", "handshake_check", "envelope", "request", "response",
            "peer_refusal", "encode", "decode", "stream_prefix", "stream_split",
            "comline2_message", "comline2_negotiate", "check", "version", "session"],
-   "formats": ["json@1", "msgpack@1", "packed@1"],
-   "framings": ["datagram@1", "datagram@2", "datagram@3", "jsonrpc@1"]}}
+  "formats": ["json@1", "msgpack@1", "packed@1"],
+  "framings": ["datagram@1", "datagram@2", "datagram@3", "jsonrpc@1"]}}
 ```
 
 `protocol` must be the runner's (`1`), or the CLI refuses the implementation.

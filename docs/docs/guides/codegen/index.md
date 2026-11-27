@@ -10,17 +10,12 @@ schema.
 
 ## What Comline aims for
 
-Many schema libraries generate just enough to move bytes — message types, and a
-thin service stub. Comline tries to carry more of the schema's information into
-the generated code: language-specific typing, the protocol surface as a real
-interface or trait so editors can complete and check against it, and enough
-detail that the generated code is pleasant to use directly rather than only as a
-"try it out" artifact.
+test
 
 ## Using it
 
 `comline generation` is the command; [Generating code](generating-code.md) is the
-full guide, and [`comline.toml`](../../reference/package/comline-toml.md) is where a
+full guide, and [`comline.toml`](../../reference/package/user-configuration.md) is where a
 consumer sets the output location, layout and mode.
 
 Today there are `rust` and `typescript` generators, and both do `code` and

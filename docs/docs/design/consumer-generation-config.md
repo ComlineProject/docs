@@ -297,6 +297,7 @@ a *consumer build artifact*?**
   crate version the same way it bumps the package. Right when the consumer
   **publishes** the generated crate ("the official Rust binding for `acme-api`")
   or reasons about compat (`acme-api-schema >=0.4`).
+
 - *Artifact* — like `prost-build` / `bindgen` output in `OUT_DIR`: `path`-depended
   on locally, never published, so its name/version barely matter. This is the
   natural reading of `mode = "dylib"` (the runtime loads it; nothing depends on it
@@ -310,6 +311,7 @@ territory. But there is a strong default: **mirror**.
 - Default: the congregation name (`FrozenUnit::Namespace`, from the manifest),
   run through a per-language normaliser — a valid Comline identifier is not
   necessarily a valid crate / PyPI / Lua-module name.
+
 - Override: optional `package_name` (or `crate_name`) on `[[generate.target]]`,
   for consumers who publish or must fit a naming scheme. Possibly a mode/lang
   suffix convention (`-schema`, `-types`) left to the override.
@@ -319,14 +321,17 @@ territory. But there is a strong default: **mirror**.
 - Source of truth: the CAS ref (`refs/heads/main` → `Commit.version`). **The
   manifest never carries a version** — a hand-written version would drift from
   and fight the diff engine's auto-versioning. Settled non-option.
+
 - No CAS history yet (`generate` before any `build`, now that `generate` no
   longer freezes): either require one `comline build` first for `mode =
   lib|dylib`, or fall back to `0.0.0` with a warning.
+
 - Dirty working tree (schemas changed since the last commit): `Commit.version` is
   stale. Options — (a) refuse / warn "generating a stale version"; (b) stamp it
   as-is; (c) run the diff *without* committing, stamp the prospective
   `X.Y.Z-dev` plus a short `Commit.tree` hash. (c) is nicest and needs a
   diff-without-freeze path (compatible with the `compile_package()` decision).
+
 - Override: a `version` field in `comline.toml`, allowed but discouraged (defeats
   auto-versioning).
 

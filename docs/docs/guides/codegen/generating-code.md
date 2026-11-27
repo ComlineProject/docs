@@ -4,23 +4,23 @@
 language. This page is the practical guide: what it produces, how to say where it
 goes, and how to generate more than one version at once.
 
-Status: this reflects the current CLI. `rust` and `typescript` are the
-generators, and both do `code` and `lib`; the configuration surface below is
-stable.
 
 ## The two files
 
 Code generation is configured across two files with two different owners:
 
 | File | Owner | In version control | Purpose |
-|---|---|---|---|
+| ---  |  ---  |        ---         |  ---    |
 | `config.idp` | the **package author** | committed, frozen into every published version | declares *what languages* the package can be generated as |
-| `comline.toml` | the **consumer** (whoever runs `comline generation`) | committed, never frozen | says *where* generated code goes, in what layout, for which versions |
+| `comline.toml` | the **consumer** (whoever runs `generate`) | committed, never frozen | says *where* generated code goes, in what layout, for which versions |
 
 `config.idp` never contains an output path — where your bindings land is your
 call, not the package author's, so it lives in `comline.toml`.
 
-## Declaring targets — `config.idp`
+To configure where the packages's generated output path, you configure it in the User Configuration (`comline.toml`) file.
+
+
+## Declaring targets (`config.idp`)
 
 ```idp
 congregation my_api
@@ -44,7 +44,7 @@ language listed here. The entry carries no output path — where the code lands 
 the consumer's business, below — and a consumer who wants fewer says so with
 `only`.
 
-## Configuring output — `comline.toml`
+## Configuring output (`comline.toml`)
 
 ```toml
 [generate]
@@ -143,7 +143,7 @@ compilers promise to build older code, as Rust's do, there's no such limit.
 To insist on verified targets, raise it to an error in the package's
 [settings](../idl/settings.md):
 
-```idp
+```idp title="package.idp"
 settings = {
     diagnostics = {
         generation::unverified-version = {
@@ -214,9 +214,9 @@ idiomatic output for a past schema shape.
 comline generation [--target <lang>] [--out <dir>] [--layout <tpl>] [--mode <m>] [--dry-run] [--list] [--watch]
 ```
 
-`generation` validates the project and writes the code. Unlike `comline build` it
+`generate` validates the project and writes the code. Unlike `comline build` it
 does **not** freeze a version or write to `.comline/` — it is safe to run
-repeatedly and from CI. `gen` is short for `generation`.
+repeatedly and from CI.
 
 ```bash
 comline generation                              # every configured target, per comline.toml
@@ -245,8 +245,8 @@ Each target's files are reported as a tree:
 generated at once. `--dry-run` and `--list` are independent: the first decides
 whether anything is written, the second how it is reported.
 
-`comline generation clean` removes the generated output (the whole `out` directory when it
-is a dedicated one, e.g. `generated/`); `--target <lang>` removes only that language's. It leaves `.comline/` alone —
+`comline clean` removes the generated output (the whole `out` directory when it
+is a dedicated one, e.g. `generated/`). It leaves `.comline/` alone —
 `comline reset` is the command that discards the version history.
 
 ## What Rust output looks like
@@ -267,10 +267,48 @@ using cross-schema references in `code` mode needs to declare matching `mod`
 statements itself.
 
 `std` is the exception, because
-[`external_std`](../../reference/package/comline-toml.md#external_std)
+[`external_std`](../../reference/package/user-configuration.md#external_std)
 is on by default in `lib` mode: a std type then resolves to
 `comline_std::http::Request` and the crate depends on `comline_std` rather
 than carrying a copy of it.
+
+
+## What generated code looks like
+
+Given the following schema:
+
+```ids title="schema.ids"
+const BAZ_AMOUNT: u8 = 5
+
+struct Foo {
+  bars: bool
+  baz: u8[BAZ_AMOUNT]
+}
+
+```
+
+The following is produced:
+
+!!! example "Generated in each language"
+
+    === ":simple-rust: Rust"
+
+        ``` markdown
+        * Sed sagittis eleifend rutrum
+        * Donec vitae suscipit est
+        * Nulla tempor lobortis orci
+        ```
+
+    === ":simple-typescript: TypeScript"
+
+        ``` markdown
+        1. Sed sagittis eleifend rutrum
+        2. Donec vitae suscipit est
+        3. Nulla tempor lobortis orci
+        ```
+
+
+        ff
 
 ## What TypeScript output looks like
 
@@ -293,7 +331,7 @@ An alias imports the name the other module actually exports
 nothing refers to produces no import at all.
 
 `std` again resolves to its own package when
-[`external_std`](../../reference/package/comline-toml.md#external_std)
+[`external_std`](../../reference/package/user-configuration.md#external_std)
 is on, by subpath import — the leading `std` segment drops, since
 `@comline/std` is its own package root:
 
@@ -325,7 +363,7 @@ for it.
 
 ## Gotchas
 
-- `generation` never changes the package version. Only `build` does.
+- `generate` never changes the package version. Only `build` does.
 - The default layout writes under `generated/`. Older CLI versions wrote flat
   into the project root; set `out = "."` and `layout = "{{namespace}}.{{ext}}"`
   for that.

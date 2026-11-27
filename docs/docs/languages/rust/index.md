@@ -1,9 +1,11 @@
+<!--
+---
+icon: simple/rust
+---
+-->
+
 # Rust
 
-Status: shipped. `comline-codegen-rust` generates `code` mode (plain
-source files) and `lib` mode (a buildable crate) — see [Library
-generation](../../guides/codegen/library-generation.md) for what each mode
-produces.
 
 ## What you use
 
@@ -54,30 +56,40 @@ The pages below show each case as it's generated.
 
 ## Adding runtime to dependencies
 
+### From crates.io
 Not published to crates.io yet. Pin it by git rev, the same way the rest
 of the toolchain does (see `cli/Cargo.toml`'s own pattern if you want a
 worked example):
 
-```toml
+
+```toml title="Cargo.toml"
 [dependencies]
 comline-runtime = { git = "https://github.com/ComlineProject/runtime", rev = "…" }
 ```
 
-## Licensing
+### From git
 
-Generated code depends on the **`comline-runtime`** crate
-(MPL-2.0 — the piece that actually ships inside your program, as opposed
-to the GPL-3.0 generator that only runs at build time).
+If you are generating a package into code, you can check in the generated
+`Cargo.toml` for the exact pin revision and features, which is much easier.
+
 
 ## Where to go next
 
-- [Connections](connections.md) — the default: every protocol on one
+
+<div class="grid cards" markdown>
+
+- **[Connections](connections.md)** — the default: every protocol on one
   connection, calls in both directions, sync or async.
-- [Lockstep `datagram`: client & server](client-and-server.md) — the lockstep
+
+- **[Lockstep `datagram`: client & server](client-and-server.md)** — the lockstep
   framing's `<Protocol>Client` and `<Protocol>Dispatcher`, and the shape
   codegen emits for them.
-- [Framing & wire format](framing-and-wire-format.md) — `Packed`, `Json`
+
+- **[Framing & wire format](framing-and-wire-format.md)** — `Packed`, `Json`
   and `MsgPack`; `Datagram3Framing`, `Datagram2Framing`, `DatagramFraming` and
   `JsonRpcFraming`; and how the package's `wire` key picks both.
-- [Sync, async & concurrency](concurrency.md) — sharing a lockstep `Client`
+
+- **[Sync, async & concurrency](concurrency.md)** — sharing a lockstep `Client`
   between threads, and calling it from async code.
+
+</div>

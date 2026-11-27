@@ -117,7 +117,7 @@ turns the accepted proposal into issues.
    `[format]` read from `comline.toml`; completion and hover for `group`.
 8. **docs.** The [Imports](../../guides/idl/use.md) guide (own schemas, the relative forms, what an absolute path
    means), [Packages & dependencies](../../guides/packages/index.md#dependencies) (groups, `--group`), the
-   [`config.idp`](../../reference/package/idp.md) and [`comline.toml`](../../reference/package/comline-toml.md)
+   [`config.idp`](../../reference/package/manifest.md) and [`comline.toml`](../../reference/package/user-configuration.md)
    references (`group`, `[format]`, and the JSON Schema `scripts/sync-comline-toml-schema.py` writes), the
    [CLI reference](../../reference/tools/cli/index.md), and this
    proposal marked accepted.

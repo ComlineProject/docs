@@ -115,3 +115,31 @@
 .mermaid-left .mermaid {
   justify-content: flex-start;
 }
+
+
+.md-typeset .grid a.card {
+  color: inherit;
+  text-decoration: none;
+}
+
+.md-typeset .grid.cards > ul > li {
+  position: relative;
+}
+
+.md-typeset .grid.cards > ul > li > p:first-child a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.md-typeset .grid.cards > ul > li > p:first-child a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.md-typeset .big-icon,
+.md-typeset .big-icon svg {
+  width: 1rem !important;
+  height: 1rem !important;
+  font-size: 1rem !important;
+}

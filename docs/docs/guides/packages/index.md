@@ -3,9 +3,9 @@
 A Comline **package** (historically *congregation*) is a directory with a
 manifest and one or more schema files:
 
-```shell
+```text title="package directory structure"
 my-api/
-├── config.idp         # the manifest — package identity + declarations
+├── config.idp         # the manifest
 ├── comline.toml       # consumer-side: where generated code goes (see below)
 ├── src/
 │   └── *.ids          # the schemas
@@ -28,7 +28,7 @@ code_generation = {
 ```
 
 Every key, its syntax and what it does is in the
-[`config.idp` reference](../../reference/package/idp.md). The ones
+[`config.idp` reference](../../reference/package/manifest.md). The ones
 with more to them have their own sections below: [wire defaults](#wire-defaults)
 and [dependencies](#dependencies).
 
@@ -57,18 +57,22 @@ that says nothing gets. The values are strings, quoted.
 - **`framing`** applies to every protocol with no `@framing` of its own. The
   build writes it into each one, so it's part of the schema, and changing it
   is a major change.
+
 - **Before `datagram@3` and `comline@2` were the defaults,** a package that
   said nothing got `datagram@2` and `comline@1`. Such a package's first build
   after the change is a wire change, and its next release a breaking one (a
   minor bump in 0.x). To keep the old wire, state it:
   `wire = { framing = "datagram@2" }` and `handshake = "comline@1"`. See
   [Defaults before `comline@2`](../../reference/wire/handshakes/index.md#defaults-before-comline2).
+
 - **`format`** is what the generated code encodes with: Rust's and
   TypeScript's `Format`. Changing it is a major change too.
+
 - **JSON-RPC carries JSON.** A package with a JSON-RPC protocol (through its
   own `@framing` or through `wire.framing`) can't declare another `format`;
   that's a build error naming the protocol. Leaving `format` out is fine:
   the default then applies to the other protocols only.
+
 - **A target has to support the format.** TypeScript has no MessagePack codec
   yet, so `comline build` refuses `msgpack@1` in a package that declares
   TypeScript.
@@ -82,7 +86,7 @@ Where generated code lands, in what layout, for which versions — none of which
 belongs to the package author — is set by whoever runs `comline generation`, in a
 separate, non-frozen `comline.toml`. See
 [Generating code](../codegen/generating-code.md) and the
-[`comline.toml` reference](../../reference/package/comline-toml.md).
+[`comline.toml` reference](../../reference/package/user-configuration.md).
 
 ## Dependencies
 
@@ -134,18 +138,23 @@ reports git's own error.
   `shared_types`'s `src/foo.ids` is imported as `use shared_types::foo::X`. An
   import that matches nothing fails the build
   ([Imports](../idl/use.md#when-nothing-matches)).
+
 - **Direct dependencies only.** A dependency's own dependencies aren't
   importable from your package.
+
 - **Pinning.** `hash` is a blake3 hash over the dependency's compiled schemas.
   If it doesn't match, the build fails. Without one, the build warns and prints
   the hash to pin.
+
 - **Reproducible versions.** Each build vendors the resolved dependencies into
   the version it commits (a `dep_<name>` subtree in `.comline/`), so a version
   can be rebuilt from the store alone.
+
 - **Versioning.** Adding a dependency is a minor bump and removing one is major.
   A dependency present in both versions is diffed like your own schemas, so a
   breaking change in it is a major bump for you and an additive one a minor
   bump.
+
 - **In the editor.** The language server reads the same `dependencies` block,
   but never fetches anything. A path dependency, or a git pin `comline check`
   has already fetched, is indexed under its name: hover, go-to-definition and
@@ -154,12 +163,12 @@ reports git's own error.
   `config.idp`, and imports from it aren't checked until it is. More in
   [Dependency packages in the editor](../../design/editor-dependency-packages.md).
 
-`comline deps add` writes an entry for you, after resolving the dependency (a git pin
+`comline add` writes an entry for you, after resolving the dependency (a git pin
 is fetched), with its `hash` pinned to what it just compiled:
 
 ```bash
-comline deps add shared_types ../shared-types
-comline deps add net --git https://github.com/acme/net --commit 4f2c9e1 --version 1.2.0
+comline add shared_types ../shared-types
+comline add net --git https://github.com/acme/net --commit 4f2c9e1 --version 1.2.0
 ```
 
 The rest of `config.idp` is left as written. `--no-hash` skips the pin, say for
@@ -177,7 +186,7 @@ recorded versions. The `comline new` scaffold's `.gitignore` ignores only
 `.comline/deps-cache/`, where [git dependencies](#dependencies) are fetched.
 
 !!! warning
-    `comline reset` deletes `.comline/` (behind a confirmation). `comline generation clean`
+    `comline reset` deletes `.comline/` (behind a confirmation). `comline clean`
     does not — see [Versioning rules](../../reference/versioning.md#history-model).
 
 ## Publishing
@@ -192,7 +201,7 @@ partly wired up.
 
 A package declares where it can publish in `config.idp`:
 
-```idp
+```idp title="config.idp"
 publish_registries = {
     mainstream = std::publish::MAINSTREAM_REGISTRY
     my_registry  = { uri = "https://example.test/index/" }

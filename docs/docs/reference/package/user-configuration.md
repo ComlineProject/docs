@@ -1,4 +1,4 @@
-# `comline.toml`
+# Package User Configuration (`comline.toml`)
 
 Consumer-owned configuration for `comline generation`: where generated code goes,
 in what layout, in what form, and for which package versions. Its `[doc]`

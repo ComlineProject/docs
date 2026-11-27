@@ -1,13 +1,13 @@
-# `config.idp`
+# Package Manifest (`config.idp`)
 
-The package manifest: who the package is, what it depends on, which languages
-it can be generated as, and the rules and wire defaults its schemas share. It
+This is a package's manifest: it dictates what the package is, what it depends on,
+which languages it _should_ be generated as, and the rules and wire defaults its schemas share. It
 sits at the package root, beside `src/`. The [package author](index.md) owns
 it, and it's frozen into every built version.
 
 For a walk through it, see [Packages & dependencies](../../guides/packages/index.md).
 
-```idp
+```idp title="config.idp"
 //! The shop's API: orders, customers and payments.
 congregation shop
 id = "3f2a9c41d07e4b1c8a65f2e0d91b7c34"
@@ -76,4 +76,4 @@ counts like a schema change; the rules are in
 [Manifest changes](../versioning.md#manifest-configidp-changes).
 
 It never holds an output path: where generated code lands is the consumer's
-choice, in [`comline.toml`](comline-toml.md).
+choice, in [`comline.toml`](user-configuration.md).

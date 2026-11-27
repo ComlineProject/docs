@@ -59,7 +59,7 @@ an error, so a typo doesn't quietly reorder every file.
 
 ### Where the configuration lives
 
-**Decided: [`comline.toml`](../../reference/package/comline-toml.md), not `config.idp`.**
+**Decided: [`comline.toml`](../../reference/package/user-configuration.md), not `config.idp`.**
 
 - `config.idp` is **frozen into every build and hashed**. It holds what a package *is*: its identity, what it
   depends on, how it is put on the wire. An import order is how a file is *written*; putting it there would make
@@ -76,7 +76,7 @@ package. It was not taken.
 ### Precedence
 
 **Decided:** the project's `comline.toml`, then the defaults. Each is applied key by key, like
-[`[generate]`](../../reference/package/comline-toml.md#precedence).
+[`[generate]`](../../reference/package/user-configuration.md#precedence).
 
 **Decided: no per-user override.** `comline.toml` is the project's, committed beside the package, so the project's
 `[format]` is what every author's editor formats with, and a save in one editor never makes a diff in the next.
@@ -90,5 +90,5 @@ package. It was not taken.
   case in the specification repository (a schema, a configuration, and the text it must format to) holds every
   implementation to it.
 
-`comline.toml` gains the table in its [reference](../../reference/package/comline-toml.md) and in the JSON Schema served
+`comline.toml` gains the table in its [reference](../../reference/package/user-configuration.md) and in the JSON Schema served
 for it, so an editor completes `imports.order` and checks its values.

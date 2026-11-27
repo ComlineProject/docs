@@ -136,9 +136,9 @@ headers, names or type tags.
 | Type | Bytes |
 |---|---|
 | `bool` | 1 byte: `00` or `01`; anything else is an error |
-| `u8` `u16` `u32` `u64` | 1, 2, 4, 8 bytes, little-endian |
-| `s8` `s16` `s32` `s64` | 1, 2, 4, 8 bytes, little-endian two's complement |
-| `f32` `f64` | 4, 8 bytes, IEEE 754 little-endian |
+| `#!ids u8 u16 u32 u64 s128` | 1, 2, 4, 8 bytes, little-endian |
+| `#!ids s8 s16 s32 s64` | 1, 2, 4, 8 bytes, little-endian two's complement |
+| `#!ids f32 f64` | 4, 8 bytes, [IEEE 754](https://en.wikipedia.org/wiki/IEEE_754) little-endian |
 | `string` | length as a varint, then that many bytes of UTF-8 (invalid UTF-8 is an error) |
 | `T[]` | element count as a varint, then the elements |
 | `T[N]` | the N elements; the length is in the schema |
