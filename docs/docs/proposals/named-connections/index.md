@@ -189,13 +189,15 @@ are the design sets are [being built](#decided) to; the last four are from 2026-
 10. **A set's Hello lists only its members.** The handshake's guarantee is per protocol (line
     and shape hash), and a subset keeps it. **Noted gap:** the set's name isn't on the wire.
     A client of `admin` that reaches the `public` endpoint gets a connection carrying only
-    what the two share (the health check), with the rest `Unavailable`; under
-    `scope = package` it is refused whole. Carrying the set's name in the Hello, for a clear
-    refusal, is a `comline@3` matter, not a blocker.
+    what the two share (the health check), with the rest `Unavailable`, under either `scope`:
+    [`unknown_protocol` never refuses more than its protocol](../../reference/wire/handshakes/comline@2.md).
+    Carrying the set's name in the Hello, for a clear refusal, is a `comline@3` matter, not a
+    blocker.
 11. **Sets need a handshake that compares protocol by protocol.** `comline@1` with
     `datagram@2` numbers protocols by position and hashes every schema, so a change in one set
     would refuse every set: a package on them can't declare sets. The rule comes from the
-    encodings' facts ([Part 1](../dependency-protocols/capabilities.md)), not from a setting.
+    encodings' facts ([Part 1](../dependency-protocols/capabilities.md)), not from a setting;
+    answer 20 states it.
 12. **A module per set under `connection`:** `connection::admin::{Services, ClientServices,
     accept, serve, connect, Connection, Framing, Format}`, and the same layout in
     TypeScript. The default connection stays at `connection::` itself.
@@ -246,6 +248,30 @@ Given on 2026-11-27, when sets were taken up:
     [comline-rust#141](https://github.com/ComlineProject/comline-rust/issues/141) and
     [comline-typescript#180](https://github.com/ComlineProject/comline-typescript/issues/180),
     and isn't folded into this.
+20. **Sets need a handshake that compares protocol by protocol and a framing whose protocol
+    numbers don't depend on position:** today `comline@2` or later with `datagram@3`. These
+    can't have sets:
+    - `comline@1`, with any framing: it hashes the whole schema;
+    - `datagram@2`, with any handshake: it numbers protocols by position;
+    - `none`: no Hello, so nothing enforces the set.
+
+    JSON-RPC connections run `comline@1`, so they can't have sets yet, and answer 13's
+    by-name rule can't arise until they can.
+21. **Diagnostic codes, all errors:**
+    - `connection::unassigned`: a protocol on a connection is in no set, once one is annotated;
+    - `connection::not-on-a-connection`: `@connection` on a protocol that runs on no connection;
+    - `connection::bad-set-name`: not lowercase `snake_case`, a keyword, or one of the
+      connection module's item names (answer 17);
+    - `connection::unsupported-encoding`: the set's encodings can't have sets (answer 20);
+    - `connection::encoding-mismatch`: a member's own `@framing` or `@handshake` disagrees with
+      its set's (answer 7);
+    - `connection::unknown-set`: a `connections` table entry names a set no protocol is in;
+    - `connection::duplicate-set`: a set name repeated in one `@connection` list;
+    - `connection::empty-list`: `@connection = []` is refused; a protocol in one set is just a
+      name, a list is for several sets.
+
+    A forbidden annotation (answer 16) reuses `settings::forbidden`. The cases are in
+    [specification#22](https://github.com/ComlineProject/specification/issues/22) (spec 0.13).
 
 ### Decided
 
@@ -416,7 +442,7 @@ the detail behind each one.
 
 ## What it touches
 
-Nothing is built; this lists where each option would reach.
+The smaller step is built and sets are being built under [core#300](https://github.com/ComlineProject/core/issues/300); this lists where each option would reach.
 
 - **core:** the declaration (a manifest key, a block, or an annotation), its parsing and
   validation, the encoding check applied per set (the compiler's check of which encodings may
