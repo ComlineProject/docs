@@ -19,7 +19,10 @@ and `Events` (the client does), and `Mail` and `Rpc` for the others.
 | **The lockstep `datagram`**: one protocol per transport ([lockstep](client-and-server.md)) | the protocol's trait: `Mail` | `MailDispatcher(MyMail).serve(&mut transport)` | `MailClient::connect(transport)` | `MailClient`'s methods; it takes `&mut self` |
 | **JSON-RPC**, a protocol the client provides | as the default connection | as the default: the package's `serve` opens the connection with `JsonRpcFraming` ([over JSON-RPC](connections.md#over-json-rpc)) | as the default | as the default |
 | **JSON-RPC**, a server-only protocol | the protocol's trait: `Rpc` | `RpcDispatcher(MyRpc).serve(&mut transport)` | `RpcClient::connect(transport)`, encoding JSON | `RpcClient`'s methods |
-| **By hand** | the same traits | `Connection::accept_with(transport, Format::default(), Datagram3Framing, &mut handshake(), CONNECTION_IR_HASH)?`, then `ChatDispatcher(chat).provide_on(&mut conn)` and `conn.serve()?` ([by hand](connections.md#by-hand)). Lockstep: `Server::new(MailDispatcher(mail), format).serve(transport, IR_HASH)` | `Connection::connect_with(…)`, the same way. Lockstep: `MailClient::connect_with_format(transport, format)` | the same senders and clients |
+| **By hand** | the same traits | `Connection::accept_with(transport, Format::default(), Datagram3Framing, &mut handshake(&[P_SNIPPET_CHAT], &[P_SNIPPET_EVENTS]), CONNECTION_IR_HASH)?`, then `ChatDispatcher(chat).provide_on(&mut conn)?` and `conn.serve()?` ([by hand](connections.md#by-hand)). Lockstep: `Server::new(MailDispatcher(mail), format).serve(transport, IR_HASH)` | `Connection::connect_with(…)`, the same way. Lockstep: `MailClient::connect_with_format(transport, format)` | the same senders and clients |
+
+A side can provide just some of its protocols ([serving a subset](connections.md#serving-a-subset)):
+`Services::new().with_chat(chat)`, or `Absent` in the fields left out.
 
 A package whose protocols disagree on the framing or the handshake has no one
 connection, so no `serve` or `connect`; each protocol keeps its own dispatcher
@@ -45,9 +48,9 @@ The plumbing stays `pub`, so it's there for by-hand use, and is
 `#[doc(hidden)]`, so it isn't in `cargo doc`: the `…Params` structs, the
 `…_CALLS` tables, the dispatchers of a connection (`ChatDispatcher`, whose
 `provide_on` is what `Services` calls), each protocol's `PROTOCOL` number, and
-what the `comline@2` handshake is built from (`HELLO`, `handshake()`). What's left in rustdoc is what the header
+what the `comline@2` handshake is built from (`HEADER`, a `P_` entry for each protocol, and `handshake(provided, called)`). What's left in rustdoc is what the header
 tells you to use: the traits, the senders, `Services`, `ClientServices`,
-`accept`, `serve`, `connect`, `Connection<T>` and `Format`. A lockstep protocol's own
+`Absent`, `accept`, `serve`, `connect`, `Connection<T>` and `Format`. A lockstep protocol's own
 file has no header: in `lib` mode the crate root's docs list it, with the
 `…Dispatcher(provider).serve(&mut transport)` and `…Client::connect(transport)?`
 to use, and its dispatcher and client are documented as they are.

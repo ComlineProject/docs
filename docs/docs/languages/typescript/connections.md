@@ -21,7 +21,8 @@ protocol Events {
 ## Serving every protocol
 
 The package gets one `serve`, taking a `Services` object with a field per
-protocol the server provides. Leaving one out doesn't type-check.
+protocol the server provides. Every field is optional: leave one out to
+[provide only some](#serving-a-subset).
 
 ### When they're generated
 
@@ -54,11 +55,11 @@ file, wherever you placed it. `Format` and `CONNECTION_IR_HASH` are in
 
 ```ts
 // `lib` mode
-import { connect, serve, chat } from "my-package";
+import { connect, serve, snippet } from "my-package";
 
 // `code` mode
 // import { connect, serve } from "./generated/connection";
-// import * as chat from "./generated/chat";
+// import * as snippet from "./generated/snippet";
 
 // The side that accepts: handshake, provide every protocol, serve until
 // the peer leaves.
@@ -67,7 +68,7 @@ await serve(transport, { chat: chatImpl });
 // The side that dials: handshake, provide the client's protocols, and call
 // the server's through their senders.
 const conn = await connect(transport, { events: eventsImpl });
-const sent = await new chat.ChatSender(conn).send({ n: 3 });
+const sent = await new snippet.ChatSender(conn).send({ n: 3 });
 ```
 
 - **`accept(transport, services)`** returns the connection, already serving,
@@ -86,6 +87,49 @@ const sent = await new chat.ChatSender(conn).send({ n: 3 });
 - **A schema named `wire`** can't be used, since the package's `wire.ts` would
   overwrite it.
 
+## Serving a subset
+
+A side doesn't have to provide every protocol of its direction. Say `snippet.ids` also
+declares `protocol Admin { function kick(user: u32); }`, which the server provides, and a
+public server wants to serve `Chat` and nothing else. The fields of `Services` and `ClientServices` are optional,
+so leave out the ones you don't provide:
+
+```ts
+// Every protocol provided, as before.
+await serve(transport, { chat: chatImpl, admin: adminImpl });
+
+// A subset: `Admin` left out.
+await serve(transport, { chat: chatImpl });
+
+// The dialling side the same way. `connect`'s services default to `{}`.
+const conn = await connect(transport, { events: eventsImpl });
+const bare = await connect(transport);
+```
+
+A connection carries exactly what its Hello lists
+([`comline@2`](../../reference/wire/handshakes/comline@2.md#what-an-ends-hello-lists)):
+
+- **What the Hello lists.** Each end lists the protocols it provides, and every
+  protocol of the other side, which it calls: the server lists what `Services`
+  holds and every client-provided protocol, the dialling side what
+  `ClientServices` holds and every server-provided one. A protocol both provide
+  (`@provider = Multiple`) is listed once. The peer refuses a listed protocol it
+  doesn't have (`unknown_protocol`), and a protocol an end leaves out of its Hello
+  is not on the connection. Two ends that list different protocols still connect.
+- **A refused protocol is skipped, not an error.** `accept` and `connect` provide
+  only the protocols the handshake accepted. If a client written before `Admin`
+  existed lists `Chat` alone, the server's `Admin` is refused, the connection
+  still comes up, and `Chat` is served.
+- **A call outside the connection fails locally.** A sender's call to a protocol
+  the handshake didn't accept rejects with a `RuntimeError` of kind `unavailable`
+  and sends nothing; its `unavailable` field names the protocol and function, and
+  `refused` says why the peer refused it (`unknown_protocol` for one it didn't list).
+- **Wired by hand,** `Connection.provide` throws `unavailable` for a protocol the
+  handshake didn't accept ([by hand](#by-hand)).
+
+With `comline@1`, `none` or JSON-RPC there is no Hello, so a subset means only
+fewer dispatchers: nothing is negotiated and nothing is refused.
+
 ## What codegen emits
 
 The entry points are in `connection.ts`, which opens with a comment saying, for
@@ -98,7 +142,7 @@ this package's protocols, what to implement, serve, dial and call:
 /**
  * Where to start:
  *
- * - Implement what you provide: `Chat`, `Events` (in `./conformance.js`).
+ * - Implement what you provide: `Chat`, `Events` (in `./snippet.js`).
  * - Serve with `serve(transport, { chat })`; `accept(transport, { chat })` takes the same and hands back the connection.
  * - Dial with `connect(transport, { events })`.
  * - Call the other end with `new ChatSender(conn).send(…)`, on the connection `connect` returns or the peer a handler is given.
@@ -112,18 +156,33 @@ import { CONNECTION_IR_HASH, Format } from "./wire.js";
 /** The package's wire format and the digest of every schema in it, which every file of the package shares. */
 export { CONNECTION_IR_HASH, Format } from "./wire.js";
 
-/** What the accepting side provides: one field per protocol, so leaving one out doesn't type-check. */
+/**
+ * What the accepting side provides, a field per protocol: leave one out to not provide it.
+ * The Hello lists the ones given, and the protocols the dialling side provides, which this side calls.
+ */
 export interface Services {
-    chat: ns_conformance.Chat;
+    chat?: ns_snippet.Chat;
 }
 
-/** What the dialling side provides: one field per protocol, so leaving one out doesn't type-check. */
+/** What the dialling side provides, the same way: the Hello lists the ones given and the protocols the accepting side provides. */
 export interface ClientServices {
-    events: ns_conformance.Events;
+    events?: ns_snippet.Events;
 }
 
 /**
- * Provide every protocol in `services` on `conn`: the peer's calls to them come here.
+ * The protocols the accepting side provides, as a Hello lists each, by their field in `Services`:
+ *
+ * - `chat`: 0 `snippet::Chat`, line 0.1.0: `send` 0
+ *
+ * @internal
+ */
+export const SERVICES_HELLO: Record<keyof Services, ProtocolEntry> = { /* … */ };
+
+// CLIENT_SERVICES_HELLO, the same for `ClientServices`, also `@internal`.
+
+/**
+ * Provide each protocol `services` holds on `conn`: the peer's calls to them come here.
+ * Except any the handshake didn't accept (one the peer refused): its calls can't come, so it's skipped.
  * @internal
  */
 export function provideServices(conn: Connection, services: Services): void { /* … */ }
@@ -131,7 +190,7 @@ export function provideServices(conn: Connection, services: Services): void { /*
 // provideClientServices, the same for `ClientServices`, also `@internal`.
 
 export async function accept(transport: Transport, services: Services): Promise<Connection> {
-    const agreed = handshake();
+    const agreed = handshake(providedEntries(SERVICES_HELLO, services), Object.values(CLIENT_SERVICES_HELLO));
     const conn = await Connection.accept(transport, Format, CONNECTION_IR_HASH, new Datagram3Framing(), agreed);
     conn.extensions.set(agreed.negotiated!);
     provideServices(conn, services);
@@ -143,10 +202,11 @@ export async function serve(transport: Transport, services: Services): Promise<v
     await (await accept(transport, services)).closed;
 }
 
-export async function connect(transport: Transport, services: ClientServices): Promise<Connection> { /* … */ }
+export async function connect(transport: Transport, services: ClientServices = {}): Promise<Connection> { /* … */ }
 
 // Also here, for the `comline@2` handshake: `negotiated` and `warnings`, which
-// read what it agreed, and `@internal` `HELLO` and `handshake()`.
+// read what it agreed, and `@internal` `HELLO_HEADER` (the Hello up to its
+// protocols) and `handshake(provided, called)`.
 ```
 
 `wire.ts` holds what every file of the package shares:
@@ -157,13 +217,13 @@ export const Format: Codec = new PackedCodec();
 
 /** Digest of every schema in the package — what a connection's handshake
 *  checks, so both ends agree on each protocol's number. */
-export const CONNECTION_IR_HASH = 0x1ad273c98d4e98fbn;
+export const CONNECTION_IR_HASH = 0x4d934c4e06a6f038n;
 ```
 
 Each protocol's file has its interface, its sender, and the plumbing:
 
 ```ts
-// conformance.ts
+// snippet.ts
 export interface ChatSendParams {
     n: number;
 }
@@ -192,7 +252,7 @@ export class ChatSender {
     constructor(peer: Peer) { /* … */ }
 
     async send(params: ChatSendParams): Promise<number> {
-        checkCall(this.peer, ChatSender.PROTOCOL, 0, "conformance::Chat", "send");
+        checkCall(this.peer, ChatSender.PROTOCOL, 0, "snippet::Chat", "send");
         const env = await this.peer.call(ChatSender.PROTOCOL, { id: 0, name: "send" }, params, { layout: ChatSendParamsLayout });
         // …
     }
@@ -204,7 +264,8 @@ export class ChatSender {
 
 `u32` is a `number`; a `u64` would be a `bigint`. The plumbing is exported, so
 you can wire a connection [by hand](#by-hand), and `@internal`, so it isn't what
-you call: the `…ParamsLayout` constants, the `…_CALLS` tables, and the
+you call: the `…ParamsLayout` constants, the `…_CALLS` tables, the Hello entries
+(`SERVICES_HELLO`, `CLIENT_SERVICES_HELLO`), and the
 dispatchers (`provideServices` builds them, so you don't name one). With
 `datagram@2` and `comline@1`, the comment is the same, `accept` and `connect`
 call `Connection.accept(transport, Format, CONNECTION_IR_HASH)` without a
@@ -237,16 +298,16 @@ which is also how to pick another codec for one connection. For the default
 ```ts
 import { Connection, Datagram3Framing } from "@comline/runtime";
 import { CONNECTION_IR_HASH, Format } from "./generated/wire.js";
-import { handshake } from "./generated/connection.js";
+import { handshake, SERVICES_HELLO, CLIENT_SERVICES_HELLO } from "./generated/connection.js";
 
-// The side that accepts.
-const agreed = handshake();
+// The side that accepts provides `Chat` and calls `Events`: its Hello lists those two.
+const agreed = handshake([SERVICES_HELLO.chat], [CLIENT_SERVICES_HELLO.events]);
 const server = await Connection.accept(transport, Format, CONNECTION_IR_HASH, new Datagram3Framing(), agreed);
 server.extensions.set(agreed.negotiated!);
 new ChatDispatcher(chatImpl).provideOn(server);
 
 // The side that dials.
-const client = await Connection.connect(transport, Format, CONNECTION_IR_HASH, new Datagram3Framing(), handshake());
+const client = await Connection.connect(transport, Format, CONNECTION_IR_HASH, new Datagram3Framing(), handshake([CLIENT_SERVICES_HELLO.events], [SERVICES_HELLO.chat]));
 new EventsDispatcher(eventsImpl).provideOn(client);
 const sent = await new ChatSender(client).send({ n: 3 });
 
@@ -254,11 +315,17 @@ const sent = await new ChatSender(client).send({ n: 3 });
 await new EventsSender(server).shown({ n: 7 });
 ```
 
+`handshake(provided, called)` builds the Hello from the entries of the protocols
+this end provides and the ones it calls, so a connection wired by hand lists
+what you tell it to. `Connection.provide`, and so `provideOn`, throws
+`unavailable` for a protocol the `comline@2` handshake didn't accept, one this
+end's Hello didn't list or the peer refused.
 The package's `accept` and `connect` keep what `comline@2` agreed in the
 connection's extensions, as the `server.extensions.set(…)` line does, for
 `negotiated` and `warnings` to read and for each sender to check before it
-calls. A connection opened without it has nothing to check against, and every
-call goes. On `datagram@2` and `comline@1` there's nothing to keep, and
+calls. A connection opened without it has nothing to check against for calls,
+and every call goes. With no Hello at all (`comline@1`, `none`), `provide` takes
+any protocol. On `datagram@2` and `comline@1` there's nothing to keep, and
 `Connection.accept(transport, Format, CONNECTION_IR_HASH)` is all of it.
 
 A connection starts reading as soon as it's made, and `closed` resolves when
@@ -323,7 +390,12 @@ const chatImpl: Chat = {
 
 ## Without generated code
 
-`conn.provide(protocol, dispatcher)` registers any `Dispatch`. One that
+`conn.provide(protocol, dispatcher)` registers any `Dispatch`, and throws
+`unavailable` for a protocol the `comline@2` handshake didn't accept. The
+runtime exports `buildHello(header, provided, called)`, which makes a Hello of
+the entries it is given (each protocol once, ascending by number), and
+`accepts(conn, protocol)`, which says whether the handshake accepted one (it
+does where there was no Hello). One that
 needs the peer implements the optional `dispatchWith(kind, params, reply,
 peer)`. `Peer` has `codec`, `id`, `extensions`, `call(protocol, call, params,
 { timeoutMs })` and `notify`. `Datagram2Framing` is the default framing; another

@@ -25,7 +25,9 @@ protocol Events {
 ## Serving every protocol
 
 The package gets one `serve`, with a `Services` struct holding a field per
-protocol the server provides. Leaving one out doesn't compile.
+protocol the server provides. Written as a struct literal, every field is
+there, so leaving one out doesn't compile; to
+[provide only some](#serving-a-subset), say so.
 
 ### When they're generated
 
@@ -62,11 +64,11 @@ under `mod generated;` it's `generated::connection`.
     ```rust
     // `lib` mode
     use my_package::{connect, serve, ClientServices, Services};
-    use my_package::chat::ChatSender;
+    use my_package::snippet::ChatSender;
 
     // `code` mode, with the generated files as the crate's modules
     // use crate::connection::{connect, serve, ClientServices, Services};
-    // use crate::chat::ChatSender;
+    // use crate::snippet::ChatSender;
 
     // The side that accepts: handshake, provide every protocol, serve until
     // the peer leaves.
@@ -84,6 +86,8 @@ under `mod generated;` it's `generated::connection`.
     - **`ClientServices`** holds the protocols the dialling side provides
       (`@provider = Client` or `Multiple`). With none, there is no `ClientServices`
       and `connect` takes only the transport.
+    - **A subset** of either is [`Services::new().with_chat(..)`](#serving-a-subset),
+      or the literal with `Absent` in the fields left out.
     - **Field names** are the protocol's name in snake case
       (`CharacterInventory` is `character_inventory`). Where two schemas declare
       a protocol of the same name, both are prefixed with their namespace.
@@ -95,6 +99,56 @@ under `mod generated;` it's `generated::connection`.
     - **A schema named `connection`** can't be used in `code` mode, since the
       file would overwrite it.
 
+## Serving a subset
+
+A side doesn't have to provide every protocol of its direction. Say `snippet.ids` also
+declares `protocol Admin { function kick(user: u32); }`, which the server provides, and a
+public server wants to serve `Chat` and nothing else. Each field of `Services` and `ClientServices` is a
+protocol's implementation, or `Absent` for one left out:
+
+```rust
+// Every protocol provided: the literal, as before.
+serve(transport, Services { chat: ChatImpl, admin: AdminImpl })?;
+
+// A subset: the same literal with `Absent` in the fields left out...
+serve(transport, Services { chat: ChatImpl, admin: Absent })?;
+
+// ...or start from nothing and add each protocol.
+serve(transport, Services::new().with_chat(ChatImpl))?;
+
+// The dialling side the same way.
+let mut conn = connect(transport, ClientServices::new().with_events(EventsImpl::default()))?;
+```
+
+`Services::new()` provides nothing, and each `with_<field>` provides one more
+(`with_chat`, `with_admin`). An implementation that doesn't implement the
+protocol's trait is still a compile error naming it. `accept` and `async = true`
+take a subset the same way.
+
+A connection carries exactly what its Hello lists
+([`comline@2`](../../reference/wire/handshakes/comline@2.md#what-an-ends-hello-lists)):
+
+- **What the Hello lists.** Each end lists the protocols it provides, and every
+  protocol of the other side, which it calls: the server lists what `Services`
+  holds and every client-provided protocol, the dialling side what
+  `ClientServices` holds and every server-provided one. A protocol both provide
+  (`@provider = Multiple`) is listed once. The peer refuses a listed protocol it
+  doesn't have (`unknown_protocol`), and a protocol an end leaves out of its Hello
+  is not on the connection. Two ends that list different protocols still connect.
+- **A refused protocol is skipped, not an error.** `accept` and `connect` provide
+  only the protocols the handshake accepted. If a client written before `Admin`
+  existed lists `Chat` alone, the server's `Admin` is refused, the connection
+  still comes up, and `Chat` is served.
+- **A call outside the connection fails locally.** A sender's call to a protocol
+  the handshake didn't accept returns `RuntimeError::Unavailable` and writes
+  nothing. `unavailable(&mut conn)` says which function, and why the peer refused
+  its protocol (`Reason::UnknownProtocol` for one it didn't list).
+- **Wired by hand,** `provide_on` returns a `Result` and fails with `Unavailable`
+  for a protocol the handshake didn't accept ([by hand](#by-hand)).
+
+With `comline@1`, `none` or JSON-RPC there is no Hello, so a subset means only
+fewer dispatchers: nothing is negotiated and nothing is refused.
+
 ## What codegen emits
 
 The entry points are in `connection.rs`, and open with a header that says, for
@@ -105,10 +159,11 @@ this package's protocols, what to implement, serve, dial and call:
 // For Rust 1.85.0 or later; verified up to 1.99.
 //! The package's protocols share one connection: `datagram@3` framing, the `comline@2` handshake. To use it:
 //!
-//! - Implement the trait of each protocol the server provides: `conformance::Chat`.
-//! - Implement the trait of each protocol the client provides: `conformance::Events`.
+//! - Implement the trait of each protocol the server provides: `snippet::Chat`.
+//! - Implement the trait of each protocol the client provides: `snippet::Events`.
 //! - Serve with [`serve`]`(transport, Services { chat: .. })`, which serves every call until the peer leaves. [`accept`] hands the connection back first, for a server that calls the client or serves one call at a time.
 //! - Dial with [`connect`]`(transport, ClientServices { events: .. })`.
+//! - To provide only some of a side's protocols, start from `Services::new().with_chat(..)` or `ClientServices::new().with_events(..)` and add each with its `with_` method, or write [`Absent`] in the fields left out. The `comline@2` Hello then lists what is provided and every protocol of the other side this end calls, and a protocol it doesn't list isn't on the connection.
 //! - Call the server from the dialling side: `ChatSender::new(&mut conn).send(..)`.
 //! - Call the client from the accepting side, on the connection [`accept`] returns or the peer a handler is given: `EventsSender::new(&mut conn).shown(..)`.
 //!
@@ -119,7 +174,7 @@ pub type Format = comline_runtime::format::Packed;
 
 /// Digest of every schema in the package — what a connection's handshake
 /// checks, so both ends agree on each protocol's number.
-pub const CONNECTION_IR_HASH: u64 = 0x1ad273c98d4e98fb;
+pub const CONNECTION_IR_HASH: u64 = 0x4d934c4e06a6f038;
 
 /// The framing the package's connection runs on (`datagram@3`).
 pub type Framing = comline_runtime::contract::Datagram3Framing;
@@ -128,32 +183,46 @@ pub type Framing = comline_runtime::contract::Datagram3Framing;
 /// return, written `Connection<Tcp>`: [`Format`] over [`Framing`].
 pub type Connection<T> = comline_runtime::connection::Connection<T, Format, Framing>;
 
+/// A protocol left out of [`Services`] or [`ClientServices`]: it isn't provided,
+/// and the `comline@2` Hello doesn't list it unless this end calls it.
+pub struct Absent;
+
+/// What the accepting side provides: one field per protocol. Every field is a
+/// protocol's implementation, or [`Absent`] to leave the protocol out;
+/// `Services::new()` has them all absent, and `with_<field>` provides one.
 pub struct Services<Chat> {
     pub chat: Chat,
 }
 
-pub struct ClientServices<Events> {
-    pub events: Events,
+impl Services<Absent> { pub fn new() -> Self { /* … */ } }
+
+impl<Chat> Services<Chat> {
+    pub fn with_chat<P: crate::snippet::Chat + 'static>(self, provider: P) -> Services<P> { /* … */ }
 }
 
-pub fn accept<T: Transport, Chat: crate::conformance::Chat + 'static>(transport: T, services: Services<Chat>) -> Result<Connection<T>, RuntimeError> { /* … */ }
+// ClientServices<Events>, the same for the protocols the dialling side provides.
 
-pub fn serve<T: Transport, Chat: crate::conformance::Chat + 'static>(transport: T, services: Services<Chat>) -> Result<(), RuntimeError> {
+pub fn accept<T: Transport, Chat: ProvideSnippetChat>(transport: T, services: Services<Chat>) -> Result<Connection<T>, RuntimeError> { /* … */ }
+
+pub fn serve<T: Transport, Chat: ProvideSnippetChat>(transport: T, services: Services<Chat>) -> Result<(), RuntimeError> {
     accept(transport, services)?.serve()
 }
 
-pub fn connect<T: Transport, Events: crate::conformance::Events + 'static>(transport: T, services: ClientServices<Events>) -> Result<Connection<T>, RuntimeError> { /* … */ }
+pub fn connect<T: Transport, Events: ProvideSnippetEvents>(transport: T, services: ClientServices<Events>) -> Result<Connection<T>, RuntimeError> { /* … */ }
 
 // Also here, for the `comline@2` handshake: `negotiated`, `warnings` and
-// `unavailable`, which read what it agreed, and `#[doc(hidden)]` `HELLO` and
-// `handshake()`.
+// `unavailable`, which read what it agreed, and `#[doc(hidden)]` `HEADER`
+// (the Hello up to its protocols), a `P_<PATH>` entry for each protocol (here
+// `P_SNIPPET_CHAT`) and `handshake(provided, called)`. `ProvideSnippetChat`
+// is the hidden trait `Services` bounds a field by: implemented for `Absent`, and
+// for whatever implements `Chat`.
 ```
 
 Each protocol's file has its trait, its sender, and the plumbing:
 
 ```rust
-// chat.rs (here, conformance.rs)
-pub const IR_HASH: u64 = 0x1ad273c98d4e98fb;
+// snippet.rs
+pub const IR_HASH: u64 = 0x4d934c4e06a6f038;
 
 #[doc(hidden)]
 pub use crate::connection::{CONNECTION_IR_HASH, Format};
@@ -178,7 +247,10 @@ impl<S: Chat> ChatDispatcher<S> {
     #[doc(hidden)]
     pub const PROTOCOL: ProtocolNumber = 0;
 
-    pub fn provide_on<T: Transport, W: WireFormat, F: ConnectionFraming>(self, conn: &mut Connection<T, W, F>)
+    /// Fails with `RuntimeError::Unavailable` when the connection ran a `comline@2`
+    /// handshake that didn't accept this protocol: the Hello didn't list it, or the
+    /// peer refused it. A connection opened without one accepts it.
+    pub fn provide_on<T: Transport, W: WireFormat, F: ConnectionFraming>(self, conn: &mut Connection<T, W, F>) -> Result<(), RuntimeError>
     where S: 'static { conn.provide(Self::PROTOCOL, self) }
 }
 
@@ -190,7 +262,7 @@ impl<'p, P: Peer> ChatSender<'p, P> {
     pub fn new(peer: &'p mut P) -> Self { /* … */ }
 
     pub fn send(&mut self, n: u32) -> Result<u32, CallError<ChatSendError>> {
-        crate::connection::check_call(&mut *self.0, Self::PROTOCOL, 0, "conformance::Chat", "send")?;
+        crate::connection::check_call(&mut *self.0, Self::PROTOCOL, 0, "snippet::Chat", "send")?;
         let (reply, fmt) = self.0.call(Self::PROTOCOL, Call::new(0, "send"), &ChatSendParams { n })?;
         // …
     }
@@ -206,7 +278,7 @@ connection [by hand](#by-hand), and `#[doc(hidden)]`, so it isn't in rustdoc:
 the `…Params` structs, the `…_CALLS` tables, the dispatchers (`Services` provides
 them on the connection, so you don't name one) and their `PROTOCOL` numbers.
 What rustdoc shows is the traits, the senders, `Services`, `ClientServices`,
-`accept`, `serve`, `connect`, `Connection<T>` and `Format`. With
+`Absent`, `accept`, `serve`, `connect`, `Connection<T>` and `Format`. With
 `datagram@2` and `comline@1`, the header is the same, there is no `Framing`, and
 `Connection<T>` is `Connection<T, Format>`.
 
@@ -237,20 +309,27 @@ the framing:
 
 ```rust
 use comline_runtime::contract::Datagram3Framing;
-use my_package::connection::{handshake, Format, CONNECTION_IR_HASH};
+use my_package::connection::{handshake, Format, CONNECTION_IR_HASH, P_SNIPPET_CHAT, P_SNIPPET_EVENTS};
 
-let mut hs = handshake();
+// This end provides `Chat` and calls `Events`: its Hello lists those two.
+let mut hs = handshake(&[P_SNIPPET_CHAT], &[P_SNIPPET_EVENTS]);
 let mut conn = comline_runtime::connection::Connection::accept_with(
     transport, Format::default(), Datagram3Framing, &mut hs, CONNECTION_IR_HASH,
 )?;
-ChatDispatcher(ChatImpl).provide_on(&mut conn);
+ChatDispatcher(ChatImpl).provide_on(&mut conn)?;
 conn.serve()?;                              // until the transport closes
 ```
 
+`handshake(provided, called)` builds the Hello from the `P_` entries of the
+protocols this end provides and the ones it calls, so a connection wired by
+hand lists what you tell it to. `provide_on` returns a `Result`: with
+`comline@2` it fails with `RuntimeError::Unavailable` for a protocol the
+handshake didn't accept, one this end's Hello didn't list or the peer refused.
 The package's `accept` also keeps what `comline@2` agreed in the connection's
 extensions, which `negotiated`, `warnings` and `unavailable` read, and each
 sender checks before it calls. Opened as above, a connection has nothing to
-check against, and every call goes. On `datagram@2` and `comline@1` the
+check against for calls, and every call goes. With no Hello at all
+(`comline@1`, `none`), `provide_on` takes any protocol. On `datagram@2` and `comline@1` the
 connection is simpler, and `Connection::accept(transport, Format::default(),
 CONNECTION_IR_HASH)` is all of it.
 
@@ -396,7 +475,7 @@ Protocols that aren't on a connection keep their blocking `Client` and
 
 ## Without generated code
 
-`Connection::provide(protocol, dispatcher)` registers any `Dispatch`. One
+`Connection::provide(protocol, dispatcher)` registers any `Dispatch`, and returns a `Result`: `Unavailable` for a protocol the `comline@2` handshake didn't accept. One
 that needs the peer implements `Dispatch::dispatch_with`, whose default
 calls `dispatch`. `Connection` implements `Peer`, whose `call`, `notify` and
 `call_with_timeout` take the protocol number. Underneath, `connection::State`
