@@ -14,7 +14,7 @@ flowchart LR
     TOML --> GEN
 ```
 
-| | [`config.idp`](idp.md) | [`comline.toml`](comline-toml.md) |
+| | [`config.idp`](manifest.md) | [`comline.toml`](user-configuration.md) |
 | --- | --- | --- |
 | Owner | the package author | whoever runs `comline generation` |
 | Says | what the package is: name, identity, languages it supports, dependencies, wire defaults, settings | where generated code goes, in what layout and mode, for which versions |

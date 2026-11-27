@@ -1,9 +1,11 @@
 """Lexer for Comline's `.ids` schema language.
 
-Token set follows `core/src/schema/idl/grammar.rs` (mirrored by
-`core/src/schema/idl/vocabulary.rs` for Rust-side consumers like the
-language server — this lexer can't depend on that crate directly, so it
-stays a manual mirror): keywords, the twelve primitive types, `///`
+Token set follows [`core/src/schema/idl/grammar.rs`](https://github.com/ComlineProject/core/blob/master/core/src/schema/idl/grammar.rs)
+(mirrored by [`core/src/schema/idl/vocabulary.rs`](https://github.com/ComlineProject/core/blob/master/core/src/schema/idl/vocabulary.rs)
+for Rust-side consumers like the language server.
+
+Since this lexer can't depend on that crate directly, its mirrored:
+keywords, the twelve primitive types, `///`
 docstrings vs. `//` comments, `@key=value` annotations, and the three
 literal forms (`"..."` strings, `f"..."` f-strings, bare integers).
 Booleans are lowercase `true`/`false`, same as `.idp` - both grammars
@@ -29,12 +31,12 @@ _KEYWORDS = (
     "import", "use", "self", "parent", "package", "as", "const", "type",
     "optional", "struct", "error", "enum", "settings", "validator",
     "validate", "assert", "and", "or", "protocol", "function", "union",
-    "for",
+    "for", "max",
 )
 
 _PRIMITIVES = (
-    "s8", "s16", "s32", "s64", "u8", "u16", "u32", "u64", "f32", "f64",
-    "bool", "string",
+    "s8", "s16", "s32", "s64", "s128", "u8", "u16", "u32", "u64", "u128", "f32", "f64",
+    "bool", "char", "string",
 )
 
 # Keywords that are immediately followed by the name they declare — matched

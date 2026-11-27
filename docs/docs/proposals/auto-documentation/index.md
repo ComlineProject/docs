@@ -58,7 +58,7 @@ IR", and it follows from the
 
 It is a tool a project opts into, not a step in the pipeline. Nothing here
 happens unless asked for. The consumer's
-[`comline.toml`](../../reference/package/comline-toml.md) owns the switches,
+[`comline.toml`](../../reference/package/user-configuration.md) owns the switches,
 the same way it already owns generation's output location, layout and mode.
 
 ## Decisions

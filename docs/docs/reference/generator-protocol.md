@@ -4,7 +4,7 @@ How the CLI talks to a code generator, and to a documentation renderer. For a
 walkthrough, see
 [Generators](../developer/extending/generators.md); to point a target at one, see
 the [CLI reference](tools/cli/index.md#commands) and
-[`comline.toml`](package/comline-toml.md#generator).
+[`comline.toml`](package/user-configuration.md#generator).
 
 The Rust definitions are in `codegen/src/protocol.rs` of the
 [generation](https://github.com/ComlineProject/generation) repository.

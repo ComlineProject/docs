@@ -1,5 +1,9 @@
 # Connections
 
+To be able to have multiple protocols running on a socket, know that both ends are talking the same
+protocols and that the protocol signatures are correct (through handshake), Comline generates some
+code that you can use.
+
 Every protocol runs on a
 [connection](../../guides/idl/protocol.md#calls-in-both-directions) unless it
 picks the lockstep `datagram` framing, in which case it gets a
@@ -25,9 +29,10 @@ protocol the server provides. Leaving one out doesn't compile.
 
 ### When they're generated
 
-`Services`, `ClientServices`, `accept`, `serve` and `connect` are generated
-when the package has one connection to serve, and left out otherwise. They're
-left out when:
+Snippets like `Services`, `ClientServices`, `accept`, `serve` and `connect` are
+generated when the package has one connection to serve, and left out otherwise.
+
+They **aren't generated** when:
 
 - **No protocol is on a connection.** That includes a package with no
   protocols at all. A protocol is on a connection when it uses `datagram@3`
@@ -52,41 +57,43 @@ schema files in `code` mode, so the path depends on where you mounted the
 generated files. Mounted as the crate's own modules it's `crate::connection`;
 under `mod generated;` it's `generated::connection`.
 
-```rust
-// `lib` mode
-use my_package::{connect, serve, ClientServices, Services};
-use my_package::chat::ChatSender;
+??? note "Using the generated code"
 
-// `code` mode, with the generated files as the crate's modules
-// use crate::connection::{connect, serve, ClientServices, Services};
-// use crate::chat::ChatSender;
+    ```rust
+    // `lib` mode
+    use my_package::{connect, serve, ClientServices, Services};
+    use my_package::chat::ChatSender;
 
-// The side that accepts: handshake, provide every protocol, serve until
-// the peer leaves.
-serve(transport, Services { chat: ChatImpl })?;
+    // `code` mode, with the generated files as the crate's modules
+    // use crate::connection::{connect, serve, ClientServices, Services};
+    // use crate::chat::ChatSender;
 
-// The side that dials: handshake, provide the client's protocols, and call
-// the server's through their senders.
-let mut conn = connect(transport, ClientServices { events: EventsImpl::default() })?;
-let sent = ChatSender::new(&mut conn).send(3)?;
-```
+    // The side that accepts: handshake, provide every protocol, serve until
+    // the peer leaves.
+    serve(transport, Services { chat: ChatImpl })?;
 
-- **`accept(transport, Services { .. })`** is `serve` without the serving: it
-  returns the connection, for a server that calls the client first or serves
-  one request at a time.
-- **`ClientServices`** holds the protocols the dialling side provides
-  (`@provider = Client` or `Multiple`). With none, there is no `ClientServices`
-  and `connect` takes only the transport.
-- **Field names** are the protocol's name in snake case
-  (`CharacterInventory` is `character_inventory`). Where two schemas declare
-  a protocol of the same name, both are prefixed with their namespace.
-- **The format** is the package's `Format`
-  ([Framing & wire format](framing-and-wire-format.md)), and the framing and
-  handshake are the protocols'. When the protocols on connections disagree
-  on either, no one connection carries them all, so these functions aren't
-  generated and `comline generation` warns why.
-- **A schema named `connection`** can't be used in `code` mode, since the
-  file would overwrite it.
+    // The side that dials: handshake, provide the client's protocols, and call
+    // the server's through their senders.
+    let mut conn = connect(transport, ClientServices { events: EventsImpl::default() })?;
+    let sent = ChatSender::new(&mut conn).send(3)?;
+    ```
+
+    - **`accept(transport, Services { .. })`** is `serve` without the serving: it
+      returns the connection, for a server that calls the client first or serves
+      one request at a time.
+    - **`ClientServices`** holds the protocols the dialling side provides
+      (`@provider = Client` or `Multiple`). With none, there is no `ClientServices`
+      and `connect` takes only the transport.
+    - **Field names** are the protocol's name in snake case
+      (`CharacterInventory` is `character_inventory`). Where two schemas declare
+      a protocol of the same name, both are prefixed with their namespace.
+    - **The format** is the package's `Format`
+      ([Framing & wire format](framing-and-wire-format.md)), and the framing and
+      handshake are the protocols'. When the protocols on connections disagree
+      on either, no one connection carries them all, so these functions aren't
+      generated and `comline generation` warns why.
+    - **A schema named `connection`** can't be used in `code` mode, since the
+      file would overwrite it.
 
 ## What codegen emits
 
@@ -280,7 +287,7 @@ pub type Connection<T> = comline_runtime::connection::Connection<T, comline_runt
 
 By hand, the rest of this page is unchanged:
 
-```rust
+```rust title="json_connection.rs"
 use comline_runtime::format::Json;
 use comline_runtime::framing::JsonRpcFraming;
 use comline_runtime::handshake::ComlineHandshake;
@@ -303,9 +310,13 @@ A JSON-RPC protocol that stays off a connection keeps its `Client` and
 `Server`: `RpcDispatcher(MyRpc).serve(&mut transport)` and
 `RpcClient::connect(transport)`, which encode JSON.
 
-## A handler calling back
+## Extensions (A handler calling back)
 
-```rust
+`Extensions` holds one value per type (`insert`, `get`, `get_mut`,
+`remove`). It belongs to the connection, so `Sent` counts this client's
+messages and no one else's.
+
+```rust title="chat_extensions.rs"
 struct Sent(u32);
 
 impl Chat for ChatImpl {
@@ -318,10 +329,6 @@ impl Chat for ChatImpl {
 }
 ```
 
-`Extensions` holds one value per type (`insert`, `get`, `get_mut`,
-`remove`). It belongs to the connection, so `Sent` counts this client's
-messages and no one else's.
-
 ## Threads
 
 A `Connection` is blocking and does one thing at a time. A request is
@@ -331,12 +338,12 @@ another task while the connection serves, generate for the async driver.
 
 ## Async
 
-With `async = true` in [`comline.toml`](../../reference/package/comline-toml.md#async),
+With `async = true` in [`comline.toml`](../../reference/package/user-configuration.md#async),
 connection protocols are generated for the runtime's `AsyncConnection`
 instead, on any executor. `Connection<T>` becomes `AsyncConnection<T, Format>`
 (over [`Framing`](#what-codegen-emits), where there is one):
 
-```rust
+```rust title="generated.rs"
 pub trait Chat: Send + Sync + 'static {
     fn send(&self, peer: &impl AsyncPeer, n: u32) -> impl ::core::future::Future<Output = Result<u32, Fault<ChatSendError>>> + Send;
 }

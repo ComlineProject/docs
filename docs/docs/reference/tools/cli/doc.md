@@ -40,7 +40,7 @@ reads it.
 
 `comline doc --open` is the same after a render, as `cargo doc --open` is.
 
-The `[doc]` keys are in [`comline.toml`](../../package/comline-toml.md#doc),
+The `[doc]` keys are in [`comline.toml`](../../package/user-configuration.md#doc),
 including `versions`, which trims the list of versions.
 
 ## Versions and paths

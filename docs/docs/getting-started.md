@@ -1,26 +1,5 @@
 # Getting started
 
-## Install
-
-`comline` isn't released on crates.io or as an OS package yet, so build it
-from source. You need a Rust toolchain ([rustup](https://rustup.rs/)) and
-`git`:
-
-```shell
-git clone https://github.com/ComlineProject/cli
-cd cli
-cargo install --path .
-```
-
-This puts the `comline` binary in `~/.cargo/bin`. Check it's on your `PATH`:
-
-```shell
-comline --help
-```
-
-`cargo install comline` and OS packages (Fedora, Arch, Windows, macOS) are
-planned; packaging is tracked in
-[`ComlineProject/distributions`](https://github.com/ComlineProject/distributions).
 
 ## Create a project
 
@@ -87,7 +66,7 @@ comline generation
 
 Targets come from `code_generation.languages` in `config.idp` (the scaffold
 declares `rust#1.85.0`, the Rust generator's floor); output lands under `generated/` by default. Change where
-and how in [`comline.toml`](reference/package/comline-toml.md):
+and how in [`comline.toml`](reference/package/user-configuration.md):
 
 ```toml title="comline.toml"
 [generate]
@@ -97,9 +76,16 @@ layout = "{{language}}/{{namespace}}.{{ext}}"
 
 Today `rust` and `typescript` are the generators.
 
-## Next
+## How to start
 
-- [Overview](guides/index.md) — the whole pipeline
-- [IDL guide](guides/idl/index.md) — the schema language
-- [Generating code](guides/codegen/generating-code.md) — the full `generation` surface
-- [CLI reference](reference/tools/cli/index.md) — every command and flag
+<div class="grid cards" markdown>
+
+- **[:material-web:{ .big-icon } Tutorial](https://comlineproject.github.io/tutorial/):** Learn in the website with interactive lessons
+
+- **[:material-book-open-page-variant:{ .big-icon } Reading Guides](guides/index.md):** Read guides and documentation to get some notions of aspects
+
+- **[:material-laptop:{ .big-icon } Sketch Locally](setting-up.md):** Get the CLI and/or extension for your editor and try out
+
+</div>
+
+

@@ -117,7 +117,7 @@ Semver for a user's schema package means nothing until a break is defined.
       corpus and ops protocol;
     - the documentation model behind [`comline doc`](../reference/tools/cli/doc.md)
       (version 1 today);
-    - the [`comline.toml` schema](../reference/package/comline-toml.md)
+    - the [`comline.toml` schema](../reference/package/user-configuration.md)
       (`0.x` today);
     - the JSON from [`comline inspect --json`](../reference/tools/cli/inspect.md).
 - The extension API is part of 1.0, so it is designed, built and frozen

@@ -1,9 +1,10 @@
-# TypeScript
+<!--
+---
+icon: simple/typescript
+---
+-->
 
-Status: shipped. `comline-codegen-typescript` generates `code` mode (plain
-source files) and `lib` mode (an npm package); see [Library
-generation](../../guides/codegen/library-generation.md). Generated code
-depends on **`@comline/runtime`** (MPL-2.0, ESM, Node).
+# TypeScript
 
 Not published to npm yet. Depend on it from a git checkout or workspace
 reference until it is; `comline-codegen-typescript`'s own pin on the
@@ -50,12 +51,11 @@ call.
 
 ## The mirror fact to Rust's
 
-Where the Rust runtime is sync and blocking by design, the TypeScript
-runtime is **async/`Promise`-based throughout** — `Client.connect`,
-`client.call`, `Server.serve`, every generated method. There's no sync
+Where the Rust runtime can choose to be sync or async by design, the TypeScript
+runtime is **async/`Promise`-based throughout**,
+`Client.connect`, `client.call`, `Server.serve`, every generated method. There's no sync
 mode, so there's no equivalent of the Rust guide's concurrency page: using
-it from async code is simply using it as it's already written, with
-`await`.
+it from async code is simply using it as it's already written, with `await`.
 
 ## On the shared core
 
@@ -66,7 +66,7 @@ to a `runtime` revision by `scripts/vendor-core.sh`
 ([ts#87](https://github.com/ComlineProject/comline-typescript/pull/87)).
 
 | Runs on the core, once it has loaded | Stays in TypeScript |
-|---|---|
+|                          ---         |          ---        |
 | `nameHash` and the `comline@1` handshake frames | The read loop, scheduling and dispatch |
 | With a built-in framing (`Datagram2Framing`, `JsonRpcConnectionFraming`): framing, request ids and waiting state, in `Connection` ([ts#89](https://github.com/ComlineProject/comline-typescript/pull/89)) | Custom framings, and everything when the core can't load (a strict CSP, say) |
 | | Codecs, generated types, transports and the `Handshake` plug-in |
@@ -89,7 +89,7 @@ median of 5. They are not a CI gate; see
 [how JavaScript is checked](../../proposals/shared-runtime-core/verification.md#how-javascript-is-checked).
 
 | Workload | TypeScript | Core | Change |
-|---|---:|---:|---:|
+|    ---   |    ---:    | ---: |  ---:  |
 | `datagram@2` round trip, 16 B | 44,902 | 42,072 | -6.3% |
 | `datagram@2` round trip, 4096 B | 74,892 | 59,105 | -21.1% |
 | `jsonrpc@1` round trip, 16 B | 189,461 | 54,782 | -71.1% |

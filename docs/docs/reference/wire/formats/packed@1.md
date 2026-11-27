@@ -12,11 +12,11 @@ declared, it's this one.
 ## Layout
 
 | Type | Bytes |
-| --- | --- |
+| ---  | ---   |
 | [`#!ids bool`](../../package/schema/types.md#bool) | 1 byte: `00` or `01`; anything else is an error |
 | [`#!ids u8 u16 u32 u64 u128`](../../package/schema/types.md#unsigned) | 1, 2, 4, 8, 16 bytes, little-endian |
 | [`#!ids s8 s16 s32 s64 s128`](../../package/schema/types.md#signed) | 1, 2, 4, 8, 16 bytes, little-endian two's complement |
-| [`#!ids f32 f64`](../../package/schema/types.md#floats) | 4, 8 bytes, IEEE 754 little-endian |
+| [`#!ids f32 f64`](../../package/schema/types.md#floats) | 4, 8 bytes, [IEEE 754](https://en.wikipedia.org/wiki/IEEE_754) little-endian |
 | [`#!ids char`](../../package/schema/types.md#char) | its UTF-8 bytes alone, 1 to 4, no length: the first byte says how many follow |
 | [`#!ids string` `#!ids char[max N]` `#!ids char[N]`](../../package/schema/types.md#text-string-and-char) | length in bytes as a varint, then that many bytes of UTF-8 (invalid UTF-8 is an error). An array of `char` is always text, so `char[N]` sends its length too |
 | `T[]`, `T[max N]` | element count as a varint, then the elements |
@@ -117,6 +117,7 @@ That's 19 bytes. The same value in `json@1` is 73.
 
 - **Major:** adding, removing or reordering fields (an optional one included),
   or reordering enum variants or union members.
+  
 - **Minor:** appending an enum variant. An old peer can't decode the new one,
   so don't send it to one.
 
@@ -137,3 +138,8 @@ Changing a package's `wire.format` is itself a major change.
   pin each type's bytes and each decoding error, a single `char`, and each
   bound at and over its limit. Both runtimes pass them; see
   [Runtimes side by side](../../languages/index.md#runtimes-side-by-side).
+
+
+## Facts
+
+The vectors can be found at [vectors/format-packed.json](https://github.com/ComlineProject/runtime/blob/main/runtime/conformance/spec/vectors/format-packed.json).

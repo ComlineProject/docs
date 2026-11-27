@@ -396,7 +396,7 @@ Nothing is built; this lists where each option would reach.
   declaration, and for each set's members.
 - **docs:** the Rust and TypeScript connections guides, the
   [packages guide](../../guides/packages/index.md), the
-  [`config.idp`](../../reference/package/idp.md) or
-  [`comline.toml`](../../reference/package/comline-toml.md) reference (and its JSON Schema),
+  [`config.idp`](../../reference/package/manifest.md) or
+  [`comline.toml`](../../reference/package/user-configuration.md) reference (and its JSON Schema),
   the [`comline@2`](../../reference/wire/handshakes/comline@2.md) page on what a Hello
   lists, and this proposal's status.

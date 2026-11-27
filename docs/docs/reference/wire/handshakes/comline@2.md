@@ -168,7 +168,7 @@ because it lacks the function or because the protocol was refused.
 ## Proven by
 
 The `handshake-comline2` vectors in the runtime's corpus
-([vectors](https://github.com/ComlineProject/runtime/tree/main/runtime/conformance/vectors)):
+([vectors](https://github.com/ComlineProject/runtime/tree/main/runtime/conformance/spec/vectors)):
 
 - every message type, with byte-exact encodings and malformed variants;
 - every step of both exchanges under every parameter value;

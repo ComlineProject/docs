@@ -23,10 +23,10 @@ form is accepted: `80 00` for 0 is refused, and so is a value above 65535.
 A reply's outcome, the same in both framings:
 
 | Outcome | Bytes |
-| --- | --- |
-| ok | `00`, then the result |
-| error | `01`, the error's ordinal (`u16` LE), then its body |
-| fault | `02` |
+|   ---   |  ---  |
+| ok      | `00`, then the result |
+| error   | `01`, the error's ordinal (`u16` LE), then its body |
+| fault   | `02`  |
 
 ## Proven by
 
@@ -35,3 +35,4 @@ The byte-exact vectors in the runtime's corpus:
 ([vectors](https://github.com/ComlineProject/runtime/tree/main/runtime/conformance/vectors)).
 These include rejections: an unknown kind, overlong or out-of-range
 numbers, a short request, and a reply read as a request.
+

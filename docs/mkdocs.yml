@@ -5,6 +5,7 @@ nav:
   - Home:
     - Welcome to Comline: 'index.md'
     - Getting started: 'getting-started.md'
+    - Setting up locally: 'setting-up.md'
   
   - Guides:
     - Overview: 'guides/index.md'
@@ -74,13 +75,13 @@ nav:
 
     - Package:
         - "reference/package/index.md"
-        - 'reference/package/idp.md'
-        - 'reference/package/comline-toml.md'
+        - 'reference/package/manifest.md'
+        - 'reference/package/user-configuration.md'
 
         - Schema:
           - 'reference/package/schema/index.md'
           - Types: 'reference/package/schema/types.md'
-
+          
           # std:start
           - Standard library:
             - std: 'reference/package/schema/std/index.md'
@@ -98,14 +99,14 @@ nav:
       - 'reference/wire/index.md'
       - Framings:
         - 'reference/wire/framings/index.md'
-        - datagram@3: 'reference/wire/framings/datagram@3.md'
-        - datagram@2: 'reference/wire/framings/datagram@2.md'
-        - datagram@1: 'reference/wire/framings/datagram@1.md'
+        - 'reference/wire/framings/datagram@1.md'
+        - 'reference/wire/framings/datagram@2.md'
+        - 'reference/wire/framings/datagram@3.md'
 
       - Handshakes:
         - 'reference/wire/handshakes/index.md'
-        - comline@2: 'reference/wire/handshakes/comline@2.md'
-        - comline@1: 'reference/wire/handshakes/comline@1.md'
+        - 'reference/wire/handshakes/comline@1.md'
+        - 'reference/wire/handshakes/comline@2.md'
 
       - Formats:
         - 'reference/wire/formats/index.md'
@@ -270,7 +271,7 @@ nav:
       - 'Import formatting': 'proposals/use-paths-and-groups/import-formatting.md'
 
 extra_css:
-  - stylesheets/nav.css?v=23   # bump on every nav.css change — it is not cache-busted otherwise
+  - stylesheets/nav.css?v=24   # bump on every nav.css change — it is not cache-busted otherwise
 
 theme:
   name: material
@@ -326,12 +327,25 @@ extra:
     default: stable
 
 markdown_extensions:
+  - abbr
+  - footnotes
+  - attr_list
+  - admonition
+  - md_in_html
+
+  - toc:
+      permalink: ⚓︎
+  
   - pymdownx.highlight:
       anchor_linenums: true
-
+  
   - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - admonition
+  - pymdownx.details
+  - pymdownx.mark
+
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
 
   - pymdownx.arithmatex:
       generic: true
@@ -342,20 +356,15 @@ markdown_extensions:
         kwds:
           case: lower
 
-  - footnotes
-  - pymdownx.details
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
-  - pymdownx.mark
-  - attr_list
 
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-
 
 copyright: |
   &copy; 2023&ndash;present <a href="https://github.com/ComlineProject/"  target="_blank" rel="noopener">Comline</a> &middot;
