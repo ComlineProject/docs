@@ -200,10 +200,10 @@ to [core#277](https://github.com/ComlineProject/core/issues/277) and
   IDL, a world-like declaration) and prior art from protoc, gRPC, Thrift,
   Cap'n Proto, Smithy, WIT and FIDL. Develops the declared set that
   [Connections](connections.md#several-protocols-on-one-connection) left
-  unbuilt. *smaller step accepted (2026-11-15) and built (2026-11-27), sets designed and
-  deferred: a Hello built from what is provided, and `Services` that take a
-  subset; an `@connection` annotation, package-owned, a constraint, when sets are
-  needed.*
+  unbuilt. *smaller step accepted (2026-11-15) and built (2026-11-27), sets taken up
+  2026-11-27 and being built (epic core#300): a Hello built from what is provided,
+  and `Services` that take a subset; an `@connection` annotation, package-owned, a
+  constraint, with per-set encodings in a `connections` table in `config.idp`.*
 
 #### [A dependency's protocols on a connection](dependency-protocols/index.md)
 

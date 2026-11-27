@@ -1,8 +1,9 @@
 # Named connections
 
-Status: **the smaller step is built; sets are designed and deferred** (accepted 2026-11-15,
-built 2026-11-27) · the user's [answers](#answers-so-far) shape the design of sets, and [the decision](#decided)
-says what is built now · the [original questions](#open-questions) stay at the end
+Status: **the smaller step is built; sets are being built** (accepted 2026-11-15, smaller step
+built 2026-11-27, sets taken up 2026-11-27, epic [core#300](https://github.com/ComlineProject/core/issues/300)) ·
+the user's [answers](#answers-so-far) are the design, and [the decision](#decided) says what
+was built first and why sets followed · the [original questions](#open-questions) stay at the end
 
 **The question.** A package gets exactly one connection: one `Services`, one
 `ClientServices`, one `accept`, `serve` and `connect`, and one `Connection<T>`, however many
@@ -134,7 +135,7 @@ extend it later, or Option 0 could stay as the rule and nothing be added.
 ## Answers so far
 
 Given by the user on 2026-11-15, numbered as the [open questions](#open-questions). They
-shape the design; they are the design sets will be built to, when [they are](#decided).
+are the design sets are [being built](#decided) to; the last four are from 2026-11-27.
 
 1. **An annotation on the protocol (Option 2):** `@connection = "admin"`, or a list
    (`@connection = ["admin", "public"]`), which annotation values already allow
@@ -164,12 +165,14 @@ shape the design; they are the design sets will be built to, when [they are](#de
     - `@connection` on a protocol that runs on no connection (lockstep `datagram`, a
       server-only JSON-RPC protocol off the connection) is an error.
     - **No setting to forbid sets.** Where sets can't work is derived from the encodings'
-      facts instead (answer 11); a lint for organisations that want none can come later.
+      facts instead (answer 11); a lint for organisations that want none can come later
+      (it came, with no new key: answer 16).
 6. **A protocol may be in several sets** (a health check in every application's).
 7. **Each set's encodings are checked on their own, and a set may state its own.** The
    framing and handshake check runs per set. `config.idp` may override `wire` per set, in its
    dictionary form keyed by the set's name (its grammar has no list values, and needs none
-   for this), defaulting to the package's `wire`. A member's own `@framing` and `@handshake`
+   for this), defaulting to the package's `wire` (made concrete, with the handshake per set,
+   by answer 16). A member's own `@framing` and `@handshake`
    must agree with its set's; a protocol in two sets whose framings differ can't pin
    `@framing` itself. A format per set is new (the format is package-wide today), and both
    generators already allow it: Rust's generated types are format-independent through
@@ -219,6 +222,31 @@ shape the design; they are the design sets will be built to, when [they are](#de
     generators, the CLI and language server, and the docs. Nothing waits on `comline@3`
     except answer 8.
 
+Given on 2026-11-27, when sets were taken up:
+
+16. **Per-set encodings live only in a top-level `connections` table in `config.idp`:**
+    ```
+    connections = {
+        admin = { wire = { format = "packed@1" framing = "datagram@3" } handshake = { name = "comline@2" } }
+    }
+    ```
+    Anything a set doesn't state comes from the package's `wire` and `handshake`. This makes
+    answer 7's dictionary form keyed by the set's name concrete, and adds the handshake per
+    set. Settings blocks stay authoring policy: `annotations.connection.allowed = false` in
+    one forbids sets, with no new key. That is the lint for organisations that want none,
+    which answer 5 left for later.
+17. **Set names are lowercase `snake_case`.** A keyword of any target and the connection
+    module's own item names (`serve`, `connect`, `accept`, `services`, ...) are refused, with
+    an error that says why: a set's name is a generated module's name.
+18. **Set membership is recorded in the frozen IR,** so compat can apply answer 9's rules. It
+    is an IR format change under [core#268](https://github.com/ComlineProject/core/issues/268),
+    riding with provenance ([core#283](https://github.com/ComlineProject/core/issues/283)) in
+    format 4 or 5, whichever is ready. A package with no annotation hashes as today.
+19. **Narrowing what a side calls stays separate from sets.** It is
+    [comline-rust#141](https://github.com/ComlineProject/comline-rust/issues/141) and
+    [comline-typescript#180](https://github.com/ComlineProject/comline-typescript/issues/180),
+    and isn't folded into this.
+
 ### Decided
 
 - **Whether sets are worth building, or a smaller step is enough.** Raised while answering
@@ -255,11 +283,20 @@ shape the design; they are the design sets will be built to, when [they are](#de
       default: the peer refuses those it doesn't have). A connection then carries exactly
       what its Hello lists, enforced as [answer 4](#answers-so-far) says. It is designed so
       sets can build on it without throwing anything away.
-    - **Sets are not built now.** Their design (the answers above) stays recorded, to be
-      taken up when per-application encodings or named entry points are actually needed.
-      Until then, several applications are separate packages sharing a package they depend
-      on ([Option 0](options.md#option-0-status-quo)), which also keeps an admin package
-      private.
+    - **Sets were not built then, and were taken up on 2026-11-27.** The reasoning at the
+      time: their design (the answers above) stays recorded, to be taken up when
+      per-application encodings or named entry points are actually needed; until then,
+      several applications are separate packages sharing a package they depend on
+      ([Option 0](options.md#option-0-status-quo)), which also keeps an admin package
+      private. They are being built now, to the answers above, under the epic
+      [core#300](https://github.com/ComlineProject/core/issues/300): [specification#21](https://github.com/ComlineProject/specification/issues/21)
+      (the conformance cases first), [core#301](https://github.com/ComlineProject/core/issues/301),
+      [core#302](https://github.com/ComlineProject/core/issues/302),
+      [generation#161](https://github.com/ComlineProject/generation/issues/161),
+      [comline-rust#142](https://github.com/ComlineProject/comline-rust/issues/142),
+      [comline-typescript#181](https://github.com/ComlineProject/comline-typescript/issues/181),
+      [language-server#128](https://github.com/ComlineProject/language-server/issues/128) and
+      [docs#197](https://github.com/ComlineProject/docs/issues/197).
 
     **Settled with it (2026-11-15), from a review of the smaller step:**
 
