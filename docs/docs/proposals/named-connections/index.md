@@ -135,7 +135,7 @@ extend it later, or Option 0 could stay as the rule and nothing be added.
 ## Answers so far
 
 Given by the user on 2026-11-15, numbered as the [open questions](#open-questions). They
-are the design sets are [being built](#decided) to; the last seven are from 2026-11-27.
+are the design sets are [being built](#decided) to; the last eight are from 2026-11-27.
 
 1. **An annotation on the protocol (Option 2):** `@connection = admin`, or a list
    (`@connection = [admin, public]`), which annotation values already allow
@@ -198,9 +198,11 @@ are the design sets are [being built](#decided) to; the last seven are from 2026
     would refuse every set: a package on them can't declare sets. The rule comes from the
     encodings' facts ([Part 1](../dependency-protocols/capabilities.md)), not from a setting;
     answer 20 states it.
-12. **A module per set under `connection`:** `connection::admin::{Services, ClientServices,
-    accept, serve, connect, Connection, Framing, Format}`, and the same layout in
-    TypeScript. The default connection stays at `connection::` itself.
+12. **A module per set, named after the set with "connection":** `admin_connection::{Services,
+    ClientServices, accept, serve, connect, Connection, Framing, Format}`, beside the schema
+    modules, and the same layout in TypeScript (`import { admin_connection } from "my-package"`).
+    The default connection stays at `connection::` itself. *Revised 2026-11-27 (answer 23);
+    it was `connection::admin::`.*
 13. **Rules follow the framing's facts, scoped to a set.** The page states the facts rather
     than "JSON-RPC":
     - **A framing that addresses calls by name** (JSON-RPC's method, not a protocol number)
@@ -237,9 +239,10 @@ Given on 2026-11-27, when sets were taken up:
     set. Settings blocks stay authoring policy: `annotations.connection.allowed = false` in
     one forbids sets, with no new key. That is the lint for organisations that want none,
     which answer 5 left for later.
-17. **Set names are lowercase `snake_case`.** A keyword of any target and the connection
-    module's own item names (`serve`, `connect`, `accept`, `services`, ...) are refused, with
-    an error that says why: a set's name is a generated module's name.
+17. **Set names are lowercase `snake_case`.** Nothing else about the word is refused: a
+    keyword of any language is a fine set name, since the generated name always has
+    "connection" after it (answer 23). *Revised 2026-11-27; it refused every target's
+    keywords and the connection module's item names.*
 18. **Set membership is recorded in the frozen IR,** so compat can apply answer 9's rules. It
     is an IR format change under [core#268](https://github.com/ComlineProject/core/issues/268),
     riding with provenance ([core#283](https://github.com/ComlineProject/core/issues/283)) in
@@ -260,8 +263,9 @@ Given on 2026-11-27, when sets were taken up:
 21. **Diagnostic codes, all errors:**
     - `connection::unassigned`: a protocol on a connection is in no set, once one is annotated;
     - `connection::not-on-a-connection`: `@connection` on a protocol that runs on no connection;
-    - `connection::bad-set-name`: not lowercase `snake_case`, a keyword, or one of the
-      connection module's item names (answer 17);
+    - `connection::bad-set-name`: not lowercase `snake_case` (answer 17);
+    - `connection::name-taken`: the set's generated name is already a name in the package,
+      a schema named `<set>_connection` or a protocol named `<Set>Connection` (answer 23);
     - `connection::unsupported-encoding`: the set's encodings can't have sets (answer 20);
     - `connection::encoding-mismatch`: a member's own `@framing` or `@handshake` disagrees with
       its set's, or a protocol in two sets whose encodings differ pins one of its own
@@ -281,6 +285,19 @@ Given on 2026-11-27, when sets were taken up:
     A quoted name (`@connection = "admin"`) or any other value is the annotation-value
     error (`validation::annotation-value-mismatch`). A protocol in a set is that set's
     **member**.
+23. **Generated code names a set `<set>` with "connection" after it, in the language's own
+    casing, and never escapes it:** `public_connection` in Rust, TypeScript, Python and Lua,
+    `PublicConnection` in Go, Java, Kotlin, C# and Swift, `<package>_public_connection_` as a
+    C prefix. Tried with the compilers before deciding: a bare set name breaks in TypeScript
+    (`export * as public` is refused before TypeScript 5.6, and the generated code supports
+    5.0), clashes with a shared function (`warnings`) or is hidden by a schema of the same name
+    at the package root; in Rust it needs `r#loop`; in Java a package segment can't be
+    `public`; and in the PascalCase languages set `admin` would clash with protocol `Admin`.
+    Every language has keywords of its own, so a list of them in core would grow with every
+    generator. With the suffix no keyword can be hit, the name says what it is at the import
+    site (a "set" would read as a collection type in Java, C# or Swift), and core keeps no
+    keyword list: it only refuses a set whose generated name is already taken
+    (`connection::name-taken`).
 
 ### Decided
 
