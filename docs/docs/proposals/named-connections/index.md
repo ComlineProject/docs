@@ -1,8 +1,9 @@
 # Named connections
 
-Status: **the smaller step is built; sets are designed and deferred** (accepted 2026-11-15,
-built 2026-11-27) · the user's [answers](#answers-so-far) shape the design of sets, and [the decision](#decided)
-says what is built now · the [original questions](#open-questions) stay at the end
+Status: **the smaller step is built; sets are being built** (accepted 2026-11-15, smaller step
+built 2026-11-27, sets taken up 2026-11-27, epic [core#300](https://github.com/ComlineProject/core/issues/300)) ·
+the user's [answers](#answers-so-far) are the design, and [the decision](#decided) says what
+was built first and why sets followed · the [original questions](#open-questions) stay at the end
 
 **The question.** A package gets exactly one connection: one `Services`, one
 `ClientServices`, one `accept`, `serve` and `connect`, and one `Connection<T>`, however many
@@ -134,10 +135,10 @@ extend it later, or Option 0 could stay as the rule and nothing be added.
 ## Answers so far
 
 Given by the user on 2026-11-15, numbered as the [open questions](#open-questions). They
-shape the design; they are the design sets will be built to, when [they are](#decided).
+are the design sets are [being built](#decided) to; the last seven are from 2026-11-27.
 
-1. **An annotation on the protocol (Option 2):** `@connection = "admin"`, or a list
-   (`@connection = ["admin", "public"]`), which annotation values already allow
+1. **An annotation on the protocol (Option 2):** `@connection = admin`, or a list
+   (`@connection = [admin, public]`), which annotation values already allow
    (`@validators = [...]`). No block, no manifest table.
 2. **The name is `connection`:** the annotation, the generated module and the docs share it.
 3. **The package owns the declaration.** A set changes what its Hello lists, which is part
@@ -164,12 +165,14 @@ shape the design; they are the design sets will be built to, when [they are](#de
     - `@connection` on a protocol that runs on no connection (lockstep `datagram`, a
       server-only JSON-RPC protocol off the connection) is an error.
     - **No setting to forbid sets.** Where sets can't work is derived from the encodings'
-      facts instead (answer 11); a lint for organisations that want none can come later.
+      facts instead (answer 11); a lint for organisations that want none can come later
+      (it came, with no new key: answer 16).
 6. **A protocol may be in several sets** (a health check in every application's).
 7. **Each set's encodings are checked on their own, and a set may state its own.** The
    framing and handshake check runs per set. `config.idp` may override `wire` per set, in its
    dictionary form keyed by the set's name (its grammar has no list values, and needs none
-   for this), defaulting to the package's `wire`. A member's own `@framing` and `@handshake`
+   for this), defaulting to the package's `wire` (made concrete, with the handshake per set,
+   by answer 16). A member's own `@framing` and `@handshake`
    must agree with its set's; a protocol in two sets whose framings differ can't pin
    `@framing` itself. A format per set is new (the format is package-wide today), and both
    generators already allow it: Rust's generated types are format-independent through
@@ -186,13 +189,15 @@ shape the design; they are the design sets will be built to, when [they are](#de
 10. **A set's Hello lists only its members.** The handshake's guarantee is per protocol (line
     and shape hash), and a subset keeps it. **Noted gap:** the set's name isn't on the wire.
     A client of `admin` that reaches the `public` endpoint gets a connection carrying only
-    what the two share (the health check), with the rest `Unavailable`; under
-    `scope = package` it is refused whole. Carrying the set's name in the Hello, for a clear
-    refusal, is a `comline@3` matter, not a blocker.
+    what the two share (the health check), with the rest `Unavailable`, under either `scope`:
+    [`unknown_protocol` never refuses more than its protocol](../../reference/wire/handshakes/comline@2.md).
+    Carrying the set's name in the Hello, for a clear refusal, is a `comline@3` matter, not a
+    blocker.
 11. **Sets need a handshake that compares protocol by protocol.** `comline@1` with
     `datagram@2` numbers protocols by position and hashes every schema, so a change in one set
     would refuse every set: a package on them can't declare sets. The rule comes from the
-    encodings' facts ([Part 1](../dependency-protocols/capabilities.md)), not from a setting.
+    encodings' facts ([Part 1](../dependency-protocols/capabilities.md)), not from a setting;
+    answer 20 states it.
 12. **A module per set under `connection`:** `connection::admin::{Services, ClientServices,
     accept, serve, connect, Connection, Framing, Format}`, and the same layout in
     TypeScript. The default connection stays at `connection::` itself.
@@ -218,6 +223,64 @@ shape the design; they are the design sets will be built to, when [they are](#de
 15. **The house order:** the specification's cases first, then core, generation, the two
     generators, the CLI and language server, and the docs. Nothing waits on `comline@3`
     except answer 8.
+
+Given on 2026-11-27, when sets were taken up:
+
+16. **Per-set encodings live only in a top-level `connections` table in `config.idp`:**
+    ```
+    connections = {
+        admin = { wire = { format = "packed@1" framing = "datagram@3" } handshake = { name = "comline@2" } }
+    }
+    ```
+    Anything a set doesn't state comes from the package's `wire` and `handshake`. This makes
+    answer 7's dictionary form keyed by the set's name concrete, and adds the handshake per
+    set. Settings blocks stay authoring policy: `annotations.connection.allowed = false` in
+    one forbids sets, with no new key. That is the lint for organisations that want none,
+    which answer 5 left for later.
+17. **Set names are lowercase `snake_case`.** A keyword of any target and the connection
+    module's own item names (`serve`, `connect`, `accept`, `services`, ...) are refused, with
+    an error that says why: a set's name is a generated module's name.
+18. **Set membership is recorded in the frozen IR,** so compat can apply answer 9's rules. It
+    is an IR format change under [core#268](https://github.com/ComlineProject/core/issues/268),
+    riding with provenance ([core#283](https://github.com/ComlineProject/core/issues/283)) in
+    format 4 or 5, whichever is ready. A package with no annotation hashes as today.
+19. **Narrowing what a side calls stays separate from sets.** It is
+    [comline-rust#141](https://github.com/ComlineProject/comline-rust/issues/141) and
+    [comline-typescript#180](https://github.com/ComlineProject/comline-typescript/issues/180),
+    and isn't folded into this.
+20. **Sets need a handshake that compares protocol by protocol and a framing whose protocol
+    numbers don't depend on position:** today `comline@2` or later with `datagram@3`. These
+    can't have sets:
+    - `comline@1`, with any framing: it hashes the whole schema;
+    - `datagram@2`, with any handshake: it numbers protocols by position;
+    - `none`: no Hello, so nothing enforces the set.
+
+    JSON-RPC connections run `comline@1`, so they can't have sets yet, and answer 13's
+    by-name rule can't arise until they can.
+21. **Diagnostic codes, all errors:**
+    - `connection::unassigned`: a protocol on a connection is in no set, once one is annotated;
+    - `connection::not-on-a-connection`: `@connection` on a protocol that runs on no connection;
+    - `connection::bad-set-name`: not lowercase `snake_case`, a keyword, or one of the
+      connection module's item names (answer 17);
+    - `connection::unsupported-encoding`: the set's encodings can't have sets (answer 20);
+    - `connection::encoding-mismatch`: a member's own `@framing` or `@handshake` disagrees with
+      its set's, or a protocol in two sets whose encodings differ pins one of its own
+      (answer 7). A handshake agrees when its name and its wire parameters (`exchange`)
+      match; its policy parameters (`scope`, `newer_consumer`, `same_version_differs`)
+      may differ per member, since each end applies them per protocol;
+    - `connection::unknown-set`: a `connections` table entry names a set no protocol is in;
+    - `connection::duplicate-set`: a set name repeated in one `@connection` list;
+    - `connection::empty-list`: `@connection = []` is refused; a protocol in one set is just a
+      name, a list is for several sets.
+
+    A forbidden annotation (answer 16) reuses `settings::forbidden`. The cases are in
+    [specification#22](https://github.com/ComlineProject/specification/issues/22) (spec 0.13).
+22. **A set is named by a bare identifier, never a string:** `@connection = admin`,
+    `@connection = [admin, public]`, as `@settings = Strict` names a preset. A list's items
+    are bare names in the annotation grammar already, and a set name becomes a module name.
+    A quoted name (`@connection = "admin"`) or any other value is the annotation-value
+    error (`validation::annotation-value-mismatch`). A protocol in a set is that set's
+    **member**.
 
 ### Decided
 
@@ -255,11 +318,20 @@ shape the design; they are the design sets will be built to, when [they are](#de
       default: the peer refuses those it doesn't have). A connection then carries exactly
       what its Hello lists, enforced as [answer 4](#answers-so-far) says. It is designed so
       sets can build on it without throwing anything away.
-    - **Sets are not built now.** Their design (the answers above) stays recorded, to be
-      taken up when per-application encodings or named entry points are actually needed.
-      Until then, several applications are separate packages sharing a package they depend
-      on ([Option 0](options.md#option-0-status-quo)), which also keeps an admin package
-      private.
+    - **Sets were not built then, and were taken up on 2026-11-27.** The reasoning at the
+      time: their design (the answers above) stays recorded, to be taken up when
+      per-application encodings or named entry points are actually needed; until then,
+      several applications are separate packages sharing a package they depend on
+      ([Option 0](options.md#option-0-status-quo)), which also keeps an admin package
+      private. They are being built now, to the answers above, under the epic
+      [core#300](https://github.com/ComlineProject/core/issues/300): [specification#21](https://github.com/ComlineProject/specification/issues/21)
+      (the conformance cases first), [core#301](https://github.com/ComlineProject/core/issues/301),
+      [core#302](https://github.com/ComlineProject/core/issues/302),
+      [generation#161](https://github.com/ComlineProject/generation/issues/161),
+      [comline-rust#142](https://github.com/ComlineProject/comline-rust/issues/142),
+      [comline-typescript#181](https://github.com/ComlineProject/comline-typescript/issues/181),
+      [language-server#128](https://github.com/ComlineProject/language-server/issues/128) and
+      [docs#197](https://github.com/ComlineProject/docs/issues/197).
 
     **Settled with it (2026-11-15), from a review of the smaller step:**
 
@@ -379,7 +451,7 @@ the detail behind each one.
 
 ## What it touches
 
-Nothing is built; this lists where each option would reach.
+The smaller step is built and sets are being built under [core#300](https://github.com/ComlineProject/core/issues/300); this lists where each option would reach.
 
 - **core:** the declaration (a manifest key, a block, or an annotation), its parsing and
   validation, the encoding check applied per set (the compiler's check of which encodings may

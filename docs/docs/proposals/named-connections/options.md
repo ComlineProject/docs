@@ -199,10 +199,10 @@ framework, with a frozen copy of the format, a migration step and its fixtures.
 ### 2b: an annotation on each protocol
 
 ```ids
-@connection = ["public", "admin"]
+@connection = [public, admin]
 protocol Health { function ping(); }
 
-@connection = "admin"
+@connection = admin
 protocol Admin { function refund(id: OrderId); }
 ```
 
