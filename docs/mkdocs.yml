@@ -197,6 +197,7 @@ nav:
     - Project dashboard: 'proposals/project-dashboard.md'
     - Schema compatibility: 'proposals/schema-compatibility.md'
     - Language target versions: 'proposals/target-versions.md'
+    - Dependency pins in generated code: 'proposals/dependency-pins.md'
     - Extending the call system: 'proposals/extensibility.md'
     - Connections: 'proposals/connections.md'
     - Dependency protocols:
