@@ -135,10 +135,10 @@ extend it later, or Option 0 could stay as the rule and nothing be added.
 ## Answers so far
 
 Given by the user on 2026-11-15, numbered as the [open questions](#open-questions). They
-are the design sets are [being built](#decided) to; the last four are from 2026-11-27.
+are the design sets are [being built](#decided) to; the last seven are from 2026-11-27.
 
-1. **An annotation on the protocol (Option 2):** `@connection = "admin"`, or a list
-   (`@connection = ["admin", "public"]`), which annotation values already allow
+1. **An annotation on the protocol (Option 2):** `@connection = admin`, or a list
+   (`@connection = [admin, public]`), which annotation values already allow
    (`@validators = [...]`). No block, no manifest table.
 2. **The name is `connection`:** the annotation, the generated module and the docs share it.
 3. **The package owns the declaration.** A set changes what its Hello lists, which is part
@@ -275,6 +275,12 @@ Given on 2026-11-27, when sets were taken up:
 
     A forbidden annotation (answer 16) reuses `settings::forbidden`. The cases are in
     [specification#22](https://github.com/ComlineProject/specification/issues/22) (spec 0.13).
+22. **A set is named by a bare identifier, never a string:** `@connection = admin`,
+    `@connection = [admin, public]`, as `@settings = Strict` names a preset. A list's items
+    are bare names in the annotation grammar already, and a set name becomes a module name.
+    A quoted name (`@connection = "admin"`) or any other value is the annotation-value
+    error (`validation::annotation-value-mismatch`). A protocol in a set is that set's
+    **member**.
 
 ### Decided
 
