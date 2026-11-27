@@ -173,11 +173,20 @@ CLI: cli#17.
   returned files write under `<out>/<language>/` for `lib`, at `layout` for
   `code`. `dylib` is rejected.
 
-No FFI, no compile step. Deliberately out of scope for now (each a documented
-error or noted follow-up): nested (`/`-joined) namespaces in `lib`, multi-version
-`lib`, `layout`-driven `lib` root, `typescript` `Lib`. A namespace literally
-named `main` / `lib` compiles but trips Rust's `special_module_name` warning —
-fix by nesting the schema modules under `src/schemas/`.
+No FFI, no compile step. What G2a left out of scope, and where each stands now:
+
+- **Nested (`/`-joined) namespaces in `lib`:** done. Both generators support
+  `nested-namespaces` in `lib` mode.
+- **`typescript` `Lib`:** done (comline-typescript#9).
+- **`layout`-driven `lib` root:** replaced by `flatten`. `layout` has no effect
+  in `lib` mode (the CLI warns), and `flatten = true` writes the crate straight
+  into `out`.
+- **A namespace named `main` / `lib`:** refused. Core reserves `crate`, `index`,
+  `lib`, `main`, `mod`, `super`, `__init__` and `__main__` in every namespace
+  segment (`package/layout.rs`), and the Rust generator also refuses `lib` as a
+  first segment for a hand-built `GenerateRequest`.
+- **Multi-version `lib`:** still refused by the CLI ("`lib` mode does not
+  support multiple package versions yet"). Tracked in cli#171.
 
 #### G2b — TypeScript in `code` mode (generation#4, comline-typescript#5, #8)
 
@@ -216,6 +225,11 @@ Registered under `typescript` and `ts`, version key `"5.0"`. No CLI change —
 dylib-loading story ([runtime structure](runtime-repo-structure.md)) and needs
 core#8. Not scoped until that is. When it happens it lands in `comline-rust`, not
 `generation`.
+
+core#8 has since been decided: generators outside the CLI load over the stdio
+protocol (native or WASI), not as `dylib` / `abi_stable` libraries. Whether
+`mode = "dylib"` stays at all, and where a per-package C ABI would live if it
+does, is open in comline-rust#145.
 
 ### G3 — split to per-language repos
 
