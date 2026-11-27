@@ -265,7 +265,9 @@ Given on 2026-11-27, when sets were taken up:
     - `connection::unsupported-encoding`: the set's encodings can't have sets (answer 20);
     - `connection::encoding-mismatch`: a member's own `@framing` or `@handshake` disagrees with
       its set's, or a protocol in two sets whose encodings differ pins one of its own
-      (answer 7);
+      (answer 7). A handshake agrees when its name and its wire parameters (`exchange`)
+      match; its policy parameters (`scope`, `newer_consumer`, `same_version_differs`)
+      may differ per member, since each end applies them per protocol;
     - `connection::unknown-set`: a `connections` table entry names a set no protocol is in;
     - `connection::duplicate-set`: a set name repeated in one `@connection` list;
     - `connection::empty-list`: `@connection = []` is refused; a protocol in one set is just a
