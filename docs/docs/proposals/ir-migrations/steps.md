@@ -59,7 +59,7 @@ dependency that can't be seen, applied to a whole version.
 An unknown has two possible carriers. **Proposed: both**, in this order of preference.
 
 1. **Typed, in the new format.** Where N+1's own type has room for it, the field is `Known<T>`: a value, or
-   `Unknown { reason }`. The compiler then forces every reader to handle it. Format 4's chains are the example
+   `Unknown { reason, step }`, naming the step that wrote it as an untyped entry does (decided 2026-11-28). The compiler then forces every reader to handle it. Format 4's chains are the example
    ([format 4](format-4.md#the-step)). A format that adds a field is written so that anything a later step might have
    to leave unknown is already a `Known<T>`.
 2. **An `unknown` entry in the root tree,** for a retype whose new type has no room: a blob listing, for each
