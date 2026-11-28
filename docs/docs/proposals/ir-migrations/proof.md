@@ -81,10 +81,14 @@ is released, built by that release's core, and keeps them for ever ([after 1.0](
 
 ### Regenerating
 
-`cargo xtask ir-fixtures --format N` checks the recorded revision out into a worktree outside the repository, builds
-it with its lockfile and `--locked`, and runs each script. Core's only non-determinism is the author (`USER`, or
-`whoami`) and the timestamp (`SystemTime`), so the generator sets the first and runs under a fake clock
-(`faketime`, on Linux). A store regenerated that way is **byte for byte** the committed one, and `--check` says so.
+**Decided (2026-11-28):** the stores are built by the **CLI**, not an `xtask` or a maker in core. A plain shell script
+in `core/tests/migrations/fixtures/`, run only by its CI job, installs `comline` at the recorded CLI revision (the one
+that pins the recorded core) with its lockfile and `--locked`, and runs each script as real commands (`comline new`,
+`build`, `release`). Format 3's closing core is the **base commit of the format 4 pull request**, and `PRODUCED_BY`
+records the CLI and core revisions. Core's only non-determinism is the author (`USER`, or `whoami`) and the timestamp,
+so the script sets the first and the timestamp comes from `SOURCE_DATE_EPOCH`, the reproducible-builds variable the
+CLI reads, with no fake clock. A store regenerated that way is **byte for byte** the committed one, and `--check`
+says so.
 The committed bytes are the fixtures; regeneration is what shows they are what that core made. A weekly job runs
 `--check` for every recorded format, so a yanked crate or a vanished revision shows within a week and not when a
 fixture is needed. The committed stores don't depend on it.
@@ -115,7 +119,7 @@ Fixtures are fixed histories. The differential test draws random ones.
   files and has no dependency on core. Add **histories**: a sequence of edits (add a field, swap a type, add or
   remove a dependency, change a handshake or a bound, release), with proptest strategies for the property tests
   and `Arbitrary` for the fuzzer, as for the guarantee oracle.
-- **The old side runs out of process.** The CLI (or maker) built at the recorded revision of the previous format is run over the
+- **The old side runs out of process.** The CLI built at the recorded revision of the previous format is run over the
   rendered package, and its `.comline/` is read back. The binary is built once per `(revision, lockfile, toolchain)`
   and cached in CI. The only exchange is the file system.
 - **The current side runs in the test:** the current core builds the same history, `migrate` runs on the old store, and

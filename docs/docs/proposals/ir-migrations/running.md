@@ -46,12 +46,14 @@ proposal still delete a store whose stamp they don't expect; they are out of sco
 3. **Write the new store** into `.comline.migrating/`: `objects/` (payloads that didn't change are linked or copied under
    the same hash; everything else is new), `refs/heads/main` with each head mapped, and `FORMAT_VERSION` **last**. A
    `JOURNAL` there records the old head hashes, the stamp and assumed format, and the state: `writing`, then `ready`.
+   The receipt (`MIGRATIONS`, with this migration's `N -> M` line) is written here too, before the swap, so it moves
+   with the store and can't be missing after a crash (decided 2026-11-28, core#304).
    `deps-cache/` is not read or written: it isn't part of the store.
 4. **Verify** the new directory as if it were a store, [below](#verifying). A failure keeps the directory, marks it
    `FAILED` with the reason, leaves `.comline/` as it was, and exits nonzero.
 5. **Swap.** Set the journal `ready`. Rename `.comline/` to `.comline.format-N.bak/`. Rename `.comline.migrating/` to
    `.comline/`. Move `deps-cache/` from the backup into the new `.comline/`: offline machines depend on it, and today's
-   wipe deletes it with everything else. Write the receipt and remove the journal.
+   wipe deletes it with everything else. Remove the journal.
 
 Each rename is atomic. Between the two there is no `.comline/`, and that state is recognized and completed, not
 mistaken for "never built".
@@ -104,8 +106,9 @@ change are hard links, so a backup costs little.
 
 ## Reset
 
-`comline store reset` is the only way a store with no path to the current format is replaced, and it is the user's
-command:
+`comline store reset` is the only way a store is replaced, and it is the user's command. It is offered for a store with
+no path to the current format, and allowed on any store with history, since it deletes nothing; it refuses a newer store,
+a store with merged formats and a migration in progress (decided 2026-11-28, core#304):
 
 - It renames `.comline/` to `.comline.format-N.bak/` and starts a new store at the next build. It deletes nothing, and
   `deps-cache/` is kept.
